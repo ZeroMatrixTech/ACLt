@@ -1,0 +1,182 @@
+# ACLt Protocol 任务生命周期
+
+> 文档状态：`CANDIDATE` state-machine baseline  
+> 语义基线：v0.5  
+> 最后更新：2026-08-17  
+> 更新触发：Receipt、Plan、Lease、验证、终态、资金或结算语义变化
+
+## 1. 生命周期目标
+
+每个任务必须从一个不可变 `ComputeReceipt` 开始，在有界执行、验证和资金条件内推进，并且最多进入一个协议终态。任何阶段都必须能够拒绝非法转换或进入准确的安全退出，而不是无限重试或人工裁决。
+
+## 2. 顶层状态机
+
+```mermaid
+stateDiagram-v2
+    [*] --> Proposed
+    Proposed --> Registered: canonical + policy checks
+    Proposed --> RejectedAtCreate: invalid or unsupported
+    Registered --> Planned: valid WorkPlan
+    Registered --> FailedPlanning: no legal plan
+    Planned --> Leased: exposure reserved + accepted Lease
+    Leased --> Executing
+    Executing --> Planned: lease expiry / retry allowed
+    Executing --> Verifying: valid current-epoch result
+    Executing --> Failed: attempts exhausted / fatal failure
+    Executing --> Expired: final deadline
+    Verifying --> Trusted: stop rule satisfied
+    Verifying --> Unresolved: Nmax / invalid conditions
+    Verifying --> FundingExhausted: authorized cap reached
+    Trusted --> Settling
+    Unresolved --> Settling
+    Failed --> Settling
+    Expired --> Settling
+    FundingExhausted --> Settling
+    Settling --> Closed: at-most-once settlement resolved
+```
+
+状态名是当前候选规范。精确枚举、嵌套状态和转换守卫仍需机器化。
+
+## 3. 阶段与输出
+
+| 阶段 | 主要动作 | 必要前置条件 | 输出 | 安全退出 |
+|---|---|---|---|---|
+| 1. 选择版本与政策 | 绑定 ProtocolVersion、验证、资金、结算 | 全部可解析且兼容 | 创建输入 | REJECTED_AT_CREATE |
+| 2. 登记 Receipt | canonicalize、摘要、签署、登记 | 预算和字段合法 | ReceiptID | REJECTED_AT_CREATE |
+| 3. 规划 | 任意 Principal 提出 WorkPlan | Receipt 可用 | Assignment DAG | FAILED_PLANNING |
+| 4. 能力与暴露 | 估计任务族能力并原子预留额度 | 证据版本、资源和限额有效 | ExposureDecision | 排队/拒绝/EXPIRED |
+| 5. Lease | 提议并由 Provider 接受 | epoch、期限、暴露有效 | 生效 Lease | 释放额度 |
+| 6. 执行与恢复 | Execute、heartbeat、checkpoint | 当前 Lease | Result/Checkpoint/Failure | retry/FAILED/EXPIRED |
+| 7. 验证快照 | 冻结总体、分层、相关性和随机性 | 有效候选结果与策略 | EligibilitySnapshot | UNSUPPORTED/UNRESOLVED |
+| 8. 序贯验证 | Sample、Verify、Aggregate | Snapshot 未破坏 | ConfidenceState | 扩样/UNRESOLVED |
+| 9. 终态 | 原子提交唯一状态 | 停止或边界条件 | TerminalState | 事务重试 |
+| 10. 结算 | 计算权利并最多一次提交 | 终态、政策、资金有效 | Settlement | FUNDING_EXHAUSTED/暂停 |
+| 11. 证据更新 | 追加可归责事件 | 来源和故障归因充分 | PerformanceEvidence | 暂缓更新 |
+
+## 4. ComputeReceipt 冻结点
+
+Receipt 登记前必须明确：
+
+- 程序和输入引用；
+- 执行环境与资源限制；
+- 成功、结果等价与验证类型；
+- deadline、Lease、attempt 和恢复边界；
+- 有限总体与 Nmax 的政策来源；
+- FundingPolicy、SettlementPolicy 和预算；
+- ProtocolVersion 与 canonical encoding。
+
+登记后任何实质变化必须生成新 ReceiptID。修正文书不能改变原任务义务。
+
+## 5. 规划阶段
+
+WorkPlan 只需合法、确定且可验证，不承诺全局最优。合法性至少检查：
+
+- 所有 Assignment 的并集覆盖要求的工作；
+- 依赖图无非法环或未声明依赖；
+- 合并规则与任务结果语义一致；
+- 每个单元资源和输出大小有界；
+- 失败、取消和部分完成语义明确；
+- 规划不会扩大 Receipt 的权限、预算或 deadline。
+
+具体 DAG 和等价性算法为 `OPEN/P0`。
+
+## 6. 暴露与 Lease
+
+Lease 生效必须同时完成：
+
+1. 绑定 Receipt、Assignment、Provider、ProtocolVersion；
+2. 原子预留 Provider、相关集群、Receipt 和窗口暴露；
+3. 分配严格递增 epoch；
+4. 写入期限、资源、提交和权利条件；
+5. 获取 Provider 接受签名。
+
+Lease 到期、拒绝或失败后的额度释放必须是幂等的。未接受 Lease 不产生负面 PerformanceEvidence。
+
+## 7. 执行与迟到隔离
+
+ResultSubmission 和 Checkpoint 必须绑定当前 epoch、内容摘要、环境版本和幂等键。若 `epoch < current_epoch`：
+
+- 可以保存为 stale audit evidence；
+- 不得覆盖当前执行状态；
+- 不得进入当前验证；
+- 不得产生当前结算权利。
+
+若尝试、deadline 或预算达到上限，任务必须进入相应终态，不能在状态机外重新启动同一义务。
+
+## 8. 验证阶段
+
+首次 draw 前冻结 EligibilitySnapshot、总体、排除项、抽样单位、分层、相关性处理、随机性、误差目标、停止规则和资金上限。
+
+当前研究方向为有限总体、不放回、anytime-valid 序贯验证：
+
+\[
+N_{max}=\min(N_{population},N_{budget},N_{policy})
+\]
+
+该接口不证明统计方法已经安全。若随机性、总体、验证器或相关性假设失效，不得输出 TRUSTED。
+
+## 9. 终态语义
+
+| 终态 | 严格含义 | 允许结算 | 绝对正确性 |
+|---|---|---|---|
+| `TRUSTED` | 在预声明模型和停止规则下满足背书条件 | 按 SettlementPolicy | 不证明 |
+| `UNRESOLVED` | 在 Nmax/预算/政策内不能背书单一结果 | 按预声明过程费用/退款 | 不证明 |
+| `FAILED` | 执行或系统条件失败且不能继续 | 按故障归因 | 不适用 |
+| `EXPIRED` | 最终期限到达 | 按责任矩阵 | 不适用 |
+| `FUNDING_EXHAUSTED` | 授权资金阻止继续或结算 | 仅按剩余额度和政策 | 不适用 |
+| `REJECTED_AT_CREATE` | 创建条件不合法 | 不进入执行服务 | 不适用 |
+| `FAILED_PLANNING` | 没有合法 WorkPlan | 仅按创建/规划政策 | 不适用 |
+| `UNSUPPORTED` | 当前版本无合规验证或执行语义 | 不进入相关阶段 | 不适用 |
+
+每个 Receipt 最多提交一个互斥协议终态。
+
+## 10. 结算阶段
+
+Settlement 必须引用：唯一终态、冻结 SettlementPolicy、合法故障归因、足够资金和未提交 EntitlementKey。
+
+\[
+Committed + Settled + RefundReserved \le AuthorizedFundingCap
+\]
+
+超时或响应丢失后必须查询唯一权利状态，不能盲目重试支付。发行若被选择，也必须在 Receipt 前声明并受上限约束。
+
+## 11. 证据更新
+
+只有可归责事件才能更新 PerformanceEvidence。记录至少包括任务族、环境、条件、结果、期限表现、验证来源、失败来源和因果引用。
+
+- 更正通过新事件追加；
+- 平台、任务或验证器故障不能自动归罪 Provider；
+- 跨任务族迁移默认关闭；
+- 证据只影响未来 CapabilityEstimate 和 ExposureDecision；
+- 本次验证和终态不得被历史能力反向覆盖。
+
+## 12. 关键竞态
+
+| 竞态 | 必须保持 |
+|---|---|
+| 两个 Schedule 同时签 Lease | epoch 唯一递增，暴露不超限 |
+| Lease 到期与 Result 同时到达 | 以原子状态和 epoch 判断，不产生双权利 |
+| retry 与旧 Checkpoint 同时恢复 | stale 隔离，当前状态唯一 |
+| Nmax 与 TRUSTED 条件同时出现 | 预声明顺序和原子 Decision |
+| terminal 与 funding exhaustion 同时出现 | 唯一终态及确定性权利映射 |
+| Settlement 提交后响应丢失 | 最多一次，不盲重试 |
+| 发布新 ProtocolVersion 时任务运行 | 旧任务继续使用冻结版本 |
+
+## 13. 不变量映射
+
+- Receipt/版本：INV-01、INV-02；
+- Lease/执行：INV-03、INV-08、INV-09、INV-10；
+- 验证：INV-11、INV-12、INV-14；
+- 终态/资金：INV-04、INV-05、INV-06、INV-07；
+- 证据/维护/适配器：INV-13、INV-15、INV-16。
+
+## 14. 当前未决问题
+
+- 完整状态枚举和合法转换表；
+- WorkPlan 覆盖、合并与部分失败；
+- Lease 时钟、heartbeat 和 checkpoint；
+- attempt、deadline、暴露和损失参数；
+- 验证 Registry、Snapshot、随机性和停止规则；
+- terminal—refund—fee—fault attribution 矩阵；
+- 事务、幂等、分区和灾难恢复；
+- Evidence 更正、隐私与保留。
