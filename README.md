@@ -1,243 +1,155 @@
-# ACLt
-An Distributed Computing Solution
+# ACLt Protocol
 
-[中文 v0.5 文档](https://github.com/tenneidp/ACLt/blob/main/docs/codocs/v0.5/DCP_%E5%AE%8C%E6%95%B4%E9%A1%B9%E7%9B%AE%E6%80%9D%E8%B7%AF%E6%9E%B6%E6%9E%84%E4%B8%8E%E8%AE%BA%E8%AF%81%E6%98%A0%E5%B0%84_v0.5_%E4%B8%AD%E6%96%87.md)
+> **状态：G0——协议规格化**  
+> **当前语义基线：v0.5**  
+> **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
+> **最后更新：2026-08-17**
 
-[English v0.5 Documentation](https://github.com/tenneidp/ACLt/blob/main/docs/codocs/v0.5/DCP_Complete_Project_Architecture_Argument_and_Traceability_v0.5_EN.md)
+ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
-[待决问题 v0.5](https://github.com/tenneidp/ACLt/blob/main/docs/codocs/v0.5/ACLt_v0.5_Unresolved_Issues.md)
+协议定义任务如何被不可变地承诺、规划、领取、执行、恢复、验证和结算，以及历史履约证据如何转化为未来的能力估计与有界风险暴露。它不是区块链、计算平台、市场、基金会或单一软件产品。
 
-## Repository Structure
+## 当前结论
 
-本项目采用单仓库结构，以协议定义、形式化规范和安全分析为核心。现阶段只创建实际需要的目录；候选组件只有在证明其必要性后才加入仓库，以贯彻“如无必要勿增实体”的设计原则。
+ACLt Protocol 已形成一套完整的候选协议架构，但**尚未证明整体鲁棒性**。当前可以支持的严格表述是：
 
-```text
-distributed-compute/
-├── README.md                       # 项目简介、快速开始与文档入口
-├── LICENSE                         # 开源许可证
-├── CONTRIBUTING.md                 # 贡献规范
-├── SECURITY.md                     # 安全政策与漏洞披露流程
-├── CODE_OF_CONDUCT.md              # 社区行为准则
-├── CHANGELOG.md                    # 版本变更记录
-├── CITATION.cff                    # 学术引用信息
-│
-├── docs/                           # 项目的权威文档中心
-│   ├── README.md                   # 文档索引、阅读顺序与状态说明
-│   │
-│   ├── 00-overview/                # 项目总览
-│   │   ├── project-overview.md     # 项目目标、适用范围与非目标
-│   │   ├── design-principles.md    # 核心设计原则
-│   │   ├── terminology.md          # 统一术语与符号定义
-│   │   └── system-context.md       # 系统环境、参与者与外部依赖
-│   │
-│   ├── 01-requirements/            # 系统要求与基本假设
-│   │   ├── functional.md           # 功能需求
-│   │   ├── non-functional.md       # 安全、性能、可用性等要求
-│   │   ├── threat-model.md         # 威胁模型与攻击者能力
-│   │   └── invariants.md           # 系统必须始终满足的不变量
-│   │
-│   ├── 02-architecture/            # 系统架构
-│   │   ├── system-architecture.md  # 完整系统架构
-│   │   ├── identities-and-roles.md # 身份组、职能与权限边界
-│   │   ├── trust-model.md          # 信任模型与信任边界
-│   │   ├── task-lifecycle.md       # 任务或仓单的完整生命周期
-│   │   ├── data-model.md           # 核心数据结构及其关系
-│   │   └── protocol-flow.md        # 主要协议交互流程
-│   │
-│   ├── 03-protocol/                # 协议设计
-│   │   ├── protocol-spec.md        # 规范性协议正文
-│   │   ├── task-assignment.md      # 任务分配算法
-│   │   ├── result-validation.md    # 结果验证与最大验证轮机制
-│   │   ├── reputation.md           # 信用、Rank 与权重机制
-│   │   ├── rewards-penalties.md    # 报酬、惩罚与成本核算
-│   │   ├── disputes-disclosure.md  # 争议处理与道德披露机制
-│   │   └── protocol-parameters.md  # 协议参数、约束及默认值
-│   │
-│   ├── 04-analysis/                # 理论分析与证明
-│   │   ├── robustness.md           # 系统鲁棒性分析
-│   │   ├── incentive-compatibility.md
-│   │   ├── sybil-resistance.md     # 女巫攻击抵抗能力
-│   │   ├── collusion-analysis.md   # 串谋攻击分析
-│   │   ├── economic-security.md    # 经济安全与攻击成本
-│   │   ├── administrative-cost.md  # 行政成本及其必要性分析
-│   │   └── proof-obligations.md    # 待证明命题及证明状态
-│   │
-│   ├── 05-decisions/               # 架构决策记录（ADR）
-│   │   ├── README.md               # ADR 编号、格式与使用规则
-│   │   ├── ADR-0001-single-repository.md
-│   │   ├── ADR-0002-no-unnecessary-entities.md
-│   │   └── ADR-xxxx-template.md    # ADR 模板
-│   │
-│   ├── 06-research/                # 研究资料与成果归属
-│   │   ├── literature-review.md    # 文献综述
-│   │   ├── related-systems.md      # 相关系统及对比分析
-│   │   ├── claims-and-sources.md   # 系统论断与资料来源对应表
-│   │   └── bibliography.bib        # BibTeX 参考文献数据库
-│   │
-│   ├── 07-roadmap/                 # 项目进度与协作
-│   │   ├── current-status.md       # 已确定、暂定与未完成事项
-│   │   ├── open-questions.md       # 未解决问题及候选方案
-│   │   ├── milestones.md           # 阶段目标与里程碑
-│   │   └── collaboration-guide.md  # 合作、分工与交接指南
-│   │
-│   ├── 08-operations/              # 部署与运行维护
-│   │   ├── deployment.md           # 部署方式
-│   │   ├── observability.md        # 日志、指标与可观测性
-│   │   ├── incident-response.md    # 故障及安全事件响应
-│   │   └── governance.md           # 项目治理边界
-│   │
-│   └── diagrams/                   # 架构图与协议流程图
-│       ├── source/                 # Mermaid、PlantUML 等源文件
-│       └── exported/               # 导出的 SVG 或 PNG 文件
-│
-├── spec/                            # 可被实现和测试引用的形式化规范
-│   ├── schemas/                     # JSON Schema、Protobuf 等结构定义
-│   ├── state-machines/              # 协议状态机
-│   ├── algorithms/                  # 规范性算法与伪代码
-│   ├── test-vectors/                # 标准输入、输出和边界案例
-│   └── protocol-version.md          # 协议版本及兼容性规则
-│
-├── src/                             # 正式实现
-│   ├── core/                        # 不依赖网络和存储的纯协议逻辑
-│   ├── node/                        # 通用节点功能
-│   ├── verification/                # 验证、复验与结果聚合
-│   ├── reputation/                  # 信用和 Rank 计算
-│   ├── ledger/                      # 仓单、任务及参与记录
-│   ├── economics/                   # 报酬、惩罚和成本模型
-│   ├── networking/                  # 节点发现与通信
-│   ├── storage/                     # 数据持久化适配层
-│   └── api/                         # 对外接口
-│
-├── simulations/                     # 协议和经济模型仿真
-│   ├── scenarios/                   # 正常运行场景
-│   ├── attacks/                     # 攻击与异常场景
-│   ├── parameters/                  # 仿真参数集
-│   ├── notebooks/                   # 探索性分析
-│   └── results/                     # 可复现的实验结果
-│
-├── tests/                           # 自动化测试
-│   ├── unit/                        # 单元测试
-│   ├── integration/                 # 集成测试
-│   ├── protocol/                    # 协议一致性测试
-│   ├── adversarial/                 # 对抗性与攻击测试
-│   ├── property/                    # 属性测试与不变量测试
-│   └── fixtures/                    # 公共测试数据
-│
-├── tools/                           # 研究及开发辅助工具
-│   ├── parameter-analysis/          # 参数敏感性分析
-│   ├── data-generation/             # 测试及仿真数据生成
-│   └── documentation/               # 文档生成和校验工具
-│
-├── examples/                        # 最小可运行示例
-│   ├── minimal-network/
-│   ├── task-provider/
-│   └── compute-node/
-│
-├── config/                          # 配置模板
-│   ├── development/
-│   ├── simulation/
-│   └── production.example/
-│
-├── scripts/                         # 项目级辅助脚本
-│   ├── test.sh
-│   ├── simulate.sh
-│   └── build-docs.sh
-│
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   ├── pull_request_template.md
-│   └── workflows/
-│
-└── .gitignore
+- 系统只保留 `Requester` 与 `Provider` 两类不可再约减的 Principal；
+- Planner、Verifier、Scheduler 等职能被压缩为 permissionless functions；
+- `ComputeReceipt` 固定任务、验证、期限、预算和结算语义；
+- Provider 可零前置抵押参与，但暴露、并发、价值、Lease、尝试和损失必须有界；
+- 履约历史只允许形成 `PerformanceEvidence → CapabilityEstimate ± Uncertainty → ExposureDecision`；
+- 履约能力不得授予验证票权、真理权、最终审计权或治理权；
+- 验证优先研究冻结有限总体、不放回抽样和 anytime-valid 序贯推断；该方向尚未完成 ACLt 特定证明；
+- Sybil 分析不假定标识独立，先以相关集群和硬损失上限控制风险；
+- `UNRESOLVED`、`FAILED`、`EXPIRED` 和 `FUNDING_EXHAUSTED` 是合法安全终态；
+- 资金来自预声明 `FundingPolicy`；发行只是可选来源，不是默认机制；
+- 数据库、签名日志、联盟账本或公共区块链均可实现同一协议语义。
+
+## 非目标与禁止主张
+
+当前不得声称：
+
+- 任意计算都可以廉价或绝对正确地验证；
+- Provider 数量等于独立控制实体数量；
+- 51% 是 ACLt Protocol 的默认安全阈值；
+- Rank、信誉或历史表现代表真理；
+- 攻击不划算等于攻击不可能；
+- 临时发行使验证免费；
+- 使用区块链自动带来协议安全或分布式容错；
+- 中心化参考实现已经具备公共网络鲁棒性。
+
+## 最小本体
+
+```mermaid
+flowchart TD
+    R["Requester\n任务与预算承诺"]
+    P["Provider\n资源与证据承诺"]
+    F["Permissionless Functions\nPlan / Execute / Verify / Settle …"]
+    A["ACLt Protocol\n对象 / 状态机 / 不变量"]
+    M["Maintenance Boundary\n规范 / 测试 / 发布"]
+
+    R --> F
+    P --> F
+    F --> A
+    M -->|仅影响未来版本| A
 ```
 
-### Documentation Authority
+图中的 Protocol 是规则，不是行为者；函数输出只有通过版本、签名、前置状态与不变量检查后才生效。
 
-为避免相同结论分散在多个文件中，每类内容应设置唯一的权威文档。
+## 核心设计原则
 
-| 内容 | 权威位置 |
-|---|---|
-| 项目介绍与快速开始 | `README.md` |
-| 项目目标、边界与非目标 | `docs/00-overview/project-overview.md` |
-| 核心设计原则 | `docs/00-overview/design-principles.md` |
-| 身份组、职能与权限 | `docs/02-architecture/identities-and-roles.md` |
-| 完整系统架构 | `docs/02-architecture/system-architecture.md` |
-| 规范性协议定义 | `docs/03-protocol/protocol-spec.md` |
-| 信用、Rank 与任务权重 | `docs/03-protocol/reputation.md` |
-| 验证轮与结果共识 | `docs/03-protocol/result-validation.md` |
-| 攻击模型与经济安全论证 | `docs/04-analysis/` |
-| 行政成本分析 | `docs/04-analysis/administrative-cost.md` |
-| 关键架构决定及其理由 | `docs/05-decisions/` |
-| 文献、引用与成果归属 | `docs/06-research/` |
-| 当前进度与未决问题 | `docs/07-roadmap/` |
-| 机器可读或可验证的协议规范 | `spec/` |
-| 仿真实验、参数与结果 | `simulations/` |
+1. **如无必要勿增实体**：公开、确定且可验证的职能优先写成协议函数；
+2. **先承诺，后观察**：任务、验证、抽样、资金和结算政策先冻结；
+3. **先限制损失，再讨论激励**：硬上限优先于“攻击成本大于收益”；
+4. **不确定性必须显式化**：无法背书时返回 `UNRESOLVED`；
+5. **证据不等于权威**：能力估计只影响有界暴露；
+6. **不假定身份独立**：原始标识数不等于有效样本量；
+7. **协议与实现分离**：底层基础设施可替换，语义不可漂移；
+8. **维护最小权限**：维护者不得裁决运行中个案。
 
-### Initial Repository Structure
+完整原则见 [`docs/00-overview/design-principles.md`](docs/00-overview/design-principles.md)。
 
-项目早期不应一次性创建所有候选目录。第一阶段建议仅建立以下最小结构：
+## 文档阅读顺序
+
+| 顺序 | 文档 | 用途 |
+|---:|---|---|
+| 1 | [`project-overview.md`](docs/00-overview/project-overview.md) | 项目目标、范围、非目标和成熟度 |
+| 2 | [`terminology.md`](docs/00-overview/terminology.md) | 统一术语、状态标签和废弃语义 |
+| 3 | [`system-context.md`](docs/00-overview/system-context.md) | 系统边界、Principal、函数和外部依赖 |
+| 4 | [`threat-model.md`](docs/01-requirements/threat-model.md) | 攻击者、威胁、剩余风险和禁止主张 |
+| 5 | [`invariants.md`](docs/01-requirements/invariants.md) | 16 条规范性安全不变量 |
+| 6 | [`system-architecture.md`](docs/02-architecture/system-architecture.md) | 分层架构和实现边界 |
+| 7 | [`protocol-spec.md`](docs/03-protocol/protocol-spec.md) | 当前规范性协议骨架 |
+| 8 | [`result-validation.md`](docs/03-protocol/result-validation.md) | 验证流程、统计边界与证明义务 |
+| 9 | [`current-status.md`](docs/07-roadmap/current-status.md) | 当前进度、证据成熟度与工程 Gate |
+| 10 | [`open-questions.md`](docs/07-roadmap/open-questions.md) | P0/P1/P2 未决问题和 v0.6 依赖 |
+
+完整索引见 [`docs/README.md`](docs/README.md)。
+
+## 仓库结构
 
 ```text
-distributed-compute/
+.
 ├── README.md
-├── LICENSE
 ├── CONTRIBUTING.md
-│
 ├── docs/
 │   ├── README.md
 │   ├── 00-overview/
-│   │   ├── project-overview.md
-│   │   ├── design-principles.md
-│   │   └── terminology.md
-│   │
 │   ├── 01-requirements/
-│   │   ├── threat-model.md
-│   │   └── invariants.md
-│   │
 │   ├── 02-architecture/
-│   │   ├── system-architecture.md
-│   │   ├── identities-and-roles.md
-│   │   └── task-lifecycle.md
-│   │
 │   ├── 03-protocol/
-│   │   ├── protocol-spec.md
-│   │   ├── result-validation.md
-│   │   └── reputation.md
-│   │
 │   ├── 04-analysis/
-│   │   ├── robustness.md
-│   │   └── administrative-cost.md
-│   │
 │   ├── 05-decisions/
-│   │   └── ADR-0001-no-unnecessary-entities.md
-│   │
 │   ├── 06-research/
-│   │   ├── claims-and-sources.md
-│   │   └── bibliography.bib
-│   │
 │   └── 07-roadmap/
-│       ├── current-status.md
-│       └── open-questions.md
-│
 ├── spec/
 │   ├── algorithms/
 │   └── state-machines/
-│
 └── simulations/
     ├── scenarios/
     └── results/
 ```
 
-### Expansion Rule
+目录只表示资料组织，不表示系统中存在同名特权实体。`spec/` 与 `simulations/` 将在对应 P0 规格冻结后逐步填充。
 
-`src/`、`tests/`、部署配置、治理机制以及任何具有特殊权限的组件，均应在其需求和边界得到确认后再加入。
+## 当前工程 Gates
 
-新增重要组件前，应至少满足以下条件：
+| Gate | 内容 | 当前状态 |
+|---|---|---|
+| G0 | 规格、对象、状态机、不变量、威胁、统计和资金政策 | **进行中** |
+| G1 | 能力、调度、验证、Sybil、资金和行政成本仿真 | 未开始 |
+| G2 | 单机参考实现与确定性测试 | 未开始 |
+| G3 | 局域网多 Provider MVP 与故障注入 | 未开始 |
+| G4 | 持久化、备份、恢复和适配器一致性 | 未开始 |
+| G5 | Sybil、串谋、预算耗尽和维护滥权对抗验证 | 未开始 |
+| G6 | 异构硬件、外部参与者与可选账本试点 | 未开始 |
 
-1. 该组件承担的职能已经被明确证明为必要；
-2. 该职能不能由现有参与者或公开、确定的协议算法合理完成；
-3. 已明确其信任假设、权限范围和失效影响；
-4. 已在 `docs/05-decisions/` 中记录对应的架构决策；
-5. 已同步更新系统架构、威胁模型和协议规范。
+不得在前一 Gate 的退出证据不足时，把后一 Gate 的可运行结果解释为安全证明。
 
-仓库目录不是系统参与者清单。目录可以用于代码组织，但不得因为存在某个目录，就默认系统中必须存在对应的特权实体。
+## 参与项目
+
+当前最有价值的贡献是：
+
+- 把 16 条不变量转化为机器可检查的状态机与性质测试；
+- 完成 canonical schemas、编码和测试向量；
+- 证明或证伪有限总体序贯验证方案；
+- 建立相关性、集群暴露和最大损失仿真；
+- 规格化 FundingPolicy、退款、故障归因和最多一次结算；
+- 建立适配器一致性、发布密钥、撤销和漏洞响应流程。
+
+提交前请阅读 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+
+## 版本与更新
+
+- v0.5 是当前语义基线，不是不可修改的产品版本；
+- 新证据可以把 `CANDIDATE` 升为 `DECIDED/INVARIANT`，也可以把旧结论降级为 `SUPERSEDED/REJECTED`；
+- 影响协议语义的变更必须同时更新 ADR、威胁模型、不变量、协议规范、状态和未决问题；
+- 文档冲突时，较新的明确决定与规范性文档优先，历史文件仅作追踪。
+
+## 开源与许可
+
+项目目标是完整开源。具体开源许可证目前仍为 `OPEN/P0`；在正式加入 `LICENSE` 之前，不应对外声称已经完成法律意义上的开源授权。
+
+## 名称说明
+
+当前正式名称为 **ACLt Protocol**。DistributedCompute、RUDCP、DCP 和 BigMind 仅用于历史追踪。ACLt 的商标、域名和软件包名清查仍为 `OPEN`。
