@@ -131,6 +131,9 @@ flowchart TD
     ├── 07-roadmap/
     │   ├── current-status.md
     │   └── open-questions.md
+    ├—— 08-governance/
+    |   ├── audit-procedure.md
+    |   └── audit-report-template.md
     └── codocs/                    # 历史版本档案；不构成当前规范
         └── README.md              # 历史状态与权威性说明
 ```
