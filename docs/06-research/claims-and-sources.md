@@ -20,25 +20,27 @@
 
 ## 2. 当前论断登记
 
-| Claim ID | 论断 | 状态 | 证据 | 严格边界 |
-|---|---|---|---|---|
-| CLM-001 | 公共/志愿计算可以工程化分发任务、重试并验证结果 | `DERIVED` | S01、S02 | 不证明 ACLt 的 Sybil、统计或资金安全 |
-| CLM-002 | 低成本身份会削弱把冗余身份视为独立实体的推理 | `DERIVED` | S03 | 不直接给出 ACLt 的相关集群算法或损失界 |
-| CLM-003 | 对有限总体不放回序贯抽样构造 time-uniform confidence sequences 在数学上可行 | `SOURCE-ESTABLISHED` | S04、S05 | 不自动覆盖恶意、相关、异质验证证据 |
-| CLM-004 | ACLt 可直接采用某一 confidence sequence 并保持目标误差 | `OPEN/P0` | S04、S05 是候选基础 | 必须定义目标、总体、依赖、分层和攻击模型并证明 |
-| CLM-005 | 完全异步、允许故障的共识不能获得无条件终止保证 | `DERIVED BOUNDARY` | S06 | 只在论文模型内成立；ACLt 必须声明自身活性模型 |
-| CLM-006 | Byzantine 阈值依赖明确的消息、认证和故障模型 | `DERIVED BOUNDARY` | S07 | 不支持把任何固定阈值直接移植为 ACLt 的 51% |
-| CLM-007 | 任意程序的非平凡语义性质不存在通用可判定方法 | `DERIVED BOUNDARY` | S08 | 不排除特定任务族的验证器或证明系统 |
-| CLM-008 | 内容摘要和 descriptor 可作为可互操作内容引用先例 | `ENGINEERING PRECEDENT` | S09 | OCI 不定义 ACLt Receipt、状态机或结算语义 |
-| CLM-009 | 带不确定度的能力/表现估计有现有模型先例 | `CANDIDATE SUPPORT` | S10、S11 | 不支持 Rank 真理权，也不能直接移植参数 |
-| CLM-010 | 风险评估应记录威胁、影响、控制和剩余风险并持续更新 | `PROCESS SUPPORT` | S12、S13 | NIST 不证明 ACLt 协议安全 |
-| CLM-101 | 两 Principal + permissionless functions 可缩小固定特权面 | `DECIDED/DERIVED` | ADR-0001、Threat model | 属 ACLt 设计结论，非外部定理 |
-| CLM-102 | 零抵押与硬暴露上限可以同时存在 | `DESIGN-VALID` | INV-09/10 | 是否达到目标完成率和损失界仍需仿真 |
-| CLM-103 | PerformanceEvidence→CapabilityEstimate→ExposureDecision 优于单 Rank | `CANDIDATE/HYPOTHESIS` | S10、S11 + 架构分析 | 需要校准、公平、漂移和攻击实验 |
-| CLM-104 | 显式 UNRESOLVED 可以避免无限验证和伪造确定性 | `DECIDED/DERIVED` | INV-04/09/12 | 用户效用、退款和成本仍需验证 |
-| CLM-105 | v0.5 已证明 ACLt Protocol 整体鲁棒 | `REJECTED` | 无 | 当前证据不足 |
-| CLM-106 | ACLt Protocol 的组合是公开系统中完全原创且无先例 | `OPEN/PROHIBITED OVERCLAIM` | 组件均有先例 | 只能在系统化检索和权利清查后作有限原创性表述 |
-| CLM-107 | 以 RIR 作为规范执行表示、Rust Profile 作为参考前端，可以在架构上隔离源语言与协议语义 | `DECIDED/DERIVED` | ADR-0002、INV-01/16 | 不证明 lowering、runtime、资源计量、确定性或结果正确；需要 ACLt 自身 conformance 证据 |
+| Claim ID | 论断 | SemanticStatus | ClaimQualifier | 证据 | 严格边界 |
+|---|---|---|---|---|---|
+| CLM-001 | 公共/志愿计算可以工程化分发任务、重试并验证结果 | `DECIDED` | `DERIVED` | S01、S02 | 不证明 ACLt 的 Sybil、统计或资金安全 |
+| CLM-002 | 低成本身份会削弱把冗余身份视为独立实体的推理 | `DECIDED` | `DERIVED` | S03 | 不直接给出 ACLt 的相关集群算法或损失界 |
+| CLM-003 | 对有限总体不放回序贯抽样构造 time-uniform confidence sequences 在数学上可行 | `DECIDED` | `SOURCE_ESTABLISHED` | S04、S05 | 不自动覆盖恶意、相关、异质验证证据 |
+| CLM-004 | ACLt 可直接采用某一 confidence sequence 并保持目标误差 | `OPEN` | Priority `P0` | S04、S05 是候选基础 | 必须定义目标、总体、依赖、分层和攻击模型并证明 |
+| CLM-005 | 完全异步、允许故障的共识不能获得无条件终止保证 | `DECIDED` | `DERIVED_BOUNDARY` | S06 | 只在论文模型内成立；ACLt 必须声明自身活性模型 |
+| CLM-006 | Byzantine 阈值依赖明确的消息、认证和故障模型 | `DECIDED` | `DERIVED_BOUNDARY` | S07 | 不支持把任何固定阈值直接移植为 ACLt 的 51% |
+| CLM-007 | 任意程序的非平凡语义性质不存在通用可判定方法 | `DECIDED` | `DERIVED_BOUNDARY` | S08 | 不排除特定任务族的验证器或证明系统 |
+| CLM-008 | 内容摘要和 descriptor 可作为可互操作内容引用先例 | `DECIDED` | `ENGINEERING_PRECEDENT` | S09 | OCI 不定义 ACLt Receipt、状态机或结算语义 |
+| CLM-009 | 带不确定度的能力/表现估计有现有模型先例 | `CANDIDATE` | `SUPPORT` | S10、S11 | 不支持 Rank 真理权，也不能直接移植参数 |
+| CLM-010 | 风险评估应记录威胁、影响、控制和剩余风险并持续更新 | `DECIDED` | `PROCESS_SUPPORT` | S12、S13 | NIST 不证明 ACLt 协议安全 |
+| CLM-101 | 两 Principal + permissionless functions 可缩小固定特权面 | `DECIDED` | `DERIVED` | ADR-0001、Threat model | 属 ACLt 设计结论，非外部定理 |
+| CLM-102 | 零抵押与硬暴露上限可以同时存在 | `DECIDED` | `DESIGN_VALID` | INV-09/10 | 是否达到目标完成率和损失界仍需仿真 |
+| CLM-103 | PerformanceEvidence→CapabilityEstimate→ExposureDecision 优于单 Rank | `CANDIDATE` | `HYPOTHESIS` | S10、S11 + 架构分析 | 需要校准、公平、漂移和攻击实验 |
+| CLM-104 | 显式 UNRESOLVED 可以避免无限验证和伪造确定性 | `DECIDED` | `DERIVED` | INV-04/09/12 | 用户效用、退款和成本仍需验证 |
+| CLM-105 | v0.5 已证明 ACLt Protocol 整体鲁棒 | `REJECTED` | — | 无 | 当前证据不足 |
+| CLM-106 | ACLt Protocol 的组合是公开系统中完全原创且无先例 | `OPEN` | `PROHIBITED_OVERCLAIM` | 组件均有先例 | 只能在系统化检索和权利清查后作有限原创性表述 |
+| CLM-107 | 以 RIR 作为规范执行表示、Rust Profile 作为参考前端，可以在架构上隔离源语言与协议语义 | `DECIDED` | `DERIVED` | ADR-0002、INV-01/16 | 不证明 lowering、RPR、资源计量、确定性或结果正确；需要 ACLt 自身 conformance 证据 |
+| CLM-108 | Abstract Machine、不可变 Logical Object、Compile 三阶段和 RPR 边界可以减少隐藏执行语义 | `DECIDED` | `DERIVED` | ADR-0001/0002/0003、INV-01/16 | 只闭合架构边界；不证明 Schema、compiler、RPR 或状态机正确 |
+| CLM-109 | Bayesian stop proposal 与 anytime-valid safety envelope 的组合可以在 ACLt 攻击模型下同时提高效率并保持目标风险 | `CANDIDATE` | `HYPOTHESIS`，Priority `P0` | 尚无 ACLt 特定证明 | 必须冻结 prior、目标、有限总体、相关性并给出组合定理或反例 |
 
 ## 3. 来源登记与边界
 

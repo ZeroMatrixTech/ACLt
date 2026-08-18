@@ -127,10 +127,10 @@ ACLt Protocol 不默认信任：
 
 | ID | 威胁 | 可能影响 | 必要控制 | 不变量 | 当前状态 |
 |---|---|---|---|---|---|
-| TH-01 | Receipt 字段歧义、碰撞、静默修改或对不同参与者展示不同语义 | 各方执行、验证或结算不同义务 | canonical encoding；摘要覆盖全部实质字段；内容寻址；变化生成新 ReceiptID | INV-01、INV-02 | Schema 与编码仍为 `OPEN/P0` |
-| TH-02 | 版本降级、未知版本、兼容性混淆或规则分叉 | 旧漏洞重现、不同状态机并行生效 | 所有活对象显式绑定 ProtocolVersion；版本兼容和撤销检查 | INV-02、INV-16 | 版本迁移仍为 `OPEN/P0` |
+| TH-01 | Receipt/Logical Object 字段歧义、摘要碰撞、别名、静默修改或对不同参与者展示不同语义 | 各方读取不同输入或执行、验证、结算不同义务 | canonical encoding；摘要覆盖全部实质字段；内容寻址；显式 Object refs；变化生成新对象/ReceiptID | INV-01、INV-02 | Schema 与编码仍为 `OPEN/P0` |
+| TH-02 | ProtocolVersion、ConformanceTarget、SemanticStatus 或 VersionDisposition 混淆，导致降级、未知版本或规则分叉 | 把开放 CORE 误当完成、旧漏洞重现、不同状态机并行生效 | 两维分存；V1 Profile 唯一映射；所有活对象绑定 ContractTuple；兼容和撤销检查 | INV-02、INV-16 | 二维模型 `DECIDED`；registry/迁移 `OPEN/P0` |
 | TH-03 | 恶意、不可执行、侵权或资源炸弹任务 | Provider 或实现资源耗尽、法律与安全风险 | 创建期验证；资源/权限声明；执行沙箱；任务价值与预算硬上限；`REJECTED_AT_CREATE` | INV-09、INV-10 | 沙箱和任务策略为 `OPEN/P0/P2` |
-| TH-04 | WorkPlan 遗漏依赖、重复工作、错误合并或人为制造极端碎片 | 错误结果、放大成本、无法恢复 | 确定性合法性检查；DAG、合并与失败语义；Plan 输出无特殊权 | INV-01、INV-09 | WorkPlan 规则为 `OPEN/P0` |
+| TH-04 | Lowering/Decomposition/Packing 或 WorkPlan 遗漏依赖、改变语义、重复工作、错误合并或制造极端碎片 | 错误结果、权限扩大、成本放大、无法恢复 | 三阶段输入输出绑定；validator；DAG/合并/失败合法性；Compile/Plan 输出无特殊权 | INV-01、INV-09、INV-16 | 三阶段边界 `DECIDED`；规则与证明 `OPEN/P0` |
 
 ### 7.2 证据、准入与 Sybil
 
@@ -146,11 +146,11 @@ ACLt Protocol 不默认信任：
 
 | ID | 威胁 | 可能影响 | 必要控制 | 不变量 | 当前状态 |
 |---|---|---|---|---|---|
-| TH-10 | Lease 重放、epoch 回滚、重复签发或旧结果迟到覆盖 | 双重执行、状态回滚、重复权利 | epoch 严格递增；Lease/Result 绑定 Assignment 和版本；旧 epoch 隔离 | INV-03、INV-08 | 状态机与竞态为 `OPEN/P0` |
+| TH-10 | Lease proposal 被误当为已接受义务、Lease 重放、epoch 回滚、重复签发或旧结果迟到覆盖 | 未授权执行、双重执行、状态回滚、重复权利 | proposal/accept/active 分离；Provider 签名；epoch 严格递增；Lease/Result 绑定 Assignment 和版本；旧 epoch 隔离 | INV-03、INV-08 | 握手边界 `DECIDED`；状态机与竞态 `OPEN/P0` |
 | TH-11 | Provider 接受后弃单、故意拖延、选择性提交或耗尽尝试 | 延迟、资源锁定、任务无法完成 | 有限 Lease、heartbeat/checkpoint 政策、deadline、attempt 上限和暴露限制 | INV-09、INV-10 | 参数为 `OPEN/P0/P1` |
 | TH-12 | 伪造、损坏或跨环境不兼容的 Checkpoint | 恢复到错误状态或污染后续结果 | 摘要、格式和环境版本绑定；恢复前兼容性验证 | INV-01、INV-02、INV-08 | Checkpoint 语义为 `OPEN/P0` |
 | TH-13 | ResultSubmission 伪造、分叉、内容不可用或幂等键冲突 | 错误验证、重复处理、无法审计 | 签名与摘要；Lease/epoch 绑定；内容可用性检查；幂等接收 | INV-02、INV-08、INV-13 | 内容保留和幂等规则为 `OPEN/P0` |
-| TH-14 | 恶意任务突破沙箱、访问未授权数据或消耗宿主资源 | Provider 系统受损、数据泄露、横向移动 | 最小权限沙箱、资源配额、网络/文件策略、隔离和审计 | INV-09、INV-10 | 工程控制为 `OPEN/P0/P2` |
+| TH-14 | 恶意 Task 突破 RPR/沙箱、读取隐藏 Host OS 状态、访问未授权数据或消耗宿主资源 | 结果不可复现、Provider 系统受损、数据泄露、横向移动 | RPR default-deny capability；显式 Logical Object；资源配额；网络/文件隔离和审计 | INV-09、INV-10、INV-16 | 边界 `DECIDED`；工程控制 `OPEN/P0/P2` |
 
 ### 7.4 验证与决定
 
@@ -160,7 +160,7 @@ ACLt Protocol 不默认信任：
 | TH-16 | 抽样重复、随机性偏置、提前泄露或可由攻击者磨矿 | 有效证据减少、攻击集群被过度抽中 | 不放回抽样；预承诺随机性；可复算 draw order；无效时拒绝或 UNRESOLVED | INV-11、INV-12 | 随机协议为 `OPEN/P0` |
 | TH-17 | 串谋验证、共同控制、相同软件/硬件故障或伪装独立 | 错误结果获得虚假多数 | 相关性证据、集群折减、权重上限、敏感性分析和最大损失限制 | INV-10、INV-12、INV-14 | 折减方法为 `CANDIDATE/P0` |
 | TH-18 | 验证器缺陷、任务语义不支持或结果等价关系错误 | 错误聚类、错误背书或无限争议 | 任务验证注册表；方法版本；负例；`UNSUPPORTED`/`UNRESOLVED` | INV-01、INV-02、INV-12 | Registry 与 equivalence 为 `OPEN/P0` |
-| TH-19 | 将序贯查看误当作已证明的 anytime-valid 推断 | 实际错误率高于声明值 | 冻结统计目标；使用经证明方法；仿真与形式化审查；未证明前禁止安全主张 | INV-12 | 整体方法为 `CANDIDATE/P0` |
+| TH-19 | 将 posterior、序贯查看或 Bayesian stop proposal 误当作已证明的 anytime-valid 安全保证 | 错误 prior、可选停止或模型失配使实际错误率高于声明值 | 冻结 prior/likelihood/目标；独立 safety envelope；仿真与形式审查；未证明前禁止安全主张 | INV-12 | 双层方法为 `CANDIDATE/P0` |
 | TH-20 | 达到 Nmax 后继续采样、临时增资或人工覆盖结论 | 无界成本、规则追溯、伪造确定性 | Nmax 取总体/预算/政策最小值；边界后输出安全终态 | INV-09、INV-12、INV-15 | Nmax 算法为 `OPEN/P0` |
 | TH-21 | 并发 Aggregate 产生两个 VerificationDecision | 双终态、双结算、审计分叉 | 原子终态提交；唯一约束；事务重试不得改变终态 | INV-04、INV-07 | 竞态模型为 `OPEN/P0` |
 
@@ -185,7 +185,7 @@ ACLt Protocol 不默认信任：
 | TH-31 | 发布密钥、依赖、构建流程或参考实现被攻破 | 广泛后门、规则污染和密钥冒用 | 可复现构建、签名、密钥轮换/撤销、最小权限、漏洞响应 | INV-02、INV-15、INV-16 | 发布安全为 `OPEN/P0` |
 | TH-32 | 相关性、设备和控制关系数据过度收集或泄露 | 隐私侵害、错误关联、外部滥用 | 数据最小化、目的限制、访问/保留政策、可审计更正 | INV-13、INV-14 | 隐私模型为 `OPEN/P0/P1` |
 | TH-33 | Rust Profile 或未来 frontend 对相同受支持程序产生不等价 RIR，或 compiler 被攻破 | 同一源任务形成不同执行义务、共因错误或后门 | 规范 lowering；RIR canonical digest；可复现构建；多实现 golden/differential tests | INV-01、INV-02、INV-16 | 架构选择 `DECIDED`，规则与测试 `OPEN/P0` |
-| TH-34 | RIR parser/validator/runtime 接受未声明指令、effect、宿主访问或原生回退 | 沙箱逃逸、不可审计 I/O、跨节点语义漂移 | fail-closed validator；封闭 effects；V1 Profile allowlist；禁止静默 native fallback | INV-01、INV-09、INV-16 | `OPEN/P0` |
+| TH-34 | RIR parser/validator/RPR 接受未声明指令、Logical Object、effect、Host OS 访问或原生回退 | 沙箱逃逸、隐藏输入、不可审计 I/O、跨节点语义漂移 | fail-closed validator；显式 Object refs；RPR default-deny capability；V1 Profile allowlist；禁止静默 native fallback | INV-01、INV-09、INV-16 | 边界 `DECIDED`；contract/test `OPEN/P0` |
 | TH-35 | 不同 runtime、硬件或计量实现对资源、终止、错误或结果语义不同 | 结果分叉、预算绕过、错误归因或验证失效 | 规范 runtime/resource model；跨实现 conformance；差分与边界测试 | INV-01、INV-09、INV-16 | `OPEN/P0` |
 
 ## 8. 关键攻击路径
@@ -282,12 +282,13 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 | 优先级 | 未决问题 | 需要产出的证据 |
 |---|---|---|
 | P0 | canonical schemas、编码、摘要范围与版本迁移 | Schema、正反例、等价性和篡改测试 |
-| P0 | RIR schema/canonical encoding、validator、Rust Profile lowering、runtime effects 与资源语义 | golden vectors、恶意工件负例、可复现 lowering、跨实现差分与计量测试 |
+| P0 | Abstract Machine/Logical Object Schema、RIR canonical encoding、validator、Rust Profile lowering、RPR/Host OS capability、runtime effects 与资源语义 | golden vectors、恶意工件负例、隐藏宿主输入负例、可复现 lowering、跨实现差分与计量测试 |
+| P0 | Lowering/Decomposition/Packing 与 Provider Dispatch | TaskGraph/WorkPlan 语义保持、proposal/accept/active Lease 状态机、竞态和越权负例 |
 | P0 | Principal、函数、签名责任和权限边界 | 机器可表达权限矩阵与越权测试 |
 | P0 | WorkPlan/Assignment 的 DAG、合并和失败语义 | 合法性算法、测试向量、反例 |
 | P0 | Lease、Attempt、Result、Decision、Settlement 状态机与竞态 | 状态机、模型检查、并发与重放测试 |
 | P0 | 任务验证 Registry、结果等价和 `UNSUPPORTED` | 任务类型规范、验证器契约、负例 |
-| P0 | 有限总体、随机性、分层、anytime-valid 目标和停止规则 | 统计规范、定理/证明、仿真与实现测试 |
+| P0 | 有限总体、随机性、分层、Bayesian prior/posterior、anytime-valid safety envelope 和停止规则 | 统计规范、组合定理/证明、prior sensitivity、仿真与实现测试 |
 | P0 | 控制相关性、未知依赖处理和集群暴露 | 相关性模型、隐私边界、敏感性与攻击仿真 |
 | P0 | 最大尝试、任务价值、验证支出和可接受损失 | 按 Provider/集群/Receipt/窗口的硬参数与性质测试 |
 | P0 | FundingPolicy、退款、故障归因、资不抵债和资金守恒 | 账务状态机、唯一键、故障与并发测试 |

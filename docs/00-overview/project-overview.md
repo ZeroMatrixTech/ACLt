@@ -14,14 +14,14 @@
 ACLt 规定不同主体如何在缺乏预先信任的情况下：
 
 1. 对任务语义、预算、期限和政策作出不可静默修改的承诺；
-2. 将任务规划为合法但不承诺全局最优的可执行工作单元；
-3. 将受支持的源前端降级为规范 RIR，并通过有限 Lease、单调 epoch、检查点和有界尝试执行及恢复工作；
+2. 通过 `Lowering + Decomposition + Packing` 将受支持源程序和显式 Logical Object 输入转换为规范 RIR 与合法工作单元；
+3. 通过 Provider 显式接受的有限 Lease、单调 epoch、RPR、检查点和有界尝试执行及恢复工作；
 4. 按任务类型形成、采样和聚合验证证据；
 5. 在证据不足时以明确的 `UNRESOLVED` 状态安全终止；
 6. 在预声明资金与结算政策内完成最多一次的结算；
 7. 将历史履约证据转化为未来的能力估计和有界风险暴露决策。
 
-ACLt 是协议，不是区块链、平台、市场、基金会或单一软件产品。中心化服务、签名日志、Merkle 日志、联盟账本或公共区块链均可作为实现方式，但实现必须保持同一组对象语义、状态转换和不变量。
+ACLt 是协议，不是区块链、平台、市场、基金会或单一软件产品。它可以被理解为一台由多台物理计算机承载的 Abstract Machine 或 “computer-of-computers”，但该抽象不创造共享地址空间，也不假定节点独立。中心化服务、签名日志、Merkle 日志、联盟账本或公共区块链均可作为实现方式，但实现必须保持同一组对象语义、状态转换和不变量。
 
 ## 2. 项目要解决的问题
 
@@ -42,7 +42,10 @@ ACLt 的目标不是消灭这些不确定性，而是将它们转化为显式且
 | 目标 | 协议要求 |
 |---|---|
 | 共同任务语义 | 用版本化、内容寻址的 `ComputeReceipt` 固定程序、输入、环境、验证、期限、预算和政策 |
+| 逻辑对象内存 | V1 使用不可变、内容寻址、显式引用的 Logical Object；Provider 之间没有共享机器地址空间 |
 | 统一执行语义 | V1 以 RIR 为机器/网络层规范表示；Rust Profile 只是参考前端，未来前端必须降级到同一 RIR |
+| 运行时隔离 | RPR 实现冻结的 runtime/effects/resource 语义；Host OS 隐藏状态不得成为任务输入 |
+| 可审计编译 | Compile 分为 Lowering、Decomposition、Packing；任何阶段不得扩大 Receipt 义务或权限 |
 | 无许可参与 | 任何 Principal 均可尝试执行公开函数，但输出只有通过协议检查后才生效 |
 | 零前置抵押参与 | 普通 Provider 无需先缴抵押；风险通过低初始暴露、并发限制、Lease 和硬损失上限控制 |
 | 有界执行与恢复 | Lease、epoch、deadline、attempt limit 和 checkpoint 防止无限占用与迟到覆盖 |
@@ -60,7 +63,10 @@ ACLt 的目标不是消灭这些不确定性，而是将它们转化为显式且
 
 - `Requester` 与 `Provider` 两类不可再约减的 Principal；
 - `ProtocolVersion`、`ComputeReceipt`、`WorkPlan`、`Assignment`、`Lease`、`Attempt`、`Checkpoint`、`ResultSubmission` 等核心对象；
+- ACLt Abstract Machine 及不可变 Logical Object Memory；
 - RIR 版本、规范工件摘要和执行 Profile 的 Receipt 绑定，以及 V1 Rust Profile 参考 lowering；
+- RPR 与 Host OS 的 fail-closed 边界；
+- `Compile = Lowering + Decomposition + Packing` 及 Provider Dispatch 的 offer/accept/Lease 边界；
 - `Plan`、`Admit`、`Schedule`、`Execute`、`Sample`、`Verify`、`Aggregate`、`Settle` 和 `UpdateEvidence` 等无许可函数；
 - 证据、能力估计、不确定度和风险暴露限制；
 - 有限总体、不放回、可审计的序贯验证方向；
@@ -84,6 +90,7 @@ ACLt 当前不承诺：
 - 在 G0 阶段声称系统鲁棒性已经得到证明；
 - 在首版解决跨境支付、公共链治理、通用零知识证明、TEE 或任意非确定性计算。
 - 在 V1 接受 unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器或非确定性任务；
+- 在 V1 提供跨 Provider 的共享可变地址空间、分布式原子操作或隐藏 Host OS 状态；
 - 把 Rust 源码、某个编译器输出或本机二进制本身当作协议规范语义。
 
 这些能力可以成为未来研究或适配方向，但不得被写入当前安全主张。
@@ -98,6 +105,8 @@ ACLt 只承认两类不可再约减的 Principal：
 | `Provider` | 没有提供方就不存在计算、验证或其他协议函数的实际执行者 | 声明资源、接受 Lease、执行函数并提交可归责证据 |
 
 Planner、Broker、Scheduler、Verifier、Sampler 和 Aggregator 均不是固定身份，而是任何合规 Principal 均可执行的无许可函数。Protocol 是规则而非行为者；Control Plane 是实现而非协议主体；维护组织是可选工程安排而非运行时裁判。
+
+ACLt Abstract Machine、Logical Object Memory、RIR、RPR 和 Compile pipeline 同样是规范或实现边界，不是新的 Principal、组织或真理权威。
 
 ## 7. 核心安全方向
 
@@ -162,7 +171,10 @@ ACLt 仍处于 **G0：协议规格化阶段**。目前已经形成完整候选�
 进入核心原型之前至少需要完成：
 
 - 规范化 Schema 与 canonical encoding；
+- Abstract Machine 和 Logical Object 的 machine-readable Schema、生命周期与可用性规则；
 - RIR canonical encoding、validator、runtime/effects/resource model、Rust Profile lowering 与 golden vectors；
+- RPR capability contract、Host OS 隔离、资源计量、错误与 checkpoint portability；
+- Lowering、Decomposition、Packing 的合法性谓词、TaskGraph 等价和 Provider Dispatch 状态机；
 - Principal、函数、签名责任与权限矩阵；
 - WorkPlan、Lease、Result、VerificationDecision 和 Settlement 状态机；
 - 任务验证类型注册表；

@@ -37,16 +37,19 @@ stateDiagram-v2
 
 状态名是当前候选规范。精确枚举、嵌套状态和转换守卫仍需机器化。
 
+SourcePackage、Lowering 和候选 RIR 的准备发生在 `Proposed` 之前；只有 canonical Receipt 登记后才进入 ACLt Protocol 状态机。直接提交规范 RIR 的任务可以跳过 source frontend，但不能跳过 validator。
+
 ## 3. 阶段与输出
 
 | 阶段 | 主要动作 | 必要前置条件 | 输出 | 安全退出 |
 |---|---|---|---|---|
+| 0. Compile 候选工件 | Lowering、Decomposition 可行性和 Profile 检查 | source/RIR、对象引用和 Profile 明确 | 候选 RIR、lowering provenance | UNSUPPORTED / 本地诊断 |
 | 1. 选择版本与政策 | 绑定 ProtocolVersion、验证、资金、结算 | 全部可解析且兼容 | 创建输入 | REJECTED_AT_CREATE |
 | 2. 登记 Receipt | canonicalize、摘要、签署、登记 | 预算和字段合法 | ReceiptID | REJECTED_AT_CREATE |
-| 3. 规划 | 任意 Principal 提出 WorkPlan | Receipt 可用 | Assignment DAG | FAILED_PLANNING |
+| 3. Decomposition 与 Packing | 任意 Principal 提出合法分解和打包 | Receipt 与规范 RIR 可用 | WorkPlan、Assignment DAG | FAILED_PLANNING |
 | 4. 能力与暴露 | 估计任务族能力并原子预留额度 | 证据版本、资源和限额有效 | ExposureDecision | 排队/拒绝/EXPIRED |
-| 5. Lease | 提议并由 Provider 接受 | epoch、期限、暴露有效 | 生效 Lease | 释放额度 |
-| 6. 执行与恢复 | Execute、heartbeat、checkpoint | 当前 Lease | Result/Checkpoint/Failure | retry/FAILED/EXPIRED |
+| 5. Provider Dispatch | Schedule 产生 Lease proposal，Provider 显式接受 | epoch、期限、暴露有效 | 生效 active Lease | proposal 失效、释放额度 |
+| 6. 执行与恢复 | RPR Execute、heartbeat、checkpoint | 当前 active Lease | Result/Checkpoint/Failure | retry/FAILED/EXPIRED |
 | 7. 验证快照 | 冻结总体、分层、相关性和随机性 | 有效候选结果与策略 | EligibilitySnapshot | UNSUPPORTED/UNRESOLVED |
 | 8. 序贯验证 | Sample、Verify、Aggregate | Snapshot 未破坏 | ConfidenceState | 扩样/UNRESOLVED |
 | 9. 终态 | 原子提交唯一状态 | 停止或边界条件 | TerminalState | 事务重试 |
@@ -69,7 +72,17 @@ Receipt 登记前必须明确：
 
 登记后任何实质变化必须生成新 ReceiptID。修正文书不能改变原任务义务。
 
-## 5. 规划阶段
+Lowering 必须发生在 Receipt 冻结前，Receipt 绑定其 RIRVersion、RIR digest、FrontendProfileVersion 和 lowering provenance。Decomposition/Packing 可以在登记后由任意 Principal 提议，但只能产生受同一 Receipt 约束的合法 WorkPlan 和 Assignment。
+
+## 5. Compile 与规划阶段
+
+\[
+Compile=Lowering+Decomposition+Packing
+\]
+
+- Lowering 把受支持 source frontend 转换为候选规范 RIR；
+- Decomposition 把冻结的计算与对象依赖表达为有界工作图；
+- Packing 把合法分解组织为 WorkPlan、Assignment、资源和验证上下文。
 
 WorkPlan 只需合法、确定且可验证，不承诺全局最优。合法性至少检查：
 
@@ -80,9 +93,11 @@ WorkPlan 只需合法、确定且可验证，不承诺全局最优。合法性�
 - 失败、取消和部分完成语义明确；
 - 规划不会扩大 Receipt 的权限、预算或 deadline。
 
-具体 DAG 和等价性算法为 `OPEN/P0`。
+三阶段边界已决定并进入 V1 CORE。具体 source/RIR/TaskGraph Schema、DAG 合法性、计划唯一性、等价性算法和 golden vectors 的 SemanticStatus 为 `OPEN`，Priority 为 `P0`。
 
 ## 6. 暴露与 Lease
+
+Assignment 不绑定 Provider，也不产生执行义务。Schedule 只能生成候选顺序或 Lease proposal；Provider 拒绝或忽略未接受 proposal 不产生负面 PerformanceEvidence。
 
 Lease 生效必须同时完成：
 
@@ -94,9 +109,11 @@ Lease 生效必须同时完成：
 
 Lease 到期、拒绝或失败后的额度释放必须是幂等的。未接受 Lease 不产生负面 PerformanceEvidence。
 
+Transport 可以是 Provider pull、Control Plane push 或混合方式；协议只接受相同的 proposal → accept → active Lease 状态转换。候选选择、排序、pull API、并发冲突和时间模型仍为 `OPEN/P0`。
+
 ## 7. 执行与迟到隔离
 
-执行前必须先验证 RIR 工件与 Receipt/Profile 一致；不支持的指令、effect 或 runtime 必须 fail closed，不得静默回退到原生执行。ResultSubmission 和 Checkpoint 必须绑定当前 epoch、RIR/runtime 版本、内容摘要、环境版本和幂等键。若 `epoch < current_epoch`：
+执行前必须先验证 RIR 工件与 Receipt/Profile 一致；RPR 只可读取 Receipt 显式引用的 Logical Object 和 ExecutionProfile capability。Host OS 文件、网络、时间、随机性、环境变量或设备状态不得成为隐藏输入。不支持的指令、effect 或 runtime 必须 fail closed，不得静默回退到原生执行。ResultSubmission 和 Checkpoint 必须绑定当前 epoch、RIR/RPR 版本、内容摘要、环境版本和幂等键。若 `epoch < current_epoch`：
 
 - 可以保存为 stale audit evidence；
 - 不得覆盖当前执行状态；
@@ -176,10 +193,12 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 
 - 完整状态枚举和合法转换表；
 - WorkPlan 覆盖、合并与部分失败；
+- Lowering/Decomposition/Packing Schema、合法性和语义保持证明；
 - Lease 时钟、heartbeat 和 checkpoint；
+- Provider Dispatch 候选顺序、proposal/accept 竞态和传输接口；
 - attempt、deadline、暴露和损失参数；
 - 验证 Registry、Snapshot、随机性和停止规则；
 - terminal—refund—fee—fault attribution 矩阵；
 - 事务、幂等、分区和灾难恢复；
 - Evidence 更正、隐私与保留。
-- RIR validator、Rust Profile lowering、runtime/effects/resource 与 checkpoint 可移植语义。
+- Logical Object 生命周期、RIR validator、Rust Profile lowering、RPR/Host OS capability、runtime/effects/resource 与 checkpoint 可移植语义。

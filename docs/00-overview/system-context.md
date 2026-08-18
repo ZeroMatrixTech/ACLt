@@ -12,7 +12,10 @@ ACLt 的协议边界包含：
 - 对象签名、版本、摘要和因果引用规则；
 - 合法状态转换、前置条件和不变量；
 - 任务规划、准入、Lease、执行、验证、终态和结算规则；
+- ACLt Abstract Machine、Logical Object Memory 及其显式引用边界；
 - RIR 版本、规范工件、执行 Profile 与前端一致性边界；
+- RPR 对 Host OS effects、资源、错误和终止的规范化边界；
+- Lowering、Decomposition、Packing 和 Provider Dispatch 的合法性边界；
 - 风险暴露、尝试、预算和资金上限；
 - 追加式证据、审计和状态重放语义；
 - 版本兼容、升级和适配器一致性要求。
@@ -61,9 +64,10 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 
 | 函数 | 主要输入 | 主要输出 | 协议检查 | 权威边界 |
 |---|---|---|---|---|
+| `Compile` | SourcePackage、FrontendProfile、Receipt policy | RIR、TaskGraph、WorkPlan/Assignment | lowering、validator、覆盖、依赖、权限和边界 | 由 Lowering、Decomposition、Packing 组成；不成为编译权威 |
 | `Plan` | Receipt、依赖、资源约束 | WorkPlan、Assignment DAG | 版本、合法性、依赖、确定性、边界 | 只能提出计划，不保证最优 |
 | `Admit` | 证据、能力估计、不确定度、暴露 | Eligibility、ExposureDecision | 证据版本、硬资源、风险及集群限额 | 不创建身份，不授予真理权 |
-| `Schedule` | Assignment、候选、期限、政策 | 领取顺序或 Lease 提案 | 暴露、并发、epoch、期限 | 不得绕过准入和损失上限 |
+| `Schedule` | Assignment、候选、期限、政策 | 领取顺序或 Lease proposal | 暴露、并发、epoch、期限 | proposal 不产生执行义务；不得绕过准入和损失上限 |
 | `Execute` | Assignment、RIR 工件、执行 Profile、有效 Lease | Result、Checkpoint、FailureEvidence | RIRVersion、validator、Lease、epoch、effects、资源、幂等性 | 结果不是自动可信结论 |
 | `Sample` | EligibilitySnapshot、随机性承诺 | 不放回抽样序列 | 总体冻结、排除、分层、去重 | 不得观察结果后改总体或规则 |
 | `Verify` | 候选结果、任务检查器、证据 | VerificationEvidence | 方法版本、输入绑定、来源、成本 | 单次验证不是最终裁决 |
@@ -84,7 +88,9 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 | `Foundation` / 委员会 | 可选组织形式 | 只有证明净治理价值为正时才考虑引入 |
 | 区块链 | 可选实现基础设施 | 不属于 ACLt 安全性的默认前提 |
 | Node、Account、Device、Key | 实现、标识或证据载体 | 不新增 Principal 类型 |
-| Rust/C++ frontend、compiler、RIR runtime | 实现组件 | 不是 Principal 或真理权威；输出必须通过统一 RIR conformance |
+| Rust/C++ frontend、compiler | 实现组件 | 不是 Principal 或真理权威；输出必须通过统一 RIR conformance |
+| ACLt Abstract Machine、Logical Object Memory | 规范抽象 | 不是参与者、数据库或共享物理内存 |
+| RPR、Host OS、容器、VM | 实现边界与载体 | RPR 必须规范化可观察语义；Host OS 不定义 Task 结果 |
 | Rank / Reputation | 已废弃的权威化抽象 | 当前协议不存在该实体 |
 
 ## 6. 核心交互生命周期
@@ -93,9 +99,9 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 |---|---|---|---|
 | 1. 选择版本与政策 | Requester 选择兼容的 ProtocolVersion、验证、资金和结算政策 | 可解析的任务创建输入 | `REJECTED_AT_CREATE` |
 | 2. 登记任务 | Requester 规范化并签署包含 RIRVersion/Profile/Digest 的 ComputeReceipt | 不可变 ReceiptID | `REJECTED_AT_CREATE` / `UNSUPPORTED` |
-| 3. 规划任务 | 任意 Principal 执行 Plan | 合法 WorkPlan / Assignment | `FAILED_PLANNING` |
-| 4. 准入与暴露 | Admit/Schedule 处理证据、能力、不确定度和限额 | ExposureDecision、Lease 提案 | 排队、拒绝或 `EXPIRED` |
-| 5. 接受与执行 | Provider 接受 Lease 并按 epoch 执行 | Result、Checkpoint 或失败证据 | 重租约、`FAILED`、`EXPIRED` |
+| 3. Compile 与规划 | Lowering、Decomposition、Packing/Plan 形成并验证候选工件 | 规范 RIR、合法 WorkPlan / Assignment | `FAILED_PLANNING` / `UNSUPPORTED` |
+| 4. 准入与 Dispatch | Admit/Schedule 处理证据、能力、不确定度和限额 | ExposureDecision、Lease proposal | 排队、拒绝或 `EXPIRED` |
+| 5. 接受与执行 | Provider 显式接受 Lease；RPR 按当前 epoch 执行 | active Lease、Result、Checkpoint 或失败证据 | proposal 失效、重租约、`FAILED`、`EXPIRED` |
 | 6. 冻结验证总体 | Sample 前建立 EligibilitySnapshot | 可审计总体、分层与随机承诺 | `UNRESOLVED` |
 | 7. 序贯验证 | Sample、Verify、Aggregate 循环 | 置信状态持续更新 | 扩样或到达 Nmax |
 | 8. 提交唯一终态 | Aggregate 应用预声明停止规则 | `TRUSTED` 或 `UNRESOLVED` | 事务重试，不得双终态 |
@@ -109,9 +115,10 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 | 网络传输 | 消息可认证、可去重并可关联版本和因果关系 | 延迟、重试、Lease 到期或条件性活性失败 |
 | 持久化存储 | 保存不可变对象、追加事件和唯一提交约束 | 阻止不安全推进；恢复后重放 |
 | 对象或内容存储 | 按摘要提供程序、输入、结果和检查点 | 内容不可用时拒绝执行、验证或进入失败状态 |
+| Logical Object 存储 | 保持 canonical content、digest、版本和显式引用；物理位置不改变语义 | 摘要或版本不符时 fail closed；不得退化为共享宿主路径 |
 | 时钟与期限 | 提供足以执行 Lease 和 deadline 政策的时间语义 | 时钟假设不满足时不得声称正常活性 |
 | 随机性来源 | 在抽样前承诺、可审计且不被结果观察后操纵 | 随机承诺无效时验证拒绝或 `UNRESOLVED` |
-| RIR 执行环境 | 验证规范 RIR，隔离执行并报告 runtime、effects、资源和限制 | validator、Profile、沙箱或计量不满足时拒绝、`UNSUPPORTED` 或失败 |
+| RPR / Host OS | 验证规范 RIR，隔离执行并报告 runtime、effects、资源和限制；默认隐藏宿主状态 | validator、Profile、capability、沙箱或计量不满足时拒绝、`UNSUPPORTED` 或失败 |
 | 结算通道 | 支持唯一权利键、额度检查和幂等提交 | 暂停结算、重试或 `FUNDING_EXHAUSTED` |
 | 可选账本 | 保存或证明等价的对象与事件语义 | 适配器不合规时不得作为 ACLt 实现 |
 
@@ -143,6 +150,9 @@ ACLt 不规定这些能力必须由同一系统、组织或账本提供。参考
 - 随机性承诺和抽样可复算条件；
 - 每类任务验证方法的正确性及覆盖范围；
 - source frontend → RIR lowering、RIR validator、runtime 与资源/effects 模型的一致性条件；
+- Logical Object 的可用性、保留和内容寻址条件；
+- Decomposition/Packing 的合法性与 TaskGraph 等价条件；
+- RPR capability 与 Host OS 故障归一化条件；
 - 资金来源、授权上限和结算最终性；
 - 相关性信息的来源、缺失处理和隐私边界。
 
@@ -198,6 +208,6 @@ ACLt 不规定这些能力必须由同一系统、组织或账本提供。参考
 8. PerformanceEvidence 只能追加或以新事件更正；
 9. 履约能力证据不能直接授予真理权；
 10. 维护者不能改变个案结果、权重或结算。
-11. 更换 Rust/C++ 等 frontend、compiler 或 RIR runtime 不得改变同一 Receipt 下的规范执行与结果语义。
+11. 更换 Rust/C++ 等 frontend、compiler、RPR 或 Host OS 不得改变同一 Receipt 下的规范执行与结果语义。
 
 无法通过这些一致性要求的基础设施，只能被称为相关软件，不能被称为符合 ACLt 的实现。

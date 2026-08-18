@@ -1,6 +1,7 @@
 # ACLt Protocol Principal、函数与权限
 
-> 文档状态：`DECIDED` ontology；权限细节 `OPEN/P0`  
+> SemanticStatus：ontology `DECIDED`；权限细节 `OPEN`<br>
+> Priority：权限细节 `P0`<br>
 > 语义基线：v0.5  
 > 最后更新：2026-08-18  
 > 更新触发：新增身份、职能、签名责任、维护权限或控制关联语义
@@ -30,9 +31,10 @@ Principal 是协议责任单位，不等于现实独立控制实体。一个控�
 
 | Function | 可执行者 | 输出 | 接受条件 | 权威边界 |
 |---|---|---|---|---|
+| `Compile` | 任意 Principal/可复算 toolchain | RIR、TaskGraph、WorkPlan/Assignment | lowering、validator、覆盖、依赖、权限和边界 | Lowering/Decomposition/Packing 均不产生编译权威 |
 | `Plan` | 任意 Principal | WorkPlan / Assignment | 合法性、依赖、资源和版本检查 | 只能提案，不保证最优 |
 | `Admit` | 任意 Principal/可复算实现 | CapabilityEstimate / ExposureDecision | 证据版本、不确定度、硬限额 | 不产生身份或真理权 |
-| `Schedule` | 任意 Principal/实现 | Lease proposal | 暴露、并发、epoch、期限 | 不得绕过准入 |
+| `Schedule` | 任意 Principal/实现 | Lease proposal | 暴露、并发、epoch、期限 | proposal 不产生义务，不得绕过准入 |
 | `Execute` | 接受 Lease 的 Provider | Result / Checkpoint / FailureEvidence | Lease、epoch、摘要、环境 | 输出不是自动可信 |
 | `Sample` | 任意 Principal/实现 | draw order | Snapshot、随机性、去重 | 不得观察后改总体 |
 | `Verify` | 任意 Principal | VerificationEvidence | 任务方法、来源、成本、版本 | 单次证据不是终局 |
@@ -49,7 +51,7 @@ Principal 是协议责任单位，不等于现实独立控制实体。一个控�
 | ComputeReceipt | Requester | Requester | canonical、版本、政策、预算合法 | `OPEN/P0` Schema |
 | WorkPlan | 提案 Principal | 任意 Principal | 确定性合法性检查 | `OPEN/P0` |
 | Resource declaration | Provider | Provider | 字段、时间和证据来源有效 | `OPEN/P0` |
-| Lease acceptance | Provider | Schedule 输出 | epoch、暴露、期限有效 | `OPEN/P0` |
+| Lease acceptance | Provider | Schedule 输出 | proposal、epoch、暴露、期限有效；接受后才形成 active Lease | `OPEN/P0` |
 | ResultSubmission | 执行 Provider | Provider | Lease/epoch/摘要/幂等有效 | `OPEN/P0` |
 | VerificationEvidence | 执行 Verify 的 Principal | 任意 Principal | 方法版本、输入绑定、来源有效 | `OPEN/P0` |
 | VerificationDecision | 无特殊人类裁判；按 Aggregate 规则生成 | 任意复算者 | 唯一终态、策略快照、证据链有效 | `OPEN/P0` |
@@ -110,6 +112,7 @@ Provider 可以执行计算、规划、验证、抽样或聚合，但：
 - 覆盖 VerificationDecision；
 - 制造 Settlement 或退款；
 - 把维护者分析作为更高权证据。
+- 把 FoundationReport、委员会报告或维护报告写入 Bayesian prior、VerificationEvidence 权重或停止条件。
 
 基金会、委员会或链上治理是可选组织方案，不是 Principal，也不是当前协议必需组件。
 
@@ -126,7 +129,8 @@ Provider 可以执行计算、规划、验证、抽样或聚合，但：
 | Node/Account/Device/Key | 执行或标识载体 |
 | Foundation | 可选组织形式 |
 | Blockchain | 可选基础设施 Adapter |
-| Rust/C++ frontend、compiler、RIR runtime | 实现组件；不得成为 Principal、VerifierAuthority 或协议语义来源 |
+| ACLt Abstract Machine、Logical Object Memory | 规范抽象；不是 Principal、数据库或共享物理内存 |
+| Rust/C++ frontend、compiler、RPR、Host OS | 实现组件；不得成为 Principal、VerifierAuthority 或协议语义来源 |
 
 ## 10. 防止角色再膨胀的检查
 

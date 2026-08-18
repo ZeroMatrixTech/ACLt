@@ -10,26 +10,28 @@
 
 关键词 `MUST`、`MUST NOT`、`SHOULD`、`SHOULD NOT` 和 `MAY` 的含义见 `terminology.md`。
 
+SemanticStatus 与指定 ConformanceTarget 的 VersionDisposition 必须分别记录。设计被列为 V1 `CORE` 不代表其算法、证明、实现或测试已经完成；详细规则见 ADR-0003。
+
 ## 2. 原则总表
 
-| ID | 原则 | 状态 | 核心要求 |
-|---|---|---|---|
-| DP-01 | 如无必要勿增实体 | `DECIDED / DERIVED` | 能由公开、确定、可验证的协议函数完成的职能，不新增特权身份或组织 |
-| DP-02 | 承诺主体与函数分离 | `DECIDED` | 只有能签署承诺并承担权利义务者才是 Principal；Planner、Verifier 等是函数 |
-| DP-03 | 协议与实现分离 | `DECIDED` | 协议定义对象、状态转换和不变量；数据库、服务或区块链只是实现 |
-| DP-04 | 先承诺，后观察 | `INVARIANT` | 任务语义、验证、资金、结算和停止条件必须在相关结果出现前冻结 |
-| DP-05 | 不确定性必须显式化 | `DECIDED` | 无足够证据时输出 `UNRESOLVED`，不得伪造确定性 |
-| DP-06 | 先限制损失，再讨论激励 | `DECIDED / DERIVED` | 用硬上限约束暴露、尝试、预算和结算；经济威慑只作第二层控制 |
-| DP-07 | 证据不等于权威 | `DECIDED` | 履约证据只能形成能力估计和风险决策，不能授予真理权或治理权 |
-| DP-08 | 不假定身份独立 | `DECIDED` | Provider 数量不得直接视为独立控制实体或有效样本数量 |
-| DP-09 | 零抵押不等于零约束 | `DECIDED` | 普通 Provider 无前置抵押，但初始暴露、并发、任务价值和 Lease 必须受限 |
-| DP-10 | 失败、恢复和资源必须有界 | `INVARIANT` | deadline、epoch、attempt、draw、budget 和 settlement 均须存在硬边界 |
-| DP-11 | 资金来源与安全机制解耦 | `DECIDED` | 费用、储备、补贴和可选发行是 FundingPolicy，不是验证正确性的来源 |
-| DP-12 | 维护最小权限 | `DECIDED` | 维护者只能管理未来规范和实现，不得裁决或追溯修改运行中个案 |
-| DP-13 | 全链路可审计与可重放 | `INVARIANT` | 关键对象绑定版本、摘要、签名或因果引用；更正通过追加事件完成 |
-| DP-14 | 对任务语义诚实 | `DERIVED` | 验证方法必须针对任务族声明；不支持的任务必须拒绝或标为不支持 |
-| DP-15 | 保留安全退出 | `DECIDED` | `UNRESOLVED`、`FAILED`、`EXPIRED` 和 `FUNDING_EXHAUSTED` 是合法终态 |
-| DP-16 | 前端不定义协议执行语义 | `DECIDED / DERIVED` | V1 以 RIR 为规范执行表示；Rust/C++ 等前端只有降级并通过一致性检查后才可兼容 |
+| ID | 原则 | SemanticStatus | ClaimQualifier | 核心要求 |
+|---|---|---|---|---|
+| DP-01 | 如无必要勿增实体 | `DECIDED` | `DERIVED` | 能由公开、确定、可验证的协议函数完成的职能，不新增特权身份或组织 |
+| DP-02 | 承诺主体与函数分离 | `DECIDED` | — | 只有能签署承诺并承担权利义务者才是 Principal；Planner、Verifier 等是函数 |
+| DP-03 | 协议与实现分离 | `DECIDED` | — | 协议定义对象、状态转换和不变量；数据库、服务或区块链只是实现 |
+| DP-04 | 先承诺，后观察 | `INVARIANT` | — | 任务语义、验证、资金、结算和停止条件必须在相关结果出现前冻结 |
+| DP-05 | 不确定性必须显式化 | `DECIDED` | — | 无足够证据时输出 `UNRESOLVED`，不得伪造确定性 |
+| DP-06 | 先限制损失，再讨论激励 | `DECIDED` | `DERIVED` | 用硬上限约束暴露、尝试、预算和结算；经济威慑只作第二层控制 |
+| DP-07 | 证据不等于权威 | `DECIDED` | — | 履约证据只能形成能力估计和风险决策，不能授予真理权或治理权 |
+| DP-08 | 不假定身份独立 | `DECIDED` | — | Provider 数量不得直接视为独立控制实体或有效样本数量 |
+| DP-09 | 零抵押不等于零约束 | `DECIDED` | — | 普通 Provider 无前置抵押，但初始暴露、并发、任务价值和 Lease 必须受限 |
+| DP-10 | 失败、恢复和资源必须有界 | `INVARIANT` | — | deadline、epoch、attempt、draw、budget 和 settlement 均须存在硬边界 |
+| DP-11 | 资金来源与安全机制解耦 | `DECIDED` | — | 费用、储备、补贴和可选发行是 FundingPolicy，不是验证正确性的来源 |
+| DP-12 | 维护最小权限 | `DECIDED` | — | 维护者只能管理未来规范和实现，不得裁决或追溯修改运行中个案 |
+| DP-13 | 全链路可审计与可重放 | `INVARIANT` | — | 关键对象绑定版本、摘要、签名或因果引用；更正通过追加事件完成 |
+| DP-14 | 对任务语义诚实 | `DECIDED` | `DERIVED` | 验证方法必须针对任务族声明；不支持的任务必须拒绝或标为不支持 |
+| DP-15 | 保留安全退出 | `DECIDED` | — | `UNRESOLVED`、`FAILED`、`EXPIRED` 和 `FUNDING_EXHAUSTED` 是合法终态 |
+| DP-16 | 前端不定义协议执行语义 | `DECIDED` | `DERIVED` | V1 以 RIR 为规范执行表示；Rust/C++ 等前端只有降级并通过一致性检查后才可兼容 |
 
 ## 3. DP-01：如无必要勿增实体
 
@@ -62,6 +64,8 @@ ACLt 协议由以下内容构成：
 - 可验证的输入输出约束。
 
 Control Plane、数据库、消息队列、对象存储、签名日志和区块链属于实现。任何实现都必须通过相同的适配器一致性测试，且不得把自身特性提升为未经声明的协议安全假设。
+
+ACLt Abstract Machine、Logical Object Memory 和 Compile pipeline 是协议抽象，不是实现产品或新增 Principal。RPR 是可替换运行时边界，Host OS 是外部实现环境；二者不得反向定义 RIR 或 Task 的规范结果。
 
 ## 6. DP-04：先承诺，后观察
 
@@ -106,7 +110,7 @@ PerformanceEvidence
 
 历史证据用于估计某个 Principal 在特定任务族和条件下的履约能力。估计结果必须带有不确定度、有效期和证据版本，并仅用于具体任务的风险暴露决策。
 
-协议中不得存在独立的 `Rank`、`ReputationState`、`VerifierAuthority` 或类似权威对象。能力证据不得直接产生验证票权、最终审计权、治理权或结算裁决权。
+协议中不得存在独立的 `Rank`、`ReputationState`、`VerifierAuthority` 或类似权威对象。能力证据、FoundationReport、维护报告或付款记录不得直接产生验证票权、最终审计权、治理权或结算裁决权。
 
 ## 10. DP-08：不假定身份独立
 
@@ -169,6 +173,8 @@ PerformanceEvidence
 
 协议必须在机器/网络可交换层绑定可验证的执行语义，而不能把某个源语言、编译器版本或本机二进制当作规范。V1 采用 RIR 作为该规范表示，Rust Profile 作为参考前端；未来 C++23 等前端只能通过降级到同一 RIR 并满足相同 validator、effects、resource 和结果语义进入兼容范围。
 
+V1 通过 RPR 执行规范 RIR。Logical Object 是显式输入输出；Host OS 文件、网络、时钟、随机性、环境变量和设备状态默认不可见。Compile 的 Lowering、Decomposition 和 Packing 都必须可审计，且不得扩大 Receipt 绑定的任务义务。
+
 该原则不证明 RIR、编译器或运行时正确，也不证明程序结果确定。RIR 编码、validator、lowering、runtime、资源计量和跨实现差分测试仍是 G0/G1 证明义务。V1 未支持或未验证的能力必须被拒绝或标为 `UNSUPPORTED`，不得静默回退到宿主原生语义。
 
 ## 19. 新设计的准入检查
@@ -184,5 +190,6 @@ PerformanceEvidence
 7. 哪些主张可以被测试、证明或反驳？
 8. 是否提供迁移、撤销、兼容和安全退出路径？
 9. 若涉及执行语言或硬件，是否保持同一 RIR、effects、资源与结果语义？
+10. SemanticStatus 与各 ConformanceTarget 的 VersionDisposition 是否分别记录，且 CORE 缺口是否仍被列为 Gate 阻断？
 
 不能明确回答这些问题的设计，不应进入协议核心。

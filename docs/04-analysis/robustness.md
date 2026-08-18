@@ -35,6 +35,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | 治理安全 | 维护者不能裁决个案 | INV-15、ADR-0001 | `DECIDED / 未测试` |
 | 实现中立 | Adapter 替换保持语义 | INV-16 | `OPEN/P0` |
 | 执行一致性 | frontend、compiler 与 runtime 保持同一 RIR/Profile 语义 | ADR-0002、INV-01/02/09/16 | `DECIDED direction / OPEN/P0 evidence` |
+| 逻辑机器一致性 | Abstract Machine、Logical Object、Compile 和 Dispatch 不引入隐藏共享状态或权威 | ADR-0003、INV-01/02/08/16 | 边界 `DECIDED`；证据 `OPEN/P0` |
 
 ## 3. 证据等级
 
@@ -57,7 +58,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 机制：只保留 Requester/Provider，把职能写成 permissionless functions；
 - 结论：固定特权身份、信任根和治理接口更少；
 - 边界：恶意函数输出仍必须验证，函数间串谋仍存在；
-- 状态：`DECIDED/DERIVED`，尚无量化净风险证明。
+- SemanticStatus：`DECIDED`；ClaimQualifier：`DERIVED`；尚无量化净风险证明。
 
 ### RB-02：不可变 Receipt 提供共同义务引用
 
@@ -65,7 +66,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 机制：变化生成新 ReceiptID；
 - 结论：执行、验证和结算可以引用同一承诺；
 - 边界：编码、哈希、内容可用性和版本迁移尚未完成；
-- 状态：`INVARIANT / OPEN/P0`。
+- SemanticStatus：接口 `INVARIANT`；形式证据 `OPEN`；Priority：`P0`。
 
 ### RB-03：零抵押可与有界风险共存
 
@@ -81,7 +82,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 机制：旧 epoch 只保留为 stale evidence；
 - 结论：迟到结果不能覆盖当前状态或产生当前权利；
 - 边界：事务、时钟和分区模型尚未冻结；
-- 状态：`INVARIANT / OPEN/P0`。
+- SemanticStatus：接口 `INVARIANT`；事务与时钟证据 `OPEN`；Priority：`P0`。
 
 ### RB-05：显式 UNRESOLVED 防止伪造确定性
 
@@ -105,7 +106,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 机制：授权上限、资金桶、唯一权利和最多一次结算；
 - 结论：实现不得通过隐性借用或临时发行掩盖成本；
 - 边界：资产、精度、退款和资不抵债语义开放；
-- 状态：`INVARIANT / OPEN/P0`。
+- SemanticStatus：接口 `INVARIANT`；账务语义 `OPEN`；Priority：`P0`。
 
 ### RB-08：维护最小权限防止个案捕获
 
@@ -123,6 +124,30 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 边界：lowering、validator、runtime、effects、资源计量和共因 compiler 错误尚未验证；
 - 状态：架构选择 `DECIDED`，鲁棒性结论 `OPEN/P0`。
 
+### RB-10：Abstract Machine 与 Logical Object 隔离物理宿主状态
+
+- 前提：Task 只读取显式 Logical Object 和 ExecutionProfile capability；
+- 机制：不可变内容寻址对象、RPR default-deny Host OS 边界和 fail-closed validator；
+- 结论：Provider 本地路径、RAM、环境变量或设备状态不能静默成为共享协议输入；
+- 边界：Object Schema、capability ABI、内容可用性、RPR 和跨实现测试尚未完成；
+- SemanticStatus：架构边界 `DECIDED`；鲁棒性证据 `OPEN`，Priority `P0`。
+
+### RB-11：Compile 与 Dispatch 分阶段减少隐含权威
+
+- 前提：Lowering、Decomposition、Packing 和 proposal/accept/active Lease 均可由冻结规则检查；
+- 机制：Compile/Plan/Schedule 是 permissionless functions，Provider 必须显式接受 Lease；
+- 结论：compiler、Planner 或 Scheduler 不能仅凭身份改变任务义务或强加执行责任；
+- 边界：TaskGraph 等价、计划合法性、候选排序、时钟与并发状态机仍未冻结；
+- SemanticStatus：边界 `DECIDED`；算法和证据 `OPEN`，Priority `P0`。
+
+### RB-12：Bayesian proposal 不单独定义真理
+
+- 前提：prior、likelihood、posterior target、Snapshot 和停止接口在观察前冻结；
+- 机制：Bayesian policy 只提出抽样/停止，接受还需 anytime-valid safety envelope、相关性和最大损失条件；
+- 结论：posterior、历史能力或 FoundationReport 不能单独产生 TRUSTED；
+- 边界：组合定理、prior sensitivity、攻击模型和参数均未完成；
+- SemanticStatus：`CANDIDATE`，Priority `P0`。
+
 ## 5. 尚不能支持的主张
 
 | 主张 | 缺失证据 |
@@ -135,6 +160,8 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | 区块链实现更安全 | Adapter、重组、最终性、费用和攻击面对比 |
 | 中心化参考实现可安全迁移 | conformance、重放和迁移证明 |
 | RIR 或 Rust Profile 已保证确定性/正确性 | RIR 形式语义、validator、lowering、runtime、effects/resource conformance 与差分测试 |
+| Abstract Machine 或 Logical Object 已实现共享一致内存 | V1 明确不提供共享可变地址空间；仍需 Object Schema、可用性和恢复证据 |
+| Bayesian posterior 已提供安全停止保证 | prior、有限总体、相关性、anytime-valid 组合定理、校准和对抗仿真 |
 
 ## 6. 核心证明义务
 
@@ -151,6 +178,9 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | PO-09 | 发布/撤销/维护权限不能改个案 | 权限测试 + key compromise exercise | G2/G5 |
 | PO-10 | 资金、退款和外部通道最多一次 | accounting model + failure injection | G2/G4 |
 | PO-11 | frontend lowering 与 runtime 对同一 RIR/Profile 保持规范执行语义 | golden vectors + differential/conformance tests + fault injection | G0/G2 |
+| PO-12 | Logical Object 在存储、复制、缓存和恢复后保持 canonical identity 与显式引用 | Schema + golden vectors + availability/fault tests | G0/G2/G4 |
+| PO-13 | Lowering/Decomposition/Packing 与 Provider Dispatch 不改变 Receipt 义务或产生未接受权利 | 状态机 + semantic differential tests + race injection | G0/G2/G3 |
+| PO-14 | Bayesian stop proposal 与 anytime-valid safety envelope 在声明攻击模型下组合有效 | 数学证明 + prior sensitivity + adversarial simulation | G0/G1 |
 
 ## 7. 仿真最小集合
 
@@ -160,7 +190,8 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 新 Provider 探索和能力收敛；
 - Lease 到期、checkpoint 和恢复；
 - 多种验证难度和资金政策。
-- Rust Profile source→RIR、恶意/边界 RIR、不同 runtime 与资源耗尽语义。
+- Rust Profile source→RIR、恶意/边界 RIR、不同 RPR/Host OS 与资源耗尽语义；
+- Logical Object 缺失/别名/篡改、不同 Compile 策略和 Provider pull/push Dispatch。
 
 ### 对抗场景
 
@@ -171,7 +202,8 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 随机性偏置、Snapshot 污染和可选停止攻击；
 - Funding exhaustion、重复结算和退款竞态；
 - Maintainer/发布密钥失陷和 Adapter 语义漂移。
-- compiler 后门、lowering 分歧、隐藏宿主 effect、native fallback 与 runtime 计量分歧。
+- compiler 后门、lowering/decomposition/packing 分歧、隐藏宿主 effect、native fallback 与 RPR 计量分歧；
+- prior 操纵、posterior 过度确信、Bayesian/anytime 双层条件冲突和 FoundationReport 权重注入。
 
 ### 输出指标
 
@@ -209,7 +241,8 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 维护发布与依赖供应链可能失陷；
 - 资金与结算通道可能有法律或最终性风险；
 - 异构硬件和非确定性任务可能破坏结果等价。
-- Rust frontend、RIR validator 或 runtime 的共因缺陷可能让多次执行产生相同错误。
+- Rust frontend、RIR validator 或 RPR 的共因缺陷可能让多次执行产生相同错误；
+- Logical Object 可用性、Compile 语义保持、Dispatch 竞态和 Bayesian/anytime 组合仍无证明。
 
 ## 10. 当前严格结论
 

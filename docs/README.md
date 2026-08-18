@@ -22,7 +22,8 @@
 3. [`02-architecture/system-architecture.md`](02-architecture/system-architecture.md)
 4. [`02-architecture/task-lifecycle.md`](02-architecture/task-lifecycle.md)
 5. [`03-protocol/protocol-spec.md`](03-protocol/protocol-spec.md)
-6. [`03-protocol/result-validation.md`](03-protocol/result-validation.md)
+6. [`03-protocol/v1-profile.md`](03-protocol/v1-profile.md)
+7. [`03-protocol/result-validation.md`](03-protocol/result-validation.md)
 
 ### 研究与决策
 
@@ -30,9 +31,12 @@
 2. [`04-analysis/administrative-cost.md`](04-analysis/administrative-cost.md)
 3. [`05-decisions/ADR-0001-no-unnecessary-entities.md`](05-decisions/ADR-0001-no-unnecessary-entities.md)
 4. [`05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md`](05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md)
-5. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
-6. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
-7. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
+5. [`05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md`](05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md)
+6. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
+7. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
+8. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
+9. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
+10. [`08-governance/audits/audit-20260818-01-semantic-structure.md`](08-governance/audits/audit-20260818-01-semantic-structure.md)
 
 ## 2. 文档权威范围
 
@@ -40,15 +44,17 @@
 |---|---|
 | 项目目标、范围、非目标 | `00-overview/project-overview.md` |
 | 顶层设计原则 | `00-overview/design-principles.md` |
-| 术语与状态标签 | `00-overview/terminology.md` |
+| 术语、SemanticStatus 与 VersionDisposition 定义 | `00-overview/terminology.md` |
 | 系统边界和外部依赖 | `00-overview/system-context.md` |
 | 攻击者、威胁和剩余风险 | `01-requirements/threat-model.md` |
 | 核心安全不变量 | `01-requirements/invariants.md` |
 | 分层架构与实现边界 | `02-architecture/system-architecture.md` |
 | RIR、V1 Rust Profile 与前端边界 | `05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md` |
+| 二维状态模型及版本命名 | `05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md` |
 | Principal、函数与权限 | `02-architecture/identities-and-roles.md` |
 | 任务状态与生命周期 | `02-architecture/task-lifecycle.md` |
 | 规范性协议骨架 | `03-protocol/protocol-spec.md` |
+| V1 CORE/DEFERRED/REJECTED 映射 | `03-protocol/v1-profile.md` |
 | 结果验证与统计边界 | `03-protocol/result-validation.md` |
 | 证据、能力估计与暴露 | `03-protocol/reputation.md` |
 | 鲁棒性证据与反证 | `04-analysis/robustness.md` |
@@ -57,24 +63,37 @@
 | 论断、来源及引用边界 | `06-research/claims-and-sources.md` |
 | 当前完成度 | `07-roadmap/current-status.md` |
 | 未决问题和候选方案 | `07-roadmap/open-questions.md` |
+| 审计程序与报告格式 | `08-governance/` |
+| 当前审计记录 | `08-governance/audits/audit-20260818-01-semantic-structure.md` |
 
 同一结论不得在多个文件中形成互相独立的权威版本；其他文件应链接到权威位置。
 
-## 3. 文档状态
+## 3. 二维状态模型
+
+每项核心结论必须分别处理两个问题：语义是否成熟，以及是否进入某个 ConformanceTarget。没有明确字段的描述不得被用作安全或兼容性主张。
+
+### 3.1 SemanticStatus
 
 | 状态 | 含义 |
 |---|---|
-| `DECIDED` | 已接受的决定 |
-| `DERIVED` | 从明确前提推出的结论 |
-| `INVARIANT` | 正确实现不得违反的性质 |
-| `CANDIDATE` | 研究方向已选，但尚未冻结 |
-| `ASSUMPTION` | 当前模型依赖的未证明前提 |
-| `HYPOTHESIS` | 需要实验或仿真检验 |
-| `OPEN` | 尚未决定或规格化 |
+| `OPEN` | 已识别但尚无被接受方案 |
+| `CANDIDATE` | 有明确候选但尚未接受 |
+| `DECIDED` | 已被当前语义基线接受 |
+| `INVARIANT` | 正确实现和兼容版本不得违反 |
 | `SUPERSEDED` | 被新语义替代，保留追踪价值 |
-| `REJECTED` | 明确排除 |
+| `REJECTED` | 已评估并拒绝 |
 
-每项核心结论必须标记状态；没有标签的描述不得被用作安全主张。
+`DERIVED`、`ASSUMPTION` 和 `HYPOTHESIS` 是 ClaimQualifier；`P0–P2` 是 Priority；它们不与 SemanticStatus 或 VersionDisposition 共用字段。
+
+### 3.2 VersionDisposition
+
+| 状态 | 含义 |
+|---|---|
+| `CORE` | 指定目标必须实现并通过 conformance |
+| `DEFERRED` | 指定目标不支持，未来可以独立准入 |
+| `REJECTED` | 指定目标明确禁止，必须拒绝或 fail closed |
+
+V1 映射只在 [`03-protocol/v1-profile.md`](03-protocol/v1-profile.md) 存储。各语义权威文件不复制 VersionDisposition；Profile 也不覆盖来源的 SemanticStatus。
 
 ## 4. Living document 更新规则
 
@@ -102,7 +121,8 @@
 ```mermaid
 flowchart LR
     O["OPEN"] --> C["CANDIDATE"]
-    C --> D["DECIDED / INVARIANT"]
+    C --> D["DECIDED"]
+    D --> I["INVARIANT"]
     C --> R["REJECTED"]
     D --> S["SUPERSEDED"]
     D --> R
@@ -163,13 +183,14 @@ Decision / evidence
 | `00-overview` | 已建立项目语义与边界 | v0.5 baseline |
 | `01-requirements` | 已建立威胁模型和 16 条不变量 | 规范意图已定，形式化未完成 |
 | `02-architecture` | 当前候选分层与生命周期 | G0 draft |
-| `03-protocol` | 当前规范性协议骨架 | G0 draft |
+| `03-protocol` | 当前规范性协议骨架与 V1 VersionDisposition Profile | G0 draft |
 | `04-analysis` | 鲁棒性和行政成本证据账本 | 进行中 |
-| `05-decisions` | 已接受架构决定 | ADR-0001/0002 已建立 |
+| `05-decisions` | 已接受架构决定 | ADR-0001/0002/0003 已建立 |
 | `06-research` | 论断—来源—边界 | 持续核查 |
 | `07-roadmap` | 状态和未决问题 | 持续更新 |
+| `08-governance` | 审计程序、模板和审计记录 | 程序已接受；报告持续追加 |
 | `codocs` | 历史版本与决策追踪；不构成当前规范 | archived / superseded where marked |
 
 ## 9. v0.5 的严格定位
 
-v0.5 是当前协议语义基线，V1 是建立在其上的首个执行/一致性目标，两者不是相互替代的版本号。V1 已选择 RIR 和 Rust Profile，但仍处于 G0；有限总体序贯验证、相关性折减、资金退款、RIR/runtime conformance、实现一致性和参数化最大损失仍未证明或冻结。
+v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 ConformanceTarget，两者不是相互替代的版本号。V1 的能力处置见唯一 Profile；它已选择 RIR 和 Rust Profile，但仍处于 G0。有限总体序贯验证、相关性折减、资金退款、RIR/RPR conformance、实现一致性和参数化最大损失仍未证明或冻结。

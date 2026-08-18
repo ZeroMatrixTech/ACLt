@@ -16,9 +16,10 @@
 1. **RIR 是 V1 的规范性机器/网络执行表示。** 协议执行语义在 RIR 层冻结，不由源语言或本机指令集定义。
 2. **Rust Profile 是 V1 的 reference frontend。** 它提供首个受约束的源语言入口，但 Rust 不是 ACLt Protocol 的唯一或规范语言。
 3. **未来允许其他 conforming frontends。** C++23 等前端可以在未来加入，条件是其受支持子集降级到同一 RIR 语义并通过统一 conformance suite。
-4. **Receipt 必须绑定规范执行上下文。** 至少需要无歧义绑定 RIRVersion、RIR 工件摘要、输入、执行 Profile、资源/effects 边界及验证语义；准确字段名与编码仍为 `OPEN/P0`。
+4. **Receipt 必须绑定规范执行上下文。** 至少需要无歧义绑定 RIRVersion、RIR 工件摘要、Logical Object 输入、Runtime/Frontend/Verification Profile、资源/effects 边界及验证语义；准确字段名与编码仍为 `OPEN/P0`。
 5. **不允许静默原生回退。** 不受 V1 Profile 支持的程序或 effect 必须在创建、lowering 或验证阶段被拒绝/标为 `UNSUPPORTED`。
-6. **V1 暂不支持或不验证以下能力：** unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器及非确定性任务。未来引入任何一项都需要独立 Profile、威胁更新、兼容性规则和 ADR。
+6. **V1 暂不支持或不验证以下能力：** unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器、共享可变地址空间及非确定性任务。未来引入任何一项都需要独立 Profile、威胁更新、兼容性规则和 ADR。
+7. **V1 由 RPR 实现运行时边界。** RPR 默认隐藏 Host OS 状态，只执行通过验证的 RIR 和显式 capability；RPR 不是新的 Principal 或规范真相来源。
 
 ## 3. 状态边界
 
@@ -27,6 +28,7 @@
 - RIR 指令集、类型系统、canonical encoding 或 validator；
 - Rust Profile 的准确语法/语义子集与 lowering 规则；
 - runtime、effects、资源计量、浮点或并发语义；
+- Logical Object Schema、RPR capability contract 与 Host OS 错误归一化；
 - 编译器/运行时正确性证明；
 - 结果验证、相关性、资金、结算或分布式容错证明；
 - RIR 的计算完备性、性能或任意工作负载适用性主张。
@@ -53,11 +55,11 @@
 
 ## 5. 被拒绝或延期的替代方案
 
-| 方案 | 当前处理 | 原因 |
+| 方案 | V1 VersionDisposition | 原因 |
 |---|---|---|
 | Rust 源码直接作为规范语义 | `REJECTED` | 编译器、版本和平台差异进入协议真相 |
-| 本机二进制/ISA 作为规范语义 | `REJECTED for V1` | 可移植性、审计和跨 Provider 等价性不足 |
-| 容器镜像即规范语义 | `REJECTED as sufficient` | 镜像仍包含宿主、架构、内核和运行时差异 |
+| 本机二进制/ISA 作为规范语义 | `REJECTED` | 可移植性、审计和跨 Provider 等价性不足 |
+| 容器镜像即规范语义 | `REJECTED` | 镜像仍包含宿主、架构、内核和运行时差异 |
 | V1 同时支持 Rust 与 C++23 原生路径 | `DEFERRED` | 扩大 G0 状态空间与供应链面 |
 | V1 直接支持完整 OS/GPU/非确定性任务 | `DEFERRED` | effects、计量、复现和验证边界尚未冻结 |
 
@@ -68,11 +70,11 @@ G0/G1 至少需要产出：
 1. RIR grammar/schema、canonical encoding、validator 和正反 golden vectors；
 2. Rust Profile 的允许/禁止构造及确定的诊断结果；
 3. source → RIR lowering 的版本、摘要和可复现构建规则；
-4. RIR runtime 的 effects、资源、终止、错误和 checkpoint 语义；
+4. Logical Object、RPR/Host OS capability、effects、资源、终止、错误和 checkpoint 语义；
 5. 至少两个独立实现或一个实现加差分 oracle 的 conformance 结果；
 6. 对恶意 RIR、编译器差异、隐藏宿主 effect、计量分歧和运行时崩溃的故障注入；
 7. 将 RIRVersion/Profile/Digest 变化映射为新 ReceiptID 的测试。
 
 ## 7. 连续性结论
 
-本 ADR 扩展 v0.5 的任务语义与实现中立原则，不改变两类 Principal、permissionless functions、验证不确定性、FundingPolicy、证据—能力—暴露链条或 Maintenance 最小权限。V1 是工程一致性目标；v0.5 仍是当前协议语义基线。
+本 ADR 扩展 v0.5 的任务语义与实现中立原则，不改变两类 Principal、permissionless functions、验证不确定性、FundingPolicy、证据—能力—暴露链条或 Maintenance 最小权限。V1 是 ConformanceTarget；v0.5 仍是当前协议语义基线。各能力的 VersionDisposition 由 [`../03-protocol/v1-profile.md`](../03-protocol/v1-profile.md) 唯一登记，状态分离规则见 ADR-0003。

@@ -9,8 +9,10 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 ## 1. 可以贡献什么
 
 - 协议对象、Schema、canonical encoding 和测试向量；
+- SemanticStatus registry、V1 Profile、Abstract Machine 和 Logical Object Schema；
 - 状态机、并发模型、性质测试和形式化验证；
-- RIR parser/validator、canonical encoding、Rust Profile lowering 和差分 conformance 测试；
+- RIR parser/validator、canonical encoding、Rust Profile lowering、RPR/Host OS capability 和差分 conformance 测试；
+- Lowering/Decomposition/Packing、Provider Dispatch 与 TaskGraph/Lease 合法性；
 - 验证统计、相关性模型和攻击仿真；
 - FundingPolicy、SettlementPolicy 和账务状态机；
 - 威胁建模、故障注入、适配器一致性和供应链安全；
@@ -35,26 +37,19 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 - `TRUSTED` 表示绝对正确。
 - 让某个源语言、编译器或原生二进制定义协议执行语义；
 - 未经新 Profile/ADR 就把 unsafe Rust、完整宿主 effects、原生执行、GPU 或非确定性任务纳入 V1。
+- 把 Logical Object Memory 解释为跨 Provider 共享可变 RAM，或让 RPR 读取隐藏 Host OS 状态；
+- 把 FoundationReport、维护报告或付款记录写入验证真理权重。
 
 若要重新讨论已拒绝语义，必须提供新的威胁模型、反例、净风险分析和 ADR，不得仅替换名称。
 
-## 3. 状态标签
+## 3. 状态与版本处置
 
-所有实质性文档变更必须使用以下标签之一：
+所有实质性文档变更必须分别处理：
 
-| 标签 | 使用条件 |
-|---|---|
-| `DECIDED` | 已经接受的项目决定 |
-| `DERIVED` | 可由明确前提推出的结论 |
-| `INVARIANT` | 所有正确实现都不得违反的性质 |
-| `CANDIDATE` | 已选方向，但算法、参数或证明尚未冻结 |
-| `ASSUMPTION` | 结论依赖但尚未证明的条件 |
-| `HYPOTHESIS` | 需要实验或仿真检验的经验主张 |
-| `OPEN` | 尚未决定或规格化 |
-| `SUPERSEDED` | 被更新语义替代，但保留历史价值 |
-| `REJECTED` | 明确排除的设计或主张 |
+- `SemanticStatus`：`OPEN`、`CANDIDATE`、`DECIDED`、`INVARIANT`、`SUPERSEDED`、`REJECTED`；
+- 指定 ConformanceTarget 的 `VersionDisposition`：`CORE`、`DEFERRED`、`REJECTED`。
 
-不得把 `CANDIDATE`、`ASSUMPTION` 或 `HYPOTHESIS` 写成已经成立的系统事实。
+`DERIVED`、`ASSUMPTION` 和 `HYPOTHESIS` 是 ClaimQualifier，`P0–P2` 是 Priority。不得用斜杠把这些字段合并，也不得把 V1 `CORE` 写成已经完成的系统事实。V1 处置只更新 `docs/03-protocol/v1-profile.md`；语义状态只更新对应权威来源。
 
 ## 4. 变更类型
 
@@ -100,6 +95,7 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 6. 运行全部现有检查；
 7. 提交小而可审查的变更；
 8. 在证据不足时保留 `OPEN/CANDIDATE`，不要提前关闭问题。
+9. 按 `docs/08-governance/audit-procedure.md` 执行连续性、结构与 Gate 回验。
 
 ## 6. 提交说明模板
 
@@ -125,6 +121,8 @@ Documents updated:
 | Principal / function / authority | terminology、identities-and-roles、system-context、threat-model、ADR |
 | 对象或状态机 | protocol-spec、task-lifecycle、invariants、test vectors |
 | RIR、前端或执行 Profile | terminology、system-architecture、protocol-spec、threat-model、ADR、conformance tests |
+| SemanticStatus 或 VersionDisposition | terminology、ADR-0003、v1-profile、current-status、audit report |
+| Abstract Machine、Logical Object、Compile、RPR 或 Dispatch | system-architecture、task-lifecycle、protocol-spec、threat-model、invariants、robustness |
 | 验证或统计 | result-validation、robustness、claims-and-sources、open-questions |
 | 能力或暴露 | reputation、threat-model、robustness、simulations |
 | 资金或结算 | protocol-spec、task-lifecycle、invariants、open-questions |

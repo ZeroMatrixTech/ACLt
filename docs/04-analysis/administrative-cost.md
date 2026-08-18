@@ -18,7 +18,8 @@
 | 人力 | 规范评审、发布、漏洞处理、合规 | 工时、人员数、响应时间 |
 | 决策延迟 | 审批、委员会、申诉 | 排队时间、错失任务价值 |
 | 基础设施 | 签名、审计、备份、披露渠道 | 固定/变动成本、可用性 |
-| 执行规范维护 | RIR、Rust Profile、validator、runtime、golden vectors 与未来 frontend conformance | 评审工时、实现数、回归规模、兼容失败率 |
+| 执行规范维护 | Logical Object、RIR、Rust Profile、RPR/Host OS capability、Compile/Dispatch、golden vectors 与未来 frontend conformance | 评审工时、实现数、回归规模、兼容失败率 |
+| 版本与审计 | SemanticStatus registry、V1 Profile、ADR、审计和历史隔离 | CORE 阻断数、状态漂移、审计工时和重复权威数 |
 | 权限风险 | 密钥、管理接口、人工覆盖 | 影响面、单点故障、滥权概率 |
 | 法律与地域 | 法人、税务、数据、劳动、支付 | 专业费用、限制和责任 |
 | 协调 | 会议、分歧、版本迁移 | 决策周期、分叉概率 |
@@ -34,7 +35,8 @@
 - 管理发布签名、密钥轮换和撤销；
 - 接收、修复和披露漏洞；
 - 发布参考实现与 conformance suite；
-- 维护 RIR 规范、Rust Profile、validator/runtime 一致性材料及未来 frontend 准入测试；
+- 维护 Logical Object、RIR、Rust Profile、RPR、Compile/Dispatch 一致性材料及未来 frontend 准入测试；
+- 维护 SemanticStatus 与 VersionDisposition 的分离登记、审计程序和 Gate 证据；
 - 保存公开变更、证据和历史版本。
 
 这些是项目维护责任，不是运行时协议身份。
@@ -48,6 +50,7 @@
 - 覆盖 TRUSTED/UNRESOLVED 或其他终态；
 - 制造结算、退款或未授权资金；
 - 把维护意见当作优先证据；
+- 把 FoundationReport、委员会报告或维护报告写入 Bayesian prior、VerificationEvidence 权重或停止条件；
 - 因组织地位获得 Provider/Requester 之外的协议权利。
 
 如果某种事故只有依赖这些权力才能处理，必须优先改进协议的安全终态、版本、撤销或追加更正机制。
