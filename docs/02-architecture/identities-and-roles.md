@@ -2,7 +2,7 @@
 
 > 文档状态：`DECIDED` ontology；权限细节 `OPEN/P0`  
 > 语义基线：v0.5  
-> 最后更新：2026-08-17  
+> 最后更新：2026-08-18  
 > 更新触发：新增身份、职能、签名责任、维护权限或控制关联语义
 
 ## 1. 分类规则
@@ -126,6 +126,7 @@ Provider 可以执行计算、规划、验证、抽样或聚合，但：
 | Node/Account/Device/Key | 执行或标识载体 |
 | Foundation | 可选组织形式 |
 | Blockchain | 可选基础设施 Adapter |
+| Rust/C++ frontend、compiler、RIR runtime | 实现组件；不得成为 Principal、VerifierAuthority 或协议语义来源 |
 
 ## 10. 防止角色再膨胀的检查
 
@@ -137,6 +138,7 @@ Provider 可以执行计算、规划、验证、抽样或聚合，但：
 4. 失陷后能否改变 Receipt、Decision 或 Settlement？
 5. 是否增加行政成本和信任根？
 6. 是否有退出、撤销和权限测试？
+7. 它是否只是 source frontend/compiler/runtime，而其输出仍由 RIR 与 conformance 约束？
 
 无法证明必要性的实体不得进入协议本体。
 

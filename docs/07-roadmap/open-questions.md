@@ -2,7 +2,7 @@
 
 > 文档性质：持续更新的问题与决策队列（living document）  
 > 基线版本：v0.5  
-> 更新日期：2026-08-17  
+> 更新日期：2026-08-18  
 > 目标：列出会影响协议正确性、安全性、可实现性或发布条件的全部当前问题，并为每个问题保留备选路径、当前建议、依赖与关闭证据。
 
 ## 1. 使用规则
@@ -27,8 +27,8 @@
 
 优先级含义：
 
-- **P0**：阻断 G0/G1、公开发布，或存在未封顶的安全/资金风险。
-- **P1**：阻断 G2/G3 或参考实现的可信验证。
+- **P0**：阻断 G0、公开发布，或存在未封顶的安全/资金风险。
+- **P1**：阻断 G1—G4 的可信仿真、参考实现或恢复验证。
 - **P2**：不阻断当前核心，可在核心稳定后评估。
 
 “当前建议”只是下一步首选路径，不等于 `DECIDED`。只有关闭证据满足，并同步到规范或 ADR 后，状态才能改变。
@@ -37,35 +37,38 @@
 
 | ID | 问题组 | 优先级 | 状态 | 主要阻断 |
 |---|---|---:|---|---|
-| OQ-01 | 名称、许可与发布章程 | P0 | OPEN | 公开发布 |
-| OQ-02 | 规范对象、编码与版本演进 | P0 | OPEN | G1 |
-| OQ-03 | Principal、签名与控制关系 | P0 | OPEN | G1 |
-| OQ-04 | WorkPlan、准入与 Assignment 合法性 | P0 | OPEN | G1 |
-| OQ-05 | Lease、执行、恢复与沙箱 | P0 | OPEN | G1/G3 |
-| OQ-06 | 验证器、结果等价与验证会话 | P0 | OPEN | G1/G2 |
-| OQ-07 | 有限总体序贯验证与停止定理 | P0 | OPEN | G2 |
-| OQ-08 | Sybil、相关性、隐私与最坏暴露 | P0 | OPEN | G2/G3 |
-| OQ-09 | 能力估计、冷启动与暴露决策 | P1 | OPEN | G2/G3 |
-| OQ-10 | 资金、故障归因、结算与偿付 | P0 | OPEN | G1/G3 |
-| OQ-11 | 一致性、时钟、分区与适配器语义 | P0 | OPEN | G1/G3 |
-| OQ-12 | 审计日志、保留、可观测性与恢复 | P1 | OPEN | G3/G5 |
-| OQ-13 | Maintenance、发布、撤销与管理成本 | P0 | OPEN | 公开发布/G6 |
-| OQ-14 | 异构任务与未来安全增强 | P2 | OPEN | 后续扩展 |
+| OQ-01 | 名称、分层许可与发布章程 | P0 | OPEN（代码许可已决定） | 公开发布 |
+| OQ-02 | 规范对象、编码与版本演进 | P0 | OPEN | G0 |
+| OQ-03 | Principal、签名与控制关系 | P0 | OPEN | G0 |
+| OQ-04 | WorkPlan、准入与 Assignment 合法性 | P0 | OPEN | G0 |
+| OQ-05 | Lease、RIR 执行、恢复与沙箱 | P0 | OPEN（RIR/Rust 方向已决定） | G0/G2/G3 |
+| OQ-06 | 验证器、结果等价与验证会话 | P0 | OPEN | G0/G1 |
+| OQ-07 | 有限总体序贯验证与停止定理 | P0 | OPEN | G0/G1 |
+| OQ-08 | Sybil、相关性、隐私与最坏暴露 | P0 | OPEN | G1/G5 |
+| OQ-09 | 能力估计、冷启动与暴露决策 | P1 | OPEN | G1 |
+| OQ-10 | 资金、故障归因、结算与偿付 | P0 | OPEN | G0/G2 |
+| OQ-11 | 一致性、时钟、分区与适配器语义 | P0 | OPEN | G0/G2/G4 |
+| OQ-12 | 审计日志、保留、可观测性与恢复 | P1 | OPEN | G2/G4/G5 |
+| OQ-13 | Maintenance、发布、撤销与管理成本 | P0 | OPEN | G0/公开发布/G6 |
+| OQ-14 | 异构任务与未来安全增强 | P2 | OPEN（V1 排除边界已决定） | G6 |
 
-## 3. OQ-01 — 名称、许可与发布章程
+## 3. OQ-01 — 名称、分层许可与发布章程
 
 **问题。** 如何确保 ACLt Protocol 的名称、许可和贡献方式足以支持公开协作，同时不对尚未证明的成熟度作错误暗示？
 
 **备选路径。**
 
 1. 名称：保留 ACLt Protocol；在冲突时加限定词；或在公开发布前更名。
-2. 许可证：宽松型许可证；弱 copyleft；强 copyleft；双许可证；暂不许可公开使用。
-3. 贡献许可：仅项目许可证；Developer Certificate of Origin（DCO）；Contributor License Agreement（CLA）。
-4. 发布标记：research preview；draft specification；experimental implementation；release candidate。
+2. 代码与参考实现：**已决定采用 Apache License 2.0**；不再在 MIT、copyleft、双许可证或暂不授权之间保持开放。
+3. 协议规范与项目文档：Apache-2.0；CC BY 4.0；CC BY-SA 4.0；独立开放规范条款；或在稳定发布前保留版权、仅供审阅。
+4. 研究论文：作者保留版权；CC BY；或按投稿平台/出版社条款单独授权。
+5. 名称、商标与兼容性：不设独立政策；建立名称/商标使用政策；另设兼容性声明或认证政策。
+6. 贡献许可：仅依项目许可证；Developer Certificate of Origin（DCO）；Contributor License Agreement（CLA）。
+7. 发布标记：research preview；draft specification；experimental implementation；release candidate。
 
-**当前建议。** 保留名称但完成法律与生态检索；在选择许可证前不宣称“开源”；v0.5 公开时标为 draft/research baseline；贡献机制根据维护主体和再许可需求在 DCO 与 CLA 之间选择。
+**当前建议。** 保留名称但完成法律与生态检索；根目录已经包含未经修改的 Apache License 2.0 英文全文，后续应保持该文件，并为未来适用源码使用 `SPDX-License-Identifier: Apache-2.0`；只有存在归属或第三方通知要求时才增加相应 `NOTICE` 内容。不得把代码许可默认为规范、文档、论文或商标许可。v0.5 公开时标为 draft/research baseline；贡献机制根据维护主体、来源证明和再许可需求在仅项目许可证、DCO 与 CLA 之间选择。
 
-**关闭证据。** 名称检索记录；批准的 `LICENSE`；贡献规则；README 中统一的成熟度声明；必要的法律意见。
+**关闭证据。** 代码许可证选择及根目录 `LICENSE` 已经完成；其余关闭证据为未来源码 SPDX 检查、按需 `NOTICE`、第三方许可清单、规范/文档/论文许可声明、名称与商标检索、贡献规则、README 中统一的成熟度声明，以及必要的法律意见。
 
 **依赖。** OQ-13 的维护主体与发布权限。
 
@@ -80,8 +83,9 @@
 3. 标识：内容寻址；随机/时间有序 ID 加内容哈希；纯外部句柄。
 4. 演进：严格主版本分叉；带能力协商的向前兼容；版本化对象族；显式迁移函数。
 5. 扩展：拒绝未知字段；保留但不解释；命名空间扩展；功能位协商。
+6. RIR：独立规范二进制/文本编码；复用对象编码；RIRVersion 独立演进；或与 ProtocolVersion 锁步演进。
 
-**当前建议。** 先写与传输格式无关的规范对象和哈希域，再选择至少一种确定性绑定；所有影响合法性或签名的字段必须进入规范编码；扩展字段不得静默改变既有语义。
+**当前建议。** 先写与传输格式无关的规范对象和哈希域，再选择至少一种确定性绑定；RIR 必须具有独立可验证的 canonical encoding，并由 Receipt 无歧义绑定 RIRVersion/Profile/Digest；所有影响合法性或签名的字段必须进入规范编码；扩展字段不得静默改变既有语义。
 
 **关闭证据。** 字段表、必选/可选规则、规范编码测试向量、哈希域分离、版本兼容矩阵、未知字段行为和至少两个独立编码实现的一致结果。
 
@@ -123,7 +127,7 @@
 
 **依赖。** OQ-02、OQ-03、OQ-09、OQ-10。
 
-## 7. OQ-05 — Lease、执行、恢复与沙箱
+## 7. OQ-05 — Lease、RIR 执行、恢复与沙箱
 
 **问题。** 如何在崩溃、延迟、重复提交、资源滥用和不可信代码下执行任务，同时保持可恢复和至多一次的经济效果？
 
@@ -135,10 +139,12 @@
 4. 沙箱：容器；微虚拟机；WebAssembly；TEE；任务专用隔离；外部受信执行环境。
 5. 资源计量：Provider 自报；Control Plane 观测；可验证计量；预付上限；多方观测。
 6. 数据访问：完整复制；按需拉取；能力令牌；数据本地执行；加密/密封输入。
+7. 执行表示：**已决定 V1 使用 RIR，Rust Profile 为 reference frontend**；仍需在文本/二进制编码、类型系统、effects、资源计量、错误与 checkpoint 语义之间收敛。
+8. 前端：仅 Rust Profile；未来 C++23/其他 conforming frontend；或多前端同时进入 V1。当前决定为首项，后两项延期。
 
-**当前建议。** 协议定义 Lease/epoch、幂等键、过期和结果接受规则；沙箱与计量作为部署配置，但必须声明满足的最小安全剖面。经济结算应绑定接受的 Receipt，而非绑定“进程是否曾运行”。
+**当前建议。** 协议定义 Lease/epoch、幂等键、过期和结果接受规则；V1 只执行 Receipt 绑定且通过 validator 的 RIR，Rust Profile 负责 reference lowering。沙箱与计量作为部署配置，但必须满足冻结的 runtime/effects/resource Profile。经济结算应绑定接受的 Receipt，而非绑定“进程是否曾运行”。
 
-**关闭证据。** 执行状态机、重复/迟到/分区测试、资源耗尽与逃逸威胁测试、恢复目标、Receipt 幂等性和故障注入结果。
+**关闭证据。** RIR grammar/canonical encoding/validator、Rust Profile 允许与禁止构造、lowering golden vectors、runtime/effects/resource semantics、执行状态机、重复/迟到/分区测试、资源耗尽与逃逸威胁测试、恢复目标、Receipt 幂等性和故障注入结果。
 
 **依赖。** OQ-02、OQ-10、OQ-11、OQ-12。
 
@@ -309,7 +315,7 @@
 5. 验证增强：可验证计算；SNARK/STARK；交互式证明；领域证明系统；抽样与证明混合。
 6. 试点路线：纯确定性 CPU 任务；可重复容器任务；数据本地任务；非确定性/ML 任务；高价值生产任务。
 
-**当前建议。** v0.5 先以可冻结输入、可重复或有明确等价谓词的任务作为验证对象；通过 TaskType/VerifierProfile 扩展，不在核心中预设 TEE、链或零知识系统。任何增强都必须说明它减少了哪项威胁，以及引入了哪些新信任和成本。
+**当前建议。** V1 先以通过 Rust Profile 降级到规范 RIR、effects 封闭、资源有界、可重复或有明确等价谓词的 CPU 任务作为验证对象。unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器和非确定性任务暂不支持或不验证；未来只能通过独立 Profile、conformance、威胁更新和 ADR 引入。TaskType/VerifierProfile 负责扩展验证语义，核心不预设 TEE、链或零知识系统。
 
 **关闭证据。** 至少一个受控试点、任务类型安全剖面、成本—风险对比、失败模式、可移植性测试和是否需要新 ADR 的判断。
 

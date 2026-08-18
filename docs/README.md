@@ -2,7 +2,7 @@
 
 > 文档状态：Living index and governance  
 > 当前语义基线：v0.5  
-> 最后更新：2026-08-17
+> 最后更新：2026-08-18
 
 本目录是 ACLt Protocol 的权威文档中心。文档不是一次性说明材料，而是随反例、证明、仿真、实现、攻击测试和工程试点持续修订的规格系统。
 
@@ -29,9 +29,10 @@
 1. [`04-analysis/robustness.md`](04-analysis/robustness.md)
 2. [`04-analysis/administrative-cost.md`](04-analysis/administrative-cost.md)
 3. [`05-decisions/ADR-0001-no-unnecessary-entities.md`](05-decisions/ADR-0001-no-unnecessary-entities.md)
-4. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
-5. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
-6. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
+4. [`05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md`](05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md)
+5. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
+6. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
+7. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
 
 ## 2. 文档权威范围
 
@@ -44,6 +45,7 @@
 | 攻击者、威胁和剩余风险 | `01-requirements/threat-model.md` |
 | 核心安全不变量 | `01-requirements/invariants.md` |
 | 分层架构与实现边界 | `02-architecture/system-architecture.md` |
+| RIR、V1 Rust Profile 与前端边界 | `05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md` |
 | Principal、函数与权限 | `02-architecture/identities-and-roles.md` |
 | 任务状态与生命周期 | `02-architecture/task-lifecycle.md` |
 | 规范性协议骨架 | `03-protocol/protocol-spec.md` |
@@ -163,10 +165,11 @@ Decision / evidence
 | `02-architecture` | 当前候选分层与生命周期 | G0 draft |
 | `03-protocol` | 当前规范性协议骨架 | G0 draft |
 | `04-analysis` | 鲁棒性和行政成本证据账本 | 进行中 |
-| `05-decisions` | 已接受架构决定 | 最小 ADR 集合 |
+| `05-decisions` | 已接受架构决定 | ADR-0001/0002 已建立 |
 | `06-research` | 论断—来源—边界 | 持续核查 |
 | `07-roadmap` | 状态和未决问题 | 持续更新 |
+| `codocs` | 历史版本与决策追踪；不构成当前规范 | archived / superseded where marked |
 
 ## 9. v0.5 的严格定位
 
-v0.5 是当前最高语义基线，但仍处于 G0。它已经替代旧 Rank、51%、固定角色和默认发行语义；有限总体序贯验证、相关性折减、资金退款、实现一致性和参数化最大损失仍未证明或冻结。
+v0.5 是当前协议语义基线，V1 是建立在其上的首个执行/一致性目标，两者不是相互替代的版本号。V1 已选择 RIR 和 Rust Profile，但仍处于 G0；有限总体序贯验证、相关性折减、资金退款、RIR/runtime conformance、实现一致性和参数化最大损失仍未证明或冻结。

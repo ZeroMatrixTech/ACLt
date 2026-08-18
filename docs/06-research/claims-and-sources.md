@@ -2,7 +2,7 @@
 
 > 文档状态：Living evidence registry  
 > 语义基线：v0.5  
-> 最后核查：2026-08-17  
+> 最后核查：2026-08-18  
 > 规则：文献支持理论边界、方法或先例，不替 ACLt Protocol 证明组合系统
 
 ## 1. 证据纪律
@@ -38,6 +38,7 @@
 | CLM-104 | 显式 UNRESOLVED 可以避免无限验证和伪造确定性 | `DECIDED/DERIVED` | INV-04/09/12 | 用户效用、退款和成本仍需验证 |
 | CLM-105 | v0.5 已证明 ACLt Protocol 整体鲁棒 | `REJECTED` | 无 | 当前证据不足 |
 | CLM-106 | ACLt Protocol 的组合是公开系统中完全原创且无先例 | `OPEN/PROHIBITED OVERCLAIM` | 组件均有先例 | 只能在系统化检索和权利清查后作有限原创性表述 |
+| CLM-107 | 以 RIR 作为规范执行表示、Rust Profile 作为参考前端，可以在架构上隔离源语言与协议语义 | `DECIDED/DERIVED` | ADR-0002、INV-01/16 | 不证明 lowering、runtime、资源计量、确定性或结果正确；需要 ACLt 自身 conformance 证据 |
 
 ## 3. 来源登记与边界
 

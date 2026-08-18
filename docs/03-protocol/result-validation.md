@@ -2,7 +2,7 @@
 
 > 文档状态：`CANDIDATE` verification design  
 > 语义基线：v0.5  
-> 最后更新：2026-08-17  
+> 最后更新：2026-08-18  
 > 严格限制：当前方法尚未形成 ACLt 特定统计定理，不得声称验证安全已经证明
 
 ## 1. 验证目标
@@ -22,6 +22,7 @@
 每个 Receipt MUST 引用一个版本化 VerificationType。Registry 至少需要描述：
 
 - 适用任务族和输入/输出语义；
+- 适用 RIRVersion、执行 Profile、runtime/effects 与规范结果表示；
 - 结果等价或聚类规则；
 - 验证器输入、输出和错误模型；
 - 是否确定性、可重执行、可抽样或依赖证明；
@@ -29,20 +30,20 @@
 - 允许的 Aggregation 与终态；
 - 负例、已知盲点和升级规则。
 
-当前 `V0–V3` 分类仍是占位接口，具体含义尚未冻结。候选方案包括：
+为避免与首个工程目标 `V1` 混淆，不再使用 `V0–V3` 作为验证类型占位编号。候选类别仅表示方法族，具体 Registry ID 尚未冻结：
 
 | 候选类型 | 可能语义 | 优点 | 局限 | 状态 |
 |---|---|---|---|---|
-| V0 | 确定性重执行/精确比较 | 语义清晰 | 成本可能接近原计算；同源故障 | `CANDIDATE` |
-| V1 | 任务专用谓词或解析式检查 | 可显著降低成本 | 只覆盖特定任务 |
-| V2 | 冗余、抽样或统计检查 | 可调成本和证据 | 相关性与统计证明困难 |
-| V3 | 密码学证明、交互证明或可信执行证据 | 可能提供更强证据 | 适用性、性能、信任和实现复杂 |
+| `REEXEC_EXACT` | 确定性 RIR 重执行/精确比较 | 语义较清晰 | 成本可能接近原计算；同源 runtime/compiler 故障 | `CANDIDATE` |
+| `TASK_PREDICATE` | 任务专用谓词或解析式检查 | 可显著降低成本 | 只覆盖特定任务 | `CANDIDATE` |
+| `STATISTICAL` | 冗余、抽样或统计检查 | 可调成本和证据 | 相关性与统计证明困难 | `CANDIDATE` |
+| `PROOF_ASSISTED` | 密码学证明、交互证明或可信执行证据 | 可能提供更强证据 | 适用性、性能、信任和实现复杂 | `CANDIDATE` |
 
 上述编号不得在 ADR 冻结前作为互操作规范。
 
 ## 3. 验证生命周期
 
-1. **候选形成**：接收合法 current-epoch ResultSubmission；
+1. **候选形成**：接收绑定合法 RIRVersion/runtime/current-epoch 的 ResultSubmission；
 2. **方法确认**：验证 Receipt 引用的 VerificationType 可用；
 3. **结果规范化**：应用预声明等价/聚类规则；
 4. **Snapshot**：冻结有限总体、排除、分层、相关性和证据摘要；
@@ -126,7 +127,7 @@ Nmax 只限制最多使用多少证据，不保证该数量足以安全背书，
 
 每条证据至少绑定：
 
-- ReceiptID、Result digest、VerificationType 和版本；
+- ReceiptID、RIRVersion/Profile、runtime、Result digest、VerificationType 和版本；
 - 执行 Verify 的 Principal/Node 与签名；
 - 输入、输出、时间、环境和资源；
 - control/correlation references；
@@ -189,6 +190,7 @@ Maintainer、Requester、多数 Provider 或高能力 Provider MUST NOT 覆盖 D
 - false endorsement、false unresolved、成本和尾延迟测量；
 - 并发、重放、崩溃恢复和唯一 Decision 测试；
 - 参数敏感性及反证条件。
+- frontend lowering、RIR runtime 与验证器共因错误的差分/故障测试。
 
 ## 13. 文献边界
 

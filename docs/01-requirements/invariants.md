@@ -1,7 +1,7 @@
 # ACLt Protocol 系统不变量
 
 > 文档状态：G0 规范性安全需求  
-> 更新日期：2026-08-17  
+> 更新日期：2026-08-18  
 > 不变量集合版本：v0.1  
 > 配套文档：[威胁模型](threat-model.md)
 
@@ -36,7 +36,7 @@
 
 | ID | 不变量 | 主要对象 | 主要威胁 | 当前成熟度 |
 |---|---|---|---|---|
-| INV-01 | 同一 ReceiptID 下规范化任务语义不可变 | ProtocolVersion、ComputeReceipt | TH-01、TH-04、TH-12、TH-18、TH-24 | `NORMATIVE / OPEN/P0` |
+| INV-01 | 同一 ReceiptID 下规范化任务语义不可变 | ProtocolVersion、ComputeReceipt | TH-01、TH-04、TH-12、TH-18、TH-24、TH-33—35 | `NORMATIVE / OPEN/P0` |
 | INV-02 | 每个活对象绑定明确且允许的 ProtocolVersion | 所有核心对象 | TH-01、TH-02、TH-12、TH-13、TH-18、TH-31 | `NORMATIVE / OPEN/P0` |
 | INV-03 | 新 Lease epoch 严格递增 | Assignment、Lease | TH-10、TH-28 | `NORMATIVE / OPEN/P0` |
 | INV-04 | 每个任务最多提交一个协议终态 | VerificationDecision、TaskState | TH-21、TH-27、TH-28 | `NORMATIVE / OPEN/P0` |
@@ -51,7 +51,7 @@
 | INV-13 | PerformanceEvidence 和关键事件只能追加或追加更正 | PerformanceEvidence、EventRecord | TH-05、TH-06、TH-13、TH-27、TH-32 | `NORMATIVE / OPEN/P0` |
 | INV-14 | 能力证据不得直接授予验证、真理、审计或治理权 | CapabilityEstimate、ExposureDecision | TH-05—TH-09、TH-17、TH-26、TH-32 | `NORMATIVE / OPEN/P0` |
 | INV-15 | Maintainer 不得改变运行中个案的语义、权重、终态或结算 | ProtocolVersion、Decision、Settlement | TH-09、TH-20、TH-30、TH-31 | `NORMATIVE / OPEN/P0` |
-| INV-16 | 替换实现或适配器不得改变可观察协议语义 | Storage、Log、Ledger、Settlement Adapter | TH-02、TH-08、TH-27—TH-31 | `NORMATIVE / OPEN/P0` |
+| INV-16 | 替换实现、前端、runtime 或适配器不得改变可观察协议语义 | Frontend、RIR Runtime、Storage、Log、Ledger、Settlement Adapter | TH-02、TH-08、TH-27—TH-31、TH-33—35 | `NORMATIVE / OPEN/P0` |
 
 ## 5. INV-01：Receipt 规范化语义不可变
 
@@ -64,11 +64,12 @@ ReceiptID(r_1)=ReceiptID(r_2)
 \Rightarrow CanonicalSemantics(r_1)=CanonicalSemantics(r_2)
 \]
 
-规范化语义必须覆盖所有影响执行义务、验证、期限、预算、尝试、资金、结算或权利的实质字段。任何实质变更必须产生新的 ReceiptID。
+规范化语义必须覆盖所有影响执行义务、验证、期限、预算、尝试、资金、结算或权利的实质字段；V1 还必须覆盖 RIRVersion、规范 RIR 工件摘要、执行 Profile、effects 与资源边界。任何实质变更必须产生新的 ReceiptID。
 
 ### 禁止状态
 
 - 相同 ReceiptID 对应不同程序、输入、环境或资源约束；
+- 相同 ReceiptID 对应不同 RIR、RIRVersion、执行 Profile、允许 effects 或 runtime 语义；
 - 验证规则、deadline、Nmax 来源、FundingPolicy 或 SettlementPolicy 被静默修改；
 - 未知字段、默认值、字段顺序或编码差异导致不同实现解释出不同义务；
 - 内容摘要仍存在，但被引用内容不可取得却继续推进。
@@ -524,7 +525,7 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 
 ### 规范陈述
 
-数据库、追加式签名日志、Merkle 日志、联盟账本、公共区块链或其他 Adapter 的替换，不得改变对 Principal 可观察的对象语义、合法状态转换、终态、资金权利和 INV-01 至 INV-15。
+数据库、追加式签名日志、Merkle 日志、联盟账本、公共区块链、source frontend、compiler、RIR runtime 或其他 Adapter/实现组件的替换，不得改变对 Principal 可观察的对象语义、规范执行、合法状态转换、终态、资金权利和 INV-01 至 INV-15。
 
 若底层基础设施无法提供所需原子性、唯一性、最终性、时间或重组边界，实现必须增加补偿层或拒绝宣称符合 ACLt Protocol。
 
@@ -535,6 +536,9 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 - 某实现允许 Maintainer 直接修改个案而另一实现不允许；
 - 对象或事件迁移后丢失版本、因果引用或终态唯一性；
 - 将“上链”本身当作满足不变量的证明。
+- Rust 与未来 C++23 frontend 对同一规范输入产生不等价 RIR 语义；
+- runtime 对不支持的 RIR/effect 静默回退到宿主原生执行；
+- 不同 runtime 对同一 Receipt 的资源耗尽、错误或结果语义不同。
 
 ### 最低验收方法
 
@@ -542,10 +546,11 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 - 跨实现 golden vectors 和状态重放；
 - 数据库事务、日志截断、链重组和结算最终性故障注入；
 - 迁移前后对象、状态和权利的语义差分测试。
+- RIR validator golden vectors、frontend lowering 差分测试和 runtime resource/effects conformance。
 
 ### 未决事项
 
-Adapter contract、可观察语义、最终性抽象、迁移协议和 conformance suite 仍为 `OPEN/P0`。
+Adapter contract、RIR canonical semantics、Rust Profile lowering、runtime/effects/resource model、可观察语义、最终性抽象、迁移协议和 conformance suite 仍为 `OPEN/P0`。
 
 ## 21. 不属于不变量的要求
 
@@ -603,6 +608,7 @@ flowchart TD
 | 统计仿真与证明 | INV-11、INV-12 | 验证不放回、可选停止、误差目标和相关性敏感性 |
 | 权限与数据流测试 | INV-14、INV-15 | 证明能力和维护身份不能绕过验证与结算前置条件 |
 | Adapter conformance | INV-01—INV-16 | 同一测试向量在所有实现产生同一可观察语义 |
+| RIR/frontend/runtime conformance | INV-01、INV-02、INV-09、INV-16 | 同一规范输入产生等价 RIR；非法 effects fail closed；资源与结果语义一致 |
 | 灾难恢复演练 | INV-04—INV-08、INV-13、INV-16 | 恢复后终态、结算、资金和事件历史一致 |
 
 ## 24. G0 完成标准
@@ -617,7 +623,8 @@ flowchart TD
 6. 对 INV-11/12 单独记录“接口不变量已确定、统计定理未完成”；
 7. 对 INV-14/15 建立结构性权限测试，防止 Rank 或维护裁决以其他名称重新出现；
 8. 对 INV-16 建立至少两个不同持久化实现或一个实现加故障适配器的语义对照；
-9. 未完成项继续标为 `OPEN/P0`，不得以“设计上应该成立”替代证据。
+9. 对 INV-01/02/09/16 建立 RIR validator、Rust Profile lowering 与 runtime conformance 的正反测试；
+10. 未完成项继续标为 `OPEN/P0`，不得以“设计上应该成立”替代证据。
 
 ## 25. 变更规则
 

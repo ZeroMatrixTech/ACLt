@@ -2,12 +2,12 @@
 
 > 规范状态：v0.5 G0 draft  
 > 文档状态：Living normative skeleton  
-> 最后更新：2026-08-17  
+> 最后更新：2026-08-18  
 > 警告：对象 Schema、状态机、统计规则和参数尚未全部冻结，不得作为生产协议实现依据
 
 ## 1. 规范范围
 
-本文件定义 ACLt Protocol 的当前规范性骨架：对象、函数、合法性、状态转换、终态、资金和实现一致性。详细威胁与不变量分别由 [`../01-requirements/threat-model.md`](../01-requirements/threat-model.md) 和 [`../01-requirements/invariants.md`](../01-requirements/invariants.md) 管理。
+本文件定义 ACLt Protocol 的当前规范性骨架：对象、函数、RIR 执行边界、合法性、状态转换、终态、资金和实现一致性。详细威胁与不变量分别由 [`../01-requirements/threat-model.md`](../01-requirements/threat-model.md) 和 [`../01-requirements/invariants.md`](../01-requirements/invariants.md) 管理。
 
 关键词 `MUST`、`MUST NOT`、`SHOULD`、`SHOULD NOT` 和 `MAY` 采用 [`../00-overview/terminology.md`](../00-overview/terminology.md) 的定义。
 
@@ -41,7 +41,7 @@ Plan、Admit、Schedule、Execute、Sample、Verify、Aggregate、Settle 和 Upd
 |---|---|---|---|
 | `ProtocolVersion` | Schema、状态机、不变量、验证、资金和兼容规则 | 发布签名/摘要 | `OPEN/P0` |
 | `PrincipalRecord` | 公钥、状态、声明、控制关联引用 | 每次决策读取版本 | `OPEN/P0` |
-| `ComputeReceipt` | 程序、输入、环境、资源、验证、期限、预算、政策 | ReceiptID 登记 | `INVARIANT` 接口 |
+| `ComputeReceipt` | RIRVersion、规范 RIR 工件、输入、执行 Profile、环境、资源、验证、期限、预算、政策 | ReceiptID 登记 | `DECIDED / INVARIANT` 接口 |
 | `FundingPolicy` | 费用、储备、补贴、可选发行或混合及上限 | Receipt 登记 | `DECIDED` 类型，细节开放 |
 | `SettlementPolicy` | 各终态费用、退款、权利和故障归因 | Receipt 登记 | `OPEN/P0` |
 | `WorkPlan` / `Assignment` | 工作单元、依赖、合并、失败和验证上下文 | 合法性检查后发布 | `OPEN/P0` |
@@ -65,8 +65,8 @@ Plan、Admit、Schedule、Execute、Sample、Verify、Aggregate、Settle 和 Upd
 Receipt MUST 覆盖：
 
 1. **Identity**：Requester、ProtocolVersion、nonce、创建时间；
-2. **Computation**：程序/镜像摘要、入口、输入摘要、输出类型；
-3. **Environment**：架构、资源、权限、网络和沙箱要求；
+2. **Computation**：RIRVersion、规范 RIR 工件摘要、入口、输入摘要、输出类型、source profile/lowering provenance；
+3. **Environment**：runtime/Profile、架构、资源、允许 effects、权限、网络和沙箱要求；
 4. **Semantics**：成功条件、结果等价、合并和失败定义；
 5. **Execution bounds**：deadline、Lease、attempt、checkpoint、最大资源；
 6. **Verification**：验证 Registry 类型、Snapshot、误差目标、Nmax 来源；
@@ -88,7 +88,8 @@ Receipt MUST 覆盖：
 5. 当前状态、因果引用和幂等性；
 6. 资源、暴露、尝试、期限和资金上限；
 7. 对应任务验证或统计规则；
-8. INV-01 至 INV-16。
+8. INV-01 至 INV-16；
+9. V1 RIR validator、Profile、effects 与 runtime/resource conformance。
 
 输出格式正确但语义非法时 MUST 被拒绝，不得因执行者身份或历史能力获得例外。
 
@@ -99,6 +100,7 @@ CreateReceipt MUST：
 - 使用 canonical encoding；
 - 验证全部必选政策可解析；
 - 验证任务类型和验证方法受支持；
+- 验证 RIRVersion、工件、Rust/其他 frontend Profile 与所需 effects/runtime 受支持；
 - 验证预算和资金上限可满足最低流程；
 - 计算并唯一绑定 ReceiptID；
 - 原子记录 Receipt 和 EventRecord。
@@ -137,6 +139,10 @@ Admit MUST 使用：
 ResultSubmission MUST 绑定当前 epoch。旧 epoch 输出 MAY 保留为 stale audit evidence，但 MUST NOT 覆盖当前状态、进入当前验证或产生当前权利。
 
 attempt、deadline、资源和恢复次数 MUST 有限；边界耗尽 MUST 进入准确终态。
+
+V1 Execute MUST 以 Receipt 绑定的规范 RIR 工件为输入。Rust Profile 是 reference frontend，不是协议规范语言；未来 C++23 等 frontend MAY 通过降级到同一 RIR 并通过 conformance suite 获得兼容性。
+
+实现 MUST 在执行前 fail-closed 验证 RIR 与 Profile。V1 MUST NOT 静默接受 unsafe Rust、完整宿主 OS effects、原生执行、GPU/专用加速器或非确定性任务；不支持的能力 MUST 返回 `UNSUPPORTED` 或创建拒绝。具体 RIR grammar、canonical encoding、lowering、runtime/effects/resource 语义仍为 `OPEN/P0`。
 
 ## 11. 验证与决定
 
@@ -208,6 +214,7 @@ Maintainer MAY 发布未来 ProtocolVersion、测试、修复和撤销，但 MUS
 一个实现只有在以下条件满足时才能声称兼容：
 
 - 通过 canonical object golden vectors；
+- 通过 RIR validator、Rust Profile lowering、runtime/effects/resource golden vectors 与差分测试；
 - 通过全部状态机合法/非法转换测试；
 - 通过 INV-01 至 INV-16 性质测试；
 - 通过重放、并发、分区、崩溃和恢复测试；
@@ -226,6 +233,7 @@ Maintainer MAY 发布未来 ProtocolVersion、测试、修复和撤销，但 MUS
 - Funding/Settlement/退款/故障归因；
 - EventRecord、保留、隐私和重放；
 - Adapter contract、最终性和 conformance suite；
+- RIR schema/canonical encoding、validator、Rust Profile、runtime/effects/resource model 与 checkpoint portability；
 - 发布、升级、漏洞和紧急响应。
 
 这些缺口关闭前，本文件保持 G0 draft。
