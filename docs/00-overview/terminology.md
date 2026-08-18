@@ -16,19 +16,43 @@
 | `SHOULD NOT` / 不应 | 通常应避免；采用时必须记录理由和风险 |
 | `MAY` / 可以 | 在不破坏其他约束时允许选择 |
 
-## 2. 文档状态标签
+## 2. 状态、版本处置与限定词
+
+ACLt 分别存储语义成熟度和版本收录状态。完整决定见 [`../05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md`](../05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md)。
+
+### 2.1 `SemanticStatus`
 
 | 标签 | 定义 |
 |---|---|
-| `DECIDED` | 已接受的项目决定 |
-| `DERIVED` | 可由已声明前提推出的设计结论 |
-| `INVARIANT` | 任何正确实现都不得破坏的性质 |
-| `CANDIDATE` | 已选研究或实现方向，但算法、定理或参数尚未冻结 |
-| `ASSUMPTION` | 当前模型依赖但尚未证明或验证的前提 |
-| `HYPOTHESIS` | 必须通过实验或仿真检验的经验主张 |
-| `OPEN` | 尚未决定或尚未完成规格化 |
-| `SUPERSEDED` | 曾被采用但已由新语义替代 |
-| `REJECTED` | 明确排除的设计或不允许作出的主张 |
+| `OPEN` | 问题已识别，但尚无被接受的具体方案 |
+| `CANDIDATE` | 已有明确候选，但尚未被当前语义基线接受 |
+| `DECIDED` | 已被当前语义基线接受；实现或证明细节可以仍未完成 |
+| `INVARIANT` | 所有正确实现和兼容版本都不得破坏的性质 |
+| `SUPERSEDED` | 曾有效但已由新语义显式替代 |
+| `REJECTED` | 已评估并拒绝；重新开启需要新证据和变更记录 |
+
+### 2.2 `VersionDisposition`
+
+VersionDisposition 必须相对于一个明确 `ConformanceTarget` 存储：
+
+| 标签 | 定义 |
+|---|---|
+| `CORE` | 指定目标必须实现并通过一致性验证 |
+| `DEFERRED` | 指定目标不支持，但可以由未来 Profile 在完成准入后引入 |
+| `REJECTED` | 指定目标明确禁止；实现必须拒绝或 fail closed |
+
+V1 的唯一权威映射见 [`../03-protocol/v1-profile.md`](../03-protocol/v1-profile.md)。`CORE` 不代表语义已经完成；`OPEN + CORE` 或 `CANDIDATE + CORE` 表示 Gate 阻断。
+
+### 2.3 其他元数据
+
+| 字段 | 允许值或用途 |
+|---|---|
+| `ClaimQualifier` | `DERIVED`、`ASSUMPTION`、`HYPOTHESIS`；说明推导或证据性质，不替代 SemanticStatus |
+| `Priority` | `P0`、`P1`、`P2`；说明工作优先级 |
+| `IssueStatus` | `OPEN`、`INVESTIGATING`、`BLOCKED`、`DECIDED`、`CLOSED`、`SUPERSEDED`、`REJECTED`；只用于问题队列 |
+| `Gate` | `G0–G6`；说明工程证据阶段 |
+
+规范表应为这些字段提供独立列或明确字段名。不得用 `DECIDED/OPEN` 表示同一语义单元，也不得把 `DEFERRED` 当作 SemanticStatus。
 
 ## 3. 本体分类
 
@@ -80,6 +104,28 @@ ACLt 中的名词必须属于以下类别之一。分类用于防止把数据对
 
 依据 `ComputeReceipt`、依赖和资源约束提出 `WorkPlan` 或 `Assignment` 的函数。Plan 只需满足合法性、确定性和边界要求，不承诺全局最优。
 
+### `Compile`
+
+把受支持的源输入和冻结任务语义转换为可调度协议工件的可审计流水线：
+
+\[
+Compile=Lowering+Decomposition+Packing
+\]
+
+Compile 是协议函数边界，不是 Principal、Broker 或编译权威。不同合法策略可以提出不同计划，但不得改变 Receipt 绑定的程序语义、权限、验证、期限或资金边界。
+
+### `Lowering`
+
+依据明确 FrontendProfileVersion 将受支持源程序转换为候选规范 RIR 的步骤。输出必须通过 RIR validator 和 conformance；source frontend 与 compiler 不定义协议真相。
+
+### `Decomposition`
+
+依据 Receipt、规范 RIR、输入对象依赖和任务政策，将计算表达为有界 TaskGraph/Assignment 依赖的步骤。拆分不得遗漏工作、重复产生权利或改变结果与失败语义。
+
+### `Packing`
+
+把合法分解组织为 WorkPlan、Assignment、对象引用、资源边界和验证上下文的步骤。Packing 不得扩大 Receipt 的 effects、deadline、预算或 SettlementPolicy。
+
 ### `Admit`
 
 依据证据、能力估计、不确定度和当前暴露生成 `ExposureDecision` 的函数。Admit 不创建身份，也不授予验证权。
@@ -87,6 +133,10 @@ ACLt 中的名词必须属于以下类别之一。分类用于防止把数据对
 ### `Schedule`
 
 在合法 Assignment、候选 Provider 和协议政策之间生成领取顺序或 Lease 提案的函数。
+
+### `Provider Dispatch`
+
+由 Admit、Schedule、Lease proposal 和 Provider 显式接受组成的协议阶段。Assignment 或 Lease proposal 本身不产生执行义务；只有通过前置条件并被 Provider 接受的当前 epoch Lease 才形成有限执行授权。Provider Dispatch 不是新的角色或中心调度实体。
 
 ### `Execute`
 
@@ -113,6 +163,14 @@ ACLt 中的名词必须属于以下类别之一。分类用于防止把数据对
 将可归责执行、验证和故障事件追加为 `PerformanceEvidence` 的函数。它不得生成 Rank。
 
 ## 6. 核心协议对象
+
+### `Logical Object`
+
+由类型、版本、canonical content 和 digest 无歧义标识的不可变协议数据。V1 Task 通过显式 Object reference 读取输入并产生新输出对象；缓存、复制或存储位置不得改变对象语义。
+
+### `Logical Object Memory`
+
+ACLt Abstract Machine 可引用的 Logical Object 集合及其版本、因果和可用性规则。它不是跨 Provider 的共享 RAM，不提供隐式全局 load/store，也不允许 Provider 通过本地地址访问其他 Provider 的机器状态。
 
 ### `ProtocolVersion`
 
@@ -208,6 +266,18 @@ Aggregate 函数依据预声明规则形成并原子提交的唯一验证终态�
 
 每获得一批新验证证据后重新计算置信状态，并依据预声明停止规则决定停止或继续抽样的过程。
 
+### `Exact Execution Evidence`
+
+对相同规范 RIR、Logical Object 输入、RuntimeProfile 和结果等价谓词进行确定性重执行或精确检查后形成的 VerificationEvidence。精确比较不自动证明 compiler、RPR、validator 或多个实现没有共因错误。
+
+### `Bayesian Sequential Policy`
+
+使用预先冻结的 prior、likelihood 和 posterior target 更新条件风险，并选择下一样本或提出停止的候选策略。它不得使用历史 CapabilityEstimate 直接提高本次结果的真理权，也不得在缺少适用证明时单独产生 `TRUSTED`。
+
+### `Safety Envelope`
+
+独立约束序贯停止提案的风险边界。当前 V1 候选要求 Bayesian stop proposal 同时满足经证明的 time-uniform/anytime-valid 条件、相关性限制和最大损失边界；具体定理仍为 `CANDIDATE/P0`。
+
 ### `Anytime-valid`
 
 在允许根据当前证据选择停止时间时，仍能在声明条件下保持误差控制的统计性质。ACLt 正研究该方向，但尚未完成任务特定定理和参数冻结。
@@ -266,13 +336,25 @@ N_{\max}=\min(N_{\text{population}},N_{\text{budget}},N_{\text{policy}})
 
 ## 9. 实现与维护术语
 
+### `ACLt Abstract Machine`
+
+以版本化协议对象、合法事件、状态转换、不变量和终态描述 ACLt 的规范机器。它把多台物理计算机组织为一台可审计的“computer-of-computers”，但不假设 Provider 共享地址空间、时钟、故障域或控制主体。
+
 ### `RIR`
 
 V1 的规范性机器/网络执行表示。协议接受的是绑定明确 RIR 版本、规范摘要、输入、资源与执行 Profile 的任务语义，而不是某个源语言文本或本机二进制。RIR 的全称不在当前规范中强制展开。
 
 ### `RIRVersion`
 
-解释、验证和执行 RIR 工件所需的版本标识。RIRVersion 的编码位置、兼容与迁移规则仍为 `OPEN/P0`，但不得依赖本地默认值。
+解释、验证和执行 RIR 工件所需的版本标识。RIRVersion 的 SemanticStatus 仍为 `OPEN`，Priority 为 `P0`；编码位置、兼容与迁移不得依赖本地默认值。
+
+### `RPR`
+
+`RIR Portable Runtime`。RPR 是执行通过验证的 RIR 并实现冻结 runtime/effects/resource/error 语义的可替换实现边界。RPR 不是 Principal、Host OS、容器、VM 或单一产品；它不得把未声明 Host OS 状态引入 Task 结果。
+
+### `Host OS`
+
+承载 RPR 的外部实现环境。Host OS 的文件、网络、时间、随机性、进程环境和设备状态默认不属于 Task 输入；只有被 ExecutionProfile 显式声明并由 RPR 规范化的 capability 才能进入可观察语义。
 
 ### `Rust Profile`
 
@@ -285,6 +367,10 @@ V1 的 reference frontend 约束集合：规定哪些 Rust 源构造可以被接
 ### `V1`
 
 建立在 v0.5 协议语义基线之上的首个执行与一致性目标。V1 不等同于 `ProtocolVersion=v1` 的最终编码，也不表示 G0、验证定理或生产安全已经完成。
+
+### `ConformanceTarget`
+
+定义一组 FeatureKey 及其 VersionDisposition 的工程一致性目标。ConformanceTarget 不替代 ProtocolVersion；当前首个目标是 V1。
 
 ### `Protocol`
 

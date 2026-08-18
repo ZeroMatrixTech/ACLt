@@ -2,7 +2,7 @@
 
 > **状态：G0——协议规格化**  
 > **当前语义基线：v0.5**  
-> **首个工程目标：V1（RIR + Rust Profile）**  
+> **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
 > **最后更新：2026-08-18**
 
@@ -17,16 +17,20 @@ ACLt Protocol 已形成一套完整的候选协议架构，但**尚未证明整�
 - 系统只保留 `Requester` 与 `Provider` 两类不可再约减的 Principal；
 - Planner、Verifier、Scheduler 等职能被压缩为 permissionless functions；
 - `ComputeReceipt` 固定任务、验证、期限、预算和结算语义；
+- ACLt Abstract Machine 以版本化 Logical Object、合法事件、状态转换和终态组织多 Provider 计算；Provider 之间不存在共享机器地址空间；
 - V1 以 `RIR` 作为机器/网络层的规范执行表示；Rust Profile 是参考前端而不是协议语义来源；
+- RPR 是实现冻结 RIR runtime/effects/resource 语义的可替换边界；Host OS 隐藏状态不得进入任务结果；
+- `Compile = Lowering + Decomposition + Packing`；该流水线是可审计函数，不是新的 Broker 或编译权威；
 - 未来 C++23 等前端只有在降级到同一 RIR 并通过 conformance tests 后，才可声明兼容；
 - Provider 可零前置抵押参与，但暴露、并发、价值、Lease、尝试和损失必须有界；
 - 履约历史只允许形成 `PerformanceEvidence → CapabilityEstimate ± Uncertainty → ExposureDecision`；
 - 履约能力不得授予验证票权、真理权、最终审计权或治理权；
-- 验证优先研究冻结有限总体、不放回抽样和 anytime-valid 序贯推断；该方向尚未完成 ACLt 特定证明；
+- 验证优先研究 exact execution evidence、冻结有限总体、不放回抽样、Bayesian stop proposal 与 anytime-valid safety envelope；该组合尚未完成 ACLt 特定证明；
 - Sybil 分析不假定标识独立，先以相关集群和硬损失上限控制风险；
 - `UNRESOLVED`、`FAILED`、`EXPIRED` 和 `FUNDING_EXHAUSTED` 是合法安全终态；
 - 资金来自预声明 `FundingPolicy`；发行只是可选来源，不是默认机制；
 - 数据库、签名日志、联盟账本或公共区块链均可实现同一协议语义。
+- SemanticStatus 与 V1 VersionDisposition 分别存储；`CORE` 不代表相应证明或实现已经完成。
 
 ## 非目标与禁止主张
 
@@ -72,6 +76,7 @@ flowchart TD
 7. **协议与实现分离**：底层基础设施可替换，语义不可漂移；
 8. **维护最小权限**：维护者不得裁决运行中个案。
 9. **前端不定义协议语义**：协议绑定 RIR、版本与执行 Profile；源语言只负责产生候选 RIR。
+10. **成熟度与版本范围分离**：语义状态不与 `CORE/DEFERRED/REJECTED` 合并存储。
 
 完整原则见 [`docs/00-overview/design-principles.md`](docs/00-overview/design-principles.md)。
 
@@ -86,10 +91,12 @@ flowchart TD
 | 5 | [`invariants.md`](docs/01-requirements/invariants.md) | 16 条规范性安全不变量 |
 | 6 | [`system-architecture.md`](docs/02-architecture/system-architecture.md) | 分层架构和实现边界 |
 | 7 | [`ADR-0002`](docs/05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md) | RIR、Rust Profile 与 V1 能力边界 |
-| 8 | [`protocol-spec.md`](docs/03-protocol/protocol-spec.md) | 当前规范性协议骨架 |
-| 9 | [`result-validation.md`](docs/03-protocol/result-validation.md) | 验证流程、统计边界与证明义务 |
-| 10 | [`current-status.md`](docs/07-roadmap/current-status.md) | 当前进度、证据成熟度与工程 Gate |
-| 11 | [`open-questions.md`](docs/07-roadmap/open-questions.md) | P0/P1/P2 未决问题和 v0.6 依赖 |
+| 8 | [`ADR-0003`](docs/05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md) | SemanticStatus 与 VersionDisposition 二维分离 |
+| 9 | [`v1-profile.md`](docs/03-protocol/v1-profile.md) | V1 CORE/DEFERRED/REJECTED 唯一映射 |
+| 10 | [`protocol-spec.md`](docs/03-protocol/protocol-spec.md) | 当前规范性协议骨架 |
+| 11 | [`result-validation.md`](docs/03-protocol/result-validation.md) | 验证流程、统计边界与证明义务 |
+| 12 | [`current-status.md`](docs/07-roadmap/current-status.md) | 当前进度、证据成熟度与工程 Gate |
+| 13 | [`open-questions.md`](docs/07-roadmap/open-questions.md) | P0/P1/P2 未决问题和 v0.6 依赖 |
 
 完整索引见 [`docs/README.md`](docs/README.md)。
 
@@ -118,6 +125,7 @@ flowchart TD
     │   └── task-lifecycle.md
     ├── 03-protocol/
     │   ├── protocol-spec.md
+    │   ├── v1-profile.md
     │   ├── result-validation.md
     │   └── reputation.md
     ├── 04-analysis/
@@ -125,15 +133,18 @@ flowchart TD
     │   └── administrative-cost.md
     ├── 05-decisions/
     │   ├── ADR-0001-no-unnecessary-entities.md
-    │   └── ADR-0002-normative-rir-and-v1-rust-profile.md
+    │   ├── ADR-0002-normative-rir-and-v1-rust-profile.md
+    │   └── ADR-0003-separate-semantic-status-and-version-disposition.md
     ├── 06-research/
     │   └── claims-and-sources.md
     ├── 07-roadmap/
     │   ├── current-status.md
     │   └── open-questions.md
-    ├—— 08-governance/
-    |   ├── audit-procedure.md
-    |   └── audit-report-template.md
+    ├── 08-governance/
+    │   ├── audit-procedure.md
+    │   ├── audit-report-template.md
+    │   └── audits/
+    │       └── audit-20260818-01-semantic-structure.md
     └── codocs/                    # 历史版本档案；不构成当前规范
         └── README.md              # 历史状态与权威性说明
 ```
@@ -185,7 +196,7 @@ flowchart TD
 ## 版本与更新
 
 - v0.5 是当前语义基线，不是不可修改的产品版本；
-- 新证据可以把 `CANDIDATE` 升为 `DECIDED/INVARIANT`，也可以把旧结论降级为 `SUPERSEDED/REJECTED`；
+- 新证据可以把 `CANDIDATE` 变更为 `DECIDED` 或 `INVARIANT`，也可以把旧结论变更为 `SUPERSEDED` 或 `REJECTED`；
 - 影响协议语义的变更必须同时更新 ADR、威胁模型、不变量、协议规范、状态和未决问题；
 - 文档冲突时，较新的明确决定与规范性文档优先，历史文件仅作追踪。
 

@@ -30,6 +30,7 @@ PerformanceEvidence_{i,t}
 
 - 创建 Rank、等级、声望资产或不可重算的 ReputationState；
 - 用历史履约直接增加 VerificationEvidence 的真理权重；
+- 把 CapabilityEstimate、FoundationReport、维护报告或付款记录写入本次 Bayesian prior、posterior 权重或停止条件；
 - 让高能力 Provider 获得最终审计、争议裁决或治理权；
 - 把不同任务族的表现默认互相迁移；
 - 因拒绝尚未接受的任务扣减证据；
@@ -137,7 +138,7 @@ v0.5 不冻结任何公式。模型必须以校准、最坏损失和反例表现
 
 ## 10. 证据与验证权隔离
 
-数据流必须满足 INV-14：CapabilityEstimate 只能进入 Admit/ExposureDecision。Verify/Aggregate 只读取本任务 VerificationPolicy、Snapshot 和 VerificationEvidence，不读取能力值作为真理票权。
+数据流必须满足 INV-14：CapabilityEstimate 只能进入 Admit/ExposureDecision。Verify/Aggregate 只读取本任务冻结的 VerificationPolicy、Snapshot、prior/likelihood（若启用）和 VerificationEvidence，不读取能力值、FoundationReport 或维护报告作为真理票权。
 
 实现层应通过独立 Schema、API 和权限测试防止这两条数据流重新耦合。
 

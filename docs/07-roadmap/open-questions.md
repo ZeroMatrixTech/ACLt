@@ -25,6 +25,8 @@
 - `SUPERSEDED`：问题被新的问题或设计替代；
 - `REJECTED`：该路径不再采用，除非出现新证据。
 
+这些值是 `IssueStatus`，不替代权威语义的 SemanticStatus，也不表示 V1 VersionDisposition。V1 的 `CORE/DEFERRED/REJECTED` 只在 [`../03-protocol/v1-profile.md`](../03-protocol/v1-profile.md) 登记。
+
 优先级含义：
 
 - **P0**：阻断 G0、公开发布，或存在未封顶的安全/资金风险。
@@ -85,9 +87,9 @@
 5. 扩展：拒绝未知字段；保留但不解释；命名空间扩展；功能位协商。
 6. RIR：独立规范二进制/文本编码；复用对象编码；RIRVersion 独立演进；或与 ProtocolVersion 锁步演进。
 
-**当前建议。** 先写与传输格式无关的规范对象和哈希域，再选择至少一种确定性绑定；RIR 必须具有独立可验证的 canonical encoding，并由 Receipt 无歧义绑定 RIRVersion/Profile/Digest；所有影响合法性或签名的字段必须进入规范编码；扩展字段不得静默改变既有语义。
+**当前建议。** ADR-0003 已决定 SemanticStatus 与 VersionDisposition 分离，并把 V1 Profile 作为版本处置的唯一存储位置；该子问题不再开放。剩余工作是先写与传输格式无关的 Abstract Machine、Logical Object、规范对象和哈希域，再选择至少一种确定性绑定；RIR 必须具有独立可验证的 canonical encoding，并由 Receipt 无歧义绑定 ContractTuple/RIR Digest；所有影响合法性或签名的字段必须进入规范编码；扩展字段不得静默改变既有语义。
 
-**关闭证据。** 字段表、必选/可选规则、规范编码测试向量、哈希域分离、版本兼容矩阵、未知字段行为和至少两个独立编码实现的一致结果。
+**关闭证据。** machine-readable SemanticStatus registry 与 V1 Profile join、Abstract Machine/Logical Object 字段表、必选/可选规则、规范编码测试向量、哈希域分离、ContractTuple 兼容矩阵、未知字段行为和至少两个独立编码实现的一致结果。
 
 **依赖。** 无；这是多数 P0 问题的前置依赖。
 
@@ -121,9 +123,9 @@
 4. 冲突：首个合法分配；显式排序键；租约竞争；提交—揭示；部署层共识。
 5. 拆分：固定分片；自适应分片；冗余副本；DAG；不可拆任务。
 
-**当前建议。** 将计划提议与计划合法性分开；任何主体都可提议，但相同冻结输入下合法性判断必须一致。调度目标可以实现特定，但暴露上限、资金上限和验证要求必须是协议约束。
+**当前建议。** 使用 `Compile = Lowering + Decomposition + Packing`：Lowering 在 Receipt 冻结前产生并验证 RIR；Decomposition/Packing 在同一 Receipt 下形成候选 TaskGraph、WorkPlan 和 Assignment。将计划提议与计划合法性分开；任何主体都可提议，但相同冻结输入下合法性判断必须一致。调度目标可以实现特定，但暴露上限、资金上限和验证要求必须是协议约束。
 
-**关闭证据。** WorkPlan 约束语言、合法性谓词、冲突排序、Assignment 前置/后置条件、资源超额和资金不足反例，以及确定性测试向量。
+**关闭证据。** Lowering/Decomposition/Packing Schema、TaskGraph/WorkPlan 约束语言、语义保持与合法性谓词、冲突排序、Assignment 前置/后置条件、资源超额和资金不足反例，以及 golden/differential vectors。
 
 **依赖。** OQ-02、OQ-03、OQ-09、OQ-10。
 
@@ -142,9 +144,9 @@
 7. 执行表示：**已决定 V1 使用 RIR，Rust Profile 为 reference frontend**；仍需在文本/二进制编码、类型系统、effects、资源计量、错误与 checkpoint 语义之间收敛。
 8. 前端：仅 Rust Profile；未来 C++23/其他 conforming frontend；或多前端同时进入 V1。当前决定为首项，后两项延期。
 
-**当前建议。** 协议定义 Lease/epoch、幂等键、过期和结果接受规则；V1 只执行 Receipt 绑定且通过 validator 的 RIR，Rust Profile 负责 reference lowering。沙箱与计量作为部署配置，但必须满足冻结的 runtime/effects/resource Profile。经济结算应绑定接受的 Receipt，而非绑定“进程是否曾运行”。
+**当前建议。** 协议使用不可变 Logical Object 输入，定义 Lease proposal → Provider accept → active Lease、epoch、幂等键、过期和结果接受规则；V1 只由 RPR 执行 Receipt 绑定且通过 validator 的 RIR，Rust Profile 负责 reference lowering。RPR 默认隐藏 Host OS 状态，只开放 ExecutionProfile capability。沙箱与计量可以采用不同部署机制，但必须满足冻结的 runtime/effects/resource Profile。经济结算应绑定接受的 Receipt 和 active Lease，而非绑定“进程是否曾运行”。
 
-**关闭证据。** RIR grammar/canonical encoding/validator、Rust Profile 允许与禁止构造、lowering golden vectors、runtime/effects/resource semantics、执行状态机、重复/迟到/分区测试、资源耗尽与逃逸威胁测试、恢复目标、Receipt 幂等性和故障注入结果。
+**关闭证据。** Logical Object Schema/可用性、RIR grammar/canonical encoding/validator、Rust Profile 允许与禁止构造、lowering golden vectors、RPR capability ABI、runtime/effects/resource/error semantics、Dispatch/执行状态机、重复/迟到/分区测试、资源耗尽与逃逸威胁测试、恢复目标、Receipt 幂等性和故障注入结果。
 
 **依赖。** OQ-02、OQ-10、OQ-11、OQ-12。
 
@@ -172,7 +174,7 @@
 
 **备选路径。**
 
-1. 统计框架：不放回 confidence sequence；序贯概率比检验；e-process；固定样本超几何检验；保守组合界。
+1. 统计框架：不放回 confidence sequence；Bayesian sequential policy；序贯概率比检验；e-process；固定样本超几何检验；保守组合界；Bayesian + anytime-valid 双层组合。
 2. 估计目标：错误结果比例；正确结果比例；多数类别质量；任务损失函数；最坏可接受风险。
 3. 抽样单位：Provider；Receipt；控制簇；分片；验证操作。
 4. 随机性：Requester 承诺种子；多方提交—揭示；可验证随机函数；外部随机信标；部署共识随机性。
@@ -180,9 +182,9 @@
 6. 多重性：逐任务保证；跨分片校正；跨轮次 alpha spending；统一 anytime-valid 过程。
 7. `Nmax`：`min(population, budget, policy)`；其中 policy 可由风险级别、验证成本和硬上限共同决定。
 
-**当前建议。** 以有限总体不放回、anytime-valid 过程作为首个严格候选；明确总体快照和抽样单位；先证明单任务、单终点版本，再扩展到多分片和相关性折扣。任何实现都不得在证明完成前把候选阈值写成安全保证。
+**当前建议。** V1 使用 exact execution evidence；Bayesian sequential policy 可以更新 posterior、选择下一样本和提出停止，但不得单独产生真理权。停止提案还必须通过有限总体、不放回、time-uniform/anytime-valid safety envelope 和相关性/最大损失边界。先证明单任务、单终点版本，再扩展到多分片和相关性折扣。任何实现都不得在证明完成前把 posterior 或候选阈值写成安全保证。
 
-**关闭证据。** 完整定理、假设清单、覆盖/错误界证明、可选停止证明、边界情况、数值稳定性、对抗性仿真、独立复核和规范参数映射。
+**关闭证据。** 统计目标、prior/likelihood/posterior、prior sensitivity、完整定理、假设清单、覆盖/错误界证明、Bayesian stop proposal 与 anytime-valid envelope 组合证明、可选停止证明、边界情况、数值稳定性、对抗性仿真、独立复核和规范参数映射。
 
 **依赖。** OQ-06；与 OQ-08 强耦合。
 
@@ -315,7 +317,7 @@
 5. 验证增强：可验证计算；SNARK/STARK；交互式证明；领域证明系统；抽样与证明混合。
 6. 试点路线：纯确定性 CPU 任务；可重复容器任务；数据本地任务；非确定性/ML 任务；高价值生产任务。
 
-**当前建议。** V1 先以通过 Rust Profile 降级到规范 RIR、effects 封闭、资源有界、可重复或有明确等价谓词的 CPU 任务作为验证对象。unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器和非确定性任务暂不支持或不验证；未来只能通过独立 Profile、conformance、威胁更新和 ADR 引入。TaskType/VerifierProfile 负责扩展验证语义，核心不预设 TEE、链或零知识系统。
+**当前建议。** V1 Profile 已分别登记 CORE、DEFERRED 和 REJECTED。V1 先以通过 Rust Profile 降级到规范 RIR、由 RPR 执行、Logical Object 输入、effects 封闭、资源有界且结果精确可比的 CPU 任务作为验证对象。unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器、共享可变内存、容差结果和非确定性任务延期；未来只能通过独立 Profile、conformance、威胁更新和 ADR 引入。TaskType/VerifierProfile 负责扩展验证语义，核心不预设 TEE、链或零知识系统。
 
 **关闭证据。** 至少一个受控试点、任务类型安全剖面、成本—风险对比、失败模式、可移植性测试和是否需要新 ADR 的判断。
 

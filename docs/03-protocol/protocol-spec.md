@@ -7,9 +7,28 @@
 
 ## 1. 规范范围
 
-本文件定义 ACLt Protocol 的当前规范性骨架：对象、函数、RIR 执行边界、合法性、状态转换、终态、资金和实现一致性。详细威胁与不变量分别由 [`../01-requirements/threat-model.md`](../01-requirements/threat-model.md) 和 [`../01-requirements/invariants.md`](../01-requirements/invariants.md) 管理。
+本文件定义 ACLt Protocol 的当前规范性骨架：对象、函数、Abstract Machine、RIR/RPR 执行边界、合法性、状态转换、终态、资金和实现一致性。详细威胁与不变量分别由 [`../01-requirements/threat-model.md`](../01-requirements/threat-model.md) 和 [`../01-requirements/invariants.md`](../01-requirements/invariants.md) 管理。V1 的 VersionDisposition 只由 [`v1-profile.md`](v1-profile.md) 登记。
 
 关键词 `MUST`、`MUST NOT`、`SHOULD`、`SHOULD NOT` 和 `MAY` 采用 [`../00-overview/terminology.md`](../00-overview/terminology.md) 的定义。
+
+### 1.1 状态与版本契约
+
+SemanticStatus 和 VersionDisposition MUST 分别存储。`CORE` 不得被解释为语义、实现、证明或测试已经完成；V1 CORE 项若仍为 `OPEN` 或 `CANDIDATE`，MUST 继续阻断 G0 退出。
+
+运行时对象 MUST 无歧义绑定其适用版本。最终 ContractTuple 至少包括：
+
+\[
+(
+ProtocolVersion,
+RIRVersion,
+RuntimeProfileVersion,
+FrontendProfileVersion,
+VerificationProfileVersion,
+SettlementProfileVersion
+)
+\]
+
+准确字段和兼容矩阵仍为 `OPEN/P0`。
 
 ## 2. 协议本体
 
@@ -18,7 +37,9 @@ ACLt Protocol MUST 只把能签署承诺并承担权利义务的主体建模为 
 - `Requester`；
 - `Provider`。
 
-Plan、Admit、Schedule、Execute、Sample、Verify、Aggregate、Settle 和 UpdateEvidence MUST 被建模为可验证函数，不得获得固定身份权威。
+Compile、Plan、Admit、Schedule、Execute、Sample、Verify、Aggregate、Settle 和 UpdateEvidence MUST 被建模为可验证函数，不得获得固定身份权威。
+
+ACLt Abstract Machine MUST 被建模为协议对象和状态转换的规范抽象，而不是 Principal、Control Plane、数据库或共享物理计算机。V1 Provider 之间 MUST NOT 具有协议定义的共享机器地址空间。
 
 ## 3. 通用对象要求
 
@@ -33,30 +54,33 @@ Plan、Admit、Schedule、Execute、Sample、Verify、Aggregate、Settle 和 Upd
 - 创建时间/逻辑顺序及适用期限；
 - 状态转换所需的策略摘要。
 
+Logical Object MUST 通过显式引用进入 Task 输入。相同 digest 不得对应不同 canonical content；输出更新 MUST 创建新对象或新版本，不得依赖跨 Provider 原地共享写入。
+
 字段名称、编码和必选性仍为 `OPEN/P0`，但不得依赖本地默认值解释实质语义。
 
 ## 4. 核心对象
 
-| 对象 | 必需语义 | 冻结点 | 状态 |
-|---|---|---|---|
-| `ProtocolVersion` | Schema、状态机、不变量、验证、资金和兼容规则 | 发布签名/摘要 | `OPEN/P0` |
-| `PrincipalRecord` | 公钥、状态、声明、控制关联引用 | 每次决策读取版本 | `OPEN/P0` |
-| `ComputeReceipt` | RIRVersion、规范 RIR 工件、输入、执行 Profile、环境、资源、验证、期限、预算、政策 | ReceiptID 登记 | `DECIDED / INVARIANT` 接口 |
-| `FundingPolicy` | 费用、储备、补贴、可选发行或混合及上限 | Receipt 登记 | `DECIDED` 类型，细节开放 |
-| `SettlementPolicy` | 各终态费用、退款、权利和故障归因 | Receipt 登记 | `OPEN/P0` |
-| `WorkPlan` / `Assignment` | 工作单元、依赖、合并、失败和验证上下文 | 合法性检查后发布 | `OPEN/P0` |
-| `PerformanceEvidence` | 任务族、环境、结果、归责、来源、时间 | 追加时 | `DECIDED` 接口 |
-| `CapabilityEstimate` | 条件能力分布/区间、不确定度、有效期 | 决策绑定证据版本 | `CANDIDATE/P1` |
-| `ExposureDecision` | 并发、价值、尝试、损失、集群和有效期 | Lease 前 | `DECIDED` 接口 |
-| `Lease` | Assignment、Provider、epoch、期限、条件权利 | Provider 接受 | `OPEN/P0` |
-| `Attempt` | 一次有界执行及其状态和原因 | 终止时 | `OPEN/P0` |
-| `Checkpoint` | 可恢复状态、摘要、格式和环境 | 接收时 | `OPEN/P0` |
-| `ResultSubmission` | 结果、摘要、epoch、证据、幂等键 | 校验接收 | `OPEN/P0` |
-| `EligibilitySnapshot` | 有限总体、排除、分层、相关性、随机承诺 | 首次 draw 前 | `INVARIANT` 接口 |
-| `VerificationEvidence` | 方法、输入、输出、来源、成本、关联 | 接收时 | `OPEN/P0` |
-| `VerificationDecision` | TRUSTED/UNRESOLVED、策略和完整证据链 | 原子终态提交 | `OPEN/P0` |
-| `Settlement` | 权利人、金额、来源、唯一键、状态 | Commit | `OPEN/P0` |
-| `EventRecord` | 状态变化、因果引用、版本、签名/摘要 | 追加时 | `INVARIANT` 接口 |
+| 对象 | 必需语义 | 冻结点 | SemanticStatus | V1 |
+|---|---|---|---|---|
+| `ProtocolVersion` | Schema、状态机、不变量、验证、资金和兼容规则 | 发布签名/摘要 | `OPEN`，Priority `P0` | `CORE` |
+| `PrincipalRecord` | 公钥、状态、声明、控制关联引用 | 每次决策读取版本 | `OPEN`，Priority `P0` | `CORE` |
+| `LogicalObject` | 类型、版本、canonical content、digest、因果和可用性 | 对象发布/引用 | 不可变接口 `DECIDED`；Schema `OPEN` | `CORE` |
+| `ComputeReceipt` | ContractTuple、规范 RIR、Logical Object 输入、环境、资源、验证、期限、预算、政策 | ReceiptID 登记 | 接口 `INVARIANT`；Schema `OPEN` | `CORE` |
+| `FundingPolicy` | 费用、储备、补贴、可选发行或混合及上限 | Receipt 登记 | 类型 `DECIDED`；细节 `OPEN` | `CORE` |
+| `SettlementPolicy` | 各终态费用、退款、权利和故障归因 | Receipt 登记 | `OPEN`，Priority `P0` | `CORE` |
+| `WorkPlan` / `Assignment` | 工作单元、依赖、合并、失败和验证上下文 | 合法性检查后发布 | 三阶段边界 `DECIDED`；Schema `OPEN` | `CORE` |
+| `PerformanceEvidence` | 任务族、环境、结果、归责、来源、时间 | 追加时 | 接口 `DECIDED` | `CORE` |
+| `CapabilityEstimate` | 条件能力分布/区间、不确定度、有效期 | 决策绑定证据版本 | `CANDIDATE`，Priority `P1` | `CORE` |
+| `ExposureDecision` | 并发、价值、尝试、损失、集群和有效期 | Lease 前 | 接口 `DECIDED`；算法 `OPEN` | `CORE` |
+| `Lease` | Assignment、Provider、epoch、期限、条件权利 | Provider 接受 | 握手边界 `DECIDED`；Schema `OPEN` | `CORE` |
+| `Attempt` | 一次有界执行及其状态和原因 | 终止时 | `OPEN`，Priority `P0` | `CORE` |
+| `Checkpoint` | 可恢复状态、摘要、格式和环境 | 接收时 | `OPEN`，Priority `P0` | `CORE` |
+| `ResultSubmission` | 结果、摘要、epoch、证据、幂等键 | 校验接收 | `OPEN`，Priority `P0` | `CORE` |
+| `EligibilitySnapshot` | 有限总体、排除、分层、相关性、随机承诺 | 首次 draw 前 | 接口 `INVARIANT`；Schema `OPEN` | `CORE` |
+| `VerificationEvidence` | 方法、输入、输出、来源、成本、关联 | 接收时 | `OPEN`，Priority `P0` | `CORE` |
+| `VerificationDecision` | TRUSTED/UNRESOLVED、策略和完整证据链 | 原子终态提交 | `OPEN`，Priority `P0` | `CORE` |
+| `Settlement` | 权利人、金额、来源、唯一键、状态 | Commit | `OPEN`，Priority `P0` | `CORE` |
+| `EventRecord` | 状态变化、因果引用、版本、签名/摘要 | 追加时 | 接口 `INVARIANT`；Schema `OPEN` | `CORE` |
 
 协议 MUST NOT 定义 `Rank`、`ReputationState`、`VerifierAuthority` 或 `FoundationDecision` 权威对象。
 
@@ -65,8 +89,8 @@ Plan、Admit、Schedule、Execute、Sample、Verify、Aggregate、Settle 和 Upd
 Receipt MUST 覆盖：
 
 1. **Identity**：Requester、ProtocolVersion、nonce、创建时间；
-2. **Computation**：RIRVersion、规范 RIR 工件摘要、入口、输入摘要、输出类型、source profile/lowering provenance；
-3. **Environment**：runtime/Profile、架构、资源、允许 effects、权限、网络和沙箱要求；
+2. **Computation**：RIRVersion、规范 RIR 工件摘要、入口、Logical Object 输入引用、输出类型、FrontendProfileVersion/lowering provenance；
+3. **Environment**：RuntimeProfileVersion、RPR/架构、资源、允许 capability/effects、权限、网络和沙箱要求；
 4. **Semantics**：成功条件、结果等价、合并和失败定义；
 5. **Execution bounds**：deadline、Lease、attempt、checkpoint、最大资源；
 6. **Verification**：验证 Registry 类型、Snapshot、误差目标、Nmax 来源；
@@ -107,7 +131,15 @@ CreateReceipt MUST：
 
 失败 MUST 返回 `REJECTED_AT_CREATE` 或 `UNSUPPORTED`，不得进入规划。
 
-## 8. 规划
+## 8. Compile 与规划
+
+Compile MUST 被解释为：
+
+\[
+Compile=Lowering+Decomposition+Packing
+\]
+
+Lowering MUST 绑定 FrontendProfileVersion，并产生通过 validator 的候选规范 RIR。Decomposition MUST 依据同一 Receipt 和 Logical Object 依赖形成有界 TaskGraph。Packing MUST 形成 WorkPlan、Assignment、资源和验证上下文，且不得扩大 Receipt 的 effects、deadline、预算、暴露或结算政策。
 
 Plan MAY 由任意 Principal 执行。WorkPlan MUST：
 
@@ -136,13 +168,15 @@ Admit MUST 使用：
 
 新 Lease MUST 使用严格递增 epoch，并在向 Provider 返回生效结果前持久化。Provider MUST 显式接受 Lease。
 
+Schedule 输出只构成 Lease proposal。Assignment 或 proposal MUST NOT 被解释为 Provider 已经承担执行义务；只有 Provider 接受且暴露预留成功的当前 epoch Lease 才能成为 active Lease。push、pull 或混合传输 MUST 保持相同状态语义。
+
 ResultSubmission MUST 绑定当前 epoch。旧 epoch 输出 MAY 保留为 stale audit evidence，但 MUST NOT 覆盖当前状态、进入当前验证或产生当前权利。
 
 attempt、deadline、资源和恢复次数 MUST 有限；边界耗尽 MUST 进入准确终态。
 
-V1 Execute MUST 以 Receipt 绑定的规范 RIR 工件为输入。Rust Profile 是 reference frontend，不是协议规范语言；未来 C++23 等 frontend MAY 通过降级到同一 RIR 并通过 conformance suite 获得兼容性。
+V1 Execute MUST 以 Receipt 绑定的规范 RIR 工件和 Logical Object refs 为输入。Rust Profile 是 reference frontend，不是协议规范语言；未来 C++23 等 frontend MAY 通过降级到同一 RIR 并通过 conformance suite 获得兼容性。
 
-实现 MUST 在执行前 fail-closed 验证 RIR 与 Profile。V1 MUST NOT 静默接受 unsafe Rust、完整宿主 OS effects、原生执行、GPU/专用加速器或非确定性任务；不支持的能力 MUST 返回 `UNSUPPORTED` 或创建拒绝。具体 RIR grammar、canonical encoding、lowering、runtime/effects/resource 语义仍为 `OPEN/P0`。
+RPR MUST 在执行前 fail-closed 验证 RIR 与 Profile，并默认隐藏 Host OS 文件、网络、时间、随机性、环境变量和设备状态。只有 Receipt/ExecutionProfile 显式声明并由规范 capability 提供的 effect 才可进入执行。V1 MUST NOT 静默接受 unsafe Rust、完整宿主 OS effects、原生执行、GPU/专用加速器、共享可变地址空间或非确定性任务；不支持的能力 MUST 返回 `UNSUPPORTED` 或创建拒绝。具体 RIR grammar、canonical encoding、lowering、RPR capability、runtime/effects/resource 语义仍为 `OPEN/P0`。
 
 ## 11. 验证与决定
 
@@ -194,6 +228,8 @@ Maintainer MAY 发布未来 ProtocolVersion、测试、修复和撤销，但 MUS
 - 把维护意见作为优先证据；
 - 通过管理接口绕过状态机。
 
+Foundation、委员会、Maintainer 或其他组织发布的报告 MAY 作为公开研究材料或未来版本变更输入，但 MUST NOT 作为当前 VerificationEvidence 的特殊权重、停止条件或个案裁决依据。
+
 ## 16. Adapter 一致性
 
 任何存储、日志、时间、随机性、结算或账本 Adapter MUST 通过统一 conformance suite，并保持 INV-01 至 INV-16。
@@ -214,7 +250,9 @@ Maintainer MAY 发布未来 ProtocolVersion、测试、修复和撤销，但 MUS
 一个实现只有在以下条件满足时才能声称兼容：
 
 - 通过 canonical object golden vectors；
+- 通过 V1 Profile 的全部 CORE、DEFERRED 与 REJECTED 行为检查；
 - 通过 RIR validator、Rust Profile lowering、runtime/effects/resource golden vectors 与差分测试；
+- 通过 Logical Object、Compile 三阶段、Provider Dispatch 和 RPR/Host OS capability 的正反测试；
 - 通过全部状态机合法/非法转换测试；
 - 通过 INV-01 至 INV-16 性质测试；
 - 通过重放、并发、分区、崩溃和恢复测试；
@@ -225,15 +263,17 @@ Maintainer MAY 发布未来 ProtocolVersion、测试、修复和撤销，但 MUS
 ## 19. v0.5 未完成的规范章节
 
 - machine-readable Schema 和 canonical encoding；
+- Abstract Machine 状态、Logical Object Schema、生命周期、保留和可用性；
 - 完整状态机和错误码；
-- WorkPlan/Assignment 合法性；
+- Lowering/Decomposition/Packing、TaskGraph 与 WorkPlan/Assignment 合法性；
+- Provider Dispatch proposal/accept/active Lease 竞态与传输语义；
 - 签名责任、授权、撤销和密钥；
 - 验证 Registry、总体、随机性、停止规则和证明；
 - 相关性、集群与 ExposureDecision 参数；
 - Funding/Settlement/退款/故障归因；
 - EventRecord、保留、隐私和重放；
 - Adapter contract、最终性和 conformance suite；
-- RIR schema/canonical encoding、validator、Rust Profile、runtime/effects/resource model 与 checkpoint portability；
+- RIR schema/canonical encoding、validator、Rust Profile、RPR/Host OS capability、runtime/effects/resource model 与 checkpoint portability；
 - 发布、升级、漏洞和紧急响应。
 
 这些缺口关闭前，本文件保持 G0 draft。

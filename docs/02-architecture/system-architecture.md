@@ -21,18 +21,102 @@
 
 架构图中的层和模块是语义边界，不要求一层对应一个进程、服务、组织或链上合约。
 
+### 1.1 ACLt Abstract Machine
+
+ACLt 将协议规范为一台由多台不可信计算机共同承载、但由统一对象与状态转换描述的 Abstract Machine。其状态可抽象为：
+
+\[
+M=(P,O,T,A,L,X,V,F,E)
+\]
+
+- `P`：被协议引用的 Principal 与授权状态；
+- `O`：Logical Object Memory；
+- `T`：Task 与 ComputeReceipt 状态；
+- `A`：WorkPlan 与 Assignment 状态；
+- `L`：Lease、epoch 与 attempt 状态；
+- `X`：Execution、Result 与 Checkpoint 状态；
+- `V`：EligibilitySnapshot、VerificationEvidence 与 Decision 状态；
+- `F`：Funding、Entitlement 与 Settlement 状态；
+- `E`：追加式 EventRecord 序列。
+
+机器只能通过满足 ProtocolVersion、前置状态和 INV-01 至 INV-16 的事件发生转换：
+
+\[
+M\xrightarrow{ValidEvent}M'
+\]
+
+“computer-of-computers”是对该抽象的项目定位，不表示 Provider 共享地址空间、时钟、内核、故障域或现实控制主体。Protocol 仍是规则，不是执行事件的行为者。
+
+Abstract Machine 的组成边界为 `DECIDED`，在 V1 为 `CORE`；machine-readable 状态 Schema 和完整转换关系保持 `OPEN/P0`。
+
+### 1.2 Logical Object Memory
+
+Logical Object Memory 是 Abstract Machine 可引用的不可变 Logical Object 集合，而不是分布式共享 RAM：
+
+- 每个对象由对象类型、Schema/ProtocolVersion、canonical content 和 digest 无歧义标识；
+- Task 只能通过 Receipt 中的显式 Object reference 读取输入；
+- Task 输出创建新对象，不能原地修改另一个 Provider 可见的共享地址；
+- 缓存、复制、分片和物理存储位置不得改变对象身份；
+- Provider 本地 RAM、临时文件和进程状态不自动成为协议对象；
+- 对象不可用、摘要不符或版本不兼容时必须 fail closed。
+
+V1 明确不提供跨 Provider 共享可变内存或分布式原子操作。Logical Object 的不可变与显式引用模型为 `DECIDED`、V1 `CORE`；字段 Schema、保留、垃圾回收、可用性、加密和隐私仍为 `OPEN/P0/P1`。
+
+### 1.3 Compile 流水线
+
+ACLt 将 Compile 定义为：
+
+\[
+Compile=Lowering+Decomposition+Packing
+\]
+
+| 阶段 | 输入 | 输出 | 必须保持 |
+|---|---|---|---|
+| Lowering | SourcePackage、FrontendProfileVersion | 候选规范 RIR | 不由源语言定义协议真相；输出通过 validator 与 lowering conformance |
+| Decomposition | Receipt、RIR、Logical Object refs、Task policy | TaskGraph/Assignment dependencies | 覆盖要求工作；不改变结果、失败、权限或依赖语义 |
+| Packing | 合法分解、资源/验证/资金边界 | WorkPlan、Assignment 与执行上下文 | 不扩大 effects、deadline、预算、暴露或 SettlementPolicy |
+
+Compile、Plan 和具体 toolchain 均是公开可复算函数或实现，不是 Broker Principal。允许多个合法计划，但给定候选输出的合法性判断必须由相同冻结规则复算。三阶段边界为 `DECIDED`、V1 `CORE`；精确 IR、TaskGraph、合法性谓词、唯一性和等价性证明仍为 `OPEN/P0`。
+
+### 1.4 RPR 与 Host OS
+
+RPR（RIR Portable Runtime）是实现 RIR 可观察语义的可替换运行时边界。RPR 必须：
+
+- 只执行 Receipt 绑定且通过 validator 的 RIR；
+- 默认拒绝 Host OS 文件、网络、时间、随机性、环境变量和设备状态；
+- 只通过 ExecutionProfile 显式声明并由规范接口提供的 capability 暴露 effect；
+- 规范化资源耗尽、终止、错误和结果；
+- 将 RPR/Host 故障与 Task 语义失败分开记录；
+- 不支持时返回 `UNSUPPORTED` 或 fail closed，不得静默 native fallback。
+
+Host OS、容器、VM 或沙箱产品是实现机制，不是规范语义来源。RPR 边界为 `DECIDED`、V1 `CORE`；capability ABI、计量、错误码、checkpoint portability 和跨实现差分证据仍为 `OPEN/P0`。
+
+### 1.5 Provider Dispatch
+
+Provider Dispatch 是 `Admit + Schedule + Lease proposal + Provider accept` 的协议阶段，不是新的实体。V1 冻结以下边界：
+
+1. Assignment 只描述可执行工作，不对任何 Provider 产生义务；
+2. Admit 必须先验证硬资源、暴露、相关集群、期限和资金边界；
+3. Schedule 只能产生候选顺序或 Lease proposal；
+4. Provider 显式接受后，当前 epoch Lease 才生效；
+5. 生效与暴露预留必须原子或具有等价补偿；
+6. 拒绝未接受的提案不得产生负面 PerformanceEvidence；
+7. 传输可以 push、pull 或混合，但不得改变相同状态语义。
+
+Offer/accept/active Lease 的权威边界为 `DECIDED`、V1 `CORE`；候选选择、排序、pull API、时钟和竞态算法仍为 `OPEN/P0`。
+
 ## 2. 分层架构
 
-| 层 | 规范内容 | 主要对象/函数 | 首要性质 | 当前状态 |
-|---|---|---|---|---|
-| L0 协议与版本 | 类型、状态机、不变量、升级 | ProtocolVersion、ADR、Release | 可追踪、不可按个案追溯变更 | `OPEN/P0` |
-| L1 Principal 与证据 | 密钥、标识、控制关联、历史事件 | PrincipalID、PerformanceEvidence | 可归责、不假定独立 | `CANDIDATE` |
-| L2 任务承诺与 RIR | RIRVersion、规范工件、输入、执行 Profile、环境、验证、预算和政策 | ComputeReceipt、FundingPolicy、SettlementPolicy | 语义不可变、前端不定义协议真相 | `DECIDED / INVARIANT` 接口 |
-| L3 规划与暴露 | 合法拆分、能力估计、准入、调度 | WorkPlan、CapabilityEstimate、ExposureDecision | 无 Rank、暴露有界、保留探索 | `CANDIDATE` |
-| L4 执行与恢复 | Lease、Attempt、epoch、checkpoint、result | Schedule、Execute | 迟到隔离、有界重试、条件性活性 | `CANDIDATE` |
-| L5 验证与决定 | Snapshot、抽样、检查、聚合、停止 | Sample、Verify、Aggregate、Decision | 不放回、预承诺、显式不确定 | `CANDIDATE/P0` |
-| L6 资金与结算 | 额度、费用、退款、唯一权利 | FundingPolicy、SettlementPolicy、Settlement | 守恒、最多一次、不得隐性借用 | `OPEN/P0` |
-| L7 事件、运维与维护 | 追加事件、重放、适配器、发布 | EventRecord、AuditView、Release | 可审计、语义等价、维护最小权 | `OPEN/P0` |
+| 层 | 规范内容 | 主要对象/函数 | 首要性质 | SemanticStatus | V1 |
+|---|---|---|---|---|---|
+| L0 协议与版本 | 类型、状态机、不变量、升级 | ProtocolVersion、ConformanceTarget、ADR、Release | 可追踪、不可按个案追溯变更 | `OPEN`；二维模型已 `DECIDED` | `CORE` |
+| L1 Principal 与证据 | 密钥、标识、控制关联、历史事件 | PrincipalID、PerformanceEvidence | 可归责、不假定独立 | `CANDIDATE` | `CORE` |
+| L2 任务承诺与执行语义 | Logical Object、RIRVersion、RPR Profile、输入、验证、预算和政策 | ComputeReceipt、Logical Object、FundingPolicy、SettlementPolicy | 语义不可变、前端与 Host OS 不定义协议真相 | `INVARIANT` 接口；Schema `OPEN` | `CORE` |
+| L3 Compile、规划与暴露 | Lowering、Decomposition、Packing、能力估计、准入 | WorkPlan、Assignment、CapabilityEstimate、ExposureDecision | 合法转换、无 Rank、暴露有界 | `CANDIDATE`；三阶段边界已 `DECIDED` | `CORE` |
+| L4 Dispatch、执行与恢复 | Lease proposal、accept、Attempt、epoch、checkpoint、result | Schedule、Provider Dispatch、Execute | 显式接受、迟到隔离、有界重试 | `CANDIDATE`；握手边界已 `DECIDED` | `CORE` |
+| L5 验证与决定 | Snapshot、抽样、检查、聚合、停止 | Sample、Verify、Aggregate、Decision | 不放回、预承诺、显式不确定 | `CANDIDATE`，Priority `P0` | `CORE` |
+| L6 资金与结算 | 额度、费用、退款、唯一权利 | FundingPolicy、SettlementPolicy、Settlement | 守恒、最多一次、不得隐性借用 | `OPEN`，Priority `P0` | `CORE` |
+| L7 事件、运维与维护 | 追加事件、重放、适配器、发布 | EventRecord、AuditView、Release | 可审计、语义等价、维护最小权 | `OPEN`，Priority `P0` | `CORE` |
 
 ```mermaid
 flowchart TD
@@ -100,7 +184,7 @@ Control Plane 可以实现登记、调度、Lease、验证聚合和结算协调�
 |---|---|---|
 | Registry | 接收、规范化并索引 ProtocolVersion 与 Receipt | 不得修改已登记语义 |
 | Frontend/RIR toolchain | 将 Rust Profile 或未来 conforming frontend 降级为规范 RIR 并执行 validator | 不得绕过 RIR、静默 native fallback 或成为真理权威 |
-| RIR runtime | 按冻结 Profile 执行、计量、隔离并报告结果/错误 | 不得访问未声明宿主 effects 或改变资源语义 |
+| RPR | 按冻结 Profile 执行、计量、隔离并报告结果/错误 | 不得访问未声明 Host OS effects、改变资源语义或静默 native fallback |
 | Planner engine | 运行 Plan 合法性算法 | 不得因“优化”改变任务义务 |
 | Admission engine | 计算 CapabilityEstimate 与 ExposureDecision | 不得授予验证或治理权 |
 | Lease coordinator | 原子签发 epoch-bound Lease | 不得回退 epoch 或绕过暴露 |
@@ -186,8 +270,12 @@ G0 架构退出至少要求：
 ## 11. 当前未决问题
 
 - canonical encoding 和 ProtocolVersion 迁移；
-- RIR 指令/类型/错误语义、canonical encoding、Rust Profile 子集、runtime effects/resource model；
-- WorkPlan/Assignment 合法性与合并；
+- Abstract Machine 的 machine-readable 状态与合法转换；
+- Logical Object 字段、生命周期、可用性、保留与隐私；
+- RIR 指令/类型/错误语义、canonical encoding、Rust Profile 子集、RPR runtime effects/resource model；
+- RPR capability contract、资源计量、终止、错误和 checkpoint portability；
+- Lowering/Decomposition/Packing 输入输出 Schema、WorkPlan/Assignment 合法性与合并；
+- Provider Dispatch 候选选择、排序、传输、时钟和并发状态机；
 - Control Plane 的事务、分区与时钟模型；
 - 相关集群、暴露单位和原子额度；
 - 验证 Registry、统计规则和随机性；

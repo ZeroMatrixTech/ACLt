@@ -64,19 +64,19 @@ ReceiptID(r_1)=ReceiptID(r_2)
 \Rightarrow CanonicalSemantics(r_1)=CanonicalSemantics(r_2)
 \]
 
-规范化语义必须覆盖所有影响执行义务、验证、期限、预算、尝试、资金、结算或权利的实质字段；V1 还必须覆盖 RIRVersion、规范 RIR 工件摘要、执行 Profile、effects 与资源边界。任何实质变更必须产生新的 ReceiptID。
+规范化语义必须覆盖所有影响执行义务、验证、期限、预算、尝试、资金、结算或权利的实质字段；V1 还必须覆盖 ContractTuple、规范 RIR 工件摘要、Logical Object refs、RPR/ExecutionProfile、effects/capability 与资源边界。任何实质变更必须产生新的 ReceiptID。
 
 ### 禁止状态
 
 - 相同 ReceiptID 对应不同程序、输入、环境或资源约束；
-- 相同 ReceiptID 对应不同 RIR、RIRVersion、执行 Profile、允许 effects 或 runtime 语义；
+- 相同 Logical Object digest 对应不同 canonical content，或相同 ReceiptID 对应不同 RIR、RIRVersion、Object refs、RPR Profile、允许 effects 或 runtime 语义；
 - 验证规则、deadline、Nmax 来源、FundingPolicy 或 SettlementPolicy 被静默修改；
 - 未知字段、默认值、字段顺序或编码差异导致不同实现解释出不同义务；
 - 内容摘要仍存在，但被引用内容不可取得却继续推进。
 
 ### 执行位置
 
-任务创建、规范化、登记、Plan、Lease、Verify、Settle 及状态重放。
+Lowering、任务创建、规范化、登记、Decomposition、Packing/Plan、Lease、RPR Execute、Verify、Settle 及状态重放。
 
 ### 最低验收方法
 
@@ -85,6 +85,7 @@ ReceiptID(r_1)=ReceiptID(r_2)
 - 单字段篡改必须改变 ReceiptID；
 - 跨语言、跨实现序列化等价测试；
 - 内容缺失和摘要不匹配负例。
+- Logical Object 别名、隐藏 Host OS 输入和 Compile 阶段扩大权限负例。
 
 ### 未决事项
 
@@ -94,12 +95,13 @@ Schema、编码格式、摘要算法、字段覆盖、内容可用性和版本�
 
 ### 规范陈述
 
-每个能影响任务状态、验证结论、资金或权利的活对象都必须绑定一个明确、可解析且在相应状态转换中允许的 `ProtocolVersion`。不得依赖进程默认版本、数据库当前版本或隐式“最新版”。
+每个能影响任务状态、验证结论、资金或权利的活对象都必须绑定一个明确、可解析且在相应状态转换中允许的 `ProtocolVersion`，并按对象职责绑定相应 RIR、Runtime、Frontend、Verification 与 Settlement Profile。不得依赖进程默认版本、数据库当前版本、隐式“最新版”或 ConformanceTarget 名称推断运行时语义。
 
 ### 禁止状态
 
 - 对象没有 ProtocolVersion；
 - 同一转换混用不兼容版本；
+- 把 V1 CORE 当作已完成，或把 SemanticStatus 当作运行时兼容版本；
 - 版本被撤销后仍创建新的受影响承诺；
 - Maintainer 发布新版本后追溯改变旧 Receipt 的解释。
 
@@ -112,6 +114,7 @@ Schema、编码格式、摘要算法、字段覆盖、内容可用性和版本�
 - 缺失、未知、撤销和不兼容版本负例；
 - 升级、降级和跨版本重放测试；
 - 旧任务在新实现上保持旧语义的兼容性测试；
+- SemanticStatus registry 与 V1 Profile join、CORE 阻断枚举和 ContractTuple 兼容性测试；
 - 发布密钥撤销和恢复演练。
 
 ### 未决事项
@@ -476,6 +479,7 @@ CapabilityEstimate 只能影响特定任务的准入与有界风险暴露，不�
 - 存在无法由证据重算的 Rank/ReputationState 权威对象；
 - 历史执行成功允许绕过本任务验证；
 - 维护者、付费 Requester 或大额 Provider 获得手工覆盖权。
+- FoundationReport、委员会报告、维护报告或历史能力直接进入 Bayesian prior、VerificationEvidence 权重或停止条件。
 
 ### 最低验收方法
 
@@ -509,6 +513,7 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 - 把维护者分析当作优先验证证据；
 - 发布密钥同时拥有无需协议检查的运行时写权限；
 - 基金会或委员会成为隐藏的最终裁判。
+- FoundationReport 或维护报告获得非零协议验证权重。
 
 ### 最低验收方法
 
@@ -525,7 +530,7 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 
 ### 规范陈述
 
-数据库、追加式签名日志、Merkle 日志、联盟账本、公共区块链、source frontend、compiler、RIR runtime 或其他 Adapter/实现组件的替换，不得改变对 Principal 可观察的对象语义、规范执行、合法状态转换、终态、资金权利和 INV-01 至 INV-15。
+数据库、追加式签名日志、Merkle 日志、联盟账本、公共区块链、source frontend、compiler、Compile 策略、RPR、Host OS 或其他 Adapter/实现组件的替换，不得改变对 Principal 可观察的 Logical Object、Receipt、规范执行、合法状态转换、终态、资金权利和 INV-01 至 INV-15。
 
 若底层基础设施无法提供所需原子性、唯一性、最终性、时间或重组边界，实现必须增加补偿层或拒绝宣称符合 ACLt Protocol。
 
@@ -533,12 +538,14 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 
 - 数据库实现最多一次，而区块链适配器在重组后重复结算；
 - 不同存储对相同 canonical object 计算不同 ReceiptID；
+- 缓存、复制或存储路径改变同一 Logical Object 的语义；
 - 某实现允许 Maintainer 直接修改个案而另一实现不允许；
 - 对象或事件迁移后丢失版本、因果引用或终态唯一性；
 - 将“上链”本身当作满足不变量的证明。
 - Rust 与未来 C++23 frontend 对同一规范输入产生不等价 RIR 语义；
-- runtime 对不支持的 RIR/effect 静默回退到宿主原生执行；
-- 不同 runtime 对同一 Receipt 的资源耗尽、错误或结果语义不同。
+- Decomposition/Packing 策略改变 Receipt 结果、权限、预算或失败语义；
+- RPR 对不支持的 RIR/effect 静默回退到宿主原生执行，或读取未声明 Host OS 状态；
+- 不同 RPR/Host OS 对同一 Receipt 的资源耗尽、错误或结果语义不同。
 
 ### 最低验收方法
 
@@ -546,11 +553,11 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 - 跨实现 golden vectors 和状态重放；
 - 数据库事务、日志截断、链重组和结算最终性故障注入；
 - 迁移前后对象、状态和权利的语义差分测试。
-- RIR validator golden vectors、frontend lowering 差分测试和 runtime resource/effects conformance。
+- RIR validator golden vectors、frontend lowering、Decomposition/Packing 差分测试和 RPR/Host OS resource/effects conformance。
 
 ### 未决事项
 
-Adapter contract、RIR canonical semantics、Rust Profile lowering、runtime/effects/resource model、可观察语义、最终性抽象、迁移协议和 conformance suite 仍为 `OPEN/P0`。
+Adapter contract、Logical Object Schema、RIR canonical semantics、Rust Profile lowering、Decomposition/Packing 合法性、RPR/Host OS capability、runtime/effects/resource model、可观察语义、最终性抽象、迁移协议和 conformance suite 仍为 `OPEN/P0`。
 
 ## 21. 不属于不变量的要求
 
@@ -623,8 +630,9 @@ flowchart TD
 6. 对 INV-11/12 单独记录“接口不变量已确定、统计定理未完成”；
 7. 对 INV-14/15 建立结构性权限测试，防止 Rank 或维护裁决以其他名称重新出现；
 8. 对 INV-16 建立至少两个不同持久化实现或一个实现加故障适配器的语义对照；
-9. 对 INV-01/02/09/16 建立 RIR validator、Rust Profile lowering 与 runtime conformance 的正反测试；
-10. 未完成项继续标为 `OPEN/P0`，不得以“设计上应该成立”替代证据。
+9. 对 INV-01/02/09/16 建立二维 registry、Logical Object、RIR validator、Rust Profile lowering、Compile 三阶段与 RPR/Host OS conformance 的正反测试；
+10. 每个 V1 CORE 项连接到唯一 SemanticStatus，`OPEN/CANDIDATE + CORE` 保持阻断；
+11. 未完成项继续分别记录 SemanticStatus 与 Priority，不得以“设计上应该成立”替代证据。
 
 ## 25. 变更规则
 
