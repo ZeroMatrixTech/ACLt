@@ -1,7 +1,7 @@
 # ACLt Protocol 威胁模型
 
 > 文档状态：G0 安全需求基线  
-> 更新日期：2026-08-17  
+> 更新日期：2026-08-18  
 > 适用范围：协议规范、参考实现、适配器、仿真与维护流程  
 > 配套文档：[系统不变量](invariants.md)
 
@@ -184,6 +184,9 @@ ACLt Protocol 不默认信任：
 | TH-30 | Maintainer 追溯改变个案、抽样、权重、终态或结算 | 维护边界成为最高裁判 | 运行时权限隔离；发布只作用于未来版本；追加式更正 | INV-12、INV-15 | 原则 `DECIDED`，流程为 `OPEN/P0` |
 | TH-31 | 发布密钥、依赖、构建流程或参考实现被攻破 | 广泛后门、规则污染和密钥冒用 | 可复现构建、签名、密钥轮换/撤销、最小权限、漏洞响应 | INV-02、INV-15、INV-16 | 发布安全为 `OPEN/P0` |
 | TH-32 | 相关性、设备和控制关系数据过度收集或泄露 | 隐私侵害、错误关联、外部滥用 | 数据最小化、目的限制、访问/保留政策、可审计更正 | INV-13、INV-14 | 隐私模型为 `OPEN/P0/P1` |
+| TH-33 | Rust Profile 或未来 frontend 对相同受支持程序产生不等价 RIR，或 compiler 被攻破 | 同一源任务形成不同执行义务、共因错误或后门 | 规范 lowering；RIR canonical digest；可复现构建；多实现 golden/differential tests | INV-01、INV-02、INV-16 | 架构选择 `DECIDED`，规则与测试 `OPEN/P0` |
+| TH-34 | RIR parser/validator/runtime 接受未声明指令、effect、宿主访问或原生回退 | 沙箱逃逸、不可审计 I/O、跨节点语义漂移 | fail-closed validator；封闭 effects；V1 Profile allowlist；禁止静默 native fallback | INV-01、INV-09、INV-16 | `OPEN/P0` |
+| TH-35 | 不同 runtime、硬件或计量实现对资源、终止、错误或结果语义不同 | 结果分叉、预算绕过、错误归因或验证失效 | 规范 runtime/resource model；跨实现 conformance；差分与边界测试 | INV-01、INV-09、INV-16 | `OPEN/P0` |
 
 ## 8. 关键攻击路径
 
@@ -269,6 +272,8 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 - 区块链或去中心化存储会自动满足 ACLt Protocol 不变量；
 - 中心化参考实现已经具备分布式容错；
 - 未经证明的序贯方法保持 anytime-valid 误差控制。
+- Rust 的语言安全、RIR 的存在或单一参考 compiler 自动保证结果正确、确定性、资源一致或分布式安全；
+- V1 已支持 unsafe Rust、完整宿主 effects、原生执行、GPU/专用加速器或非确定性任务。
 
 ## 12. G0 未决安全问题
 
@@ -277,6 +282,7 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 | 优先级 | 未决问题 | 需要产出的证据 |
 |---|---|---|
 | P0 | canonical schemas、编码、摘要范围与版本迁移 | Schema、正反例、等价性和篡改测试 |
+| P0 | RIR schema/canonical encoding、validator、Rust Profile lowering、runtime effects 与资源语义 | golden vectors、恶意工件负例、可复现 lowering、跨实现差分与计量测试 |
 | P0 | Principal、函数、签名责任和权限边界 | 机器可表达权限矩阵与越权测试 |
 | P0 | WorkPlan/Assignment 的 DAG、合并和失败语义 | 合法性算法、测试向量、反例 |
 | P0 | Lease、Attempt、Result、Decision、Settlement 状态机与竞态 | 状态机、模型检查、并发与重放测试 |
@@ -296,6 +302,7 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 - 新增 Principal、permissionless function、协议对象或特权组件；
 - 改变 Receipt、验证、资金、结算、终态或维护边界；
 - 引入公共链、联盟账本、TEE、零知识、交互式证明或新随机性来源；
+- 改变 RIR、Rust Profile、conforming frontend、runtime、effects、资源模型或 V1 能力边界；
 - 改变网络、时钟、持久化、结算或密钥假设；
 - 发现新的串谋、Sybil、证据污染、预算耗尽或供应链攻击；
 - 仿真、形式化验证、故障注入或外部试点否定现有假设。

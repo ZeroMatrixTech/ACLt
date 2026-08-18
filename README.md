@@ -2,8 +2,9 @@
 
 > **状态：G0——协议规格化**  
 > **当前语义基线：v0.5**  
+> **首个工程目标：V1（RIR + Rust Profile）**  
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-08-17**
+> **最后更新：2026-08-18**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -16,6 +17,8 @@ ACLt Protocol 已形成一套完整的候选协议架构，但**尚未证明整�
 - 系统只保留 `Requester` 与 `Provider` 两类不可再约减的 Principal；
 - Planner、Verifier、Scheduler 等职能被压缩为 permissionless functions；
 - `ComputeReceipt` 固定任务、验证、期限、预算和结算语义；
+- V1 以 `RIR` 作为机器/网络层的规范执行表示；Rust Profile 是参考前端而不是协议语义来源；
+- 未来 C++23 等前端只有在降级到同一 RIR 并通过 conformance tests 后，才可声明兼容；
 - Provider 可零前置抵押参与，但暴露、并发、价值、Lease、尝试和损失必须有界；
 - 履约历史只允许形成 `PerformanceEvidence → CapabilityEstimate ± Uncertainty → ExposureDecision`；
 - 履约能力不得授予验证票权、真理权、最终审计权或治理权；
@@ -37,6 +40,8 @@ ACLt Protocol 已形成一套完整的候选协议架构，但**尚未证明整�
 - 临时发行使验证免费；
 - 使用区块链自动带来协议安全或分布式容错；
 - 中心化参考实现已经具备公共网络鲁棒性。
+- 使用 Rust、RIR 或某个编译器自动保证结果正确、确定性、资源计量一致或分布式安全；
+- V1 已支持或验证 unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器或非确定性任务。
 
 ## 最小本体
 
@@ -66,6 +71,7 @@ flowchart TD
 6. **不假定身份独立**：原始标识数不等于有效样本量；
 7. **协议与实现分离**：底层基础设施可替换，语义不可漂移；
 8. **维护最小权限**：维护者不得裁决运行中个案。
+9. **前端不定义协议语义**：协议绑定 RIR、版本与执行 Profile；源语言只负责产生候选 RIR。
 
 完整原则见 [`docs/00-overview/design-principles.md`](docs/00-overview/design-principles.md)。
 
@@ -79,46 +85,79 @@ flowchart TD
 | 4 | [`threat-model.md`](docs/01-requirements/threat-model.md) | 攻击者、威胁、剩余风险和禁止主张 |
 | 5 | [`invariants.md`](docs/01-requirements/invariants.md) | 16 条规范性安全不变量 |
 | 6 | [`system-architecture.md`](docs/02-architecture/system-architecture.md) | 分层架构和实现边界 |
-| 7 | [`protocol-spec.md`](docs/03-protocol/protocol-spec.md) | 当前规范性协议骨架 |
-| 8 | [`result-validation.md`](docs/03-protocol/result-validation.md) | 验证流程、统计边界与证明义务 |
-| 9 | [`current-status.md`](docs/07-roadmap/current-status.md) | 当前进度、证据成熟度与工程 Gate |
-| 10 | [`open-questions.md`](docs/07-roadmap/open-questions.md) | P0/P1/P2 未决问题和 v0.6 依赖 |
+| 7 | [`ADR-0002`](docs/05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md) | RIR、Rust Profile 与 V1 能力边界 |
+| 8 | [`protocol-spec.md`](docs/03-protocol/protocol-spec.md) | 当前规范性协议骨架 |
+| 9 | [`result-validation.md`](docs/03-protocol/result-validation.md) | 验证流程、统计边界与证明义务 |
+| 10 | [`current-status.md`](docs/07-roadmap/current-status.md) | 当前进度、证据成熟度与工程 Gate |
+| 11 | [`open-questions.md`](docs/07-roadmap/open-questions.md) | P0/P1/P2 未决问题和 v0.6 依赖 |
 
 完整索引见 [`docs/README.md`](docs/README.md)。
 
 ## 仓库结构
 
+### 当前真实目录
+
 ```text
 .
 ├── README.md
 ├── CONTRIBUTING.md
-├── docs/
-│   ├── README.md
-│   ├── 00-overview/
-│   ├── 01-requirements/
-│   ├── 02-architecture/
-│   ├── 03-protocol/
-│   ├── 04-analysis/
-│   ├── 05-decisions/
-│   ├── 06-research/
-│   └── 07-roadmap/
-├── spec/
-│   ├── algorithms/
-│   └── state-machines/
-└── simulations/
-    ├── scenarios/
-    └── results/
+├── LICENSE                       # Apache License 2.0 英文全文（已存在）
+└── docs/
+    ├── README.md
+    ├── 00-overview/
+    │   ├── project-overview.md
+    │   ├── design-principles.md
+    │   ├── terminology.md
+    │   └── system-context.md
+    ├── 01-requirements/
+    │   ├── threat-model.md
+    │   └── invariants.md
+    ├── 02-architecture/
+    │   ├── system-architecture.md
+    │   ├── identities-and-roles.md
+    │   └── task-lifecycle.md
+    ├── 03-protocol/
+    │   ├── protocol-spec.md
+    │   ├── result-validation.md
+    │   └── reputation.md
+    ├── 04-analysis/
+    │   ├── robustness.md
+    │   └── administrative-cost.md
+    ├── 05-decisions/
+    │   ├── ADR-0001-no-unnecessary-entities.md
+    │   └── ADR-0002-normative-rir-and-v1-rust-profile.md
+    ├── 06-research/
+    │   └── claims-and-sources.md
+    ├── 07-roadmap/
+    │   ├── current-status.md
+    │   └── open-questions.md
+    └── codocs/                    # 历史版本档案；不构成当前规范
+        └── README.md              # 历史状态与权威性说明
 ```
 
-目录只表示资料组织，不表示系统中存在同名特权实体。`spec/` 与 `simulations/` 将在对应 P0 规格冻结后逐步填充。
+上述列出当前语义文档及历史档案入口；`docs/codocs/` 中的旧版本仅用于决策追踪，不构成当前规范。
+
+### 已规划但尚未创建
+
+```text
+.
+├── spec/
+│   ├── algorithms/                # 规范性算法与伪代码
+│   └── state-machines/            # 状态、转移与终态定义
+└── simulations/
+    ├── scenarios/                 # 可重现的仿真场景与参数
+    └── results/                   # 可追溯的仿真输出与摘要
+```
+
+这些路径是 G0 后续工程化规格工作的最小候选集，现在不应表述为已落地。`spec/` 与 `simulations/` 只在相应 P0 输入和产物边界确认后创建。目录只表示资料组织，不表示系统中存在同名特权实体。
 
 ## 当前工程 Gates
 
 | Gate | 内容 | 当前状态 |
 |---|---|---|
-| G0 | 规格、对象、状态机、不变量、威胁、统计和资金政策 | **进行中** |
-| G1 | 能力、调度、验证、Sybil、资金和行政成本仿真 | 未开始 |
-| G2 | 单机参考实现与确定性测试 | 未开始 |
+| G0 | 规格、对象、RIR、状态机、不变量、威胁、统计和资金政策 | **进行中** |
+| G1 | 能力、调度、验证、Sybil、资金、RIR/runtime 和行政成本仿真 | 未开始 |
+| G2 | 单机参考实现、RIR toolchain/runtime 与确定性测试 | 未开始 |
 | G3 | 局域网多 Provider MVP 与故障注入 | 未开始 |
 | G4 | 持久化、备份、恢复和适配器一致性 | 未开始 |
 | G5 | Sybil、串谋、预算耗尽和维护滥权对抗验证 | 未开始 |
@@ -132,6 +171,7 @@ flowchart TD
 
 - 把 16 条不变量转化为机器可检查的状态机与性质测试；
 - 完成 canonical schemas、编码和测试向量；
+- 冻结 RIR canonical encoding、验证器、运行时 effects/resource model 和 Rust Profile lowering；
 - 证明或证伪有限总体序贯验证方案；
 - 建立相关性、集群暴露和最大损失仿真；
 - 规格化 FundingPolicy、退款、故障归因和最多一次结算；
@@ -148,7 +188,9 @@ flowchart TD
 
 ## 开源与许可
 
-项目目标是完整开源。具体开源许可证目前仍为 `OPEN/P0`；在正式加入 `LICENSE` 之前，不应对外声称已经完成法律意义上的开源授权。
+代码与参考实现的许可方案已经确定为 **Apache License 2.0**，SPDX 标识为 `Apache-2.0`。该决定不自动覆盖协议规范、项目文档、研究论文、名称、商标或兼容性声明；这些工件的许可与使用政策将分别决定。
+
+仓库根目录已经包含未经修改的 Apache License 2.0 英文全文 `LICENSE`。未来适用源码仍需加入 SPDX 标识；存在归属声明或第三方通知要求时再维护 `NOTICE`。应准确表述为“代码许可证已经选定并在根目录落地”，而不是“仓库全部工件的开源授权已经完成”。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
 
 ## 名称说明
 

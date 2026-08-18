@@ -1,7 +1,7 @@
 # ACLt 项目总览
 
 > 文档状态：当前项目基线  
-> 更新日期：2026-08-17  
+> 更新日期：2026-08-18  
 > 项目类型：开放、实现中立的去中心化计算协议  
 > 当前阶段：G0——协议规格化  
 > 历史名称：DistributedCompute、RUDCP、Decentralized Compute Protocol（DCP）  
@@ -15,7 +15,7 @@ ACLt 规定不同主体如何在缺乏预先信任的情况下：
 
 1. 对任务语义、预算、期限和政策作出不可静默修改的承诺；
 2. 将任务规划为合法但不承诺全局最优的可执行工作单元；
-3. 通过有限 Lease、单调 epoch、检查点和有界尝试执行及恢复工作；
+3. 将受支持的源前端降级为规范 RIR，并通过有限 Lease、单调 epoch、检查点和有界尝试执行及恢复工作；
 4. 按任务类型形成、采样和聚合验证证据；
 5. 在证据不足时以明确的 `UNRESOLVED` 状态安全终止；
 6. 在预声明资金与结算政策内完成最多一次的结算；
@@ -42,6 +42,7 @@ ACLt 的目标不是消灭这些不确定性，而是将它们转化为显式且
 | 目标 | 协议要求 |
 |---|---|
 | 共同任务语义 | 用版本化、内容寻址的 `ComputeReceipt` 固定程序、输入、环境、验证、期限、预算和政策 |
+| 统一执行语义 | V1 以 RIR 为机器/网络层规范表示；Rust Profile 只是参考前端，未来前端必须降级到同一 RIR |
 | 无许可参与 | 任何 Principal 均可尝试执行公开函数，但输出只有通过协议检查后才生效 |
 | 零前置抵押参与 | 普通 Provider 无需先缴抵押；风险通过低初始暴露、并发限制、Lease 和硬损失上限控制 |
 | 有界执行与恢复 | Lease、epoch、deadline、attempt limit 和 checkpoint 防止无限占用与迟到覆盖 |
@@ -59,6 +60,7 @@ ACLt 的目标不是消灭这些不确定性，而是将它们转化为显式且
 
 - `Requester` 与 `Provider` 两类不可再约减的 Principal；
 - `ProtocolVersion`、`ComputeReceipt`、`WorkPlan`、`Assignment`、`Lease`、`Attempt`、`Checkpoint`、`ResultSubmission` 等核心对象；
+- RIR 版本、规范工件摘要和执行 Profile 的 Receipt 绑定，以及 V1 Rust Profile 参考 lowering；
 - `Plan`、`Admit`、`Schedule`、`Execute`、`Sample`、`Verify`、`Aggregate`、`Settle` 和 `UpdateEvidence` 等无许可函数；
 - 证据、能力估计、不确定度和风险暴露限制；
 - 有限总体、不放回、可审计的序贯验证方向；
@@ -81,6 +83,8 @@ ACLt 当前不承诺：
 - 因使用区块链而自动获得安全性、去中心化或容错性；
 - 在 G0 阶段声称系统鲁棒性已经得到证明；
 - 在首版解决跨境支付、公共链治理、通用零知识证明、TEE 或任意非确定性计算。
+- 在 V1 接受 unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器或非确定性任务；
+- 把 Rust 源码、某个编译器输出或本机二进制本身当作协议规范语义。
 
 这些能力可以成为未来研究或适配方向，但不得被写入当前安全主张。
 
@@ -158,6 +162,7 @@ ACLt 仍处于 **G0：协议规格化阶段**。目前已经形成完整候选�
 进入核心原型之前至少需要完成：
 
 - 规范化 Schema 与 canonical encoding；
+- RIR canonical encoding、validator、runtime/effects/resource model、Rust Profile lowering 与 golden vectors；
 - Principal、函数、签名责任与权限矩阵；
 - WorkPlan、Lease、Result、VerificationDecision 和 Settlement 状态机；
 - 任务验证类型注册表；

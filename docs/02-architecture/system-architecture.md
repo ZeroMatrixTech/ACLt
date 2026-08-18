@@ -2,7 +2,7 @@
 
 > 文档状态：`CANDIDATE` architecture baseline  
 > 语义基线：v0.5  
-> 最后更新：2026-08-17  
+> 最后更新：2026-08-18  
 > 更新触发：对象、函数、信任边界、状态机、适配器或不变量发生变化
 
 ## 1. 架构目标
@@ -13,6 +13,7 @@
 - 不可变任务承诺和版本绑定；
 - 零抵押 Provider 下的有界暴露；
 - Lease、epoch、checkpoint 和有界恢复；
+- RIR 规范执行边界、V1 Rust Profile 与未来 frontend 一致性；
 - 任务特定、相关性感知、显式不确定的验证；
 - 资金守恒、最多一次结算和安全终态；
 - 可替换存储、日志、结算或账本 Adapter；
@@ -26,7 +27,7 @@
 |---|---|---|---|---|
 | L0 协议与版本 | 类型、状态机、不变量、升级 | ProtocolVersion、ADR、Release | 可追踪、不可按个案追溯变更 | `OPEN/P0` |
 | L1 Principal 与证据 | 密钥、标识、控制关联、历史事件 | PrincipalID、PerformanceEvidence | 可归责、不假定独立 | `CANDIDATE` |
-| L2 任务承诺 | 程序、输入、环境、验证、预算和政策 | ComputeReceipt、FundingPolicy、SettlementPolicy | 语义不可变、先承诺后观察 | `INVARIANT` 接口 |
+| L2 任务承诺与 RIR | RIRVersion、规范工件、输入、执行 Profile、环境、验证、预算和政策 | ComputeReceipt、FundingPolicy、SettlementPolicy | 语义不可变、前端不定义协议真相 | `DECIDED / INVARIANT` 接口 |
 | L3 规划与暴露 | 合法拆分、能力估计、准入、调度 | WorkPlan、CapabilityEstimate、ExposureDecision | 无 Rank、暴露有界、保留探索 | `CANDIDATE` |
 | L4 执行与恢复 | Lease、Attempt、epoch、checkpoint、result | Schedule、Execute | 迟到隔离、有界重试、条件性活性 | `CANDIDATE` |
 | L5 验证与决定 | Snapshot、抽样、检查、聚合、停止 | Sample、Verify、Aggregate、Decision | 不放回、预承诺、显式不确定 | `CANDIDATE/P0` |
@@ -51,7 +52,7 @@ L7 只能通过未来 ProtocolVersion 或追加更正影响系统，不能改写
 
 ```mermaid
 flowchart TD
-    R["ComputeReceipt"] --> W["WorkPlan / Assignment"]
+    R["ComputeReceipt\nRIRVersion / RIRDigest / Profile"] --> W["WorkPlan / Assignment"]
     W --> X["ExposureDecision / Lease"]
     X --> S["Result / Checkpoint / FailureEvidence"]
     S --> V["EligibilitySnapshot / VerificationEvidence"]
@@ -79,6 +80,7 @@ Requester 对任务、输入权利、政策和预算承诺负责；Provider 对�
 3. 当前状态前置条件；
 4. 资源、暴露和资金限制；
 5. INV-01 至 INV-16；
+6. RIR validator、执行 Profile、effects 与 runtime conformance；
 
 之后才可被接受。
 
@@ -97,6 +99,8 @@ Control Plane 可以实现登记、调度、Lease、验证聚合和结算协调�
 | 组件 | 职责 | 不得拥有的权限 |
 |---|---|---|
 | Registry | 接收、规范化并索引 ProtocolVersion 与 Receipt | 不得修改已登记语义 |
+| Frontend/RIR toolchain | 将 Rust Profile 或未来 conforming frontend 降级为规范 RIR 并执行 validator | 不得绕过 RIR、静默 native fallback 或成为真理权威 |
+| RIR runtime | 按冻结 Profile 执行、计量、隔离并报告结果/错误 | 不得访问未声明宿主 effects 或改变资源语义 |
 | Planner engine | 运行 Plan 合法性算法 | 不得因“优化”改变任务义务 |
 | Admission engine | 计算 CapabilityEstimate 与 ExposureDecision | 不得授予验证或治理权 |
 | Lease coordinator | 原子签发 epoch-bound Lease | 不得回退 epoch 或绕过暴露 |
@@ -177,10 +181,12 @@ G0 架构退出至少要求：
 - 单机与未来分布式部署保持相同可观察语义；
 - 不存在隐藏 Rank、固定 Verifier、Foundation 裁决或区块链依赖；
 - Adapter contract 和 conformance suite 可以机器执行。
+- RIR grammar、canonical encoding、validator、Rust Profile lowering 和 runtime conformance 可以机器执行。
 
 ## 11. 当前未决问题
 
 - canonical encoding 和 ProtocolVersion 迁移；
+- RIR 指令/类型/错误语义、canonical encoding、Rust Profile 子集、runtime effects/resource model；
 - WorkPlan/Assignment 合法性与合并；
 - Control Plane 的事务、分区与时钟模型；
 - 相关集群、暴露单位和原子额度；

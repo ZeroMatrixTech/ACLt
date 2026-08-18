@@ -1,7 +1,7 @@
 # ACLt 系统上下文
 
 > 文档状态：架构边界基线  
-> 更新日期：2026-08-17  
+> 更新日期：2026-08-18  
 > 目的：说明谁能作出承诺、谁能执行函数、协议接受什么，以及哪些能力位于系统边界之外
 
 ## 1. 系统边界
@@ -12,6 +12,7 @@ ACLt 的协议边界包含：
 - 对象签名、版本、摘要和因果引用规则；
 - 合法状态转换、前置条件和不变量；
 - 任务规划、准入、Lease、执行、验证、终态和结算规则；
+- RIR 版本、规范工件、执行 Profile 与前端一致性边界；
 - 风险暴露、尝试、预算和资金上限；
 - 追加式证据、审计和状态重放语义；
 - 版本兼容、升级和适配器一致性要求。
@@ -63,7 +64,7 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 | `Plan` | Receipt、依赖、资源约束 | WorkPlan、Assignment DAG | 版本、合法性、依赖、确定性、边界 | 只能提出计划，不保证最优 |
 | `Admit` | 证据、能力估计、不确定度、暴露 | Eligibility、ExposureDecision | 证据版本、硬资源、风险及集群限额 | 不创建身份，不授予真理权 |
 | `Schedule` | Assignment、候选、期限、政策 | 领取顺序或 Lease 提案 | 暴露、并发、epoch、期限 | 不得绕过准入和损失上限 |
-| `Execute` | Assignment、环境、有效 Lease | Result、Checkpoint、FailureEvidence | Lease、epoch、摘要、环境、幂等性 | 结果不是自动可信结论 |
+| `Execute` | Assignment、RIR 工件、执行 Profile、有效 Lease | Result、Checkpoint、FailureEvidence | RIRVersion、validator、Lease、epoch、effects、资源、幂等性 | 结果不是自动可信结论 |
 | `Sample` | EligibilitySnapshot、随机性承诺 | 不放回抽样序列 | 总体冻结、排除、分层、去重 | 不得观察结果后改总体或规则 |
 | `Verify` | 候选结果、任务检查器、证据 | VerificationEvidence | 方法版本、输入绑定、来源、成本 | 单次验证不是最终裁决 |
 | `Aggregate` | 抽样与验证证据 | ConfidenceState、Decision candidate | 预声明统计规则和停止条件 | 不得人工调整投票或权重 |
@@ -83,6 +84,7 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 | `Foundation` / 委员会 | 可选组织形式 | 只有证明净治理价值为正时才考虑引入 |
 | 区块链 | 可选实现基础设施 | 不属于 ACLt 安全性的默认前提 |
 | Node、Account、Device、Key | 实现、标识或证据载体 | 不新增 Principal 类型 |
+| Rust/C++ frontend、compiler、RIR runtime | 实现组件 | 不是 Principal 或真理权威；输出必须通过统一 RIR conformance |
 | Rank / Reputation | 已废弃的权威化抽象 | 当前协议不存在该实体 |
 
 ## 6. 核心交互生命周期
@@ -90,7 +92,7 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 | 阶段 | 主要交互 | 协议结果 | 安全退出 |
 |---|---|---|---|
 | 1. 选择版本与政策 | Requester 选择兼容的 ProtocolVersion、验证、资金和结算政策 | 可解析的任务创建输入 | `REJECTED_AT_CREATE` |
-| 2. 登记任务 | Requester 规范化并签署 ComputeReceipt | 不可变 ReceiptID | `REJECTED_AT_CREATE` |
+| 2. 登记任务 | Requester 规范化并签署包含 RIRVersion/Profile/Digest 的 ComputeReceipt | 不可变 ReceiptID | `REJECTED_AT_CREATE` / `UNSUPPORTED` |
 | 3. 规划任务 | 任意 Principal 执行 Plan | 合法 WorkPlan / Assignment | `FAILED_PLANNING` |
 | 4. 准入与暴露 | Admit/Schedule 处理证据、能力、不确定度和限额 | ExposureDecision、Lease 提案 | 排队、拒绝或 `EXPIRED` |
 | 5. 接受与执行 | Provider 接受 Lease 并按 epoch 执行 | Result、Checkpoint 或失败证据 | 重租约、`FAILED`、`EXPIRED` |
@@ -109,7 +111,7 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 | 对象或内容存储 | 按摘要提供程序、输入、结果和检查点 | 内容不可用时拒绝执行、验证或进入失败状态 |
 | 时钟与期限 | 提供足以执行 Lease 和 deadline 政策的时间语义 | 时钟假设不满足时不得声称正常活性 |
 | 随机性来源 | 在抽样前承诺、可审计且不被结果观察后操纵 | 随机承诺无效时验证拒绝或 `UNRESOLVED` |
-| 执行环境 | 隔离任务并报告版本、资源和限制 | 沙箱或环境不满足时拒绝或失败 |
+| RIR 执行环境 | 验证规范 RIR，隔离执行并报告 runtime、effects、资源和限制 | validator、Profile、沙箱或计量不满足时拒绝、`UNSUPPORTED` 或失败 |
 | 结算通道 | 支持唯一权利键、额度检查和幂等提交 | 暂停结算、重试或 `FUNDING_EXHAUSTED` |
 | 可选账本 | 保存或证明等价的对象与事件语义 | 适配器不合规时不得作为 ACLt 实现 |
 
@@ -140,6 +142,7 @@ ACLt 不规定这些能力必须由同一系统、组织或账本提供。参考
 - 数据持久化、事务、唯一键和灾难恢复模型；
 - 随机性承诺和抽样可复算条件；
 - 每类任务验证方法的正确性及覆盖范围；
+- source frontend → RIR lowering、RIR validator、runtime 与资源/effects 模型的一致性条件；
 - 资金来源、授权上限和结算最终性；
 - 相关性信息的来源、缺失处理和隐私边界。
 
@@ -195,5 +198,6 @@ ACLt 不规定这些能力必须由同一系统、组织或账本提供。参考
 8. PerformanceEvidence 只能追加或以新事件更正；
 9. 履约能力证据不能直接授予真理权；
 10. 维护者不能改变个案结果、权重或结算。
+11. 更换 Rust/C++ 等 frontend、compiler 或 RIR runtime 不得改变同一 Receipt 下的规范执行与结果语义。
 
 无法通过这些一致性要求的基础设施，只能被称为相关软件，不能被称为符合 ACLt 的实现。

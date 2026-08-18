@@ -3,7 +3,7 @@
 > 文档状态：Living evidence ledger  
 > 语义基线：v0.5  
 > 当前结论：完整候选架构已形成；整体鲁棒性 **未证明**  
-> 最后更新：2026-08-17
+> 最后更新：2026-08-18
 
 ## 1. 鲁棒性的严格含义
 
@@ -34,6 +34,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | 操作恢复 | 崩溃、分区、回滚和 DR 不破坏不变量 | INV-13/16 | `OPEN/P0` |
 | 治理安全 | 维护者不能裁决个案 | INV-15、ADR-0001 | `DECIDED / 未测试` |
 | 实现中立 | Adapter 替换保持语义 | INV-16 | `OPEN/P0` |
+| 执行一致性 | frontend、compiler 与 runtime 保持同一 RIR/Profile 语义 | ADR-0002、INV-01/02/09/16 | `DECIDED direction / OPEN/P0 evidence` |
 
 ## 3. 证据等级
 
@@ -114,6 +115,14 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 边界：发布密钥失陷、紧急响应和组织形式仍开放；
 - 状态：`DECIDED / 未测试`。
 
+### RB-09：规范 RIR 隔离源语言与协议语义
+
+- 前提：不同 source frontend 可以共享一个可验证的机器/网络执行表示；
+- 机制：Receipt 绑定 RIRVersion、RIRDigest 与执行 Profile，frontend/runtime 必须通过统一 conformance；
+- 结论：Rust 或未来 C++23 frontend 不会仅因语言不同就合法改变协议执行义务；
+- 边界：lowering、validator、runtime、effects、资源计量和共因 compiler 错误尚未验证；
+- 状态：架构选择 `DECIDED`，鲁棒性结论 `OPEN/P0`。
+
 ## 5. 尚不能支持的主张
 
 | 主张 | 缺失证据 |
@@ -125,6 +134,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | 维护结构净价值为正 | 事件频率、风险降低、延迟和行政成本数据 |
 | 区块链实现更安全 | Adapter、重组、最终性、费用和攻击面对比 |
 | 中心化参考实现可安全迁移 | conformance、重放和迁移证明 |
+| RIR 或 Rust Profile 已保证确定性/正确性 | RIR 形式语义、validator、lowering、runtime、effects/resource conformance 与差分测试 |
 
 ## 6. 核心证明义务
 
@@ -140,6 +150,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | PO-08 | Adapter 替换保持可观察语义 | conformance + differential testing | G4 |
 | PO-09 | 发布/撤销/维护权限不能改个案 | 权限测试 + key compromise exercise | G2/G5 |
 | PO-10 | 资金、退款和外部通道最多一次 | accounting model + failure injection | G2/G4 |
+| PO-11 | frontend lowering 与 runtime 对同一 RIR/Profile 保持规范执行语义 | golden vectors + differential/conformance tests + fault injection | G0/G2 |
 
 ## 7. 仿真最小集合
 
@@ -149,6 +160,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 新 Provider 探索和能力收敛；
 - Lease 到期、checkpoint 和恢复；
 - 多种验证难度和资金政策。
+- Rust Profile source→RIR、恶意/边界 RIR、不同 runtime 与资源耗尽语义。
 
 ### 对抗场景
 
@@ -159,6 +171,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 随机性偏置、Snapshot 污染和可选停止攻击；
 - Funding exhaustion、重复结算和退款竞态；
 - Maintainer/发布密钥失陷和 Adapter 语义漂移。
+- compiler 后门、lowering 分歧、隐藏宿主 effect、native fallback 与 runtime 计量分歧。
 
 ### 输出指标
 
@@ -196,6 +209,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 维护发布与依赖供应链可能失陷；
 - 资金与结算通道可能有法律或最终性风险；
 - 异构硬件和非确定性任务可能破坏结果等价。
+- Rust frontend、RIR validator 或 runtime 的共因缺陷可能让多次执行产生相同错误。
 
 ## 10. 当前严格结论
 

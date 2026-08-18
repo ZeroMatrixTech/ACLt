@@ -2,7 +2,7 @@
 
 > 文档状态：`CANDIDATE` state-machine baseline  
 > 语义基线：v0.5  
-> 最后更新：2026-08-17  
+> 最后更新：2026-08-18  
 > 更新触发：Receipt、Plan、Lease、验证、终态、资金或结算语义变化
 
 ## 1. 生命周期目标
@@ -58,6 +58,8 @@ stateDiagram-v2
 Receipt 登记前必须明确：
 
 - 程序和输入引用；
+- RIRVersion、规范 RIR 工件摘要、source frontend/Profile 与 lowering 版本；
+- runtime、允许 effects、资源计量和错误/终止语义；
 - 执行环境与资源限制；
 - 成功、结果等价与验证类型；
 - deadline、Lease、attempt 和恢复边界；
@@ -94,7 +96,7 @@ Lease 到期、拒绝或失败后的额度释放必须是幂等的。未接受 L
 
 ## 7. 执行与迟到隔离
 
-ResultSubmission 和 Checkpoint 必须绑定当前 epoch、内容摘要、环境版本和幂等键。若 `epoch < current_epoch`：
+执行前必须先验证 RIR 工件与 Receipt/Profile 一致；不支持的指令、effect 或 runtime 必须 fail closed，不得静默回退到原生执行。ResultSubmission 和 Checkpoint 必须绑定当前 epoch、RIR/runtime 版本、内容摘要、环境版本和幂等键。若 `epoch < current_epoch`：
 
 - 可以保存为 stale audit evidence；
 - 不得覆盖当前执行状态；
@@ -180,3 +182,4 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 - terminal—refund—fee—fault attribution 矩阵；
 - 事务、幂等、分区和灾难恢复；
 - Evidence 更正、隐私与保留。
+- RIR validator、Rust Profile lowering、runtime/effects/resource 与 checkpoint 可移植语义。

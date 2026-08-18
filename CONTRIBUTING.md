@@ -2,7 +2,7 @@
 
 > 文档状态：Living contribution policy  
 > 语义基线：v0.5  
-> 最后更新：2026-08-17
+> 最后更新：2026-08-18
 
 ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快速增加功能，而是让协议的前提、对象、状态转换、不变量、证明义务和失败边界更清晰、更可测试。
 
@@ -10,6 +10,7 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 
 - 协议对象、Schema、canonical encoding 和测试向量；
 - 状态机、并发模型、性质测试和形式化验证；
+- RIR parser/validator、canonical encoding、Rust Profile lowering 和差分 conformance 测试；
 - 验证统计、相关性模型和攻击仿真；
 - FundingPolicy、SettlementPolicy 和账务状态机；
 - 威胁建模、故障注入、适配器一致性和供应链安全；
@@ -32,6 +33,8 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 - 验证资金默认来自发行；
 - 区块链自动提供 ACLt Protocol 安全性；
 - `TRUSTED` 表示绝对正确。
+- 让某个源语言、编译器或原生二进制定义协议执行语义；
+- 未经新 Profile/ADR 就把 unsafe Rust、完整宿主 effects、原生执行、GPU 或非确定性任务纳入 V1。
 
 若要重新讨论已拒绝语义，必须提供新的威胁模型、反例、净风险分析和 ADR，不得仅替换名称。
 
@@ -121,6 +124,7 @@ Documents updated:
 |---|---|
 | Principal / function / authority | terminology、identities-and-roles、system-context、threat-model、ADR |
 | 对象或状态机 | protocol-spec、task-lifecycle、invariants、test vectors |
+| RIR、前端或执行 Profile | terminology、system-architecture、protocol-spec、threat-model、ADR、conformance tests |
 | 验证或统计 | result-validation、robustness、claims-and-sources、open-questions |
 | 能力或暴露 | reputation、threat-model、robustness、simulations |
 | 资金或结算 | protocol-spec、task-lifecycle、invariants、open-questions |
@@ -135,6 +139,7 @@ Documents updated:
 - 明确写出文献支持范围，不能让外部成果替 ACLt Protocol 证明组合系统；
 - 不提交无法复现的实验结果；
 - 测试必须覆盖合法路径、直接反例、边界、并发、重放和故障恢复；
+- 前端/编译器变更必须证明其输出满足同一 RIR 语义；不能以“Rust 编译成功”替代 RIR validator、golden vector 与跨实现差分测试；
 - 隐私或控制关联数据必须最小化并说明用途；
 - 不得静默删除失败实验、反例或被取代的决定。
 
@@ -156,4 +161,6 @@ Documents updated:
 
 ## 11. 许可
 
-项目许可证尚未确定。贡献许可、CLA/DCO 和第三方代码接受规则均为 `OPEN/P0`；正式接受外部代码贡献前必须先完成该决定。
+代码与参考实现的项目许可证已确定为 **Apache License 2.0**（SPDX：`Apache-2.0`），根目录已经包含相应 `LICENSE`。未来适用源码仍须加入 SPDX 标识；提交内容不得仅因位于同一仓库，就推定协议规范、文档、研究成果、名称或商标也适用 Apache-2.0。
+
+贡献许可机制（仅依项目许可证、DCO 或 CLA）、第三方代码/依赖接受规则、`NOTICE` 维护规则，以及规范、文档和论文的独立许可证仍为 `OPEN/P0`。在这些规则完成前，外部贡献应逐项确认来源、版权归属和许可证兼容性，不得合入来源或授权不明的内容。
