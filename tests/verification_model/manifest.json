@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "algorithm_id": "finite-population-boundary-lr-v1",
+  "arithmetic": "exact-rational",
+  "files": {
+    "recursive_model.py": "sha256:4ecb67c73097fc339bf49a009e9e9238e0eb15809b80ef5e6cdc99ff31acb275",
+    "closed_form_oracle.py": "sha256:cdd63154a0bad204e185f86b94e5ba9caea97e711173896f4e36a101fd335d13",
+    "test_verification_model.py": "sha256:58d782660f6cf2f2635f08d4888fa418c935ab5d6804326847e15f356e40e67c",
+    "conformance_vectors.json": "sha256:bdcaa143fce583561d04177a1eee26912101717006422514608bb23e25352bb3"
+  }
+}

@@ -140,13 +140,13 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 边界：TaskGraph 等价、计划合法性、候选排序、时钟与并发状态机仍未冻结；
 - SemanticStatus：边界 `DECIDED`；算法和证据 `OPEN`，Priority `P0`。
 
-### RB-12：Bayesian proposal 不单独定义真理
+### RB-12：Bayesian proposal 只属于效率层
 
-- 前提：prior、likelihood、posterior target、Snapshot 和停止接口在观察前冻结；
-- 机制：Bayesian policy 只提出抽样/停止，接受还需 anytime-valid safety envelope、相关性和最大损失条件；
+- 前提：prior、likelihood、Snapshot 和提案接口在观察前冻结；
+- 机制：Bayesian policy 只提出抽样顺序、候选或成本计划；`REEXEC_BOUNDED` 的接受仅由冻结有限总体 e-process 及其外部假设决定；
 - 结论：posterior、历史能力或 FoundationReport 不能单独产生 TRUSTED；
-- 边界：组合定理、prior sensitivity、攻击模型和参数均未完成；
-- SemanticStatus：`CANDIDATE`，Priority `P0`。
+- 边界：prior sensitivity 和效率收益仍需实验；Bayesian 结果不得进入证据权重、停止阈值或真理判决；
+- SemanticStatus：职责边界 `DECIDED`；效率模型 `CANDIDATE/P1`。
 
 ## 5. 尚不能支持的主张
 
@@ -161,7 +161,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | 中心化参考实现可安全迁移 | conformance、重放和迁移证明 |
 | RIR 或 Rust Profile 已保证确定性/正确性 | RIR 形式语义、validator、lowering、runtime、effects/resource conformance 与差分测试 |
 | Abstract Machine 或 Logical Object 已实现共享一致内存 | V1 明确不提供共享可变地址空间；仍需 Object Schema、可用性和恢复证据 |
-| Bayesian posterior 已提供安全停止保证 | prior、有限总体、相关性、anytime-valid 组合定理、校准和对抗仿真 |
+| 通用 permissionless 重执行已提供安全停止保证 | 具体部署对支持能力集合上界 \(B\)、集合冻结/独立性、活性下界 \(Q\) 和验证器语义的证据 |
 
 ## 6. 核心证明义务
 
@@ -180,7 +180,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | PO-11 | frontend lowering 与 runtime 对同一 RIR/Profile 保持规范执行语义 | golden vectors + differential/conformance tests + fault injection | G0/G2 |
 | PO-12 | Logical Object 在存储、复制、缓存和恢复后保持 canonical identity 与显式引用 | Schema + golden vectors + availability/fault tests | G0/G2/G4 |
 | PO-13 | Lowering/Decomposition/Packing 与 Provider Dispatch 不改变 Receipt 义务或产生未接受权利 | 状态机 + semantic differential tests + race injection | G0/G2/G3 |
-| PO-14 | Bayesian stop proposal 与 anytime-valid safety envelope 在声明攻击模型下组合有效 | 数学证明 + prior sensitivity + adversarial simulation | G0/G1 |
+| PO-14 | 有限总体 e-process 在声明的能力集合模型下保持 Type-I 界，并与精确 DP/跨实现规则一致 | 条件证明 + 有理数全枚举 + 递推/闭式对拍 + 事后选择反例 | G0/G1 |
 
 ## 7. 仿真最小集合
 
@@ -203,7 +203,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - Funding exhaustion、重复结算和退款竞态；
 - Maintainer/发布密钥失陷和 Adapter 语义漂移。
 - compiler 后门、lowering/decomposition/packing 分歧、隐藏宿主 effect、native fallback 与 RPR 计量分歧；
-- prior 操纵、posterior 过度确信、Bayesian/anytime 双层条件冲突和 FoundationReport 权重注入。
+- 能力集合事后选择、\(B\) 误设、活性语料外推、Bayesian/FoundationReport 权重注入；
 
 ### 输出指标
 
@@ -236,13 +236,14 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 任务验证器本身可能错误；
 - 控制相关性可能不可观察或被伪装；
 - 隐私限制会降低相关性检测能力；
+- 同一集群识别失效会同时放宽支持能力上界 \(B\) 与 INV-10 的相关集群暴露限制；二者不是独立防线，最坏情况下只剩绝对资金和任务预算上限；
 - 外部经济收益可能超过协议内上限；
 - 中心化参考实现会保留运行和审查单点；
 - 维护发布与依赖供应链可能失陷；
 - 资金与结算通道可能有法律或最终性风险；
 - 异构硬件和非确定性任务可能破坏结果等价。
 - Rust frontend、RIR validator 或 RPR 的共因缺陷可能让多次执行产生相同错误；
-- Logical Object 可用性、Compile 语义保持、Dispatch 竞态和 Bayesian/anytime 组合仍无证明。
+- Logical Object 可用性、Compile 语义保持和 Dispatch 竞态仍无证明；有限总体数学内核虽已条件闭合，部署 \(B\)、\(Q\) 与能力集合独立性仍无通用证明。
 
 ## 10. 当前严格结论
 

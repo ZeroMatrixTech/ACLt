@@ -1,7 +1,7 @@
 # ACLt Protocol 威胁模型
 
 > 文档状态：G0 安全需求基线  
-> 更新日期：2026-08-18  
+> 更新日期：2026-08-19
 > 适用范围：协议规范、参考实现、适配器、仿真与维护流程  
 > 配套文档：[系统不变量](invariants.md)
 
@@ -85,6 +85,8 @@ ACLt Protocol 不默认信任：
 | 持久化 | 实现提供原子唯一约束、追加事件和可验证恢复 | 无法保证时停止提交终态或结算 |
 | 任务验证器 | 每类验证方法只在其声明任务语义和错误模型内有效 | `UNSUPPORTED`、`UNRESOLVED` 或拒绝创建 |
 | 随机性 | 抽样随机性在观察结果前承诺且可审计 | 抽样无效；不得输出 `TRUSTED` |
+| 错误支持能力界 | `REEXEC_BOUNDED` 必须在 draw 前以独立证据建立固定能力集合 \(A^-(c)\) 及 \(|A^-(c)|\le B\)，且集合不依赖 draw order | 未建立则不得启动；被带外证据撤销则 `ASSUMPTION_INVALID`；不得从本轮票数伪造运行时检查 |
+| 正确支持活性界 | \(Q\) 的校准覆盖率、数据来源、外推状态与 \(\delta_Q\) 必须声明 | 未建立则不得作活性承诺；仅可审计或进入 `UNRESOLVED` |
 | 资金 | 所有可用来源、额度和最终性在任务前声明 | `FUNDING_EXHAUSTED` 或暂停结算，不得隐性借用 |
 | 相关性信息 | 控制关联可能不完整且不可视为零 | 保守折减证据并收紧集群暴露上限 |
 
@@ -158,9 +160,9 @@ ACLt Protocol 不默认信任：
 |---|---|---|---|---|---|
 | TH-15 | 在观察结果后改变总体、排除项、分层、相关性、误差目标或停止规则 | p-hacking、选择性背书、统计保证失效 | 首抽前冻结 EligibilitySnapshot 和策略摘要；所有变更产生新流程 | INV-11、INV-12 | 冻结接口 `INVARIANT` |
 | TH-16 | 抽样重复、随机性偏置、提前泄露或可由攻击者磨矿 | 有效证据减少、攻击集群被过度抽中 | 不放回抽样；预承诺随机性；可复算 draw order；无效时拒绝或 UNRESOLVED | INV-11、INV-12 | 随机协议为 `OPEN/P0` |
-| TH-17 | 串谋验证、共同控制、相同软件/硬件故障或伪装独立 | 错误结果获得虚假多数 | 相关性证据、集群折减、权重上限、敏感性分析和最大损失限制 | INV-10、INV-12、INV-14 | 折减方法为 `CANDIDATE/P0` |
+| TH-17 | 串谋验证、共同控制、相同软件/硬件故障或伪装独立 | 错误结果获得虚假多数，或使错误支持能力集合超过声明 \(B\) | draw 前冻结能力集合与独立性证据；相关性证据、集群折减、权重上限、敏感性分析和最大损失限制 | INV-10、INV-12、INV-14 | 条件检验已闭合；部署 \(B\) 为 `CANDIDATE/P0` |
 | TH-18 | 验证器缺陷、任务语义不支持或结果等价关系错误 | 错误聚类、错误背书或无限争议 | 任务验证注册表；方法版本；负例；`UNSUPPORTED`/`UNRESOLVED` | INV-01、INV-02、INV-12 | Registry 与 equivalence 为 `OPEN/P0` |
-| TH-19 | 将 posterior、序贯查看或 Bayesian stop proposal 误当作已证明的 anytime-valid 安全保证 | 错误 prior、可选停止或模型失配使实际错误率高于声明值 | 冻结 prior/likelihood/目标；独立 safety envelope；仿真与形式审查；未证明前禁止安全主张 | INV-12 | 双层方法为 `CANDIDATE/P0` |
+| TH-19 | 把实际支持票数误作能力上界 \(B\)，事后选择支持集合，或将 Bayesian proposal 当作正确性权重 | e-process 条件均值界失效，错误 prior 或模型失配被误读为安全保证 | \(B\) 约束事前固定的支持能力集合；使用冻结有限总体 e-process；Bayesian 仅作效率层；精确对拍与反例回归 | INV-12 | 数学内核 `DECIDED/DERIVED`；部署前提 `CANDIDATE/P0` |
 | TH-20 | 达到 Nmax 后继续采样、临时增资或人工覆盖结论 | 无界成本、规则追溯、伪造确定性 | Nmax 取总体/预算/政策最小值；边界后输出安全终态 | INV-09、INV-12、INV-15 | Nmax 算法为 `OPEN/P0` |
 | TH-21 | 并发 Aggregate 产生两个 VerificationDecision | 双终态、双结算、审计分叉 | 原子终态提交；唯一约束；事务重试不得改变终态 | INV-04、INV-07 | 竞态模型为 `OPEN/P0` |
 
@@ -288,7 +290,7 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 | P0 | WorkPlan/Assignment 的 DAG、合并和失败语义 | 合法性算法、测试向量、反例 |
 | P0 | Lease、Attempt、Result、Decision、Settlement 状态机与竞态 | 状态机、模型检查、并发与重放测试 |
 | P0 | 任务验证 Registry、结果等价和 `UNSUPPORTED` | 任务类型规范、验证器契约、负例 |
-| P0 | 有限总体、随机性、分层、Bayesian prior/posterior、anytime-valid safety envelope 和停止规则 | 统计规范、组合定理/证明、prior sensitivity、仿真与实现测试 |
+| P0 | VerificationProfile、有限总体、能力上界 \(B\)、活性下界 \(Q\)、随机性、分层、e-process 和停止规则 | 条件定理、部署假设证据、精确 DP、对拍测试、反例与实现规范；Bayesian 仅作效率评估 |
 | P0 | 控制相关性、未知依赖处理和集群暴露 | 相关性模型、隐私边界、敏感性与攻击仿真 |
 | P0 | 最大尝试、任务价值、验证支出和可接受损失 | 按 Provider/集群/Receipt/窗口的硬参数与性质测试 |
 | P0 | FundingPolicy、退款、故障归因、资不抵债和资金守恒 | 账务状态机、唯一键、故障与并发测试 |

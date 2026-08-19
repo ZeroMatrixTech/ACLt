@@ -2,7 +2,7 @@
 
 > 文档状态：Living evidence registry  
 > 语义基线：v0.5  
-> 最后核查：2026-08-18  
+> 最后核查：2026-08-19
 > 规则：文献支持理论边界、方法或先例，不替 ACLt Protocol 证明组合系统
 
 ## 1. 证据纪律
@@ -25,7 +25,7 @@
 | CLM-001 | 公共/志愿计算可以工程化分发任务、重试并验证结果 | `DECIDED` | `DERIVED` | S01、S02 | 不证明 ACLt 的 Sybil、统计或资金安全 |
 | CLM-002 | 低成本身份会削弱把冗余身份视为独立实体的推理 | `DECIDED` | `DERIVED` | S03 | 不直接给出 ACLt 的相关集群算法或损失界 |
 | CLM-003 | 对有限总体不放回序贯抽样构造 time-uniform confidence sequences 在数学上可行 | `DECIDED` | `SOURCE_ESTABLISHED` | S04、S05 | 不自动覆盖恶意、相关、异质验证证据 |
-| CLM-004 | ACLt 可直接采用某一 confidence sequence 并保持目标误差 | `OPEN` | Priority `P0` | S04、S05 是候选基础 | 必须定义目标、总体、依赖、分层和攻击模型并证明 |
+| CLM-004 | 在错误支持能力集合于 draw 前固定、与随机排列独立且大小不超过 \(B\) 时，ACLt 的有限总体混合 e-process 保持 \(\varepsilon_F\) Type-I 界 | `DECIDED` | `DERIVED / CONDITIONAL` | S04、S05、ADR-0004、精确对拍资产 | 不证明任何 permissionless 部署能建立 \(B\)；不覆盖验证器或语义错误 |
 | CLM-005 | 完全异步、允许故障的共识不能获得无条件终止保证 | `DECIDED` | `DERIVED_BOUNDARY` | S06 | 只在论文模型内成立；ACLt 必须声明自身活性模型 |
 | CLM-006 | Byzantine 阈值依赖明确的消息、认证和故障模型 | `DECIDED` | `DERIVED_BOUNDARY` | S07 | 不支持把任何固定阈值直接移植为 ACLt 的 51% |
 | CLM-007 | 任意程序的非平凡语义性质不存在通用可判定方法 | `DECIDED` | `DERIVED_BOUNDARY` | S08 | 不排除特定任务族的验证器或证明系统 |
@@ -40,7 +40,9 @@
 | CLM-106 | ACLt Protocol 的组合是公开系统中完全原创且无先例 | `OPEN` | `PROHIBITED_OVERCLAIM` | 组件均有先例 | 只能在系统化检索和权利清查后作有限原创性表述 |
 | CLM-107 | 以 RIR 作为规范执行表示、Rust Profile 作为参考前端，可以在架构上隔离源语言与协议语义 | `DECIDED` | `DERIVED` | ADR-0002、INV-01/16 | 不证明 lowering、RPR、资源计量、确定性或结果正确；需要 ACLt 自身 conformance 证据 |
 | CLM-108 | Abstract Machine、不可变 Logical Object、Compile 三阶段和 RPR 边界可以减少隐藏执行语义 | `DECIDED` | `DERIVED` | ADR-0001/0002/0003、INV-01/16 | 只闭合架构边界；不证明 Schema、compiler、RPR 或状态机正确 |
-| CLM-109 | Bayesian stop proposal 与 anytime-valid safety envelope 的组合可以在 ACLt 攻击模型下同时提高效率并保持目标风险 | `CANDIDATE` | `HYPOTHESIS`，Priority `P0` | 尚无 ACLt 特定证明 | 必须冻结 prior、目标、有限总体、相关性并给出组合定理或反例 |
+| CLM-109 | Bayesian policy 可以在不进入正确性权重的前提下提高 ACLt 验证采样或成本效率 | `CANDIDATE` | `HYPOTHESIS`，Priority `P1` | 尚无 ACLt 特定效率证据 | posterior 不再是正确性闸门；需要 prior sensitivity、成本和尾延迟实验 |
+| CLM-110 | 只限制实际支持票数、却允许支持能力集合在看到 draw 后选择，不能保持有限总体 e-process 的 Type-I 保证 | `DECIDED` | `DERIVED / COUNTEREXAMPLE` | 有理数全枚举和最坏自适应 DP | 反例针对当前算法/参数；\(C=B+1\) 不一定立即超过给定 \(\varepsilon_F\) |
+| CLM-111 | 给定正确候选支持下界 \(Q\)，精确有限总体 DP 可以计算最小活性预算并保留平台段 | `DECIDED` | `DERIVED / CONDITIONAL` | DP 与全排列 oracle 对拍 | 端到端活性还需 \(Q\) 的覆盖率 \(1-\delta_Q\)，合成失败界为 \(\delta_Q+\delta_L\) |
 
 ## 3. 来源登记与边界
 

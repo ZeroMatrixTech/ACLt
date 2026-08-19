@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "algorithm_id": "finite-population-boundary-lr-v1",
+  "rational_encoding": "[numerator, denominator] in weights; canonical n/d string in expected capital",
+  "assumption_context": {
+    "support_capability_bound": "VALID",
+    "snapshot": "VALID",
+    "draw_order": "UNIFORM_WITHOUT_REPLACEMENT_AND_INDEPENDENT"
+  },
+  "vectors": [
+    {
+      "id": "CV-01-normal-accept",
+      "parameters": {"G": 10, "B": 3, "Q": 8, "epsilon_f": "1/5"},
+      "weights": {"8": [1, 1]},
+      "path": [1, 1],
+      "expected": {"aggregate_state": "ACCEPT", "decision": "ACCEPT", "mixture_capital": "28/3"}
+    },
+    {
+      "id": "CV-02-mixed-accept",
+      "parameters": {"G": 10, "B": 3, "Q": 8, "epsilon_f": "1/5"},
+      "weights": {"8": [1, 1]},
+      "path": [0, 1, 1, 1],
+      "expected": {"aggregate_state": "ACCEPT", "decision": "ACCEPT", "mixture_capital": "16/1"}
+    },
+    {
+      "id": "CV-03-single-component-liveness-death",
+      "parameters": {"G": 10, "B": 3, "Q": 8, "epsilon_f": "1/1000"},
+      "weights": {"8": [1, 1]},
+      "path": [0, 0, 0],
+      "expected": {"aggregate_state": "UNRESOLVED", "decision": "UNRESOLVED", "mixture_capital": "0/1"}
+    },
+    {
+      "id": "CV-04-mixture-component-death-is-local",
+      "parameters": {"G": 10, "B": 3, "Q": 8, "epsilon_f": "1/1000"},
+      "weights": {"8": [1, 2], "9": [1, 2]},
+      "path": [0, 0],
+      "expected": {"aggregate_state": "CONTINUE", "decision": null, "mixture_capital": "1/42"}
+    },
+    {
+      "id": "CV-05-null-bound-exactly-exceeded",
+      "parameters": {"G": 10, "B": 3, "Q": 8, "epsilon_f": "1/1000"},
+      "weights": {"8": [1, 1]},
+      "path": [1, 1, 1, 1],
+      "expected": {"aggregate_state": "NULL_BOUND_EXACTLY_EXCEEDED", "decision": "ACCEPT"}
+    },
+    {
+      "id": "CV-06-p-zero-failure-is-regular",
+      "parameters": {"G": 10, "B": 3, "Q": 8, "epsilon_f": "1/1000"},
+      "weights": {"8": [1, 1]},
+      "path": [1, 1, 1, 0],
+      "expected": {"aggregate_state": "CONTINUE", "decision": null, "mixture_capital": "16/1"}
+    }
+  ]
+}
+
