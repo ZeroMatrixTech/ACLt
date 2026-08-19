@@ -3,7 +3,7 @@
 > 文档性质：V1 `VersionDisposition` 权威登记  
 > Conformance Target：V1  
 > Profile 状态：G0 draft  
-> 最后更新：2026-08-18  
+> 最后更新：2026-08-19
 > 状态模型：[`../05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md`](../05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md)
 
 ## 1. 作用与边界
@@ -35,8 +35,10 @@ V1 是建立在 v0.5 语义基线上的首个执行与一致性目标，不等�
 | `dispatch.lease-handshake` | `CORE` | Assignment、Lease proposal、Provider accept 和 active Lease 边界明确 | [`../02-architecture/task-lifecycle.md`](../02-architecture/task-lifecycle.md) |
 | `task.deterministic-bounded-cpu` | `CORE` | 只接受 effects 封闭、资源有界、结果语义明确的 CPU Task | [`../03-protocol/protocol-spec.md`](protocol-spec.md) |
 | `objects.canonical` | `CORE` | 核心对象具有版本、canonical encoding、摘要域和稳定引用 | [`../07-roadmap/open-questions.md`](../07-roadmap/open-questions.md#4-oq-02--规范对象编码与版本演进) |
+| `verification.profile-contract` | `CORE` | 每个任务先绑定 VerificationProfile、VerifiedClaim、ExcludedClaims、成本和终态 | [`../05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md`](../05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md) |
 | `verification.exact-evidence` | `CORE` | V1 基础执行证据使用确定性重执行和规范结果等价 | [`result-validation.md`](result-validation.md) |
-| `verification.sequential-envelope` | `CORE` | 有限总体、不放回、预承诺的序贯决策接口 | [`result-validation.md`](result-validation.md) |
+| `verification.reexec-audit-only` | `CORE` | 未建立错误支持能力上界时，重执行只形成审计证据，不输出统计 `TRUSTED` | [`result-validation.md`](result-validation.md) |
+| `verification.sequential-envelope` | `CORE` | 实现有限总体、不放回、预承诺的条件序贯接口；只有具体 Profile 建立 \(B/Q\) 和独立性时才启用 `REEXEC_BOUNDED` | [`result-validation.md`](result-validation.md) |
 | `verification.correlation-aware` | `CORE` | 身份数不等于独立证据数；未知相关性保守处理 | [`../01-requirements/invariants.md`](../01-requirements/invariants.md) |
 | `authority.separation` | `CORE` | 履约、付款、维护身份或报告不得获得真理权 | [`../00-overview/design-principles.md`](../00-overview/design-principles.md) |
 | `funding.correctness-separation` | `CORE` | FundingPolicy 不能成为验证正确性的来源 | [`../00-overview/design-principles.md`](../00-overview/design-principles.md) |
@@ -103,7 +105,7 @@ SettlementProfileVersion
 - Logical Object 的字段、保留、可用性和隐私规则；
 - Decomposition/Packing 合法性谓词和 TaskGraph 等价性证据；
 - Assignment/Lease/Execution/Verification/Settlement 完整状态机；
-- VerificationProfile、统计目标、停止定理和相关性安全界；
+- VerificationProfile Schema、VerifiedClaim/ExcludedClaims、部署 \(B/Q\)、相关性能力集合界和固定算术 conformance；条件停止定理本身已闭合；
 - terminal—fault—fee—refund—settlement 完整矩阵；
 - conformance suite、差分实现和故障注入证据。
 

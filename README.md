@@ -4,7 +4,7 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-08-18**
+> **最后更新：2026-08-19**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -92,11 +92,13 @@ flowchart TD
 | 6 | [`system-architecture.md`](docs/02-architecture/system-architecture.md) | 分层架构和实现边界 |
 | 7 | [`ADR-0002`](docs/05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md) | RIR、Rust Profile 与 V1 能力边界 |
 | 8 | [`ADR-0003`](docs/05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md) | SemanticStatus 与 VersionDisposition 二维分离 |
-| 9 | [`v1-profile.md`](docs/03-protocol/v1-profile.md) | V1 CORE/DEFERRED/REJECTED 唯一映射 |
-| 10 | [`protocol-spec.md`](docs/03-protocol/protocol-spec.md) | 当前规范性协议骨架 |
-| 11 | [`result-validation.md`](docs/03-protocol/result-validation.md) | 验证流程、统计边界与证明义务 |
-| 12 | [`current-status.md`](docs/07-roadmap/current-status.md) | 当前进度、证据成熟度与工程 Gate |
-| 13 | [`open-questions.md`](docs/07-roadmap/open-questions.md) | P0/P1/P2 未决问题和 v0.6 依赖 |
+| 9 | [`ADR-0004`](docs/05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md) | VerificationProfile 与有限总体 e-process 边界 |
+| 10 | [`v1-profile.md`](docs/03-protocol/v1-profile.md) | V1 CORE/DEFERRED/REJECTED 唯一映射 |
+| 11 | [`protocol-spec.md`](docs/03-protocol/protocol-spec.md) | 当前规范性协议骨架 |
+| 12 | [`result-validation.md`](docs/03-protocol/result-validation.md) | 验证流程、统计边界与证明义务 |
+| 13 | [`verification-round-mathematical-model.md`](docs/06-research/verification-round-mathematical-model.md) | 验证轮条件定理、反例与对拍说明 |
+| 14 | [`current-status.md`](docs/07-roadmap/current-status.md) | 当前进度、证据成熟度与工程 Gate |
+| 15 | [`open-questions.md`](docs/07-roadmap/open-questions.md) | P0/P1/P2 未决问题和 v0.6 依赖 |
 
 完整索引见 [`docs/README.md`](docs/README.md)。
 
@@ -109,7 +111,7 @@ flowchart TD
 ├── README.md
 ├── CONTRIBUTING.md
 ├── LICENSE                       # Apache License 2.0 英文全文（已存在）
-└── docs/
+├── docs/
     ├── README.md
     ├── 00-overview/
     │   ├── project-overview.md
@@ -134,9 +136,11 @@ flowchart TD
     ├── 05-decisions/
     │   ├── ADR-0001-no-unnecessary-entities.md
     │   ├── ADR-0002-normative-rir-and-v1-rust-profile.md
-    │   └── ADR-0003-separate-semantic-status-and-version-disposition.md
+    │   ├── ADR-0003-separate-semantic-status-and-version-disposition.md
+    │   └── ADR-0004-verification-profiles-and-finite-population-e-process.md
     ├── 06-research/
-    │   └── claims-and-sources.md
+    │   ├── claims-and-sources.md
+    │   └── verification-round-mathematical-model.md
     ├── 07-roadmap/
     │   ├── current-status.md
     │   └── open-questions.md
@@ -144,9 +148,13 @@ flowchart TD
     │   ├── audit-procedure.md
     │   ├── audit-report-template.md
     │   └── audits/
-    │       └── audit-20260818-01-semantic-structure.md
+    │       ├── audit-20260818-01-semantic-structure.md
+    │       ├── audit-20260819-02-verification-model-closure.md
+    │       └── audit-20260819-03-submission-scope.md
     └── codocs/                    # 历史版本档案；不构成当前规范
         └── README.md              # 历史状态与权威性说明
+└── tests/
+    └── verification_model/        # 精确有理数递推/闭式/DP 对拍资产
 ```
 
 上述列出当前语义文档及历史档案入口；`docs/codocs/` 中的旧版本仅用于决策追踪，不构成当前规范。

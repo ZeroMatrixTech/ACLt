@@ -2,7 +2,7 @@
 
 > 文档状态：Living index and governance  
 > 当前语义基线：v0.5  
-> 最后更新：2026-08-18
+> 最后更新：2026-08-19
 
 本目录是 ACLt Protocol 的权威文档中心。文档不是一次性说明材料，而是随反例、证明、仿真、实现、攻击测试和工程试点持续修订的规格系统。
 
@@ -32,11 +32,15 @@
 3. [`05-decisions/ADR-0001-no-unnecessary-entities.md`](05-decisions/ADR-0001-no-unnecessary-entities.md)
 4. [`05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md`](05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md)
 5. [`05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md`](05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md)
-6. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
-7. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
-8. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
-9. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
-10. [`08-governance/audits/audit-20260818-01-semantic-structure.md`](08-governance/audits/audit-20260818-01-semantic-structure.md)
+6. [`05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md`](05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md)
+7. [`06-research/verification-round-mathematical-model.md`](06-research/verification-round-mathematical-model.md)
+8. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
+9. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
+10. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
+11. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
+12. [`08-governance/audits/audit-20260818-01-semantic-structure.md`](08-governance/audits/audit-20260818-01-semantic-structure.md)
+13. [`08-governance/audits/audit-20260819-02-verification-model-closure.md`](08-governance/audits/audit-20260819-02-verification-model-closure.md)
+14. [`08-governance/audits/audit-20260819-03-submission-scope.md`](08-governance/audits/audit-20260819-03-submission-scope.md)
 
 ## 2. 文档权威范围
 
@@ -56,6 +60,8 @@
 | 规范性协议骨架 | `03-protocol/protocol-spec.md` |
 | V1 CORE/DEFERRED/REJECTED 映射 | `03-protocol/v1-profile.md` |
 | 结果验证与统计边界 | `03-protocol/result-validation.md` |
+| VerificationProfile 与有限总体 e-process 决定 | `05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md` |
+| 验证轮条件定理、反例与对拍资产 | `06-research/verification-round-mathematical-model.md`、`tests/verification_model/` |
 | 证据、能力估计与暴露 | `03-protocol/reputation.md` |
 | 鲁棒性证据与反证 | `04-analysis/robustness.md` |
 | 行政成本与治理扩张门槛 | `04-analysis/administrative-cost.md` |
@@ -64,7 +70,7 @@
 | 当前完成度 | `07-roadmap/current-status.md` |
 | 未决问题和候选方案 | `07-roadmap/open-questions.md` |
 | 审计程序与报告格式 | `08-governance/` |
-| 当前审计记录 | `08-governance/audits/audit-20260818-01-semantic-structure.md` |
+| 当前审计记录 | `08-governance/audits/audit-20260819-03-submission-scope.md`；前序记录保留在同目录 |
 
 同一结论不得在多个文件中形成互相独立的权威版本；其他文件应链接到权威位置。
 
@@ -185,7 +191,7 @@ Decision / evidence
 | `02-architecture` | 当前候选分层与生命周期 | G0 draft |
 | `03-protocol` | 当前规范性协议骨架与 V1 VersionDisposition Profile | G0 draft |
 | `04-analysis` | 鲁棒性和行政成本证据账本 | 进行中 |
-| `05-decisions` | 已接受架构决定 | ADR-0001/0002/0003 已建立 |
+| `05-decisions` | 已接受架构决定 | ADR-0001/0002/0003/0004 已建立 |
 | `06-research` | 论断—来源—边界 | 持续核查 |
 | `07-roadmap` | 状态和未决问题 | 持续更新 |
 | `08-governance` | 审计程序、模板和审计记录 | 程序已接受；报告持续追加 |
@@ -193,4 +199,4 @@ Decision / evidence
 
 ## 9. v0.5 的严格定位
 
-v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 ConformanceTarget，两者不是相互替代的版本号。V1 的能力处置见唯一 Profile；它已选择 RIR 和 Rust Profile，但仍处于 G0。有限总体序贯验证、相关性折减、资金退款、RIR/RPR conformance、实现一致性和参数化最大损失仍未证明或冻结。
+v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 ConformanceTarget，两者不是相互替代的版本号。V1 的能力处置见唯一 Profile；它已选择 RIR 和 Rust Profile，但仍处于 G0。有限总体验证的条件数学内核已闭合；具体部署的 \(B/Q\)、相关性折减、资金退款、RIR/RPR conformance、实现一致性和参数化最大损失仍未证明或冻结。

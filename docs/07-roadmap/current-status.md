@@ -42,7 +42,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | Task 与 Receipt | `INVARIANT` 接口；Schema `OPEN` | `CORE` | 任务语义在结果揭示前冻结 | canonical encoding、哈希域、版本兼容 |
 | 执行表示与前端 | 方向 `DECIDED`；形式语义 `OPEN` | `CORE` | RIR 规范表示；Rust Profile reference frontend | RIR schema/validator、Rust lowering 和 conformance |
 | RPR 与 Host OS | 边界 `DECIDED`；contract `OPEN` | `CORE` | 默认隐藏宿主状态；不支持时 fail closed | capability ABI、effects、计量、错误、checkpoint |
-| 结果验证 | `CANDIDATE` | `CORE` | exact evidence + Bayesian stop proposal + anytime-valid safety envelope 候选 | 统计目标、prior、定理、组合证明和参数 |
+| 结果验证 | Profile/条件数学内核 `DECIDED`；部署前提 `CANDIDATE` | `CORE` | DIRECT/PROOF/REEXEC_BOUNDED/AUDIT_ONLY；有限总体 e-process；Bayesian 仅作效率层 | VerifiedClaim、部署 \(B/Q\)、独立性证据、固定算术和跨实现 conformance |
 | Sybil 与相关性 | 原则 `DECIDED`；算法 `OPEN` | `CORE` | 不假设身份独立；保守折减并叠加硬暴露上限 | 信号、隐私、分组算法和最坏损失校准 |
 | 权威隔离 | `INVARIANT` | `CORE` | 历史能力、付款和 FoundationReport 不进入真理权重 | 可执行权限与负例测试 |
 | 资金 | 类型与解耦 `DECIDED`；账务 `OPEN` | `CORE` | FundingPolicy 不证明 correctness；发行非默认 | 锁定、耗尽、退款和破产处理 |
@@ -119,7 +119,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 4. 冻结 RIR grammar/schema、canonical encoding、validator、Rust Profile lowering、RPR capability 与 runtime effects/resource/error 语义。
 5. 固定 Lowering/Decomposition/Packing 的 Schema、TaskGraph/WorkPlan 合法性谓词与语义保持条件。
 6. 建立威胁—不变量—函数—证明义务—测试追踪表。
-7. 固定验证器注册、exact result equivalence、样本帧、Bayesian prior、anytime-valid safety envelope 与随机性承诺。
+7. 固定 VerificationProfile、VerifiedClaim/ExcludedClaims、exact result equivalence、样本帧、部署 \(B/Q\)、有限总体 e-process、精确算术与随机性承诺。
 8. 写出资金锁定、终态、退款、处罚和 at-most-once 结算矩阵。
 
 ### P0 — 阻断公开发布
@@ -131,7 +131,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 ### P1 — 阻断 G1/G2 的可信推进
 
-1. 为不放回的 Bayesian stop proposal + anytime-valid safety envelope 建立可审阅的定理、适用条件与反例。
+1. 为 `REEXEC_BOUNDED` 建立可部署的能力集合上界 \(B\)、活性下界 \(Q\)、随机排列独立性和跨任务错误预算；保持递推/闭式/全枚举持续对拍。
 2. 校准相关性分组、证据折扣和硬暴露上限。
 3. 固定 CapabilityEstimate 的不确定性表达、冷启动和衰减模型。
 4. 建立最小可执行模型、仿真场景和失败注入基线。
@@ -173,6 +173,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | 2026-08-18 | v0.5 / V1 target | 接受 RIR 作为规范执行表示、Rust Profile 作为 V1 参考前端；未来 frontend 必须降级到同一 RIR | ADR-0002 及同步文档 | G0/G1/G2 |
 | 2026-08-18 | v0.5 / V1 target | 接受 SemanticStatus 与 VersionDisposition 二维分离；建立 V1 Profile 唯一映射 | ADR-0003、`03-protocol/v1-profile.md` | G0/G1/G2 |
 | 2026-08-18 | v0.5 / V1 target | 保守闭合 Abstract Machine、Logical Object、Compile、RPR/Host OS 与 Provider Dispatch 的概念边界；形式语义和证据继续开放 | 架构、协议、生命周期和 AUDIT-20260818-01 | G0/G1/G2 |
+| 2026-08-19 | v0.5 / V1 target | 接受 VerificationProfile 与有限总体 e-process；条件数学内核经精确递推、闭式、全枚举和 DP 对拍闭合；通用 permissionless 的 \(B/Q\) 与独立性仍阻断部署 | ADR-0004、验证模型说明、`tests/verification_model/` | G0/G1 |
 
 日志只记录影响项目认知或成熟度的变化；排版、错字和无语义重构不必记录。
 

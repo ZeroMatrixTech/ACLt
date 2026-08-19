@@ -405,6 +405,9 @@ Exposure(d,t) \le AuthorizedExposureCap(d,t)
 - 分层、相关性处理、等价/聚类规则；
 - 随机性承诺和 draw 生成规则；
 - 误差目标、置信或证据阈值与停止规则；
+- VerificationProfile、VerifiedClaim、ExcludedClaims；
+- `REEXEC_BOUNDED` 的 \(G,B,Q,\varepsilon_F,\delta_Q,\delta_L\)、算法版本、精确算术规则和混合权重；
+- 支持能力集合冻结、随机排列独立性及活性校准的证据引用；
 - Npopulation、Nbudget、Npolicy 的计算规则；
 - FundingPolicy、SettlementPolicy 和验证预算。
 
@@ -422,12 +425,13 @@ Exposure(d,t) \le AuthorizedExposureCap(d,t)
 
 - precommitment digest 校验；
 - 每个冻结字段的事后篡改负例；
-- 可选停止与序贯边界仿真；
+- 可选停止与序贯边界的精确全枚举/动态规划测试；
+- 递推实现与独立闭式 oracle 的逐步对拍；
 - 并发 Aggregate 使用相同策略快照的测试。
 
 ### 未决事项
 
-统计目标、anytime-valid 定理、分层自适应边界、相关性处理和策略摘要 Schema 仍为 `OPEN/P0`。
+有限总体 e-process 的条件定理已闭合；部署的能力上界 \(B\)、活性下界 \(Q\)、分层/相关性论证和策略摘要 Schema 仍为 `OPEN/CANDIDATE P0`。
 
 ## 17. INV-13：证据与事件追加性
 
@@ -569,7 +573,7 @@ Adapter contract、Logical Object Schema、RIR canonical semantics、Rust Profil
 
 ### 21.2 统计正确性
 
-有限总体、不放回、anytime-valid 序贯验证是当前研究方向。INV-11 和 INV-12 只固定抽样不重复与先承诺后观察的接口要求，不证明具体置信序列、误差界、分层或相关性折减正确。
+有限总体、不放回 e-process 在“错误候选的支持能力集合于 draw 前固定、与排列独立且大小不超过 \(B\)”的条件下，已有 ACLt 特定的递推、闭式和全枚举对拍。INV-11 和 INV-12 仍只把相应前提固定为接口不变量；它们不证明任何具体部署真实满足 \(B\)、\(Q\)、Bridge、分层或相关性假设。
 
 ### 21.3 经济激励相容
 

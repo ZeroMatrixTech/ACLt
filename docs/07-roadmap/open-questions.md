@@ -2,7 +2,7 @@
 
 > 文档性质：持续更新的问题与决策队列（living document）  
 > 基线版本：v0.5  
-> 更新日期：2026-08-18  
+> 更新日期：2026-08-19  
 > 目标：列出会影响协议正确性、安全性、可实现性或发布条件的全部当前问题，并为每个问题保留备选路径、当前建议、依赖与关闭证据。
 
 ## 1. 使用规则
@@ -162,7 +162,7 @@
 4. 验证器信任：完全确定性；可复现沙箱；多实现交叉检查；验证器本身也被取样验证。
 5. 会话快照：任务创建时冻结；首个样本时冻结；每轮冻结；由部署协调层提供快照。
 
-**当前建议。** 为每个 TaskType 冻结 `VerifierProfile`，至少声明输入域、结果等价、确定性、成本、失败模式和版本。开放注册只增加候选验证器，不能自动赋予真相权。验证会话开始前必须固定总体、预算、策略和随机性承诺。
+**当前建议。** 为每个 TaskType 冻结 `VerificationProfile`，至少声明 `VerifiedClaim`、`ExcludedClaims`、输入域、结果等价、确定性、成本、安全/活性参数、失败模式和版本。Profile 分为 `DIRECT_VERIFIED`、`PROOF_VERIFIED`、`REEXEC_BOUNDED` 和 `REEXEC_AUDIT_ONLY`。开放注册只增加候选验证器，不能自动赋予真相权；Profile 是后续验证工作的严格前置对象。
 
 **关闭证据。** VerifierProfile 模式、注册与撤销规则、等价关系测试、验证器不一致处理、会话快照和恶意验证器反例。
 
@@ -174,7 +174,7 @@
 
 **备选路径。**
 
-1. 统计框架：不放回 confidence sequence；Bayesian sequential policy；序贯概率比检验；e-process；固定样本超几何检验；保守组合界；Bayesian + anytime-valid 双层组合。
+1. 统计框架：有限总体 e-process；不放回 confidence sequence；固定样本超几何检验；保守组合界；Bayesian sequential policy 仅作效率层。
 2. 估计目标：错误结果比例；正确结果比例；多数类别质量；任务损失函数；最坏可接受风险。
 3. 抽样单位：Provider；Receipt；控制簇；分片；验证操作。
 4. 随机性：Requester 承诺种子；多方提交—揭示；可验证随机函数；外部随机信标；部署共识随机性。
@@ -182,9 +182,11 @@
 6. 多重性：逐任务保证；跨分片校正；跨轮次 alpha spending；统一 anytime-valid 过程。
 7. `Nmax`：`min(population, budget, policy)`；其中 policy 可由风险级别、验证成本和硬上限共同决定。
 
-**当前建议。** V1 使用 exact execution evidence；Bayesian sequential policy 可以更新 posterior、选择下一样本和提出停止，但不得单独产生真理权。停止提案还必须通过有限总体、不放回、time-uniform/anytime-valid safety envelope 和相关性/最大损失边界。先证明单任务、单终点版本，再扩展到多分片和相关性折扣。任何实现都不得在证明完成前把 posterior 或候选阈值写成安全保证。
+**当前结论。** 单候选、有限总体、不放回的 e-process 数学内核已经条件闭合：错误候选的支持能力集合必须在 draw 前固定、与随机排列独立且大小不超过 \(B\)；混合权重预先冻结；以精确算术实现。递推、闭式、全枚举和 DP oracle 已完成对拍，且“只限制实际支持票数、允许事后选择能力集合”已有精确反例。Bayesian policy 只用于采样/成本效率，不是第二真理闸门。
 
-**关闭证据。** 统计目标、prior/likelihood/posterior、prior sensitivity、完整定理、假设清单、覆盖/错误界证明、Bayesian stop proposal 与 anytime-valid envelope 组合证明、可选停止证明、边界情况、数值稳定性、对抗性仿真、独立复核和规范参数映射。
+OQ-07 因而拆成两个状态：条件定理和数值语义为 `DECIDED / DERIVED`；具体部署如何建立 \(B\)、校准 \(Q\)、证明集合冻结/独立性并处理多任务重复风险，仍为 `OPEN/CANDIDATE P0`。未建立这些前提时只能使用 `REEXEC_AUDIT_ONLY`。
+
+**剩余关闭证据。** 可部署的能力集合上界证明；\(Q,\delta_Q\) 的同类锚定校准与外推规则；随机排列和 Snapshot conformance；跨任务错误预算；固定算术编码；第二语言独立实现复核。当前数学说明与测试见 [`../06-research/verification-round-mathematical-model.md`](../06-research/verification-round-mathematical-model.md) 和 [`../../tests/verification_model/README.md`](../../tests/verification_model/README.md)。
 
 **依赖。** OQ-06；与 OQ-08 强耦合。
 
@@ -201,7 +203,7 @@
 5. Sybil 成本：保证金；资源证明；付款历史；速率限制；邀请/证明；不依赖身份成本，只依赖硬风险上限。
 6. 隐私：原始信号公开；仅公开簇标签；零知识关联证明；本地评分；只保留保守上界。
 
-**当前建议。** 不宣称解决 Sybil，也不把经济成本当作独立性证明；优先采用相关性簇/证据折扣，并始终叠加任务、簇和系统级硬暴露上限。无法可靠观测关联时，采用更保守的相关性假设。
+**当前建议。** 不宣称解决 Sybil，也不把经济成本当作独立性证明；优先采用相关性簇/证据折扣，并始终叠加任务、簇和系统级硬暴露上限。`REEXEC_BOUNDED` 还要求这些机制在 draw 前形成“可能支持错误候选”的能力集合上界 \(B\)，不能用实际票数替代。无法可靠观测关联时不得启用该 Profile，应降级为 `REEXEC_AUDIT_ONLY`。
 
 **关闭证据。** 威胁覆盖、隐私影响评估、簇错误合并/漏合并敏感性分析、最坏损失证明、对抗仿真、参数校准和降级策略。
 
