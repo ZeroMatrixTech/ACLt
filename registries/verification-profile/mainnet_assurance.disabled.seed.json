@@ -1,0 +1,10 @@
+{
+  "artifact_status": "SEED_NOT_REGISTERED",
+  "network_id": "acl.network.mainnet.placeholder",
+  "default_disposition": "DISABLED",
+  "profile_capabilities": [],
+  "allowed_rpr_refs": [],
+  "allowed_validator_refs": [],
+  "required_conformance_refs": [],
+  "note": "缺少 issuer、有效期、日志后端、ExecutionCapability contract、reducer、相关性策略和损失预算；不得注册或用于产生 TRUSTED。"
+}

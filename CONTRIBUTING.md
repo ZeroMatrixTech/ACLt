@@ -2,7 +2,7 @@
 
 > 文档状态：Living contribution policy  
 > 语义基线：v0.5  
-> 最后更新：2026-08-18
+> 最后更新：2026-08-21
 
 ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快速增加功能，而是让协议的前提、对象、状态转换、不变量、证明义务和失败边界更清晰、更可测试。
 
@@ -28,7 +28,7 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 
 - Rank/Reputation 作为实体、等级或权威；
 - 固定 Broker、Planner、Verifier 或 Scheduler 身份；
-- Foundation 作为协议必需参与者；
+- Foundation 作为运行时 Principal 或个案最终裁判；维护组织可以按 ADR-0005 发布限主网、版本化 assurance；
 - Provider 数量代表独立控制实体；
 - `Nmax = 51% × Provider 数量`；
 - 履约能力自动提高验证权；
@@ -85,10 +85,20 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 
 提交必须明确：模型、总体、随机性、依赖结构、误差目标、时间窗口、外部收益、参数来源和反证条件。只给模拟均值、单组参数或“攻击看起来不划算”不足以支持安全结论。
 
+### 4.5 工程假设与实现证据
+
+现实输入来源、日志无旁路、部署组件和运行环境可以用工程证据建立，不要求全部改写为形式定理。此类变更必须：
+
+1. 标明属于结构、算法、来源忠实性或部署风险接受哪一层；
+2. 绑定版本、网络、组件、有效期和撤销路径；
+3. 提供日志、权限、集成、故障恢复或 conformance 证据；
+4. 在证据缺失时有 `DISABLED/AUDIT_ONLY` 或 fail-closed 路径；
+5. 不让 FoundationReport、实现健康分数或历史履约进入个案真理权重。
+
 ## 5. 推荐工作流
 
 1. 先在 `docs/07-roadmap/open-questions.md` 中找到对应 Issue ID；
-2. 写明假设、候选方案和拒绝条件；
+2. 写明假设、候选方案、拒绝条件和证据层；
 3. 更新相应规范或分析文件；
 4. 为变更添加确定性测试、性质测试、模型检查或仿真；
 5. 更新 `docs/06-research/claims-and-sources.md` 中的论断状态；
@@ -128,6 +138,8 @@ Documents updated:
 | 资金或结算 | protocol-spec、task-lifecycle、invariants、open-questions |
 | 维护或治理 | administrative-cost、ADR、threat-model、current-status |
 | Adapter / 区块链 | system-architecture、invariants、robustness、conformance tests |
+| 主网 assurance 或工程假设 | design-principles、ADR-0005、threat-model、v1-profile、current-status、audit-procedure |
+| 假设原因/reducer 或 Dispatch scope | verification-profile、task-lifecycle、invariants、threat-model、问题思路树、vectors |
 
 ## 8. 质量要求
 
@@ -140,6 +152,8 @@ Documents updated:
 - 前端/编译器变更必须证明其输出满足同一 RIR 语义；不能以“Rust 编译成功”替代 RIR validator、golden vector 与跨实现差分测试；
 - 隐私或控制关联数据必须最小化并说明用途；
 - 不得静默删除失败实验、反例或被取代的决定。
+- 一个协议权威值可以有多个工程检查点，但实现不得复制并允许检查点改写第二套真相；
+- 多原因诊断必须保留完整事实集合，状态机只消费冻结函数派生的唯一结果。
 
 ## 9. 审查标准
 
@@ -151,6 +165,8 @@ Documents updated:
 - 在 Sybil、串谋、分区、重放、崩溃和资金耗尽下会怎样？
 - 是否存在安全终态和回滚路径？
 - 是否把候选结论误写为事实？
+- 是否把来源忠实性误写成 Schema/定理，或反过来用实现结果定义协议语义？
+- 能力未获 assurance 时是否确实关闭或 fail closed？
 - 是否同步更新全部权威文档？
 
 ## 10. 行为与安全问题

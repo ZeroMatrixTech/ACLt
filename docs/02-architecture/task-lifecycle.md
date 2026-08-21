@@ -2,7 +2,7 @@
 
 > 文档状态：`CANDIDATE` state-machine baseline  
 > 语义基线：v0.5  
-> 最后更新：2026-08-18  
+> 最后更新：2026-08-21
 > 更新触发：Receipt、Plan、Lease、验证、终态、资金或结算语义变化
 
 ## 1. 生命周期目标
@@ -48,7 +48,7 @@ SourcePackage、Lowering 和候选 RIR 的准备发生在 `Proposed` 之前；�
 | 2. 登记 Receipt | canonicalize、摘要、签署、登记 | 预算和字段合法 | ReceiptID | REJECTED_AT_CREATE |
 | 3. Decomposition 与 Packing | 任意 Principal 提出合法分解和打包 | Receipt 与规范 RIR 可用 | WorkPlan、Assignment DAG | FAILED_PLANNING |
 | 4. 能力与暴露 | 估计任务族能力并原子预留额度 | 证据版本、资源和限额有效 | ExposureDecision | 排队/拒绝/EXPIRED |
-| 5. Provider Dispatch | Schedule 产生 Lease proposal，Provider 显式接受 | epoch、期限、暴露有效 | 生效 active Lease | proposal 失效、释放额度 |
+| 5. Provider Dispatch | Schedule 产生 Lease proposal，Provider 显式接受；Dispatch/RPR 校验 Lease 派生 capability | epoch、期限、scope 与暴露有效 | 生效 active Lease 与 ExecutionCapability | proposal 失效、释放额度 |
 | 6. 执行与恢复 | RPR Execute、heartbeat、checkpoint | 当前 active Lease | Result/Checkpoint/Failure | retry/FAILED/EXPIRED |
 | 7. 验证快照 | 冻结总体、分层、相关性和随机性 | 有效候选结果与策略 | EligibilitySnapshot | UNSUPPORTED/UNRESOLVED |
 | 8. 序贯验证 | Sample、Verify、Aggregate | Snapshot 未破坏 | ConfidenceState | 扩样/UNRESOLVED |
@@ -107,13 +107,17 @@ Lease 生效必须同时完成：
 4. 写入期限、资源、提交和权利条件；
 5. 获取 Provider 接受签名。
 
+active Lease 是本次执行 scope、RPR、environment、resource tuple 的唯一授权来源。实现必须从它派生不可伪造或可重算的 `ExecutionCapability`，至少绑定 `ReceiptID`、`LeaseID`、epoch、执行元组摘要、scope 摘要、expiry 和 issuer key。Dispatch 只能传递并验证该 capability；RPR 启动时必须再次验证。二者不得创建第三份可覆盖 scope，也不得从本地配置补写不同执行元组。
+
+若执行元组发生任何实质变化，旧 Lease/capability 立即不再适用，必须创建新 Lease 并重新经过 scope、暴露与接受检查。这里采用“一个权威、多检查点”：Dispatch/RPR 检查提高来源忠实性，但不会增加新的协议真相。
+
 Lease 到期、拒绝或失败后的额度释放必须是幂等的。未接受 Lease 不产生负面 PerformanceEvidence。
 
 Transport 可以是 Provider pull、Control Plane push 或混合方式；协议只接受相同的 proposal → accept → active Lease 状态转换。候选选择、排序、pull API、并发冲突和时间模型仍为 `OPEN/P0`。
 
 ## 7. 执行与迟到隔离
 
-执行前必须先验证 RIR 工件与 Receipt/Profile 一致；RPR 只可读取 Receipt 显式引用的 Logical Object 和 ExecutionProfile capability。Host OS 文件、网络、时间、随机性、环境变量或设备状态不得成为隐藏输入。不支持的指令、effect 或 runtime 必须 fail closed，不得静默回退到原生执行。ResultSubmission 和 Checkpoint 必须绑定当前 epoch、RIR/RPR 版本、内容摘要、环境版本和幂等键。若 `epoch < current_epoch`：
+执行前必须先验证 RIR 工件与 Receipt/Profile 一致，并校验 active Lease 派生的 `ExecutionCapability`；RPR 只可读取 Receipt 显式引用的 Logical Object 和已绑定 ExecutionProfile capability。Host OS 文件、网络、时间、随机性、环境变量或设备状态不得成为隐藏输入。不支持的指令、effect 或 runtime 必须 fail closed，不得静默回退到原生执行。ResultSubmission 和 Checkpoint 必须绑定当前 epoch、RIR/RPR 版本、execution tuple digest、内容摘要、环境版本和幂等键。若 `epoch < current_epoch`：
 
 - 可以保存为 stale audit evidence；
 - 不得覆盖当前执行状态；
@@ -138,7 +142,7 @@ N_{max}=\min(N_{population},N_{budget},N_{policy})
 
 | 终态 | 严格含义 | 允许结算 | 绝对正确性 |
 |---|---|---|---|
-| `TRUSTED` | 在预声明模型和停止规则下满足背书条件 | 按 SettlementPolicy | 不证明 |
+| `TRUSTED` | 在预声明模型、官方主网 assurance 和停止规则下满足条件性背书 | 按 SettlementPolicy | 不证明 |
 | `UNRESOLVED` | 在 Nmax/预算/政策内不能背书单一结果 | 按预声明过程费用/退款 | 不证明 |
 | `FAILED` | 执行或系统条件失败且不能继续 | 按故障归因 | 不适用 |
 | `EXPIRED` | 最终期限到达 | 按责任矩阵 | 不适用 |
@@ -175,6 +179,7 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 |---|---|
 | 两个 Schedule 同时签 Lease | epoch 唯一递增，暴露不超限 |
 | Lease 到期与 Result 同时到达 | 以原子状态和 epoch 判断，不产生双权利 |
+| Dispatch/RPR 所见执行元组与 Lease capability 不同 | 拒绝启动或作废 Attempt；不得就地改写 scope |
 | retry 与旧 Checkpoint 同时恢复 | stale 隔离，当前状态唯一 |
 | Nmax 与 TRUSTED 条件同时出现 | 预声明顺序和原子 Decision |
 | terminal 与 funding exhaustion 同时出现 | 唯一终态及确定性权利映射 |
@@ -195,7 +200,7 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 - WorkPlan 覆盖、合并与部分失败；
 - Lowering/Decomposition/Packing Schema、合法性和语义保持证明；
 - Lease 时钟、heartbeat 和 checkpoint；
-- Provider Dispatch 候选顺序、proposal/accept 竞态和传输接口；
+- Provider Dispatch 候选顺序、proposal/accept 竞态、ExecutionCapability 和传输接口；
 - attempt、deadline、暴露和损失参数；
 - 验证 Registry、Snapshot、随机性和停止规则；
 - terminal—refund—fee—fault attribution 矩阵；

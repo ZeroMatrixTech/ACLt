@@ -3,7 +3,7 @@
 > SemanticStatus：ontology `DECIDED`；权限细节 `OPEN`<br>
 > Priority：权限细节 `P0`<br>
 > 语义基线：v0.5  
-> 最后更新：2026-08-18  
+> 最后更新：2026-08-21
 > 更新触发：新增身份、职能、签名责任、维护权限或控制关联语义
 
 ## 1. 分类规则
@@ -57,6 +57,7 @@ Principal 是协议责任单位，不等于现实独立控制实体。一个控�
 | VerificationDecision | 无特殊人类裁判；按 Aggregate 规则生成 | 任意复算者 | 唯一终态、策略快照、证据链有效 | `OPEN/P0` |
 | Settlement | 无特殊裁判；按 Settle 规则生成 | 任意复算者 | 权利、资金、终态、唯一键有效 | `OPEN/P0` |
 | ProtocolVersion release | Maintenance 发布流程 | 任何贡献者可提议 | 评审、测试、发布签名和版本策略 | `OPEN/P0` |
+| MainnetAssuranceProfile | Maintenance 发布流程 | 研究、安全和运维参与者可提议 | 绑定官方主网、版本、适用域、证据和有效期；只能收紧能力 | `CANDIDATE/P0` |
 
 具体密钥结构、代理签名、轮换和撤销仍未冻结。
 
@@ -71,7 +72,7 @@ ACLt Protocol 必须把以下内容视为可能的相关性证据：
 - 相同结果模板、错误模式或异常时间特征；
 - 可验证的现实组织或代理关系。
 
-这些信号不必证明现实身份相同，但未知关联不能默认等于独立。相关性处理必须兼顾错误关联和隐私风险。
+这些信号不必证明现实身份相同，但未知关联不能默认等于独立。V1 不以“证明每个 PrincipalID 背后都是不同自然人”为目标；相关性处理服务于官方主网有限风险域中的工程准入与暴露控制，并兼顾错误关联和隐私风险。
 
 ## 6. Provider 的多函数参与
 
@@ -102,6 +103,7 @@ Provider 可以执行计算、规划、验证、抽样或聚合，但：
 
 - 维护规范、Schema、状态机、测试和参考实现；
 - 管理发布签名、版本、兼容性和撤销；
+- 为 ACLt 官方主网发布版本化、可撤销、只能收紧能力的 `MainnetAssuranceProfile`；
 - 接收、修复和披露漏洞；
 - 记录 ADR 和迁移说明。
 
@@ -113,8 +115,9 @@ Provider 可以执行计算、规划、验证、抽样或聚合，但：
 - 制造 Settlement 或退款；
 - 把维护者分析作为更高权证据。
 - 把 FoundationReport、委员会报告或维护报告写入 Bayesian prior、VerificationEvidence 权重或停止条件。
+- 把官方主网保障结论外推到未审计的分叉、私网或修改版部署。
 
-基金会、委员会或链上治理是可选组织方案，不是 Principal，也不是当前协议必需组件。
+基金会、委员会或链上治理是可选组织方案，不是 Principal，也不是个案裁判。基金会可以承接官方主网的发布、安全响应、日志运营和保障 Profile 管理，但其输出必须经过相同的版本、适用域、签名、追加性和“只能收紧”约束。
 
 ## 9. 非实体清单
 
@@ -127,7 +130,7 @@ Provider 可以执行计算、规划、验证、抽样或聚合，但：
 | Scheduler/Sampler/Aggregator | 函数上下文 |
 | Rank/Reputation | 已废弃的权威化抽象 |
 | Node/Account/Device/Key | 执行或标识载体 |
-| Foundation | 可选组织形式 |
+| Foundation | 可选维护组织；可承担官方主网保障与日志运营，但不是 Principal 或个案真理权威 |
 | Blockchain | 可选基础设施 Adapter |
 | ACLt Abstract Machine、Logical Object Memory | 规范抽象；不是 Principal、数据库或共享物理内存 |
 | Rust/C++ frontend、compiler、RPR、Host OS | 实现组件；不得成为 Principal、VerifierAuthority 或协议语义来源 |
@@ -155,3 +158,4 @@ Provider 可以执行计算、规划、验证、抽样或聚合，但：
 - 相关性信号、隐私、错误关联与申诉；
 - 新 Provider 探索与集群暴露参数；
 - Maintenance 发布和紧急撤销流程。
+- MainnetAssuranceProfile 的发布门槛、证据等级、有效期和应急暂停流程。

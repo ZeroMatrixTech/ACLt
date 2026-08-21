@@ -439,6 +439,8 @@ Exposure(d,t) \le AuthorizedExposureCap(d,t)
 
 被协议接受的 PerformanceEvidence 和关键 EventRecord 不得被静默删除、覆盖或原地改写。更正必须产生新的追加事件，引用原事件并说明原因、来源、时间和权限。
 
+多个假设或工程条件同时失效时，原始原因必须以规范排序、去重的 `CauseSet` 追加保存；状态机使用的单一 `EffectiveVerdict` 必须由版本化纯函数从完整原因集合派生，不得由写入者挑选一个“主要原因”后丢弃其余事实。
+
 ### 禁止状态
 
 - 删除失败记录以提高能力估计；
@@ -453,6 +455,8 @@ Exposure(d,t) \le AuthorizedExposureCap(d,t)
 - 追加、纠正、撤销效果和重放测试；
 - 日志截断、数据库回滚和备份恢复故障注入；
 - 派生值从证据重算的一致性测试。
+- 多原因同时触发、reducer 重放和原因不丢失测试；
+- 经批准 append-only/finality 后端的 inclusion、consistency、重组和旁路写入测试。
 
 ### 未决事项
 
@@ -510,6 +514,8 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 
 维护者若另以 Requester 或 Provider 身份参与，只拥有该 Principal 的普通协议权利。
 
+维护边界可以发布版本化 `MainnetAssuranceProfile`，为官方 `network_id` 声明允许组件、能力处置、有效期和损失预算。该对象只决定未来准入和运行中能力的保守降级，不得升高个案证据权重、改变冻结参数或把主网保证扩展到未绑定部署。
+
 ### 禁止状态
 
 - 管理接口直接改终态或支付；
@@ -550,6 +556,9 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 - Decomposition/Packing 策略改变 Receipt 结果、权限、预算或失败语义；
 - RPR 对不支持的 RIR/effect 静默回退到宿主原生执行，或读取未声明 Host OS 状态；
 - 不同 RPR/Host OS 对同一 Receipt 的资源耗尽、错误或结果语义不同。
+- Dispatch/RPR 绕过 active Lease，读取或覆盖另一套 scope、RPR、environment 或 resource tuple；
+- 同一 `CauseSet` 在不同实现中派生不同 `EffectiveVerdict`；
+- 未 finalized 或未提供 inclusion/consistency proof 的事件改变协议状态。
 
 ### 最低验收方法
 
@@ -558,6 +567,9 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 - 数据库事务、日志截断、链重组和结算最终性故障注入；
 - 迁移前后对象、状态和权利的语义差分测试。
 - RIR validator golden vectors、frontend lowering、Decomposition/Packing 差分测试和 RPR/Host OS resource/effects conformance。
+- Lease 派生 `ExecutionCapability` 的生成/消费对拍，以及 Dispatch/RPR 换环境、重放、过期和 epoch 竞态测试；
+- `CauseSet` reducer 的多实现组合向量；
+- 主网日志 checkpoint/finality、inclusion/consistency 和恢复对账。
 
 ### 未决事项
 
@@ -582,6 +594,10 @@ Adapter contract、Logical Object Schema、RIR canonical semantics、Rust Profil
 ### 21.4 性能与可用性目标
 
 吞吐、延迟、完成率、RPO、RTO 和成本属于可测 SLO 或验收指标，不是对所有执行历史都成立的不变量。
+
+### 21.5 工程假设与部署 assurance
+
+身份独立性、日志写入方不旁路、组件无未知缺陷和实际运行环境忠实性不是无条件不变量。官方主网可以用版本化 assurance、工程审计、conformance、故障注入和硬损失上限接受这些有限条件；条件缺失或撤销时必须关闭能力或 fail closed。工程证据不能改变 INV-01 至 INV-16 的算法语义，也不能获得个案真理权。
 
 ### 21.5 隐私保证
 

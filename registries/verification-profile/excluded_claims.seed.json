@@ -1,0 +1,21 @@
+{
+  "artifact_status": "SEED_NOT_REGISTERED",
+  "registry_id": "acl.ecr.baseline",
+  "registry_version": ["1", "0", "0"],
+  "entries": [
+    {"exclusion_id": "EXC-BASE-ABSOLUTE", "category": "BASE", "statement": "不证明结果绝对正确。"},
+    {"exclusion_id": "EXC-BASE-AVAILABILITY", "category": "BASE", "statement": "不保证对象或证据未来持续可取得。"},
+    {"exclusion_id": "EXC-BASE-COMMON-MODE", "category": "BASE", "statement": "不证明实现、编译器或硬件不存在共因缺陷。"},
+    {"exclusion_id": "EXC-BASE-CONFIDENTIALITY", "category": "BASE", "statement": "不自动保证输入或输出机密性。"},
+    {"exclusion_id": "EXC-BASE-FITNESS", "category": "BASE", "statement": "不证明结果适用于外部业务、医疗、金融或法律用途。"},
+    {"exclusion_id": "EXC-BASE-INDEPENDENCE", "category": "BASE", "statement": "不证明 Provider 事实独立。"},
+    {"exclusion_id": "EXC-BASE-INTENT", "category": "BASE", "statement": "不证明源程序表达了 Requester 未编码意图。"},
+    {"exclusion_id": "EXC-BASE-LOG-BACKEND", "category": "BASE", "statement": "不证明主网日志、共识、密钥或实现不存在未知缺陷。"},
+    {"exclusion_id": "EXC-BASE-LOWERING", "category": "BASE", "statement": "不证明 Source 到 RIR 的 lowering 无缺陷。"},
+    {"exclusion_id": "EXC-BASE-NETWORK-TRANSFER", "category": "BASE", "statement": "官方主网 assurance 不自动转移到其他网络或组件集合。"},
+    {"exclusion_id": "EXC-BASE-RIR-SPEC", "category": "BASE", "statement": "不证明 RIR 规范本身无漏洞。"},
+    {"exclusion_id": "EXC-BASE-RPR-SPEC", "category": "BASE", "statement": "不证明 RPR 与 Host OS capability 规范无漏洞。"},
+    {"exclusion_id": "EXC-BASE-SYBIL", "category": "BASE", "statement": "不声称系统已解决 Sybil。"},
+    {"exclusion_id": "EXC-BASE-TIMELINESS", "category": "BASE", "statement": "不保证结论在其绑定有效期之后仍有效。"}
+  ]
+}

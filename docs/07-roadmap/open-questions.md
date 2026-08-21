@@ -2,7 +2,7 @@
 
 > 文档性质：持续更新的问题与决策队列（living document）  
 > 基线版本：v0.5  
-> 更新日期：2026-08-19  
+> 更新日期：2026-08-18  
 > 目标：列出会影响协议正确性、安全性、可实现性或发布条件的全部当前问题，并为每个问题保留备选路径、当前建议、依赖与关闭证据。
 
 ## 1. 使用规则
@@ -105,7 +105,7 @@
 4. 控制关系：自我声明；经济绑定；网络/行为聚类；第三方证明；仅保守地视为未知相关。
 5. 隐私：公开稳定标识；任务级伪名；可选择披露的关联证明。
 
-**当前建议。** 协议只要求可验证授权和可追踪轮换，不绑定单一身份基础设施；把“身份唯一性”和“控制独立性”分开；未知控制关系必须按可能相关处理，不能推定独立。
+**当前建议。** 协议只要求可验证授权和可追踪轮换，不绑定单一身份基础设施；把“身份唯一性”和“控制独立性”分开。V1 不再把“证明每个 ID 背后是不同自然人”作为关闭目标；官方主网使用可观察关联信号、相关性簇和暴露/损失上限，未知控制关系不能推定独立。
 
 **关闭证据。** 签名责任矩阵、授权与撤销状态机、轮换测试向量、委托上限、控制关系进入风险模型的明确规则，以及隐私威胁评审。
 
@@ -144,9 +144,9 @@
 7. 执行表示：**已决定 V1 使用 RIR，Rust Profile 为 reference frontend**；仍需在文本/二进制编码、类型系统、effects、资源计量、错误与 checkpoint 语义之间收敛。
 8. 前端：仅 Rust Profile；未来 C++23/其他 conforming frontend；或多前端同时进入 V1。当前决定为首项，后两项延期。
 
-**当前建议。** 协议使用不可变 Logical Object 输入，定义 Lease proposal → Provider accept → active Lease、epoch、幂等键、过期和结果接受规则；V1 只由 RPR 执行 Receipt 绑定且通过 validator 的 RIR，Rust Profile 负责 reference lowering。RPR 默认隐藏 Host OS 状态，只开放 ExecutionProfile capability。沙箱与计量可以采用不同部署机制，但必须满足冻结的 runtime/effects/resource Profile。经济结算应绑定接受的 Receipt 和 active Lease，而非绑定“进程是否曾运行”。
+**当前建议。** 协议使用不可变 Logical Object 输入，定义 Lease proposal → Provider accept → active Lease、epoch、幂等键、过期和结果接受规则；V1 只由 RPR 执行 Receipt 绑定且通过 validator 的 RIR，Rust Profile 负责 reference lowering。active Lease 是执行 scope/RPR/environment/resource tuple 的唯一授权，派生 `ExecutionCapability` 供 Dispatch 与 RPR 分别校验；不新增第三份 Dispatch scope。沙箱与计量可以采用不同部署机制，但必须满足冻结的 runtime/effects/resource Profile。经济结算应绑定接受的 Receipt 和 active Lease，而非绑定“进程是否曾运行”。
 
-**关闭证据。** Logical Object Schema/可用性、RIR grammar/canonical encoding/validator、Rust Profile 允许与禁止构造、lowering golden vectors、RPR capability ABI、runtime/effects/resource/error semantics、Dispatch/执行状态机、重复/迟到/分区测试、资源耗尽与逃逸威胁测试、恢复目标、Receipt 幂等性和故障注入结果。
+**关闭证据。** Logical Object Schema/可用性、RIR grammar/canonical encoding/validator、Rust Profile 允许与禁止构造、lowering golden vectors、RPR capability ABI、runtime/effects/resource/error semantics、ExecutionCapability golden vectors、Dispatch/RPR 旁路与换环境测试、执行状态机、重复/迟到/分区测试、资源耗尽与逃逸威胁测试、恢复目标、Receipt 幂等性和故障注入结果。
 
 **依赖。** OQ-02、OQ-10、OQ-11、OQ-12。
 
@@ -163,6 +163,8 @@
 5. 会话快照：任务创建时冻结；首个样本时冻结；每轮冻结；由部署协调层提供快照。
 
 **当前建议。** 为每个 TaskType 冻结 `VerificationProfile`，至少声明 `VerifiedClaim`、`ExcludedClaims`、输入域、结果等价、确定性、成本、安全/活性参数、失败模式和版本。Profile 分为 `DIRECT_VERIFIED`、`PROOF_VERIFIED`、`REEXEC_BOUNDED` 和 `REEXEC_AUDIT_ONLY`。开放注册只增加候选验证器，不能自动赋予真相权；Profile 是后续验证工作的严格前置对象。
+
+**局部状态（2026-08-21）。** VerificationProfile 的 P0-1A 语义已由 [`../03-protocol/verification-profile-schema.md`](../03-protocol/verification-profile-schema.md) 和 AUD-20260821-10 关闭；P0-1B 已开始但未关闭。OQ-06 仍保持 `OPEN`，因为具体任务族 predicate、完整注册/撤销、ExecutionCapability/会话快照实现和全量 conformance 尚未完成。
 
 **关闭证据。** VerifierProfile 模式、注册与撤销规则、等价关系测试、验证器不一致处理、会话快照和恶意验证器反例。
 
@@ -203,9 +205,9 @@ OQ-07 因而拆成两个状态：条件定理和数值语义为 `DECIDED / DERIV
 5. Sybil 成本：保证金；资源证明；付款历史；速率限制；邀请/证明；不依赖身份成本，只依赖硬风险上限。
 6. 隐私：原始信号公开；仅公开簇标签；零知识关联证明；本地评分；只保留保守上界。
 
-**当前建议。** 不宣称解决 Sybil，也不把经济成本当作独立性证明；优先采用相关性簇/证据折扣，并始终叠加任务、簇和系统级硬暴露上限。`REEXEC_BOUNDED` 还要求这些机制在 draw 前形成“可能支持错误候选”的能力集合上界 \(B\)，不能用实际票数替代。无法可靠观测关联时不得启用该 Profile，应降级为 `REEXEC_AUDIT_ONLY`。
+**当前建议。** 不宣称解决 Sybil，也不把经济成本当作独立性证明；优先采用相关性簇/证据折扣，并始终叠加任务、簇和系统级硬暴露上限。`REEXEC_BOUNDED` 还要求这些机制在 draw 前形成“可能支持错误候选”的能力集合上界 \(B\)，不能用实际票数替代。V1 不追求通用自然人唯一性证明；官方主网可在版本化 assurance、工程审计、有效期和绝对损失预算内接受有限相关性风险。未被该 assurance 覆盖的部署必须降级为 `REEXEC_AUDIT_ONLY` 或 `DISABLED`。
 
-**关闭证据。** 威胁覆盖、隐私影响评估、簇错误合并/漏合并敏感性分析、最坏损失证明、对抗仿真、参数校准和降级策略。
+**关闭证据。** 协议接口关闭需要簇引用、Snapshot/Capability 绑定、降级和损失上限 Schema；具体主网启用需要威胁覆盖、隐私影响评估、簇错误合并/漏合并敏感性、对抗仿真、参数校准、assurance 发布/撤销和损失预算。通用自然人唯一性证明不在关闭条件内。
 
 **依赖。** OQ-03、OQ-07、OQ-09、OQ-10。
 
@@ -262,7 +264,7 @@ OQ-07 因而拆成两个状态：条件定理和数值语义为 `DECIDED / DERIV
 5. 适配器：统一事务接口；outbox/inbox；补偿事务；幂等调用；两阶段提交；可验证收据。
 6. 区块链：不用；仅结算适配器；仅审计锚定；作为某部署的协调层；绝不作为协议必需条件。
 
-**当前建议。** 规范定义事件的因果前置条件、幂等键和可接受终局，不强制单一协调技术；分区期间不得超过预声明风险上限；适配器失败必须可重试或进入明确终态。区块链只可作为可选适配器或部署选择。
+**当前建议。** 规范定义事件的因果前置条件、幂等键和可接受终局，不强制单一协调技术；分区期间不得超过预声明风险上限；适配器失败必须可重试或进入明确终态。官方主网必须选择一个版本化 append-only/finality contract 并绑定 checkpoint/inclusion/consistency verifier；区块链、Merkle transparency log 或等价模块都可以实现，不能因“上链”跳过 contract 测试。
 
 **关闭证据。** 状态转移模型、分区与重放测试、时钟无关性分析、终局定义、适配器契约、故障矩阵和至少两个异构适配器的一致结算结果。
 
@@ -281,7 +283,7 @@ OQ-07 因而拆成两个状态：条件定理和数值语义为 `DECIDED / DERIV
 5. 监控：协议终态指标；风险预算；资金守恒；验证误差；Provider/簇集中度；适配器健康。
 6. 恢复：快照加日志；多区域复制；冷备；从 Receipt 重放；外部协调层恢复。
 
-**当前建议。** 规定最小规范事件和可验证 Receipt，允许部署增加日志；保留策略按数据敏感性和争议窗口分层；所有派生决定必须能追溯到冻结输入与规则版本；恢复测试必须覆盖资金和终态不重复。
+**当前建议。** 规定最小规范事件和可验证 Receipt，允许部署增加日志；官方主网状态转换只有在被 assurance 允许的日志后端 finalized 后生效，消费方验证 inclusion/consistency。保留策略按数据敏感性和争议窗口分层；所有派生决定必须能追溯到冻结输入与规则版本；恢复测试必须覆盖资金和终态不重复。日志忠实性属于工程 contract、权限和恢复审计，不再被错误要求由 Schema 证明现实。
 
 **关闭证据。** 事件模式、追踪 ID、保留矩阵、隐私评审、RPO/RTO 目标、重放与灾备演练、关键指标和告警阈值。
 
@@ -300,7 +302,7 @@ OQ-07 因而拆成两个状态：条件定理和数值语义为 `DECIDED / DERIV
 5. 紧急响应：单人响应；轮值小组；阈值授权；仅发布建议不触碰运行时；预先定义的兼容降级。
 6. 管理资金：志愿维护；赞助；基金；服务收入；协议费用；不设置持续组织。
 
-**当前建议。** v0.5 采用最小维护边界：维护者管理规范版本、参考工件和安全披露，但不能替任务裁决、改写证据或分配运行时收益。先用签名发布、可复现构建、ADR 和公开兼容性记录；只有在明确净收益和最小权限后才扩张组织。
+**当前建议。** v0.5 采用最小维护边界：维护者管理规范版本、参考工件、安全披露和官方主网 `MainnetAssuranceProfile`，但不能替任务裁决、改写证据、改变权重或分配运行时收益。assurance 只能限网络、先承诺、版本化并在运行中保守减权；主网外不继承。先用签名发布、透明日志、可复现构建、ADR 和公开兼容性记录；只有在明确净收益和最小权限后才继续扩张组织。
 
 **关闭证据。** 维护者权限表、发布/撤销流程、安全政策、密钥轮换、冲突与离任方案、成本预算、组织扩张/收缩触发器和法律载体判断。
 
@@ -358,16 +360,19 @@ OQ-01 发布条件 <─> OQ-13 Maintenance
 | 固定角色垄断规划、验证或结算 | REJECTED | 这些是 permissionless functions；安全来自有效性规则和可验证承诺 |
 | 默认以 51% 或简单多数决定正确性 | REJECTED | `Nmax = min(population, budget, policy)`；接受条件取决于声明模型和风险目标 |
 | 默认通过发行支付 Provider | REJECTED | 发行只是 FundingPolicy 的可选来源 |
-| 默认设立 Foundation 或治理委员会 | REJECTED | Maintenance 先保持最小边界；新增组织必须证明必要性和净收益 |
+| Foundation/委员会成为运行时 Principal 或个案最终裁判 | REJECTED | Maintenance 可以发布主网 assurance，但不能改个案、权重或终态 |
 | 把区块链作为协议、安全或真相前提 | REJECTED | 区块链最多是可选协调、审计或结算适配器 |
 | 把 TRUSTED 解释为绝对正确 | REJECTED | TRUSTED 只表示在冻结模型、证据与阈值下满足接受条件 |
 | 把身份数量视为独立证据数量 | REJECTED | 不假设身份独立；需要相关性处理与硬暴露上限 |
+| 单值 verdict 与 flag set 必须二选一 | SUPERSEDED | 保存完整 `CauseSet`，由冻结 reducer 派生唯一 `EffectiveVerdict` |
+| 增加检查必须增加第三个 Dispatch scope 权威 | REJECTED | active Lease 是唯一执行权威；Dispatch/RPR 多点校验派生 capability |
+| 所有来源忠实性都必须先有形式证明 | REJECTED | Schema/算法需确定；日志、权限、恢复和部署事实采用限域工程证据与 fail-closed |
 
 ## 19. 问题关闭流程
 
 关闭任一问题时必须完成：
 
-1. 将实验、证明、外部意见或测试链接到“关闭证据”；
+1. 将实验、证明、工程审计、故障注入、外部意见或测试链接到“关闭证据”，并标明它支持结构、算法、来源还是部署哪一层；
 2. 明确选择了哪个备选路径，拒绝了哪些路径及原因；
 3. 更新相应规范、架构、威胁、不变量和分析文档；
 4. 如果改变不可约实体、信任边界、资金权利或兼容性，新增 ADR；

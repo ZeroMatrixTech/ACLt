@@ -1,0 +1,23 @@
+{
+  "artifact_status": "STARTED_NOT_CLOSED",
+  "normative_source": "docs/03-protocol/verification-profile-schema.md",
+  "audit_baseline": "AUD-20260821-10",
+  "implemented": {
+    "L1a": [],
+    "L1b": ["SV-10", "SV-11", "SV-57", "SV-76"],
+    "L2": []
+  },
+  "partial": {
+    "L1a": ["SV-01", "SV-30", "SV-31"],
+    "L1b": ["SV-54a"],
+    "L2": []
+  },
+  "not_implemented": {
+    "policy": "§13.2 中未在 implemented 列出的 Type A 均为 NOT_IMPLEMENTED，validator 必须 fail closed 或明确拒绝进入生产模式。",
+    "l2": "canonical CBOR、Schema View 可逆投影及 18 个摘要尚未实现。",
+    "registries": "当前只有种子数据，不是官方 ACTIVE 主网注册表。",
+    "cross_implementation": "尚无第二语言实现。"
+  },
+  "type_b_excluded_from_p0_1b_closure": ["SV-24", "SV-34", "SV-56", "SV-67", "SV-100", "SV-111", "D-08-c"],
+  "deferred": ["SV-40"]
+}
