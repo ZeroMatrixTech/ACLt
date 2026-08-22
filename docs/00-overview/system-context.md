@@ -1,7 +1,7 @@
 # ACLt 系统上下文
 
 > 文档状态：架构边界基线  
-> 更新日期：2026-08-18  
+> 更新日期：2026-08-21
 > 目的：说明谁能作出承诺、谁能执行函数、协议接受什么，以及哪些能力位于系统边界之外
 
 ## 1. 系统边界
@@ -16,6 +16,7 @@ ACLt 的协议边界包含：
 - RIR 版本、规范工件、执行 Profile 与前端一致性边界；
 - RPR 对 Host OS effects、资源、错误和终止的规范化边界；
 - Lowering、Decomposition、Packing 和 Provider Dispatch 的合法性边界；
+- active Lease 派生 `ExecutionCapability`，并由 Dispatch 与 RPR 分别校验的边界；
 - 风险暴露、尝试、预算和资金上限；
 - 追加式证据、审计和状态重放语义；
 - 版本兼容、升级和适配器一致性要求。
@@ -37,14 +38,14 @@ flowchart TD
     P["Provider\n资源、执行与证据承诺"]
     A["ACLt Protocol\n对象、状态机与不变量"]
     I["Implementation & Adapters\n通信、存储、时间、随机性、结算"]
-    M["Maintenance Boundary\n规范、测试、发布与漏洞响应"]
+    M["Maintenance Boundary\n规范、测试、发布、主网保障与漏洞响应"]
 
     R -->|签署 Receipt 与政策| A
     P -->|接受 Lease 并提交证据| A
     A -->|验证后的权利与终态| R
     A -->|验证后的权利与终态| P
     I -->|执行协议语义| A
-    M -->|未来版本与兼容性材料| A
+    M -->|未来版本、只收紧的主网保障与兼容性材料| A
 ```
 
 图中的 Protocol 是规则集合，不是能主动收发消息的行为者。实际消息由 Requester、Provider 或实现组件产生，只有满足协议规则后才形成有效状态转换。
@@ -85,7 +86,7 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 | `Verifier` | 执行 `Verify` 的 Principal 或节点的上下文称呼 | 不是独立身份组，也不拥有最终真理权 |
 | `Scheduler`、`Sampler`、`Aggregator` | 函数执行上下文 | 输出必须由协议检查 |
 | `Maintainer` | 维护责任 | 只在 Maintenance Boundary 内有效 |
-| `Foundation` / 委员会 | 可选组织形式 | 只有证明净治理价值为正时才考虑引入 |
+| `Foundation` / 委员会 | 可选维护组织 | 可承担官方主网保障、日志和安全响应，但不是 Principal 或个案裁判 |
 | 区块链 | 可选实现基础设施 | 不属于 ACLt 安全性的默认前提 |
 | Node、Account、Device、Key | 实现、标识或证据载体 | 不新增 Principal 类型 |
 | Rust/C++ frontend、compiler | 实现组件 | 不是 Principal 或真理权威；输出必须通过统一 RIR conformance |
@@ -97,11 +98,11 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 
 | 阶段 | 主要交互 | 协议结果 | 安全退出 |
 |---|---|---|---|
-| 1. 选择版本与政策 | Requester 选择兼容的 ProtocolVersion、验证、资金和结算政策 | 可解析的任务创建输入 | `REJECTED_AT_CREATE` |
+| 1. 选择版本与政策 | Requester 选择兼容的 ProtocolVersion、验证、资金、结算政策和适用的主网保障 Profile | 可解析的任务创建输入 | `REJECTED_AT_CREATE` |
 | 2. 登记任务 | Requester 规范化并签署包含 RIRVersion/Profile/Digest 的 ComputeReceipt | 不可变 ReceiptID | `REJECTED_AT_CREATE` / `UNSUPPORTED` |
 | 3. Compile 与规划 | Lowering、Decomposition、Packing/Plan 形成并验证候选工件 | 规范 RIR、合法 WorkPlan / Assignment | `FAILED_PLANNING` / `UNSUPPORTED` |
 | 4. 准入与 Dispatch | Admit/Schedule 处理证据、能力、不确定度和限额 | ExposureDecision、Lease proposal | 排队、拒绝或 `EXPIRED` |
-| 5. 接受与执行 | Provider 显式接受 Lease；RPR 按当前 epoch 执行 | active Lease、Result、Checkpoint 或失败证据 | proposal 失效、重租约、`FAILED`、`EXPIRED` |
+| 5. 接受与执行 | Provider 显式接受 Lease；系统派生 ExecutionCapability；Dispatch 与 RPR 分别校验后执行 | active Lease、ExecutionCapability、Result、Checkpoint 或失败证据 | proposal 失效、能力校验失败、重租约、`FAILED`、`EXPIRED` |
 | 6. 冻结验证总体 | Sample 前建立 EligibilitySnapshot | 可审计总体、分层与随机承诺 | `UNRESOLVED` |
 | 7. 序贯验证 | Sample、Verify、Aggregate 循环 | 置信状态持续更新 | 扩样或到达 Nmax |
 | 8. 提交唯一终态 | Aggregate 应用预声明停止规则 | `TRUSTED` 或 `UNRESOLVED` | 事务重试，不得双终态 |
@@ -114,6 +115,7 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 |---|---|---|
 | 网络传输 | 消息可认证、可去重并可关联版本和因果关系 | 延迟、重试、Lease 到期或条件性活性失败 |
 | 持久化存储 | 保存不可变对象、追加事件和唯一提交约束 | 阻止不安全推进；恢复后重放 |
+| 追加式终局日志 | 为状态转换、保障发布和假设撤销提供可验证顺序、包含证明及终局规则 | 来源或终局条件不足时拒绝相应动作；不以 Schema 声称日志天然忠实 |
 | 对象或内容存储 | 按摘要提供程序、输入、结果和检查点 | 内容不可用时拒绝执行、验证或进入失败状态 |
 | Logical Object 存储 | 保持 canonical content、digest、版本和显式引用；物理位置不改变语义 | 摘要或版本不符时 fail closed；不得退化为共享宿主路径 |
 | 时钟与期限 | 提供足以执行 Lease 和 deadline 政策的时间语义 | 时钟假设不满足时不得声称正常活性 |
@@ -155,6 +157,9 @@ ACLt 不规定这些能力必须由同一系统、组织或账本提供。参考
 - RPR capability 与 Host OS 故障归一化条件；
 - 资金来源、授权上限和结算最终性；
 - 相关性信息的来源、缺失处理和隐私边界。
+- 官方主网保障 Profile 的发布者、证据等级、适用域、有效期和撤销条件；
+- 追加式日志、访问审计、最终性和灾难恢复的工程保证；
+- ExecutionCapability 的派生、Dispatch 校验、RPR 校验和对拍条件。
 
 未声明的假设不得被用于安全结论。
 
@@ -171,6 +176,7 @@ ACLt 不规定这些能力必须由同一系统、组织或账本提供。参考
 | 覆盖 VerificationDecision | 否 | 否 | 否 | 否 | 否 |
 | 绕过 FundingPolicy 结算 | 否 | 否 | 否 | 否 | 否 |
 | 发布未来 ProtocolVersion | 可提议 | 可提议 | 可提议 | 否 | 按发布流程执行 |
+| 发布官方主网保障 Profile | 可提议 | 可提议 | 可提议 | 仅记录/执行 | 按发布流程执行；只能收紧能力 |
 | 修改历史事件 | 否 | 否 | 否 | 否 | 否；只能追加更正 |
 
 “可以执行函数”不等于“输出必然被协议接受”；“按发布流程执行”也不等于维护者拥有运行时裁决权。
@@ -181,6 +187,8 @@ ACLt 不规定这些能力必须由同一系统、组织或账本提供。参考
 
 - 规范、Schema、状态机、测试向量与参考实现；
 - 发布签名、密钥轮换、版本撤销和兼容性说明；
+- ACLt 官方主网的版本化 `MainnetAssuranceProfile`、部署审计和应急暂停；
+- 追加式日志、透明度证明和访问审计的运营；
 - 漏洞接收、保密修复、协调披露和安全公告；
 - ADR、变更日志和适配器一致性套件。
 
@@ -191,8 +199,10 @@ ACLt 不规定这些能力必须由同一系统、组织或账本提供。参考
 - Requester 与 Provider 的个案权利裁决；
 - 未经协议授权的结算或退款；
 - 把维护者身份转化为验证或治理票权。
+- 把官方主网的保障结论自动外推到未审计网络；
+- 用保障 Profile 放宽 Receipt、验证规则或既有终态。
 
-维护组织的具体形式仍为 `OPEN / POLICY`。除非新增组织能证明其净治理价值高于权限扩张、行政成本和新信任根，否则不应成为协议必需部分。
+维护组织的具体形式仍为 `OPEN / POLICY`。官方主网可以由基金会或等价组织承担有限范围的保障和日志运营；该安排是部署政策，不新增 Principal，也不要求 ACLt 为主网之外的条件背书。
 
 ## 11. 实现一致性边界
 
@@ -207,7 +217,11 @@ ACLt 不规定这些能力必须由同一系统、组织或账本提供。参考
 7. 验证总体、规则和资金不得在观察结果后改变；
 8. PerformanceEvidence 只能追加或以新事件更正；
 9. 履约能力证据不能直接授予真理权；
-10. 维护者不能改变个案结果、权重或结算。
-11. 更换 Rust/C++ 等 frontend、compiler、RPR 或 Host OS 不得改变同一 Receipt 下的规范执行与结果语义。
+10. 维护者不能改变个案结果、权重或结算；
+11. 更换 Rust/C++ 等 frontend、compiler、RPR 或 Host OS 不得改变同一 Receipt 下的规范执行与结果语义；
+12. active Lease 是执行范围的唯一写入权威，Dispatch 与 RPR 必须对同一 ExecutionCapability 得到一致结论；
+13. 假设评估保留完整规范化 CauseSet，兼容终态只由版本化 reducer 派生；
+14. MainnetAssuranceProfile 必须绑定网络、版本、适用域、证据和有效期，且只能减少可调用能力；
+15. 状态、日志与保障来源的忠实性通过追加性、终局性、访问审计和故障注入验证，不由数据格式自行证明。
 
 无法通过这些一致性要求的基础设施，只能被称为相关软件，不能被称为符合 ACLt 的实现。

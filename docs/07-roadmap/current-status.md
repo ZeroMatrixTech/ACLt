@@ -2,7 +2,7 @@
 
 > 文档性质：持续更新的项目快照（living document）  
 > 基线版本：v0.5  
-> 快照日期：2026-08-18  
+> 快照日期：2026-08-21
 > 当前阶段：G0 — 语义与问题空间冻结  
 > 权威范围：记录“现在已经知道什么、还没有证明什么、下一步需要什么证据”；不替代协议规范、ADR 或测试结果。
 
@@ -19,7 +19,7 @@ V1 映射的唯一权威入口是 [`../03-protocol/v1-profile.md`](../03-protoco
 
 ## 2. 一句话状态
 
-ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 Principal、无中心裁决者的函数化流程、二维状态模型、ACLt Abstract Machine 边界、Logical Object Memory、Compile 三阶段、Provider Dispatch 握手、RIR/Rust Profile/RPR 执行边界，以及证据到暴露的风险链条已经明确；但对象模式、RIR/RPR 形式语义、完整状态机、验证定理、相关性控制、结算矩阵与参考实现都还没有达到可实现冻结状态。
+ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 Principal、无中心裁决者的函数化流程、二维状态模型、ACLt Abstract Machine 边界、Logical Object Memory、Compile 三阶段、Provider Dispatch 握手、RIR/Rust Profile/RPR 执行边界，以及证据到暴露的风险链条已经明确。有限总体验证的条件数学内核已闭合；对象 Schema、RIR/RPR 形式语义、完整状态机、主网 assurance、日志/恢复 contract、结算矩阵与参考实现仍未达到可实现冻结状态。
 
 因此，v0.5 当前是“可审查的研究与规范基线”，不是生产就绪协议，也不是已证明安全的系统。
 
@@ -38,7 +38,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | Logical Object Memory | 不可变接口 `DECIDED`；细节 `OPEN` | `CORE` | 内容寻址、显式引用、输出新对象 | Schema、可用性、保留、隐私和 GC |
 | 协议函数 | `DECIDED` | `CORE` | Compile/Plan/Admit/Schedule/Execute/Verify/Settle 等是 permissionless functions | 完整输入、输出、错误和确定性要求 |
 | Compile | 三阶段边界 `DECIDED`；算法 `OPEN` | `CORE` | `Lowering + Decomposition + Packing`，不得扩大 Receipt | TaskGraph、合法性谓词、等价证明和 vectors |
-| Provider Dispatch | 握手边界 `DECIDED`；算法 `OPEN` | `CORE` | proposal 不产生义务；Provider accept 后 Lease 生效 | 候选选择、排序、API、时钟和竞态 |
+| Provider Dispatch | 握手与单一权威边界 `DECIDED`；算法 `OPEN` | `CORE` | proposal 不产生义务；Provider accept 后 Lease 生效；Dispatch/RPR 消费 Lease capability | capability Schema、候选选择、API、时钟、旁路和竞态测试 |
 | Task 与 Receipt | `INVARIANT` 接口；Schema `OPEN` | `CORE` | 任务语义在结果揭示前冻结 | canonical encoding、哈希域、版本兼容 |
 | 执行表示与前端 | 方向 `DECIDED`；形式语义 `OPEN` | `CORE` | RIR 规范表示；Rust Profile reference frontend | RIR schema/validator、Rust lowering 和 conformance |
 | RPR 与 Host OS | 边界 `DECIDED`；contract `OPEN` | `CORE` | 默认隐藏宿主状态；不支持时 fail closed | capability ABI、effects、计量、错误、checkpoint |
@@ -48,6 +48,8 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | 资金 | 类型与解耦 `DECIDED`；账务 `OPEN` | `CORE` | FundingPolicy 不证明 correctness；发行非默认 | 锁定、耗尽、退款和破产处理 |
 | 结算 | `INVARIANT` 接口；矩阵 `OPEN` | `CORE` | 每项权利最多一次 | 故障归因、退款、尾数与部分履约 |
 | 维护边界 | `DECIDED`；流程 `OPEN` | `CORE` | Maintenance 不是运行时裁决者 | 发布、撤销、响应、密钥和最小组织流程 |
+| 主网工程 assurance | 原则 `DECIDED`；对象 `CANDIDATE` | `CORE` | 限 `network_id`、版本化、只减权、不进入个案权重 | Schema、组件注册、日志 contract、损失预算和撤销演练 |
+| 多原因假设状态 | 判决/诊断分层 `DECIDED` | `CORE` | 完整 CauseSet 派生唯一 EffectiveVerdict | reducer Schema、组合向量与迁移 |
 | 实现与适配器 | `OPEN` | `CORE` | Control Plane 是实现；基础设施可替换 | 参考实现、接口和互操作测试 |
 | 运营成熟度 | `OPEN` | — | 威胁与不变量登记已建立 | SLO、事件响应、灾难恢复和试点数据 |
 
@@ -60,8 +62,8 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 - `02-architecture`：Abstract Machine、Logical Object、Compile、Dispatch、分层架构、身份与任务生命周期。
 - `03-protocol`：协议规范骨架、V1 Profile、结果验证、能力证据与暴露模型。
 - `04-analysis`：稳健性论证和管理成本边界。
-- `05-decisions`：最小实体、RIR/Rust Profile、二维状态模型三项架构决策记录。
-- `06-research`：主张与来源登记。
+- `05-decisions`：最小实体、RIR/Rust Profile、二维状态、验证 Profile/e-process 与工程 assurance 决策记录。
+- `06-research`：主张与来源、验证数学模型及最后两个问题的思路树。
 - `07-roadmap`：当前状态与待决问题。
 - `08-governance`：已接受的审计程序、报告模板和按编号归档的审计记录。
 
@@ -93,7 +95,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | G5 | 对抗验证 | Sybil、串谋、证据刷取、预算耗尽、compiler/runtime 与维护滥权的损失界或检测率 | 未开始 |
 | G6 | 异构扩展与外部试点 | 新硬件、任务类型和可选账本保持不变量且证据不错误迁移 | 未开始 |
 
-任何 Gate 都不得用“已有实现”替代“相应语义已经证明”。实现只能为假设提供证据，不能反向定义协议真相。
+任何 Gate 都不得用“已有实现”反向定义协议语义。结构和算法闭合仍需要唯一 Schema、确定规则和可复算证据；来源忠实性和部署事实则允许由日志、权限审计、故障注入、试点与版本化 assurance 建立。工程证据不必被伪装成形式证明，但其适用网络、组件、有效期、撤销和损失边界必须公开。
 
 ### 6.1 2026-08-18 G0 连续性审计
 
@@ -119,8 +121,11 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 4. 冻结 RIR grammar/schema、canonical encoding、validator、Rust Profile lowering、RPR capability 与 runtime effects/resource/error 语义。
 5. 固定 Lowering/Decomposition/Packing 的 Schema、TaskGraph/WorkPlan 合法性谓词与语义保持条件。
 6. 建立威胁—不变量—函数—证明义务—测试追踪表。
-7. 固定 VerificationProfile、VerifiedClaim/ExcludedClaims、exact result equivalence、样本帧、部署 \(B/Q\)、有限总体 e-process、精确算术与随机性承诺。
-8. 写出资金锁定、终态、退款、处罚和 at-most-once 结算矩阵。
+7. 固定 VerificationProfile、VerifiedClaim/ExcludedClaims、MainnetAssuranceProfile、CauseSet/reducer、exact result equivalence、样本帧、有限总体 e-process、精确算术与随机性承诺；P0-1B 可用固定测试参数实现接口，不等待通用部署 \(B/Q\) 证明。
+8. 固定 Lease 派生 ExecutionCapability、Dispatch/RPR 检查接口和日志 finality/inclusion/consistency contract。
+9. 写出资金锁定、终态、退款、处罚和 at-most-once 结算矩阵。
+
+**P0-1 当前状态（2026-08-21）**：P0-1A 经 AUD-20260821-10 判定 `PASS / CLOSED`；P0-1B 已创建首批 L1a/L1b、注册表种子和单元测试工件，状态 `STARTED / NOT CLOSED`。L2、全量 119 项 Type A、完整五相位对象、18 摘要和第二语言对拍仍未完成；6 项 Type B 与 SV-40 不计入 P0-1B 关闭。
 
 ### P0 — 阻断公开发布
 
@@ -136,6 +141,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 3. 固定 CapabilityEstimate 的不确定性表达、冷启动和衰减模型。
 4. 建立最小可执行模型、仿真场景和失败注入基线。
 5. 建立 frontend lowering、RIR validator、RPR/Host OS capability 与资源计量的差分 conformance 基线。
+6. 为官方主网选择首批 assurance 组件集合、风险预算和撤销/降级演练；结论不外推到主网外。
 
 ### P2 — 可在核心稳定后并行
 
@@ -174,6 +180,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | 2026-08-18 | v0.5 / V1 target | 接受 SemanticStatus 与 VersionDisposition 二维分离；建立 V1 Profile 唯一映射 | ADR-0003、`03-protocol/v1-profile.md` | G0/G1/G2 |
 | 2026-08-18 | v0.5 / V1 target | 保守闭合 Abstract Machine、Logical Object、Compile、RPR/Host OS 与 Provider Dispatch 的概念边界；形式语义和证据继续开放 | 架构、协议、生命周期和 AUDIT-20260818-01 | G0/G1/G2 |
 | 2026-08-19 | v0.5 / V1 target | 接受 VerificationProfile 与有限总体 e-process；条件数学内核经精确递推、闭式、全枚举和 DP 对拍闭合；通用 permissionless 的 \(B/Q\) 与独立性仍阻断部署 | ADR-0004、验证模型说明、`tests/verification_model/` | G0/G1 |
+| 2026-08-21 | v0.5 / V1 target | 接受工程事实分层闭合和官方主网 assurance；不再以自然人身份唯一性或现实日志的形式完美证明阻塞接口实现；多原因采用事实集合+单一派生 verdict，Dispatch 采用单一 Lease 权威+多检查点 | ADR-0005、最后两个问题思路树 | G0/G1/G2 |
 
 日志只记录影响项目认知或成熟度的变化；排版、错字和无语义重构不必记录。
 

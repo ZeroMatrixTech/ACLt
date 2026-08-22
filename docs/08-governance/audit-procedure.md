@@ -165,6 +165,17 @@ Threat → Invariant → Protocol function/state transition
 
 每个状态转换必须说明所保持的不变量。并发、重试、崩溃、分区、恢复、迁移和适配器替换不得绕过不变量。无法证明合法性时，必须拒绝、回滚或进入已定义的安全终态。
 
+审计必须先给发现分配证据层，避免把所有问题都误判成“需要数学证明”：
+
+| 层 | 审计问题 | 合格证据 |
+|---|---|---|
+| 结构 | 输入是否唯一可编码、可解析 | Schema、canonical vectors |
+| 算法 | 相同完整输入是否唯一输出 | 纯函数、定理、模型检查、差分对拍 |
+| 来源忠实性 | 输入是否由真实状态机产生且无已知旁路 | 接口/权限审计、日志、故障注入、恢复和集成测试 |
+| 部署风险接受 | 哪个网络在何组件和损失边界内启用能力 | 版本化 assurance、有效期、组件清单、风险预算、撤销演练 |
+
+结构或算法不可两解是接口实现的阻断项。来源或部署证据尚未建立时，可以继续实现接口，但相应能力必须保持 `DISABLED/AUDIT_ONLY` 或 fail closed。不得以“没有开放世界形式证明”为由阻塞与该假设解耦的 Schema、validator 和测试，也不得以“已经实现”为由把来源事实升级成数学真理。
+
 对于 V1，至少检查：
 
 - 规范对象字段、版本、canonical encoding 和哈希域；
@@ -174,6 +185,8 @@ Threat → Invariant → Protocol function/state transition
 - 验证器注册、结果等价和统计适用条件；
 - 资金锁定、耗尽、退款、故障归因和 at-most-once 结算；
 - reference implementation、golden vectors、差分测试和故障注入。
+- MainnetAssuranceProfile、CauseSet/reducer、ExecutionCapability 与 append-only/finality 日志 contract；
+- Type A 文件向量与 Type B 数据流/权限/恢复审计是否分开。
 
 输出：追踪覆盖率、孤立项和阻断证据。
 
@@ -237,7 +250,7 @@ Threat → Invariant → Protocol function/state transition
 
 发现项分级：
 
-- `BLOCKER`：使审计目标或 Gate 无法通过；
+- `BLOCKER`：使审计目标或 Gate 无法通过；尚未证明某候选“全局最优”本身不是 BLOCKER，除非目标明确承诺该最优性或缺失会使算法不可调用/能力无法 fail closed；
 - `MAJOR`：会造成语义、安全、许可或实现不一致；
 - `MINOR`：不改变核心语义，但需要修正；
 - `NOTE`：观察项或后续建议。
@@ -286,4 +299,3 @@ Threat → Invariant → Protocol function/state transition
 5. 在审计报告中记录偏差和迁移影响。
 
 任何较简化的检查单只能作为本程序的执行视图，不能删除上述强制阶段或降低证据要求。
-

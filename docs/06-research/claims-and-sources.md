@@ -43,6 +43,10 @@
 | CLM-109 | Bayesian policy 可以在不进入正确性权重的前提下提高 ACLt 验证采样或成本效率 | `CANDIDATE` | `HYPOTHESIS`，Priority `P1` | 尚无 ACLt 特定效率证据 | posterior 不再是正确性闸门；需要 prior sensitivity、成本和尾延迟实验 |
 | CLM-110 | 只限制实际支持票数、却允许支持能力集合在看到 draw 后选择，不能保持有限总体 e-process 的 Type-I 保证 | `DECIDED` | `DERIVED / COUNTEREXAMPLE` | 有理数全枚举和最坏自适应 DP | 反例针对当前算法/参数；\(C=B+1\) 不一定立即超过给定 \(\varepsilon_F\) |
 | CLM-111 | 给定正确候选支持下界 \(Q\)，精确有限总体 DP 可以计算最小活性预算并保留平台段 | `DECIDED` | `DERIVED / CONDITIONAL` | DP 与全排列 oracle 对拍 | 端到端活性还需 \(Q\) 的覆盖率 \(1-\delta_Q\)，合成失败界为 \(\delta_Q+\delta_L\) |
+| CLM-112 | 保存完整规范化 `CauseSet`，再由版本化 reducer 派生单值 `EffectiveVerdict`，可以同时保留诊断信息与跨实现兼容终态 | `DECIDED` | `DESIGN_VALID` | ADR-0005、INV-13、反例树 | 不证明 reducer 的具体优先序最优；必须以向量验证交换律、幂等性和排序无关性 |
+| CLM-113 | active Lease 作为唯一执行范围权威，并派生由 Dispatch 与 RPR 分别校验的 `ExecutionCapability`，比维护第三份可写 Scope 更容易保持一致 | `DECIDED` | `DESIGN_VALID` | ADR-0005、INV-16、任务生命周期 | 不证明 Lease 来源天然忠实；需要派生、拒绝、竞态和对拍测试 |
+| CLM-114 | Schema 只能证明输入结构与确定算法，不能单独证明日志、时钟、Registry 或运维系统如实产生了输入 | `DECIDED` | `ENGINEERING_BOUNDARY` | ADR-0005、威胁模型 | 工程实现仍须提供追加性、终局性、访问审计、故障注入和恢复证据 |
+| CLM-115 | 版本化且只能收紧能力的官方主网保障 Profile，可以在不授予基金会个案真理权的前提下承接有限部署风险 | `CANDIDATE` | `ENGINEERING_HYPOTHESIS` | ADR-0005、行政成本分析 | 只适用于明示网络和范围；净价值、误暂停率、发布密钥与组织捕获仍需试点数据 |
 
 ## 3. 来源登记与边界
 

@@ -1,7 +1,7 @@
 # ACLt Protocol 威胁模型
 
 > 文档状态：G0 安全需求基线  
-> 更新日期：2026-08-19
+> 更新日期：2026-08-21
 > 适用范围：协议规范、参考实现、适配器、仿真与维护流程  
 > 配套文档：[系统不变量](invariants.md)
 
@@ -83,6 +83,8 @@ ACLt Protocol 不默认信任：
 | 时钟 | Lease、deadline 与有效期依赖明确的时间模型和容差 | 不满足时不得声称活性；不得接受含糊的迟到权利 |
 | 网络 | 消息可能延迟、重复、乱序或丢失；恢复条件必须声明 | 依靠幂等、epoch、重试与安全终态，不假定实时同步 |
 | 持久化 | 实现提供原子唯一约束、追加事件和可验证恢复 | 无法保证时停止提交终态或结算 |
+| 官方主网 assurance | 版本化对象绑定 `network_id`、允许组件、能力处置、有效期、conformance 与绝对损失预算 | 缺失、过期、撤销或组件不匹配时对应能力 `DISABLED/AUDIT_ONLY`；主网外不继承 |
+| 事件日志后端 | 官方主网状态转换进入已批准 append-only/finality contract，消费方校验 checkpoint 与 inclusion/consistency | 未 finalized、证明缺失或后端不匹配时不得驱动安全终态 |
 | 任务验证器 | 每类验证方法只在其声明任务语义和错误模型内有效 | `UNSUPPORTED`、`UNRESOLVED` 或拒绝创建 |
 | 随机性 | 抽样随机性在观察结果前承诺且可审计 | 抽样无效；不得输出 `TRUSTED` |
 | 错误支持能力界 | `REEXEC_BOUNDED` 必须在 draw 前以独立证据建立固定能力集合 \(A^-(c)\) 及 \(|A^-(c)|\le B\)，且集合不依赖 draw order | 未建立则不得启动；被带外证据撤销则 `ASSUMPTION_INVALID`；不得从本轮票数伪造运行时检查 |
@@ -91,6 +93,10 @@ ACLt Protocol 不默认信任：
 | 相关性信息 | 控制关联可能不完整且不可视为零 | 保守折减证据并收紧集群暴露上限 |
 
 假设是安全结论的条件，不是系统已经证明的事实。
+
+### 4.3 工程证据与形式证据分层
+
+结构和算法必须给出机器可复算的唯一结果；输入来源忠实性与具体主网部署条件可以由日志、权限隔离、集成测试、故障注入和版本化 assurance 建立。工程证据未建立时应关闭对应能力，而不是声称 Schema 已经证明现实，也不阻止与该能力解耦的接口实现。证据分层和主网边界以 [ADR-0005](../05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md) 为准。
 
 ## 5. 攻击者与故障主体
 
@@ -189,6 +195,10 @@ ACLt Protocol 不默认信任：
 | TH-33 | Rust Profile 或未来 frontend 对相同受支持程序产生不等价 RIR，或 compiler 被攻破 | 同一源任务形成不同执行义务、共因错误或后门 | 规范 lowering；RIR canonical digest；可复现构建；多实现 golden/differential tests | INV-01、INV-02、INV-16 | 架构选择 `DECIDED`，规则与测试 `OPEN/P0` |
 | TH-34 | RIR parser/validator/RPR 接受未声明指令、Logical Object、effect、Host OS 访问或原生回退 | 沙箱逃逸、隐藏输入、不可审计 I/O、跨节点语义漂移 | fail-closed validator；显式 Object refs；RPR default-deny capability；V1 Profile allowlist；禁止静默 native fallback | INV-01、INV-09、INV-16 | 边界 `DECIDED`；contract/test `OPEN/P0` |
 | TH-35 | 不同 runtime、硬件或计量实现对资源、终止、错误或结果语义不同 | 结果分叉、预算绕过、错误归因或验证失效 | 规范 runtime/resource model；跨实现 conformance；差分与边界测试 | INV-01、INV-09、INV-16 | `OPEN/P0` |
+| TH-36 | 维护组织把主网 assurance 扩张为个案裁判、事后升权或主网外通用保证 | 绕过先承诺、形成中心真理权、误导外部使用者 | assurance 版本化、限 `network_id`、只允许运行中减权；禁止进入证据权重和停止规则 | INV-12、INV-14、INV-15 | 边界 `DECIDED`；对象 Schema `CANDIDATE/P0` |
+| TH-37 | 实现绕过批准的日志后端、使用未 finalized 事件或伪造 inclusion/consistency | 状态回滚、分叉、虚假终态或不可重放 | 状态机强制写入；checkpoint/finality verifier；独立对账、恢复与旁路测试 | INV-04、INV-13、INV-16 | contract 边界 `DECIDED`；实现 `OPEN/P0` |
+| TH-38 | Dispatch 或 RPR 绕过 active Lease，另取一套 scope/RPR/environment 字段 | 执行条件漂移、越权运行、验证边界失效 | Lease 派生 `ExecutionCapability`；Dispatch 与 RPR 双检查；变化生成新 Lease，不设第三 scope 权威 | INV-01、INV-08、INV-10、INV-12 | 设计 `DECIDED`；接口与 Type B 审计 `OPEN/P0` |
+| TH-39 | 多个假设同时失效时只保存一个人工选择原因，或不同实现以不同 flag 顺序派生终态 | 诊断证据丢失、终态分叉、错误归因 | 保存规范 `CauseSet`；冻结 reducer 派生唯一 `EffectiveVerdict`；原因集合和派生值一起绑定 | INV-04、INV-13、INV-16 | 分层设计 `DECIDED`；Schema/向量 `OPEN/P0` |
 
 ## 8. 关键攻击路径
 
@@ -272,6 +282,8 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 - 攻击成本大于协议内收益即可排除攻击；
 - 验证资金可以通过临时发行变为“免费”；
 - 区块链或去中心化存储会自动满足 ACLt Protocol 不变量；
+- 官方主网 assurance、Foundation 报告或一次工程审计等于绝对正确性证明；
+- 官方主网的条件性保证自动适用于 fork、私有部署、替换组件或主网外业务；
 - 中心化参考实现已经具备分布式容错；
 - 未经证明的序贯方法保持 anytime-valid 误差控制。
 - Rust 的语言安全、RIR 的存在或单一参考 compiler 自动保证结果正确、确定性、资源一致或分布式安全；
@@ -285,7 +297,7 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 |---|---|---|
 | P0 | canonical schemas、编码、摘要范围与版本迁移 | Schema、正反例、等价性和篡改测试 |
 | P0 | Abstract Machine/Logical Object Schema、RIR canonical encoding、validator、Rust Profile lowering、RPR/Host OS capability、runtime effects 与资源语义 | golden vectors、恶意工件负例、隐藏宿主输入负例、可复现 lowering、跨实现差分与计量测试 |
-| P0 | Lowering/Decomposition/Packing 与 Provider Dispatch | TaskGraph/WorkPlan 语义保持、proposal/accept/active Lease 状态机、竞态和越权负例 |
+| P0 | Lowering/Decomposition/Packing 与 Provider Dispatch | TaskGraph/WorkPlan 语义保持、proposal/accept/active Lease 状态机、`ExecutionCapability`、Dispatch/RPR 双检查、竞态和越权负例 |
 | P0 | Principal、函数、签名责任和权限边界 | 机器可表达权限矩阵与越权测试 |
 | P0 | WorkPlan/Assignment 的 DAG、合并和失败语义 | 合法性算法、测试向量、反例 |
 | P0 | Lease、Attempt、Result、Decision、Settlement 状态机与竞态 | 状态机、模型检查、并发与重放测试 |
@@ -296,6 +308,8 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 | P0 | FundingPolicy、退款、故障归因、资不抵债和资金守恒 | 账务状态机、唯一键、故障与并发测试 |
 | P0 | 分区、时钟、事务、幂等、备份恢复和适配器一致性 | 明确故障模型、RPO/RTO 演练、conformance suite |
 | P0 | 发布、撤销、升级、密钥和漏洞响应 | 维护权限模型、签名与撤销演练 |
+| P0 | 主网 assurance 与工程日志 | `MainnetAssuranceProfile` Schema、网络/组件限域、日志 contract、finality/inclusion/consistency、旁路和恢复测试 |
+| P0 | 多原因假设失效 | `CauseSet`、冻结 reducer、`EffectiveVerdict`、多原因组合向量和迁移规则 |
 | P0 | ACLt 公共品牌清查 | 商标、域名和包名的独立结论；不影响协议安全语义 |
 
 ## 13. 威胁模型更新规则

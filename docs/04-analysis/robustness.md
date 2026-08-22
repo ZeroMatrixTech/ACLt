@@ -3,7 +3,7 @@
 > 文档状态：Living evidence ledger  
 > 语义基线：v0.5  
 > 当前结论：完整候选架构已形成；整体鲁棒性 **未证明**  
-> 最后更新：2026-08-18
+> 最后更新：2026-08-21
 
 ## 1. 鲁棒性的严格含义
 
@@ -36,6 +36,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | 实现中立 | Adapter 替换保持语义 | INV-16 | `OPEN/P0` |
 | 执行一致性 | frontend、compiler 与 runtime 保持同一 RIR/Profile 语义 | ADR-0002、INV-01/02/09/16 | `DECIDED direction / OPEN/P0 evidence` |
 | 逻辑机器一致性 | Abstract Machine、Logical Object、Compile 和 Dispatch 不引入隐藏共享状态或权威 | ADR-0003、INV-01/02/08/16 | 边界 `DECIDED`；证据 `OPEN/P0` |
+| 工程部署可信度 | 官方主网只在版本化组件、日志、有效期和损失预算内启用能力 | ADR-0005 | 边界 `DECIDED`；具体部署证据 `OPEN/P0` |
 
 ## 3. 证据等级
 
@@ -49,6 +50,8 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | E5 | 外部异构试点与持续运行数据 | 支持受限部署经验，不等于普遍证明 |
 
 当前项目大多数安全结论处于 E1；16 条不变量的规范意图已定，但尚未整体达到 E2。
+
+证据等级不是一条只能向“形式证明”前进的单线。规范算法优先追求 E2/E3；来源忠实性通常需要 E4，部署风险接受需要 E4/E5 与持续监控。工程证据不能证明开放世界真理，但可以在明确范围内支持能力启用。
 
 ## 4. 当前可支持的论证链
 
@@ -148,6 +151,22 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 边界：prior sensitivity 和效率收益仍需实验；Bayesian 结果不得进入证据权重、停止阈值或真理判决；
 - SemanticStatus：职责边界 `DECIDED`；效率模型 `CANDIDATE/P1`。
 
+### RB-13：主网 assurance 将开放世界问题限域
+
+- 前提：assurance 在结果出现前版本化绑定网络、组件、有效期、相关性策略和损失预算；
+- 机制：能力取 `DISABLED/AUDIT_ONLY/ENABLED`，运行中只能保守减权；
+- 结论：无需先证明所有身份独立或所有实现无缺陷，也能对官方主网有限条件作可撤销的工程风险接受；
+- 边界：assurance 不进入个案权重，不适用于主网外，维护密钥和被审组件仍可能失陷；
+- 状态：职责边界 `DECIDED`；具体对象和部署证据 `CANDIDATE/P0`。
+
+### RB-14：一个权威值可以有多个诊断和检查点
+
+- 前提：原因 reducer 与 Lease 派生 capability 均版本化、可复算；
+- 机制：完整 `CauseSet` 派生一个 `EffectiveVerdict`；Dispatch/RPR 多次检查同一 active Lease capability；
+- 结论：不会为了保存诊断信息制造多套终态，也不会为了增加检查制造第三份 scope 权威；
+- 边界：日志旁路、实现绕过和 reducer 代码错误仍需 Type B 审计与差分测试；
+- 状态：结构决定 `DECIDED`；Schema、接口与测试 `OPEN/P0`。
+
 ## 5. 尚不能支持的主张
 
 | 主张 | 缺失证据 |
@@ -162,6 +181,7 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | RIR 或 Rust Profile 已保证确定性/正确性 | RIR 形式语义、validator、lowering、runtime、effects/resource conformance 与差分测试 |
 | Abstract Machine 或 Logical Object 已实现共享一致内存 | V1 明确不提供共享可变地址空间；仍需 Object Schema、可用性和恢复证据 |
 | 通用 permissionless 重执行已提供安全停止保证 | 具体部署对支持能力集合上界 \(B\)、集合冻结/独立性、活性下界 \(Q\) 和验证器语义的证据 |
+| 官方主网 assurance 等于普遍正确 | 主网外、替换组件、未知实现缺陷和外部业务语义不在其保证内 |
 
 ## 6. 核心证明义务
 
@@ -181,6 +201,10 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 | PO-12 | Logical Object 在存储、复制、缓存和恢复后保持 canonical identity 与显式引用 | Schema + golden vectors + availability/fault tests | G0/G2/G4 |
 | PO-13 | Lowering/Decomposition/Packing 与 Provider Dispatch 不改变 Receipt 义务或产生未接受权利 | 状态机 + semantic differential tests + race injection | G0/G2/G3 |
 | PO-14 | 有限总体 e-process 在声明的能力集合模型下保持 Type-I 界，并与精确 DP/跨实现规则一致 | 条件证明 + 有理数全枚举 + 递推/闭式对拍 + 事后选择反例 | G0/G1 |
+| PO-15 | 主网 assurance 只能限域、减权且不能进入个案权重 | Schema/权限测试 + key compromise + 发布/撤销演练 | G0/G2/G5 |
+| PO-16 | 经批准日志后端没有已知旁路，恢复后仍能重放唯一状态 | integration audit + inclusion/consistency/finality + crash/reorg injection | G2/G4 |
+| PO-17 | 多原因集合在所有实现中派生同一 verdict 且不丢失诊断事实 | golden vectors + reducer differential tests | G0/G2 |
+| PO-18 | Dispatch/RPR 只消费 active Lease capability，执行元组变化不能静默绕过绑定 | data-flow audit + race/replay/environment-swap tests | G0/G2/G3 |
 
 ## 7. 仿真最小集合
 
@@ -204,6 +228,8 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - Maintainer/发布密钥失陷和 Adapter 语义漂移。
 - compiler 后门、lowering/decomposition/packing 分歧、隐藏宿主 effect、native fallback 与 RPR 计量分歧；
 - 能力集合事后选择、\(B\) 误设、活性语料外推、Bayesian/FoundationReport 权重注入；
+- assurance 跨网络复用、事后升权、日志旁路、未 finalized 事件、Lease capability 重放与换环境；
+- 多个假设同时失效、原因顺序变化和 reducer 版本迁移；
 
 ### 输出指标
 
@@ -244,10 +270,11 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 异构硬件和非确定性任务可能破坏结果等价。
 - Rust frontend、RIR validator 或 RPR 的共因缺陷可能让多次执行产生相同错误；
 - Logical Object 可用性、Compile 语义保持和 Dispatch 竞态仍无证明；有限总体数学内核虽已条件闭合，部署 \(B\)、\(Q\) 与能力集合独立性仍无通用证明。
+- 主网 assurance、日志后端、ExecutionCapability 与 reducer 会引入新的实现和维护信任面；它们通过限域、测试、撤销和损失上限管理，不被描述为形式证明。
 
 ## 10. 当前严格结论
 
-v0.5 已把主要风险转化为显式对象、不变量、上限和证明义务，并删除 Rank、51%、默认发行和固定角色等不受支持的安全捷径。这是架构进展，不是鲁棒性证明。
+v0.5 已把主要风险转化为显式对象、不变量、上限和证明义务，并删除 Rank、51%、默认发行和固定角色等不受支持的安全捷径。官方主网可以在版本化 assurance 的有限工程条件内推进实现和试验；这是一项可撤销、损失有界的工程结论，不是开放世界的鲁棒性证明。
 
 ## 11. 更新记录要求
 

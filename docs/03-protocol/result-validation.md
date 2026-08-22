@@ -2,8 +2,8 @@
 
 > 文档状态：`CANDIDATE` verification design  
 > 语义基线：v0.5  
-> 最后更新：2026-08-19
-> 严格限制：有限总体 e-process 的条件数学内核已闭合；具体部署的支持能力上界、活性下界和独立性前提仍未建立时，不得启动 `REEXEC_BOUNDED` 或声称通用 permissionless 验证安全
+> 最后更新：2026-08-21
+> 严格限制：有限总体 e-process 的条件数学内核已闭合；`REEXEC_BOUNDED` 只能在绑定的官方主网 assurance 和有限工程条件内启用，不构成通用 permissionless 或主网外保证
 
 ## 1. 验证目标
 
@@ -20,6 +20,8 @@
 ## 2. 任务验证 Registry
 
 每个 Receipt MUST 引用一个版本化 `VerificationProfile`；具体证据方法作为其 `VerificationType`。Registry 至少需要描述：
+
+Profile、Claim、ExcludedClaims、MainnetAssurance、五相位 validator 与 canonical encoding 的当前权威语义见 [`verification-profile-schema.md`](verification-profile-schema.md)。该文件已关闭 P0-1A；P0-1B 实现覆盖仍在进行。
 
 - 适用任务族和输入/输出语义；
 - 适用 RIRVersion、执行 Profile、runtime/effects 与规范结果表示；
@@ -47,19 +49,22 @@ V1 `CORE` 的基础证据类型是 `REEXEC_EXACT`：验证者对相同规范 RIR
 
 Profile 分为 `DIRECT_VERIFIED`、`PROOF_VERIFIED`、`REEXEC_BOUNDED` 与 `REEXEC_AUDIT_ONLY`。只有前三者在各自前提成立时可以产生 `TRUSTED`；没有可审计的支持能力上界时，重执行只能使用 `REEXEC_AUDIT_ONLY`。权威决定见 [`../05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md`](../05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md)。
 
+官方主网还必须绑定版本化 `MainnetAssuranceProfile`，声明 `network_id`、Profile capability、允许的 RPR/validator/log backend、相关性策略、有效期与损失预算。它是部署准入，不是额外证据权重；主网外环境不继承该声明。工程信任边界见 [ADR-0005](../05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md)。
+
 ## 3. 验证生命周期
 
-1. **候选形成**：接收绑定合法 RIRVersion/runtime/current-epoch 的 ResultSubmission；
-2. **方法确认**：验证 Receipt 引用的 VerificationType 可用；
-3. **结果规范化**：应用预声明等价/聚类规则；
-4. **Snapshot**：冻结有限总体、排除、分层、相关性和证据摘要；
-5. **随机承诺**：在观察 draw 结果前固定随机性来源；
-6. **Sample**：生成不放回 draw；
-7. **Verify**：产生带来源、方法、成本和关联信息的证据；
-8. **Aggregate**：更新置信或证据状态；
-9. **Stop/continue**：应用预声明停止规则；
-10. **Decision**：原子提交 `TRUSTED` 或 `UNRESOLVED`；
-11. **Evidence update**：追加可归责记录，不产生 Rank。
+1. **部署准入**：检查绑定网络的 assurance、Profile capability、组件允许集合与有效期；
+2. **候选形成**：接收绑定合法 RIRVersion/runtime/current-epoch 的 ResultSubmission；
+3. **方法确认**：验证 Receipt 引用的 VerificationType 可用；
+4. **结果规范化**：应用预声明等价/聚类规则；
+5. **Snapshot**：冻结有限总体、排除、分层、相关性和证据摘要；
+6. **随机承诺**：在观察 draw 结果前固定随机性来源；
+7. **Sample**：生成不放回 draw；
+8. **Verify**：产生带来源、方法、成本和关联信息的证据；
+9. **Aggregate**：更新置信或证据状态；
+10. **Stop/continue**：应用预声明停止规则；
+11. **Decision**：原子提交 `TRUSTED` 或 `UNRESOLVED`；
+12. **Evidence update**：追加可归责记录，不产生 Rank。
 
 ## 4. EligibilitySnapshot
 
@@ -74,6 +79,7 @@ Profile 分为 `DIRECT_VERIFIED`、`PROOF_VERIFIED`、`REEXEC_BOUNDED` 与 `REEX
 - 随机性承诺；
 - error target、tolerance 和 stopping rule；
 - `VerificationProfile`、`VerifiedClaim`、`ExcludedClaims`；
+- `network_id`、`MainnetAssuranceProfile` 版本/digest、组件允许集合与绝对损失上限；
 - 若使用 Bayesian policy：仅用于效率的 prior、likelihood、采样提案和 prior sensitivity policy；
 - `REEXEC_BOUNDED` 的 \(G,B,Q,\varepsilon_F,\delta_Q,\delta_L\)、e-process 算法版本、精确算术规则和冻结混合权重；
 - 支持能力集合冻结、随机排列独立性、Bridge 与活性校准的证据引用、适用假设和失效条件；
@@ -185,7 +191,7 @@ Aggregate MUST 是可复算的纯规则或等价确定过程。它不得根据�
 
 ### `TRUSTED`
 
-只表示 `VerifiedClaim` 在冻结模型、数据、假设和停止条件下满足协议背书要求。Decision MUST 携带完整证据链、Profile、模型版本和 `ExcludedClaims`。对于重执行，默认只背书“绑定的 RIR 在绑定的 RPR/equivalence 语义下得到该结果”，不背书 Source→RIR lowering 正确，也不背书结果符合 Requester 的未编码意图。
+只表示 `VerifiedClaim` 在冻结模型、数据、假设、主网 assurance 和停止条件下满足协议背书要求。Decision MUST 携带完整证据链、Profile、模型版本、`network_id`、assurance 引用和 `ExcludedClaims`。对于重执行，默认只背书“绑定的 RIR 在绑定的 RPR/equivalence 语义下得到该结果”，不背书 Source→RIR lowering 正确，也不背书结果符合 Requester 的未编码意图或主网外环境。
 
 ### `UNRESOLVED`
 
@@ -206,6 +212,9 @@ Maintainer、Requester、多数 Provider 或高能力 Provider MUST NOT 覆盖 D
 | Nmax/预算耗尽 | UNRESOLVED 或 FUNDING_EXHAUSTED |
 | 两个 Decision 并发 | 原子唯一约束；只允许一个提交 |
 | 维护者要求改权重 | 拒绝；通过未来版本处理 |
+| assurance 缺失、过期、撤销或组件不匹配 | 创建期降级/拒绝；运行期 `VERIFICATION_INVALIDATING`，不得产生新的 `TRUSTED` |
+| 多个假设同时失效 | 保存完整规范 `CauseSet`，由冻结 reducer 派生唯一 `EffectiveVerdict`；不得人工挑选原因 |
+| 日志 checkpoint/finality/inclusion/consistency 无法验证 | 对应事件不产生协议效力；fail closed |
 
 ## 12. 验收与证明义务
 
@@ -226,6 +235,9 @@ Maintainer、Requester、多数 Provider 或高能力 Provider MUST NOT 覆盖 D
 - 独立递推实现与闭式/全枚举 oracle 的持续对拍；
 - 参数敏感性及反证条件。
 - frontend lowering、RPR/Host OS 与验证器共因错误的差分/故障测试。
+- `MainnetAssuranceProfile` 的网络/版本/组件/有效期/减权/损失预算正反向量；
+- `CauseSet + EffectiveVerdict` 的多原因组合对拍；
+- append-only/finality 日志的 inclusion/consistency、重组、恢复和旁路测试。
 
 ## 13. 文献边界
 
@@ -233,4 +245,4 @@ Maintainer、Requester、多数 Provider 或高能力 Provider MUST NOT 覆盖 D
 
 ## 14. 更新规则
 
-任何改变 VerificationType、Snapshot、抽样单位、相关性、随机性、停止条件或 Decision 语义的提议必须同步更新 Threat TH-15 至 TH-21、INV-11/12/14、ADR、仿真计划和 open questions。
+任何改变 VerificationType、Snapshot、抽样单位、相关性、随机性、停止条件、主网 assurance、原因归约或 Decision 语义的提议必须同步更新 Threat TH-15 至 TH-21/TH-36—TH-39、INV-11—INV-16、ADR、仿真计划和 open questions。

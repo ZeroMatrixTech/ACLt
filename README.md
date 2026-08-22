@@ -4,7 +4,7 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-08-19**
+> **最后更新：2026-08-21**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -25,12 +25,15 @@ ACLt Protocol 已形成一套完整的候选协议架构，但**尚未证明整�
 - Provider 可零前置抵押参与，但暴露、并发、价值、Lease、尝试和损失必须有界；
 - 履约历史只允许形成 `PerformanceEvidence → CapabilityEstimate ± Uncertainty → ExposureDecision`；
 - 履约能力不得授予验证票权、真理权、最终审计权或治理权；
-- 验证优先研究 exact execution evidence、冻结有限总体、不放回抽样、Bayesian stop proposal 与 anytime-valid safety envelope；该组合尚未完成 ACLt 特定证明；
+- 验证使用 DIRECT/PROOF/REEXEC_BOUNDED/AUDIT_ONLY Profile；有限总体 e-process 的条件数学内核已闭合，Bayesian 只用于效率；
 - Sybil 分析不假定标识独立，先以相关集群和硬损失上限控制风险；
+- V1 不追求证明每个身份背后是不同自然人；官方主网用版本化 assurance、组件允许集合、工程审计和绝对损失预算限域启用能力；
+- 多原因失效保存完整 `CauseSet` 并派生唯一 verdict；Dispatch/RPR 多点检查 active Lease capability，但不建立第三份 scope 权威；
 - `UNRESOLVED`、`FAILED`、`EXPIRED` 和 `FUNDING_EXHAUSTED` 是合法安全终态；
 - 资金来自预声明 `FundingPolicy`；发行只是可选来源，不是默认机制；
 - 数据库、签名日志、联盟账本或公共区块链均可实现同一协议语义。
 - SemanticStatus 与 V1 VersionDisposition 分别存储；`CORE` 不代表相应证明或实现已经完成。
+- 结构/算法必须确定；日志忠实性、运行环境和部署事实可以使用限域、可撤销的工程证据，不必伪装成形式证明。
 
 ## 非目标与禁止主张
 
@@ -77,6 +80,7 @@ flowchart TD
 8. **维护最小权限**：维护者不得裁决运行中个案。
 9. **前端不定义协议语义**：协议绑定 RIR、版本与执行 Profile；源语言只负责产生候选 RIR。
 10. **成熟度与版本范围分离**：语义状态不与 `CORE/DEFERRED/REJECTED` 合并存储。
+11. **工程事实分层闭合**：接口与算法必须唯一；来源与部署用版本化工程证据、fail-closed 和损失上限管理。
 
 完整原则见 [`docs/00-overview/design-principles.md`](docs/00-overview/design-principles.md)。
 
@@ -93,12 +97,15 @@ flowchart TD
 | 7 | [`ADR-0002`](docs/05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md) | RIR、Rust Profile 与 V1 能力边界 |
 | 8 | [`ADR-0003`](docs/05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md) | SemanticStatus 与 VersionDisposition 二维分离 |
 | 9 | [`ADR-0004`](docs/05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md) | VerificationProfile 与有限总体 e-process 边界 |
-| 10 | [`v1-profile.md`](docs/03-protocol/v1-profile.md) | V1 CORE/DEFERRED/REJECTED 唯一映射 |
-| 11 | [`protocol-spec.md`](docs/03-protocol/protocol-spec.md) | 当前规范性协议骨架 |
-| 12 | [`result-validation.md`](docs/03-protocol/result-validation.md) | 验证流程、统计边界与证明义务 |
-| 13 | [`verification-round-mathematical-model.md`](docs/06-research/verification-round-mathematical-model.md) | 验证轮条件定理、反例与对拍说明 |
-| 14 | [`current-status.md`](docs/07-roadmap/current-status.md) | 当前进度、证据成熟度与工程 Gate |
-| 15 | [`open-questions.md`](docs/07-roadmap/open-questions.md) | P0/P1/P2 未决问题和 v0.6 依赖 |
+| 10 | [`ADR-0005`](docs/05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md) | 工程假设、主网 assurance 与单一权威边界 |
+| 11 | [`verification-profile-schema.md`](docs/03-protocol/verification-profile-schema.md) | P0-1A canonical 语义与 P0-1B 实现目标 |
+| 12 | [`v1-profile.md`](docs/03-protocol/v1-profile.md) | V1 CORE/DEFERRED/REJECTED 唯一映射 |
+| 13 | [`protocol-spec.md`](docs/03-protocol/protocol-spec.md) | 当前规范性协议骨架 |
+| 14 | [`result-validation.md`](docs/03-protocol/result-validation.md) | 验证流程、统计边界与证明义务 |
+| 15 | [`verification-round-mathematical-model.md`](docs/06-research/verification-round-mathematical-model.md) | 验证轮条件定理、反例与对拍说明 |
+| 16 | [`last-two-problem-trees.md`](docs/06-research/last-two-problem-trees.md) | 多原因判决与 Dispatch scope 的替代思路树 |
+| 17 | [`current-status.md`](docs/07-roadmap/current-status.md) | 当前进度、证据成熟度与工程 Gate |
+| 18 | [`open-questions.md`](docs/07-roadmap/open-questions.md) | P0/P1/P2 未决问题和 v0.6 依赖 |
 
 完整索引见 [`docs/README.md`](docs/README.md)。
 
@@ -129,6 +136,7 @@ flowchart TD
     │   ├── protocol-spec.md
     │   ├── v1-profile.md
     │   ├── result-validation.md
+    │   ├── verification-profile-schema.md
     │   └── reputation.md
     ├── 04-analysis/
     │   ├── robustness.md
@@ -137,10 +145,12 @@ flowchart TD
     │   ├── ADR-0001-no-unnecessary-entities.md
     │   ├── ADR-0002-normative-rir-and-v1-rust-profile.md
     │   ├── ADR-0003-separate-semantic-status-and-version-disposition.md
-    │   └── ADR-0004-verification-profiles-and-finite-population-e-process.md
+    │   ├── ADR-0004-verification-profiles-and-finite-population-e-process.md
+    │   └── ADR-0005-engineering-assumptions-and-mainnet-assurance.md
     ├── 06-research/
     │   ├── claims-and-sources.md
-    │   └── verification-round-mathematical-model.md
+    │   ├── verification-round-mathematical-model.md
+    │   └── last-two-problem-trees.md
     ├── 07-roadmap/
     │   ├── current-status.md
     │   └── open-questions.md
@@ -150,7 +160,8 @@ flowchart TD
     │   └── audits/
     │       ├── audit-20260818-01-semantic-structure.md
     │       ├── audit-20260819-02-verification-model-closure.md
-    │       └── audit-20260819-03-submission-scope.md
+    │       ├── audit-20260819-03-submission-scope.md
+    │       └── audit-20260821-04-engineering-closure-rollout.md
     └── codocs/                    # 历史版本档案；不构成当前规范
         └── README.md              # 历史状态与权威性说明
 └── tests/
@@ -185,7 +196,7 @@ flowchart TD
 | G5 | Sybil、串谋、预算耗尽和维护滥权对抗验证 | 未开始 |
 | G6 | 异构硬件、外部参与者与可选账本试点 | 未开始 |
 
-不得在前一 Gate 的退出证据不足时，把后一 Gate 的可运行结果解释为安全证明。
+不得在前一 Gate 的退出证据不足时，把后一 Gate 的可运行结果解释为普遍安全证明；但来源忠实性和部署事实允许用工程证据限域推进，不要求先获得开放世界形式证明。
 
 ## 参与项目
 
@@ -194,7 +205,8 @@ flowchart TD
 - 把 16 条不变量转化为机器可检查的状态机与性质测试；
 - 完成 canonical schemas、编码和测试向量；
 - 冻结 RIR canonical encoding、验证器、运行时 effects/resource model 和 Rust Profile lowering；
-- 证明或证伪有限总体序贯验证方案；
+- 实现 VerificationProfile/MainnetAssuranceProfile、CauseSet reducer 和有限总体 e-process conformance；
+- 实现 Lease capability、Dispatch/RPR 双检查和 append-only/finality 日志 contract；
 - 建立相关性、集群暴露和最大损失仿真；
 - 规格化 FundingPolicy、退款、故障归因和最多一次结算；
 - 建立适配器一致性、发布密钥、撤销和漏洞响应流程。

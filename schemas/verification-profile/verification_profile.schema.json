@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aclt.example/schema/verification-profile/p0-1b-bootstrap-1",
+  "title": "ACLt VerificationProfile Schema View v1 (P0-1B bootstrap)",
+  "description": "P0-1B 首批 L1a 工件。只覆盖顶层字段、基础标识、方法判别与参数块在场性；未覆盖项见 coverage.json。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "encoding_profile_id",
+    "profile_id",
+    "profile_version",
+    "profile_digest",
+    "task_type",
+    "contract_tuple_constraints",
+    "admission_predicate",
+    "verified_claim_spec",
+    "excluded_claims",
+    "verification_method",
+    "method_parameters",
+    "result_equivalence",
+    "cost_parameters",
+    "assumption_references",
+    "failure_mapping",
+    "decision_mapping",
+    "documentation"
+  ],
+  "properties": {
+    "schema_version": { "$ref": "#/$defs/uint" },
+    "encoding_profile_id": { "const": "acl.enc.p0-1@1" },
+    "profile_id": { "type": "string", "pattern": "^acl\\.vp\\.[a-z][a-z0-9-]{0,62}\\.[a-z][a-z0-9-]{0,62}$" },
+    "profile_version": { "$ref": "#/$defs/semver" },
+    "profile_digest": { "$ref": "#/$defs/digest" },
+    "supersedes": { "$ref": "#/$defs/versionedObjectRef" },
+    "task_type": { "type": "string", "pattern": "^acl\\.tt\\.[a-z][a-z0-9-]{0,62}$" },
+    "contract_tuple_constraints": { "type": "object" },
+    "admission_predicate": { "type": "string", "pattern": "^acl\\.pred\\.[a-z][a-z0-9-]{0,62}@[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "verified_claim_spec": { "type": ["object", "string"], "description": "字符串只允许规范底值 BOTTOM。", "if": { "type": "string" }, "then": { "const": "BOTTOM" } },
+    "excluded_claims": { "type": "object" },
+    "verification_method": { "enum": ["DIRECT_VERIFIED", "PROOF_VERIFIED", "REEXEC_BOUNDED", "REEXEC_AUDIT_ONLY"] },
+    "method_parameters": { "type": "object" },
+    "result_equivalence": { "type": "object" },
+    "safety_parameters": { "type": "object" },
+    "liveness_parameters": { "type": "object" },
+    "cost_parameters": { "type": "object" },
+    "assumption_references": { "type": "array", "items": { "type": "object" } },
+    "failure_mapping": { "type": "object" },
+    "decision_mapping": { "type": "object" },
+    "degradation": { "type": "object" },
+    "documentation": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "verification_method": { "const": "REEXEC_BOUNDED" } }, "required": ["verification_method"] },
+      "then": { "required": ["safety_parameters", "liveness_parameters"] },
+      "else": { "not": { "anyOf": [{ "required": ["safety_parameters"] }, { "required": ["liveness_parameters"] }] } }
+    },
+    {
+      "if": { "properties": { "verification_method": { "const": "REEXEC_AUDIT_ONLY" } }, "required": ["verification_method"] },
+      "then": { "properties": { "verified_claim_spec": { "const": "BOTTOM" } } }
+    }
+  ],
+  "$defs": {
+    "uint": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+    "semver": {
+      "type": "array",
+      "prefixItems": [{ "$ref": "#/$defs/uint" }, { "$ref": "#/$defs/uint" }, { "$ref": "#/$defs/uint" }],
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "versionedObjectRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "digest"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/$defs/semver" },
+        "digest": { "$ref": "#/$defs/digest" }
+      }
+    }
+  }
+}

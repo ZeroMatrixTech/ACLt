@@ -1,7 +1,7 @@
 # ACLt 项目总览
 
 > 文档状态：当前项目基线  
-> 更新日期：2026-08-18  
+> 更新日期：2026-08-21
 > 项目类型：开放、实现中立的去中心化计算协议  
 > 当前阶段：G0——协议规格化  
 > 历史名称：DistributedCompute、RUDCP、Decentralized Compute Protocol（DCP）  
@@ -49,13 +49,15 @@ ACLt 的目标不是消灭这些不确定性，而是将它们转化为显式且
 | 无许可参与 | 任何 Principal 均可尝试执行公开函数，但输出只有通过协议检查后才生效 |
 | 零前置抵押参与 | 普通 Provider 无需先缴抵押；风险通过低初始暴露、并发限制、Lease 和硬损失上限控制 |
 | 有界执行与恢复 | Lease、epoch、deadline、attempt limit 和 checkpoint 防止无限占用与迟到覆盖 |
+| 单一执行授权 | active Lease 是范围权威；由其派生的 ExecutionCapability 在 Dispatch 与 RPR 两处独立校验，不复制第三份可写 Scope |
 | 任务特定验证 | 验证语义随任务族定义，不声称存在适用于任意计算的廉价通用验证器 |
 | 显式不确定性 | 无法在上限内形成足够证据时返回 `UNRESOLVED`，不得人工包装为可信结果 |
 | 抗 Sybil 风险控制 | 不把身份数量当作独立样本数量；优先限制相关集群和系统最坏损失 |
 | 证据驱动准入 | 使用“证据 → 能力估计 → 暴露决策”，不建立 Rank 或信誉权威 |
 | 资金可解释 | 执行、验证、储备、补贴、费用和可选增发分别声明并受硬上限约束 |
 | 实现中立 | 存储、通信、随机性和结算基础设施可替换，但可观察协议语义必须一致 |
-| 最小治理 | 维护者负责规范和发布，不得裁决运行中的单个任务或追溯修改结果 |
+| 分层工程闭合 | Schema/算法义务必须可判定；来源忠实性与部署风险由日志、审计、测试和版本化保障管理，不要求把所有工程事实形式化成定理 |
+| 最小治理 | 维护者负责规范、发布和官方主网有限保障，不得裁决运行中的单个任务、追溯修改结果或把报告写入验证权重 |
 
 ## 4. 当前协议范围
 
@@ -67,12 +69,15 @@ ACLt 的目标不是消灭这些不确定性，而是将它们转化为显式且
 - RIR 版本、规范工件摘要和执行 Profile 的 Receipt 绑定，以及 V1 Rust Profile 参考 lowering；
 - RPR 与 Host OS 的 fail-closed 边界；
 - `Compile = Lowering + Decomposition + Packing` 及 Provider Dispatch 的 offer/accept/Lease 边界；
+- active Lease → ExecutionCapability 的单一权威、多点校验边界；
 - `Plan`、`Admit`、`Schedule`、`Execute`、`Sample`、`Verify`、`Aggregate`、`Settle` 和 `UpdateEvidence` 等无许可函数；
 - 证据、能力估计、不确定度和风险暴露限制；
 - 有限总体、不放回、可审计的序贯验证方向；
 - `TRUSTED`、`UNRESOLVED`、`FAILED`、`EXPIRED`、`FUNDING_EXHAUSTED` 等终态；
 - 预声明的 `FundingPolicy` 与 `SettlementPolicy`；
 - 追加式事件、状态重放、协议版本和最小维护边界；
+- 假设失效的完整 `CauseSet` 与由版本化 reducer 派生的兼容 verdict；
+- 绑定官方主网、只能收紧能力的 `MainnetAssuranceProfile`；
 - 数据库、签名日志或未来区块链实现之间的适配器一致性。
 
 ## 5. 非目标
@@ -153,6 +158,7 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 - 测试向量、兼容性套件和发布签名；
 - 漏洞接收、披露、修复和版本撤销；
 - 架构决策记录和升级说明。
+- ACLt 官方主网的部署审计、追加式日志运营、版本化保障 Profile 和应急暂停。
 
 维护者不得：
 
@@ -161,12 +167,14 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 - 覆盖 `VerificationDecision`；
 - 制造未授权结算；
 - 把维护者意见当作更高权验证证据。
+- 把官方主网保障自动外推到分叉、私网或修改版部署；
+- 用保障 Profile 放宽已经冻结的验证、资金或终态规则。
 
-是否设立基金会、委员会或链上治理结构仍是可选组织政策，不是协议必要条件。
+是否设立基金会、委员会或链上治理结构仍是可选组织政策，不是协议必要条件。若基金会运营 ACLt 官方主网，它可以承担有限保障、日志与安全响应，但不因此成为运行时 Principal 或个案真理权威。
 
 ## 10. 当前成熟度
 
-ACLt 仍处于 **G0：协议规格化阶段**。目前已经形成完整候选架构与关键边界，但尚未完成足以支持“系统鲁棒”的形式化证明或工程证据。
+ACLt 仍处于 **G0：协议规格化阶段**。目前已经形成完整候选架构与关键边界。项目不再要求每个来源事实和部署事实都先被形式化证明：结构与算法必须闭合，来源与部署则以可执行工程假设、追加式日志、访问审计、故障注入和版本化保障形成证据；证据不足时相应能力 fail closed 或保持 audit-only。
 
 进入核心原型之前至少需要完成：
 
@@ -175,6 +183,7 @@ ACLt 仍处于 **G0：协议规格化阶段**。目前已经形成完整候选�
 - RIR canonical encoding、validator、runtime/effects/resource model、Rust Profile lowering 与 golden vectors；
 - RPR capability contract、Host OS 隔离、资源计量、错误与 checkpoint portability；
 - Lowering、Decomposition、Packing 的合法性谓词、TaskGraph 等价和 Provider Dispatch 状态机；
+- ExecutionCapability 派生与 Dispatch/RPR 对拍向量；
 - Principal、函数、签名责任与权限矩阵；
 - WorkPlan、Lease、Result、VerificationDecision 和 Settlement 状态机；
 - 任务验证类型注册表；
@@ -182,10 +191,11 @@ ACLt 仍处于 **G0：协议规格化阶段**。目前已经形成完整候选�
 - 暴露、尝试、资金和最坏损失上限；
 - 结算、退款、故障归因和资金耗尽语义；
 - 发布、密钥、撤销、升级和漏洞响应流程；
+- CauseSet/reducer conformance 与 MainnetAssuranceProfile 发布、撤销和网络隔离流程；
 - 当前项目名称的商标、域名和包名清查。
 
 ## 11. 可支持的当前结论
 
-ACLt 已形成一套实现中立、证据驱动、显式处理相关性并优先限制最坏损失的完整候选协议架构。它已经将节点退出、任务语义变化、验证不确定性、Sybil 相关性、资金耗尽和维护权限等问题转化为协议对象、不变量与证明义务。
+ACLt 已形成一套实现中立、证据驱动、显式处理相关性并优先限制最坏损失的完整候选协议架构。它已经将节点退出、任务语义变化、验证不确定性、Sybil 相关性、资金耗尽和维护权限等问题转化为协议对象、不变量、证明义务和可审计工程假设。
 
-这不等于系统鲁棒性已经被证明。有限总体序贯验证、相关性折减、资金及退款语义、实现一致性和参数化损失界仍是当前必须完成的核心工作。
+这不等于系统鲁棒性已经被证明，也不等于官方主网之外的部署获得背书。有限总体序贯验证的条件安全、相关性与 B/Q 校准、资金及退款语义、实现一致性和参数化损失界仍是核心工作；但自然人唯一性、日志来源和部署诚实性不再作为阻塞所有接口实现的“必须先证明之定理”。

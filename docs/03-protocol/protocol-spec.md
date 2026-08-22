@@ -2,7 +2,7 @@
 
 > 规范状态：v0.5 G0 draft  
 > 文档状态：Living normative skeleton  
-> 最后更新：2026-08-18  
+> 最后更新：2026-08-21
 > 警告：对象 Schema、状态机、统计规则和参数尚未全部冻结，不得作为生产协议实现依据
 
 ## 1. 规范范围
@@ -25,6 +25,7 @@ RuntimeProfileVersion,
 FrontendProfileVersion,
 VerificationProfileVersion,
 SettlementProfileVersion
+MainnetAssuranceProfileVersion
 )
 \]
 
@@ -73,12 +74,16 @@ Logical Object MUST 通过显式引用进入 Task 输入。相同 digest 不得�
 | `CapabilityEstimate` | 条件能力分布/区间、不确定度、有效期 | 决策绑定证据版本 | `CANDIDATE`，Priority `P1` | `CORE` |
 | `ExposureDecision` | 并发、价值、尝试、损失、集群和有效期 | Lease 前 | 接口 `DECIDED`；算法 `OPEN` | `CORE` |
 | `Lease` | Assignment、Provider、epoch、期限、条件权利 | Provider 接受 | 握手边界 `DECIDED`；Schema `OPEN` | `CORE` |
+| `ExecutionCapability` | active Lease 的 Receipt/epoch/execution tuple/scope/expiry 绑定 | Lease 生效时派生 | 边界 `DECIDED`；Schema `OPEN` | `CORE` |
 | `Attempt` | 一次有界执行及其状态和原因 | 终止时 | `OPEN`，Priority `P0` | `CORE` |
 | `Checkpoint` | 可恢复状态、摘要、格式和环境 | 接收时 | `OPEN`，Priority `P0` | `CORE` |
 | `ResultSubmission` | 结果、摘要、epoch、证据、幂等键 | 校验接收 | `OPEN`，Priority `P0` | `CORE` |
 | `EligibilitySnapshot` | 有限总体、排除、分层、相关性、随机承诺 | 首次 draw 前 | 接口 `INVARIANT`；Schema `OPEN` | `CORE` |
 | `VerificationEvidence` | 方法、输入、输出、来源、成本、关联 | 接收时 | `OPEN`，Priority `P0` | `CORE` |
 | `VerificationDecision` | TRUSTED/UNRESOLVED、策略和完整证据链 | 原子终态提交 | `OPEN`，Priority `P0` | `CORE` |
+| `AssumptionEvaluation` | 完整 CauseSet、reducer 版本和派生 EffectiveVerdict | 判决求值时 | 分层 `DECIDED`；Schema `OPEN` | `CORE` |
+| `VerificationProfile` | Claim、排除项、方法、参数、假设、失败与终态映射 | Receipt 创建前注册并绑定 | P0-1A `CLOSED`；P0-1B `STARTED` | `CORE` |
+| `MainnetAssuranceProfile` | network、允许 Profile/组件、有效期、能力处置和损失预算 | 主网发布/Receipt 绑定前 | P0-1A `CLOSED`；部署实例 `CANDIDATE` | `CORE` |
 | `Settlement` | 权利人、金额、来源、唯一键、状态 | Commit | `OPEN`，Priority `P0` | `CORE` |
 | `EventRecord` | 状态变化、因果引用、版本、签名/摘要 | 追加时 | 接口 `INVARIANT`；Schema `OPEN` | `CORE` |
 
@@ -98,6 +103,7 @@ Receipt MUST 覆盖：
 8. **Funding**：执行、验证、存储、退款储备和各来源上限；
 9. **Settlement**：终态—权利—费用—退款—归因矩阵；
 10. **Availability**：程序、输入、结果和证据的取得与保留条件。
+11. **Deployment assurance**：`network_id`、MainnetAssuranceProfile 版本/digest、能力处置与允许组件。
 
 任何影响以上语义的修改 MUST 产生新 ReceiptID。
 
@@ -170,6 +176,8 @@ Admit MUST 使用：
 
 Schedule 输出只构成 Lease proposal。Assignment 或 proposal MUST NOT 被解释为 Provider 已经承担执行义务；只有 Provider 接受且暴露预留成功的当前 epoch Lease 才能成为 active Lease。push、pull 或混合传输 MUST 保持相同状态语义。
 
+active Lease MUST 是执行 scope、RPR、environment 和 resource tuple 的唯一授权来源，并派生 `ExecutionCapability`。Dispatch 与 RPR MUST 分别校验同一 capability；不得建立第三份可覆盖 scope。执行元组变化 MUST 使旧 capability 失效并创建新 Lease。
+
 ResultSubmission MUST 绑定当前 epoch。旧 epoch 输出 MAY 保留为 stale audit evidence，但 MUST NOT 覆盖当前状态、进入当前验证或产生当前权利。
 
 attempt、deadline、资源和恢复次数 MUST 有限；边界耗尽 MUST 进入准确终态。
@@ -182,9 +190,9 @@ RPR MUST 在执行前 fail-closed 验证 RIR 与 Profile，并默认隐藏 Host 
 
 验证 MUST 针对 Receipt 声明的任务类型。首次 draw 前 MUST 冻结 Snapshot、相关性处理、随机性、误差目标、停止规则、Nmax 和资金。
 
-同一 Snapshot 的抽样 MUST 不放回。当前研究方向 MAY 使用 anytime-valid 序贯推断，但只有完成适用证明与实现验证后才能声明对应误差控制。
+同一 Snapshot 的抽样 MUST 不放回。`REEXEC_BOUNDED` 使用 ADR-0004 的有限总体 e-process；只有绑定的主网 assurance 已启用 Profile 且其假设有效时，才能声明对应条件误差控制。未启用时 MUST 使用 `REEXEC_AUDIT_ONLY` 或拒绝。
 
-Aggregate MUST 产生可复算证据链。满足预声明停止条件时 MAY 提交 `TRUSTED`；否则在上限或假设失效时 MUST 提交 `UNRESOLVED` 或其他准确终态。
+Aggregate MUST 产生可复算证据链。多个假设同时失效时 MUST 保存规范 `CauseSet`，由冻结 reducer 派生唯一 `EffectiveVerdict`。满足预声明停止条件时 MAY 提交条件性 `TRUSTED`；否则在上限或假设失效时 MUST 提交 `UNRESOLVED` 或其他准确终态。
 
 ## 12. 终态
 
@@ -199,7 +207,7 @@ Aggregate MUST 产生可复算证据链。满足预声明停止条件时 MAY 提
 - `FAILED_PLANNING`；
 - `UNSUPPORTED`。
 
-终态集合和层级仍需状态机冻结。`TRUSTED` MUST NOT 被解释为绝对正确。
+终态集合和层级仍需状态机冻结。`TRUSTED` MUST 绑定 `network_id`、assurance 版本和 `ExcludedClaims`，MUST NOT 被解释为绝对正确或主网外保证。
 
 ## 13. 资金与结算
 
@@ -215,7 +223,7 @@ Settlement MUST 引用唯一终态、冻结政策、合法权利和 EntitlementK
 
 ## 14. 事件与证据
 
-所有关键转换 MUST 产生 EventRecord。PerformanceEvidence 和关键事件 MUST append-only；更正 MUST 产生新事件并引用原记录。
+所有关键转换 MUST 产生 EventRecord。PerformanceEvidence 和关键事件 MUST append-only；更正 MUST 产生新事件并引用原记录。官方主网安全状态转换只有在被 `MainnetAssuranceProfile` 允许的日志后端 finalized，并通过 inclusion/consistency 验证后才生效。
 
 CapabilityEstimate MUST 可以由声明的证据版本和算法重算。缓存值不得获得独立权威。
 
@@ -229,6 +237,8 @@ Maintainer MAY 发布未来 ProtocolVersion、测试、修复和撤销，但 MUS
 - 通过管理接口绕过状态机。
 
 Foundation、委员会、Maintainer 或其他组织发布的报告 MAY 作为公开研究材料或未来版本变更输入，但 MUST NOT 作为当前 VerificationEvidence 的特殊权重、停止条件或个案裁决依据。
+
+Maintenance MAY 发布版本化 `MainnetAssuranceProfile`，但只能限于声明网络和组件、先承诺并在运行中保守减权；不得在观察个案结果后升权或修改冻结统计参数。该职责边界见 ADR-0005。
 
 ## 16. Adapter 一致性
 
@@ -253,6 +263,9 @@ Foundation、委员会、Maintainer 或其他组织发布的报告 MAY 作为公
 - 通过 V1 Profile 的全部 CORE、DEFERRED 与 REJECTED 行为检查；
 - 通过 RIR validator、Rust Profile lowering、runtime/effects/resource golden vectors 与差分测试；
 - 通过 Logical Object、Compile 三阶段、Provider Dispatch 和 RPR/Host OS capability 的正反测试；
+- 通过 ExecutionCapability 的 Dispatch/RPR 双消费、重放、换环境、epoch 和旁路测试；
+- 通过 CauseSet reducer 多原因组合向量；
+- 通过 MainnetAssuranceProfile 限域/减权和日志 finality/inclusion/consistency/恢复测试；
 - 通过全部状态机合法/非法转换测试；
 - 通过 INV-01 至 INV-16 性质测试；
 - 通过重放、并发、分区、崩溃和恢复测试；
@@ -266,12 +279,12 @@ Foundation、委员会、Maintainer 或其他组织发布的报告 MAY 作为公
 - Abstract Machine 状态、Logical Object Schema、生命周期、保留和可用性；
 - 完整状态机和错误码；
 - Lowering/Decomposition/Packing、TaskGraph 与 WorkPlan/Assignment 合法性；
-- Provider Dispatch proposal/accept/active Lease 竞态与传输语义；
+- Provider Dispatch proposal/accept/active Lease、ExecutionCapability 竞态与传输语义；
 - 签名责任、授权、撤销和密钥；
 - 验证 Registry、总体、随机性、停止规则和证明；
 - 相关性、集群与 ExposureDecision 参数；
 - Funding/Settlement/退款/故障归因；
-- EventRecord、保留、隐私和重放；
+- EventRecord、CauseSet、主网日志 contract、保留、隐私和重放；
 - Adapter contract、最终性和 conformance suite；
 - RIR schema/canonical encoding、validator、Rust Profile、RPR/Host OS capability、runtime/effects/resource model 与 checkpoint portability；
 - 发布、升级、漏洞和紧急响应。

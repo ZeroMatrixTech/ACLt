@@ -1,0 +1,11 @@
+{
+  "artifact_status": "SEED_NOT_REGISTERED",
+  "templates": [
+    {
+      "template_id": "acl.ct.direct-predicate",
+      "template_version": ["1", "0", "0"],
+      "normative_text": "在已绑定网络、assurance、RIR/RPR、输入、输出、predicate 与全部 ExcludedClaims 的范围内，确定性 predicate 接受该输出。",
+      "translations": []
+    }
+  ]
+}

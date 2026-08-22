@@ -1,7 +1,7 @@
 # ACLt 设计原则
 
 > 文档状态：规范性设计约束  
-> 更新日期：2026-08-18  
+> 更新日期：2026-08-21
 > 适用范围：协议、参考实现、仿真、文档与维护流程
 
 ## 1. 使用方式
@@ -32,6 +32,7 @@ SemanticStatus 与指定 ConformanceTarget 的 VersionDisposition 必须分别�
 | DP-14 | 对任务语义诚实 | `DECIDED` | `DERIVED` | 验证方法必须针对任务族声明；不支持的任务必须拒绝或标为不支持 |
 | DP-15 | 保留安全退出 | `DECIDED` | — | `UNRESOLVED`、`FAILED`、`EXPIRED` 和 `FUNDING_EXHAUSTED` 是合法终态 |
 | DP-16 | 前端不定义协议执行语义 | `DECIDED` | `DERIVED` | V1 以 RIR 为规范执行表示；Rust/C++ 等前端只有降级并通过一致性检查后才可兼容 |
+| DP-17 | 工程事实分层闭合 | `DECIDED` | `DERIVED` | 规范/算法必须确定；来源忠实性与部署事实可用版本化工程证据，但必须限域、可撤销、fail closed |
 
 ## 3. DP-01：如无必要勿增实体
 
@@ -177,7 +178,15 @@ V1 通过 RPR 执行规范 RIR。Logical Object 是显式输入输出；Host OS 
 
 该原则不证明 RIR、编译器或运行时正确，也不证明程序结果确定。RIR 编码、validator、lowering、runtime、资源计量和跨实现差分测试仍是 G0/G1 证明义务。V1 未支持或未验证的能力必须被拒绝或标为 `UNSUPPORTED`，不得静默回退到宿主原生语义。
 
-## 19. 新设计的准入检查
+## 19. DP-17：工程事实分层闭合
+
+ACLt 不要求用形式证明覆盖所有现实世界事实。每项要求必须区分：结构闭合、算法闭合、来源忠实性和部署风险接受。前两者由 Schema、确定算法、定理和对拍测试承担；后两者由版本化组件引用、追加日志、权限隔离、故障注入、实现审计、有效期和损失预算承担。
+
+工程证据不得反向改变协议数学：它不能把未知身份变成独立身份，不能让维护报告进入真理权重，也不能在观察结果后改变统计参数。工程假设未建立或被撤销时，相应能力必须 `DISABLED`、`AUDIT_ONLY` 或 fail closed，而不是阻止不依赖该假设的接口、validator 和测试继续实现。
+
+官方主网可以通过版本化 assurance 声明其接受的 Profile、RPR、validator、日志后端、相关性策略和风险预算；该声明只适用于绑定网络和组件，不自动延伸到主网外。详细决定见 [`../05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md`](../05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md)。
+
+## 20. 新设计的准入检查
 
 任何新增对象、角色、算法或基础设施都应回答：
 
@@ -191,5 +200,6 @@ V1 通过 RPR 执行规范 RIR。Logical Object 是显式输入输出；Host OS 
 8. 是否提供迁移、撤销、兼容和安全退出路径？
 9. 若涉及执行语言或硬件，是否保持同一 RIR、effects、资源与结果语义？
 10. SemanticStatus 与各 ConformanceTarget 的 VersionDisposition 是否分别记录，且 CORE 缺口是否仍被列为 Gate 阻断？
+11. 该要求属于结构、算法、来源忠实性还是部署风险接受？证据类型是否与主张匹配？
 
 不能明确回答这些问题的设计，不应进入协议核心。
