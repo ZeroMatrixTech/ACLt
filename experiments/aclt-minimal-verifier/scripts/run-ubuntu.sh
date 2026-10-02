@@ -17,3 +17,5 @@ build/worker examples/input.txt 4 > build/results.txt
 target/debug/aclt-minimal-verifier examples/input.txt 4 build/results.txt
 python3 scripts/check.py
 python3 scripts/check-processes.py
+python3 scripts/check-recovery.py
+python3 scripts/check-batch.py
