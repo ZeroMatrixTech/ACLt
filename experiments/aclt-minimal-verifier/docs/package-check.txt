@@ -1,0 +1,11 @@
+ZIP integrity: PASS
+Source checksums: PASS
+Excluded tools/build artifacts: PASS
+Fresh extraction build/test: PASS
+Uses existing official Rust compiler, no prior build outputs.
+
+   Compiling aclt-minimal-verifier v0.1.0 (/tmp/aclt-release-check-g5xgqcab/experiments/aclt-minimal-verifier)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.54s
+ACCEPT count=10 chunks=3 sum=28 min=-7 max=12
+PASS: 68 verification cases; worker input rejection and Python reference totals checked
+PASS: 12 multi-process scenarios; retries, late results, attempt limits, cleanup, and overwrite refusal checked

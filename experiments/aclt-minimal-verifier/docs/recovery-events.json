@@ -1,0 +1,256 @@
+[
+  {
+    "directory": "R01",
+    "checkpoint": "saved",
+    "termination": "SIGKILL",
+    "events": []
+  },
+  {
+    "directory": "R02",
+    "checkpoint": "reserved",
+    "termination": "SIGKILL",
+    "events": []
+  },
+  {
+    "directory": "R03",
+    "checkpoint": "running",
+    "termination": "SIGKILL",
+    "events": [
+      [
+        "START",
+        "0",
+        "1",
+        "pid=638 mode=normal"
+      ],
+      [
+        "START",
+        "1",
+        "1",
+        "pid=640 mode=normal"
+      ]
+    ]
+  },
+  {
+    "directory": "R04",
+    "checkpoint": "output",
+    "termination": "SIGKILL",
+    "events": [
+      [
+        "START",
+        "0",
+        "1",
+        "pid=665 mode=normal"
+      ],
+      [
+        "START",
+        "1",
+        "1",
+        "pid=667 mode=normal"
+      ]
+    ]
+  },
+  {
+    "directory": "R05",
+    "checkpoint": "accepted",
+    "termination": "SIGKILL",
+    "events": [
+      [
+        "START",
+        "0",
+        "1",
+        "pid=692 mode=normal"
+      ],
+      [
+        "START",
+        "1",
+        "1",
+        "pid=694 mode=normal"
+      ],
+      [
+        "ACCEPT_BLOCK",
+        "0",
+        "1",
+        "verified"
+      ]
+    ]
+  },
+  {
+    "directory": "R06",
+    "checkpoint": "timeout",
+    "termination": "SIGKILL",
+    "events": [
+      [
+        "START",
+        "0",
+        "1",
+        "pid=717 mode=slow"
+      ],
+      [
+        "START",
+        "1",
+        "1",
+        "pid=719 mode=normal"
+      ],
+      [
+        "ACCEPT_BLOCK",
+        "1",
+        "1",
+        "verified"
+      ],
+      [
+        "START",
+        "2",
+        "1",
+        "pid=722 mode=normal"
+      ],
+      [
+        "ACCEPT_BLOCK",
+        "2",
+        "1",
+        "verified"
+      ],
+      [
+        "TIMEOUT",
+        "0",
+        "1",
+        "attempt invalidated"
+      ]
+    ]
+  },
+  {
+    "directory": "R07",
+    "checkpoint": "temp",
+    "termination": "SIGKILL",
+    "events": [
+      [
+        "START",
+        "0",
+        "1",
+        "pid=742 mode=normal"
+      ],
+      [
+        "START",
+        "1",
+        "1",
+        "pid=744 mode=normal"
+      ],
+      [
+        "ACCEPT_BLOCK",
+        "0",
+        "1",
+        "verified"
+      ],
+      [
+        "ACCEPT_BLOCK",
+        "1",
+        "1",
+        "verified"
+      ],
+      [
+        "START",
+        "2",
+        "1",
+        "pid=748 mode=normal"
+      ],
+      [
+        "ACCEPT_BLOCK",
+        "2",
+        "1",
+        "verified"
+      ]
+    ]
+  },
+  {
+    "directory": "R08",
+    "checkpoint": "published",
+    "termination": "SIGKILL",
+    "events": [
+      [
+        "START",
+        "0",
+        "1",
+        "pid=765 mode=normal"
+      ],
+      [
+        "START",
+        "1",
+        "1",
+        "pid=767 mode=normal"
+      ],
+      [
+        "ACCEPT_BLOCK",
+        "0",
+        "1",
+        "verified"
+      ],
+      [
+        "ACCEPT_BLOCK",
+        "1",
+        "1",
+        "verified"
+      ],
+      [
+        "START",
+        "2",
+        "1",
+        "pid=771 mode=normal"
+      ],
+      [
+        "ACCEPT_BLOCK",
+        "2",
+        "1",
+        "verified"
+      ]
+    ]
+  },
+  {
+    "directory": "R09",
+    "checkpoint": "saved",
+    "termination": "SIGKILL",
+    "events": []
+  },
+  {
+    "directory": "R10",
+    "checkpoint": "reserved",
+    "termination": "SIGKILL",
+    "events": []
+  },
+  {
+    "directory": "R10",
+    "checkpoint": "reserved",
+    "termination": "SIGKILL",
+    "events": [
+      [
+        "RESUME",
+        "0",
+        "0",
+        "unfinished old attempts invalidated; counts retained"
+      ]
+    ]
+  },
+  {
+    "directory": "R11",
+    "checkpoint": "saved",
+    "termination": "SIGKILL",
+    "events": []
+  },
+  {
+    "directory": "R12",
+    "checkpoint": "output",
+    "termination": "SIGKILL",
+    "events": [
+      [
+        "START",
+        "0",
+        "1",
+        "pid=855 mode=normal"
+      ],
+      [
+        "START",
+        "1",
+        "1",
+        "pid=857 mode=normal"
+      ]
+    ]
+  }
+]

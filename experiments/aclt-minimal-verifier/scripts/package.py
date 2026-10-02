@@ -6,7 +6,7 @@ import sys
 import zipfile
 
 root = pathlib.Path(__file__).resolve().parents[1]
-output = pathlib.Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else root.parent/'aclt-single-pc-2026-10-02.zip'
+output = pathlib.Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else root.parent/'aclt-single-pc-batch-2026-10-02.zip'
 files = [root/name for name in ('.gitignore','Cargo.toml','Cargo.lock','README.md')]
 for directory in ('src','cpp','scripts','examples','docs'):
     files += [p for p in (root/directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts]

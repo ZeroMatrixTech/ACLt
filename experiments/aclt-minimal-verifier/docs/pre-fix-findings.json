@@ -1,0 +1,23 @@
+[
+  {
+    "case": "temporary-result-changed",
+    "exit_code": 0,
+    "stdout": "ACCEPT count=10 chunks=3 sum=28 min=-7 max=12",
+    "result": "broken\n",
+    "stderr": ""
+  },
+  {
+    "case": "existing-final-result",
+    "exit_code": 0,
+    "stdout": "ACCEPT count=10 chunks=3 sum=28 min=-7 max=12",
+    "result": "0 0 4 10 -1 8\n1 4 4 12 -7 12\n2 8 2 6 -3 9\n",
+    "stderr": ""
+  },
+  {
+    "case": "snapshot-changed",
+    "exit_code": 0,
+    "stdout": "ACCEPT count=10 chunks=3 sum=28 min=-7 max=12",
+    "result": "0 0 4 10 -1 8\n1 4 4 12 -7 12\n2 8 2 6 -3 9\n",
+    "stderr": ""
+  }
+]

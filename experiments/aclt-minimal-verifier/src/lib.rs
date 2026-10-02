@@ -1,10 +1,12 @@
-use std::{fs::File, io::Read};
+use std::{fs::OpenOptions, io::Read, os::unix::fs::OpenOptionsExt};
 pub const INPUT_LIMIT: u64 = 2_000_000;
 pub const RESULT_LIMIT: u64 = 12_000_000;
 pub fn read(path: &str, limit: u64) -> Result<String, String> {
     let mut text = String::new();
-    File::open(path).map_err(|e| e.to_string())?.take(limit + 1)
-        .read_to_string(&mut text).map_err(|e| e.to_string())?;
+    let file=OpenOptions::new().read(true).custom_flags(0x20000 | 0x800)
+        .open(path).map_err(|e|e.to_string())?; // O_NOFOLLOW | O_NONBLOCK
+    if !file.metadata().map_err(|e|e.to_string())?.is_file() { return Err("regular file required".into()); }
+    file.take(limit + 1).read_to_string(&mut text).map_err(|e| e.to_string())?;
     if text.len() as u64 > limit { return Err("file too large".into()); }
     Ok(text)
 }
