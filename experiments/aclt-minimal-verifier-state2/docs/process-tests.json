@@ -1,0 +1,72 @@
+[
+  {
+    "scenario": "normal",
+    "max_attempts": 2,
+    "expected_success": true,
+    "passed": true
+  },
+  {
+    "scenario": "slow",
+    "max_attempts": 2,
+    "expected_success": true,
+    "passed": true
+  },
+  {
+    "scenario": "wrong",
+    "max_attempts": 2,
+    "expected_success": true,
+    "passed": true
+  },
+  {
+    "scenario": "crash",
+    "max_attempts": 2,
+    "expected_success": true,
+    "passed": true
+  },
+  {
+    "scenario": "hang",
+    "max_attempts": 2,
+    "expected_success": true,
+    "passed": true
+  },
+  {
+    "scenario": "duplicate",
+    "max_attempts": 2,
+    "expected_success": true,
+    "passed": true
+  },
+  {
+    "scenario": "malformed",
+    "max_attempts": 2,
+    "expected_success": true,
+    "passed": true
+  },
+  {
+    "scenario": "wrong-attempt",
+    "max_attempts": 2,
+    "expected_success": true,
+    "passed": true
+  },
+  {
+    "scenario": "always-wrong",
+    "max_attempts": 2,
+    "expected_success": false,
+    "passed": true
+  },
+  {
+    "scenario": "hang",
+    "max_attempts": 1,
+    "expected_success": false,
+    "passed": true
+  },
+  {
+    "scenario": "crash",
+    "max_attempts": 1,
+    "expected_success": false,
+    "passed": true
+  },
+  {
+    "scenario": "launch-failure",
+    "passed": true
+  }
+]
