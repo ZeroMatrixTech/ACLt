@@ -1,0 +1,10 @@
+START	0	1	pid=273 mode=slow
+START	1	1	pid=274 mode=normal
+ACCEPT_BLOCK	1	1	verified
+START	2	1	pid=275 mode=normal
+ACCEPT_BLOCK	2	1	verified
+TIMEOUT	0	1	attempt invalidated
+START	0	2	pid=276 mode=normal
+ACCEPT_BLOCK	0	2	verified
+STALE	0	1	ignored
+COMPLETE	0	0	all blocks verified

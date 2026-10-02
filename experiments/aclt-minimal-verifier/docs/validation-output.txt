@@ -1,0 +1,4 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+ACCEPT count=10 chunks=3 sum=28 min=-7 max=12
+PASS: 68 verification cases; worker input rejection and Python reference totals checked
+PASS: 12 multi-process scenarios; retries, late results, attempt limits, cleanup, and overwrite refusal checked
