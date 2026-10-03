@@ -1,0 +1,19 @@
+{
+  "status": "PASS_WITH_EXPLICIT_SCOPE",
+  "full_entrypoint_exit_code": 0,
+  "experiment_scenarios": 259,
+  "profile_test_methods": 24,
+  "model_test_methods": 13,
+  "differential_datasets": 204,
+  "result_mutations_rejected": 408,
+  "sanitized_runs": 20,
+  "invalid_input_cases": 12,
+  "native_reducer_vectors": 22,
+  "normative_type_a": 119,
+  "implemented_tested": 3,
+  "partial_tested": 5,
+  "not_implemented": 111,
+  "state_version": 3,
+  "repository_head_checked": "7ee5dafc2edbff8991e9bb8b86c93c690a47c82b",
+  "full_protocol_pass": false
+}

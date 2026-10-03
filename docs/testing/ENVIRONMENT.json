@@ -1,0 +1,9 @@
+{
+  "system": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "python": "3.14.4",
+  "g++": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "main_baseline": "ab9f2334c1a6b3e1047420cf24c5d8be2898a9d7",
+  "state_format": "ACLT-STATE-3",
+  "random_seed": 20261003,
+  "note": "Rust 1.93.1 from existing official Ubuntu toolchain; no third-party Rust/Python packages."
+}

@@ -1,0 +1,18 @@
+test_component_death_is_local_and_weights_are_not_renormalized (test_verification_model.DifferentialModelTests.test_component_death_is_local_and_weights_are_not_renormalized) ... ok
+test_dp_matches_full_placement_enumeration (test_verification_model.DifferentialModelTests.test_dp_matches_full_placement_enumeration) ... ok
+test_dp_quantile_minimality_and_platforms (test_verification_model.DifferentialModelTests.test_dp_quantile_minimality_and_platforms) ... ok
+test_fixed_capability_adaptive_grid_respects_type_one_bound (test_verification_model.DifferentialModelTests.test_fixed_capability_adaptive_grid_respects_type_one_bound) ... ok
+test_fixed_capability_counterexample_rates_are_exact (test_verification_model.DifferentialModelTests.test_fixed_capability_counterexample_rates_are_exact) ... ok
+test_independent_assumption_revocation_fails_closed (test_verification_model.DifferentialModelTests.test_independent_assumption_revocation_fails_closed) ... ok
+test_manifest_hashes_match_assets (test_verification_model.DifferentialModelTests.test_manifest_hashes_match_assets) ... ok
+test_p_zero_failure_is_regular_arithmetic (test_verification_model.DifferentialModelTests.test_p_zero_failure_is_regular_arithmetic) ... ok
+test_p_zero_success_is_symbolic_exact_rejection (test_verification_model.DifferentialModelTests.test_p_zero_success_is_symbolic_exact_rejection) ... ok
+test_recursive_and_closed_form_match_on_every_binary_path (test_verification_model.DifferentialModelTests.test_recursive_and_closed_form_match_on_every_binary_path) ... ok
+test_recursive_closed_form_grid (test_verification_model.DifferentialModelTests.test_recursive_closed_form_grid) ... ok
+test_static_json_vectors_match_reference_implementation (test_verification_model.DifferentialModelTests.test_static_json_vectors_match_reference_implementation) ... ok
+test_worst_adaptive_abstention_with_fixed_capability_set_is_safe (test_verification_model.DifferentialModelTests.test_worst_adaptive_abstention_with_fixed_capability_set_is_safe) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.358s
+
+OK

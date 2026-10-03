@@ -1,0 +1,23 @@
+{
+  "seed": 20261003,
+  "groups": [
+    {
+      "group": "seeded exact differential and mutated results",
+      "datasets": 204,
+      "mutations": 408,
+      "sanitized_runs": 20,
+      "passed": true
+    },
+    {
+      "group": "invalid canonical input",
+      "cases": 12,
+      "passed": true
+    },
+    {
+      "group": "Rust/C++ narrow cause reducer",
+      "valid_permutations": 16,
+      "invalid_inputs": 6,
+      "passed": true
+    }
+  ]
+}

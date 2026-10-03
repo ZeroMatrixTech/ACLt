@@ -1,0 +1,56 @@
+test_component_death_is_local_and_weights_are_not_renormalized (test_verification_model.DifferentialModelTests.test_component_death_is_local_and_weights_are_not_renormalized) ... ok
+test_dp_matches_full_placement_enumeration (test_verification_model.DifferentialModelTests.test_dp_matches_full_placement_enumeration) ... ok
+test_dp_quantile_minimality_and_platforms (test_verification_model.DifferentialModelTests.test_dp_quantile_minimality_and_platforms) ... ok
+test_fixed_capability_adaptive_grid_respects_type_one_bound (test_verification_model.DifferentialModelTests.test_fixed_capability_adaptive_grid_respects_type_one_bound) ... ok
+test_fixed_capability_counterexample_rates_are_exact (test_verification_model.DifferentialModelTests.test_fixed_capability_counterexample_rates_are_exact) ... ok
+test_independent_assumption_revocation_fails_closed (test_verification_model.DifferentialModelTests.test_independent_assumption_revocation_fails_closed) ... ok
+test_manifest_hashes_match_assets (test_verification_model.DifferentialModelTests.test_manifest_hashes_match_assets) ... ok
+test_p_zero_failure_is_regular_arithmetic (test_verification_model.DifferentialModelTests.test_p_zero_failure_is_regular_arithmetic) ... ok
+test_p_zero_success_is_symbolic_exact_rejection (test_verification_model.DifferentialModelTests.test_p_zero_success_is_symbolic_exact_rejection) ... ok
+test_recursive_and_closed_form_match_on_every_binary_path (test_verification_model.DifferentialModelTests.test_recursive_and_closed_form_match_on_every_binary_path) ... ok
+test_recursive_closed_form_grid (test_verification_model.DifferentialModelTests.test_recursive_closed_form_grid) ... ok
+test_static_json_vectors_match_reference_implementation (test_verification_model.DifferentialModelTests.test_static_json_vectors_match_reference_implementation) ... ok
+test_worst_adaptive_abstention_with_fixed_capability_set_is_safe (test_verification_model.DifferentialModelTests.test_worst_adaptive_abstention_with_fixed_capability_set_is_safe) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.481s
+
+OK
+test_all_cause_sets_and_permutations (test_singlehost.SingleHostValidationTests.test_all_cause_sets_and_permutations) ... ok
+test_all_snapshot_cause_combinations (test_singlehost.SingleHostValidationTests.test_all_snapshot_cause_combinations) ... ok
+test_assumption_rows_and_unique_ids (test_singlehost.SingleHostValidationTests.test_assumption_rows_and_unique_ids) ... ok
+test_cli_malformed_json (test_singlehost.SingleHostValidationTests.test_cli_malformed_json) ... ok
+test_cli_production_always_refuses (test_singlehost.SingleHostValidationTests.test_cli_production_always_refuses) ... ok
+test_exact_bound_grid (test_singlehost.SingleHostValidationTests.test_exact_bound_grid) ... ok
+test_exact_gap_limits (test_singlehost.SingleHostValidationTests.test_exact_gap_limits) ... ok
+test_method_parameter_matrix (test_singlehost.SingleHostValidationTests.test_method_parameter_matrix) ... ok
+test_profile_shape_rejected_without_crash (test_singlehost.SingleHostValidationTests.test_profile_shape_rejected_without_crash) ... ok
+test_rational_boundaries (test_singlehost.SingleHostValidationTests.test_rational_boundaries) ... ok
+test_required_unknown_and_identifier_fields (test_singlehost.SingleHostValidationTests.test_required_unknown_and_identifier_fields) ... ok
+test_snapshot_coverage_order_duplicates_and_claimed_verdict (test_singlehost.SingleHostValidationTests.test_snapshot_coverage_order_duplicates_and_claimed_verdict) ... ok
+test_snapshot_shape_rejected (test_singlehost.SingleHostValidationTests.test_snapshot_shape_rejected) ... ok
+test_uint_boundaries (test_singlehost.SingleHostValidationTests.test_uint_boundaries) ... ok
+test_weight_table_cases (test_singlehost.SingleHostValidationTests.test_weight_table_cases) ... ok
+test_assumption_snapshot_accepts_complete_cause_set (test_validator.BootstrapValidatorTests.test_assumption_snapshot_accepts_complete_cause_set) ... ok
+test_bounded_gap_is_exact (test_validator.BootstrapValidatorTests.test_bounded_gap_is_exact) ... ok
+test_cause_reducer_preserves_multiple_facts (test_validator.BootstrapValidatorTests.test_cause_reducer_preserves_multiple_facts) ... ok
+test_duplicate_assumption_id_is_rejected (test_validator.BootstrapValidatorTests.test_duplicate_assumption_id_is_rejected) ... ok
+test_non_reexec_must_not_carry_safety_parameters (test_validator.BootstrapValidatorTests.test_non_reexec_must_not_carry_safety_parameters) ... ok
+test_rational_must_be_reduced (test_validator.BootstrapValidatorTests.test_rational_must_be_reduced) ... ok
+test_reducer_mismatch_is_rejected (test_validator.BootstrapValidatorTests.test_reducer_mismatch_is_rejected) ... ok
+test_trusted_rejects_invalid_safety_assumption (test_validator.BootstrapValidatorTests.test_trusted_rejects_invalid_safety_assumption) ... ok
+test_valid_bounded_profile (test_validator.BootstrapValidatorTests.test_valid_bounded_profile) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.549s
+
+OK
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.02s
+ACCEPT count=10 chunks=3 sum=28 min=-7 max=12
+PASS: 68 verification cases; worker input rejection and Python reference totals checked
+PASS: 12 multi-process scenarios; retries, late results, attempt limits, cleanup, and overwrite refusal checked
+PASS: 12 recovery scenarios; 13 actual coordinator SIGKILLs; maximum observed live workers=2
+PASS: 90 batch cases; 72 randomized SIGKILLs; groups={'atomic-write-interruption': 4, 'concurrent-recovery': 4, 'damaged-record': 29, 'injected-storage-error': 15, 'kernel-storage-error': 11, 'publication-regression': 3, 'random-interruption': 24}
+PASS: 22 lifecycle scenarios; permanent outcomes, authoritative snapshots, recovery limits and deadlines
+PASS: 55 single-host quota, task-binding and boundary scenarios
+PASS: 204 exact datasets, 408 mutated results, 20 sanitizer runs, 12 malformed inputs, 22 Rust/C++ reducer vectors

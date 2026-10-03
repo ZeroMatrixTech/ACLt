@@ -50,6 +50,8 @@ def parse_uint(value: Any) -> int:
     """Parse ACLt Schema View v1 canonical uint decimal text."""
     if not isinstance(value, str) or not re.fullmatch(r"0|[1-9][0-9]*", value):
         raise ValueError("uint must be canonical unsigned decimal text")
+    if len(value) > 20:
+        raise ValueError("uint exceeds uint64")
     number = int(value)
     if number > 2**64 - 1:
         raise ValueError("uint exceeds uint64")
@@ -65,7 +67,11 @@ def parse_rational(value: Any) -> Fraction:
     denominator = parse_uint(denominator_text)
     if denominator == 0:
         raise ValueError("denominator must be positive")
+    if len(numerator_text) > 20:
+        raise ValueError("numerator exceeds int64")
     numerator = int(numerator_text)
+    if not -(2**63) <= numerator <= 2**63 - 1:
+        raise ValueError("numerator exceeds int64")
     reduced = Fraction(numerator, denominator)
     if reduced.numerator != numerator or reduced.denominator != denominator:
         raise ValueError("Rational must be reduced")
@@ -74,7 +80,12 @@ def parse_rational(value: Any) -> Fraction:
 
 def reduce_causes(cause_codes: Iterable[str]) -> str:
     """V1 reducer from a complete CauseSet to one EffectiveVerdict."""
-    codes = list(cause_codes)
+    try:
+        codes = list(cause_codes)
+    except TypeError as exc:
+        raise ValueError("CauseSet must be an iterable of cause strings") from exc
+    if any(not isinstance(code, str) for code in codes):
+        raise ValueError("CauseSet must contain cause strings")
     if len(codes) != len(set(codes)):
         raise ValueError("CauseSet contains a duplicate cause")
     unknown = set(codes) - set(CAUSE_PRIORITY)
@@ -87,6 +98,8 @@ def reduce_causes(cause_codes: Iterable[str]) -> str:
 
 def validate_l1a_bootstrap(profile: dict[str, Any]) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
+    if not isinstance(profile, dict):
+        return [_issue("SV-01", "$", "profile must be an object")]
     required = {
         "schema_version", "encoding_profile_id", "profile_id", "profile_version",
         "profile_digest", "task_type", "contract_tuple_constraints",
@@ -103,6 +116,8 @@ def validate_l1a_bootstrap(profile: dict[str, Any]) -> list[ValidationIssue]:
     if extra:
         issues.append(_issue("SV-01", "$", f"unknown fields: {extra}"))
 
+    if profile.get("schema_version") != "1":
+        issues.append(_issue("SV-01", "$.schema_version", "unsupported schema version"))
     if profile.get("encoding_profile_id") != "acl.enc.p0-1@1":
         issues.append(_issue("SV-01", "$.encoding_profile_id", "unsupported encoding profile"))
     if not PROFILE_ID.fullmatch(str(profile.get("profile_id", ""))):
@@ -113,7 +128,7 @@ def validate_l1a_bootstrap(profile: dict[str, Any]) -> list[ValidationIssue]:
         issues.append(_issue("SV-01", "$.profile_digest", "digest must be 32-byte lowercase hex"))
 
     method = profile.get("verification_method")
-    if method not in METHODS:
+    if not isinstance(method, str) or method not in METHODS:
         issues.append(_issue("SV-31", "$.verification_method", "unknown verification method"))
     has_safety = "safety_parameters" in profile
     has_liveness = "liveness_parameters" in profile
@@ -125,14 +140,25 @@ def validate_l1a_bootstrap(profile: dict[str, Any]) -> list[ValidationIssue]:
     if method == "REEXEC_AUDIT_ONLY" and profile.get("verified_claim_spec") != "BOTTOM":
         issues.append(_issue("SV-30", "$.verified_claim_spec", "audit-only claim must be BOTTOM"))
 
-    ids = [row.get("assumption_id") for row in profile.get("assumption_references", []) if isinstance(row, dict)]
-    if len(ids) != len(set(ids)) or any(not ASSUMPTION_ID.fullmatch(str(value)) for value in ids):
-        issues.append(_issue("SV-76", "$.assumption_references", "AssumptionID values must be valid and unique"))
+    if profile.get("verified_claim_spec") == "BOTTOM" and method != "REEXEC_AUDIT_ONLY":
+        issues.append(_issue("SV-30", "$.verified_claim_spec", "only audit-only may declare BOTTOM"))
+
+    references = profile.get("assumption_references", [])
+    if not isinstance(references, list) or any(not isinstance(row, dict) for row in references):
+        issues.append(_issue("SV-01", "$.assumption_references", "assumptions must be object rows"))
+    else:
+        ids = [row.get("assumption_id") for row in references]
+        if any(not isinstance(value, str) or not ASSUMPTION_ID.fullmatch(value) for value in ids):
+            issues.append(_issue("SV-76", "$.assumption_references", "invalid AssumptionID"))
+        elif len(ids) != len(set(ids)):
+            issues.append(_issue("SV-76", "$.assumption_references", "duplicate AssumptionID"))
+        if any(not isinstance(row.get("role"), str) or row["role"] not in {"SAFETY_CRITICAL", "LIVENESS", "INFORMATIONAL"} for row in references):
+            issues.append(_issue("SV-01", "$.assumption_references", "invalid assumption role"))
     return issues
 
 
 def validate_reexec_bounds(profile: dict[str, Any]) -> list[ValidationIssue]:
-    if profile.get("verification_method") != "REEXEC_BOUNDED":
+    if not isinstance(profile, dict) or profile.get("verification_method") != "REEXEC_BOUNDED":
         return []
     issues: list[ValidationIssue] = []
     try:
@@ -153,9 +179,9 @@ def validate_reexec_bounds(profile: dict[str, Any]) -> list[ValidationIssue]:
             issues.append(_issue("SV-11", "$.method_parameters.mixture_weights", "m values must be sorted and unique"))
         if any(weight < 0 for _, weight in parsed) or sum((weight for _, weight in parsed), Fraction()) != 1:
             issues.append(_issue("SV-11", "$.method_parameters.mixture_weights", "weights must be non-negative and sum exactly to one"))
-        if any(m < q for m, _ in parsed):
+        if any(m < q for m, weight in parsed if weight > 0):
             issues.append(_issue("SV-11", "$.method_parameters.mixture_weights", "every supported m must be >= Q"))
-    except (KeyError, TypeError, ValueError) as exc:
+    except (KeyError, TypeError, ValueError, AttributeError) as exc:
         issues.append(_issue("SV-10", "$", f"invalid exact parameter encoding: {exc}"))
     return issues
 
@@ -167,6 +193,18 @@ def validate_assumption_snapshot(
     terminal_state: str,
 ) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
+    if not isinstance(profile, dict) or not isinstance(snapshot, dict) or not isinstance(reducer_ref, dict):
+        return [_issue("SV-54a", "$", "profile, snapshot and reducer reference must be objects")]
+    references=profile.get("assumption_references")
+    if not isinstance(references, list) or any(not isinstance(row, dict) or not isinstance(row.get("assumption_id"), str) or not isinstance(row.get("role"), str) or row["role"] not in {"SAFETY_CRITICAL", "LIVENESS", "INFORMATIONAL"} for row in references):
+        return [_issue("SV-54a", "$", "malformed assumption references")]
+    ids=[row["assumption_id"] for row in references]
+    if len(ids)!=len(set(ids)) or any(not ASSUMPTION_ID.fullmatch(value) for value in ids):
+        return [_issue("SV-76", "$", "invalid or duplicate assumption IDs")]
+    states=snapshot.get("assumption_states")
+    if not isinstance(states,list) or any(not isinstance(row,dict) or not isinstance(row.get("assumption_id"),str) for row in states):
+        return [_issue("SV-54a", "$", "malformed assumption states")]
+
     if snapshot.get("reducer_ref") != reducer_ref:
         issues.append(_issue("SV-54a", "$.snapshot.reducer_ref", "reducer ref does not match the bound MAP"))
 
@@ -182,8 +220,11 @@ def validate_assumption_snapshot(
 
     role_by_id = {row["assumption_id"]: row.get("role") for row in profile.get("assumption_references", [])}
     for index, row in enumerate(states):
-        causes = row.get("cause_set", [])
-        codes = [cause.get("cause_code") for cause in causes if isinstance(cause, dict)]
+        causes = row.get("cause_set")
+        if not isinstance(causes,list) or any(not isinstance(cause,dict) or not isinstance(cause.get("cause_code"),str) for cause in causes):
+            issues.append(_issue("SV-54a", f"$.snapshot.assumption_states[{index}].cause_set", "malformed CauseSet"))
+            continue
+        codes = [cause["cause_code"] for cause in causes]
         if codes != sorted(set(codes)):
             issues.append(_issue("SV-54a", f"$.snapshot.assumption_states[{index}].cause_set", "CauseSet must be sorted and unique"))
             continue
@@ -208,8 +249,19 @@ def main() -> int:
     parser.add_argument("profile", type=Path)
     parser.add_argument("--production", action="store_true", help="always fail while coverage is incomplete")
     args = parser.parse_args()
-    profile = json.loads(args.profile.read_text(encoding="utf-8"))
-    issues = validate(profile)
+    def unique_object(pairs):
+        result={}
+        for key,value in pairs:
+            if key in result: raise ValueError(f"duplicate JSON key: {key}")
+            result[key]=value
+        return result
+    def invalid_constant(value):
+        raise ValueError(f"invalid JSON constant: {value}")
+    try:
+        profile = json.loads(args.profile.read_text(encoding="utf-8"), object_pairs_hook=unique_object, parse_constant=invalid_constant)
+        issues = validate(profile)
+    except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+        issues = [_issue("INPUT", "$", f"unreadable or malformed JSON: {exc}")]
     if args.production:
         issues.append(_issue("COVERAGE", "$", "P0-1B coverage is incomplete; production mode is fail-closed"))
     print(json.dumps([issue.__dict__ for issue in issues], ensure_ascii=False, indent=2))

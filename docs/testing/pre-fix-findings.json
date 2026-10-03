@@ -1,0 +1,22 @@
+[
+  {
+    "case": "unknown-version",
+    "outcome": []
+  },
+  {
+    "case": "method-list",
+    "exception": "TypeError: cannot use 'list' as a set element (unhashable type: 'list')"
+  },
+  {
+    "case": "assumptions-null",
+    "exception": "TypeError: 'NoneType' object is not iterable"
+  },
+  {
+    "case": "assumptions-non-object",
+    "outcome": []
+  },
+  {
+    "case": "malformed-cause-ignored",
+    "outcome": []
+  }
+]
