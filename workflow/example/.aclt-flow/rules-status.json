@@ -1,0 +1,627 @@
+[
+  {
+    "id": "SV-01",
+    "kind": "A",
+    "implementation": "PARTIAL"
+  },
+  {
+    "id": "SV-02",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-03",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-04",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-05",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-06",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-07",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-08",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-09",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-10",
+    "kind": "A",
+    "implementation": "DECLARED_IMPLEMENTED"
+  },
+  {
+    "id": "SV-11",
+    "kind": "A",
+    "implementation": "DECLARED_IMPLEMENTED"
+  },
+  {
+    "id": "SV-12R",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-12I",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-13",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-14",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-16",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-17",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-18",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-19",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-20",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-21",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-22",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-23",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-24",
+    "kind": "B",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-25",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-26",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-27",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-28",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-29R",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-29I",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-30",
+    "kind": "A",
+    "implementation": "PARTIAL"
+  },
+  {
+    "id": "SV-31",
+    "kind": "A",
+    "implementation": "PARTIAL"
+  },
+  {
+    "id": "SV-32",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-33",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-34",
+    "kind": "B",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-35",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-36",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-37",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-38",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-39",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-41",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-42",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-43",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-44",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-45",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-46",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-47",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-48",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-49",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-50",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-51",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-52",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-53a",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-53b",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-54a",
+    "kind": "A",
+    "implementation": "PARTIAL"
+  },
+  {
+    "id": "SV-54b",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-55",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-56",
+    "kind": "B",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-57",
+    "kind": "A",
+    "implementation": "PARTIAL"
+  },
+  {
+    "id": "SV-58",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-59",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-60",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-61",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-62",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-63",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-64",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-65",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-66",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-67",
+    "kind": "B",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-68",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-69",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-70",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-71",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-72",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-73",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-74",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-75a",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-75b",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-76",
+    "kind": "A",
+    "implementation": "DECLARED_IMPLEMENTED"
+  },
+  {
+    "id": "SV-77",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-78",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-79",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-80",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-81",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-82",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-84",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-85",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-86a",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-86b",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-86c",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-87",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-88",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-89",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-90",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-91",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-92",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-93",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-94",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-95",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-96",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-97",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-98",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-99",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-100",
+    "kind": "B",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-101",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-102",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-103",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-104",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-105",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-106",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-107",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-108",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-109",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-110",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-111",
+    "kind": "B",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-112",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-113",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-114",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-115",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-116",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-117",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-118",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-119",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-120",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  },
+  {
+    "id": "SV-121",
+    "kind": "A",
+    "implementation": "NOT_IMPLEMENTED"
+  }
+]

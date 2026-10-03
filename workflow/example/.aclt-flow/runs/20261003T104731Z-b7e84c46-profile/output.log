@@ -1,0 +1,29 @@
+test_all_cause_sets_and_permutations (test_singlehost.SingleHostValidationTests.test_all_cause_sets_and_permutations) ... ok
+test_all_snapshot_cause_combinations (test_singlehost.SingleHostValidationTests.test_all_snapshot_cause_combinations) ... ok
+test_assumption_rows_and_unique_ids (test_singlehost.SingleHostValidationTests.test_assumption_rows_and_unique_ids) ... ok
+test_cli_malformed_json (test_singlehost.SingleHostValidationTests.test_cli_malformed_json) ... ok
+test_cli_production_always_refuses (test_singlehost.SingleHostValidationTests.test_cli_production_always_refuses) ... ok
+test_exact_bound_grid (test_singlehost.SingleHostValidationTests.test_exact_bound_grid) ... ok
+test_exact_gap_limits (test_singlehost.SingleHostValidationTests.test_exact_gap_limits) ... ok
+test_method_parameter_matrix (test_singlehost.SingleHostValidationTests.test_method_parameter_matrix) ... ok
+test_profile_shape_rejected_without_crash (test_singlehost.SingleHostValidationTests.test_profile_shape_rejected_without_crash) ... ok
+test_rational_boundaries (test_singlehost.SingleHostValidationTests.test_rational_boundaries) ... ok
+test_required_unknown_and_identifier_fields (test_singlehost.SingleHostValidationTests.test_required_unknown_and_identifier_fields) ... ok
+test_snapshot_coverage_order_duplicates_and_claimed_verdict (test_singlehost.SingleHostValidationTests.test_snapshot_coverage_order_duplicates_and_claimed_verdict) ... ok
+test_snapshot_shape_rejected (test_singlehost.SingleHostValidationTests.test_snapshot_shape_rejected) ... ok
+test_uint_boundaries (test_singlehost.SingleHostValidationTests.test_uint_boundaries) ... ok
+test_weight_table_cases (test_singlehost.SingleHostValidationTests.test_weight_table_cases) ... ok
+test_assumption_snapshot_accepts_complete_cause_set (test_validator.BootstrapValidatorTests.test_assumption_snapshot_accepts_complete_cause_set) ... ok
+test_bounded_gap_is_exact (test_validator.BootstrapValidatorTests.test_bounded_gap_is_exact) ... ok
+test_cause_reducer_preserves_multiple_facts (test_validator.BootstrapValidatorTests.test_cause_reducer_preserves_multiple_facts) ... ok
+test_duplicate_assumption_id_is_rejected (test_validator.BootstrapValidatorTests.test_duplicate_assumption_id_is_rejected) ... ok
+test_non_reexec_must_not_carry_safety_parameters (test_validator.BootstrapValidatorTests.test_non_reexec_must_not_carry_safety_parameters) ... ok
+test_rational_must_be_reduced (test_validator.BootstrapValidatorTests.test_rational_must_be_reduced) ... ok
+test_reducer_mismatch_is_rejected (test_validator.BootstrapValidatorTests.test_reducer_mismatch_is_rejected) ... ok
+test_trusted_rejects_invalid_safety_assumption (test_validator.BootstrapValidatorTests.test_trusted_rejects_invalid_safety_assumption) ... ok
+test_valid_bounded_profile (test_validator.BootstrapValidatorTests.test_valid_bounded_profile) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.534s
+
+OK
