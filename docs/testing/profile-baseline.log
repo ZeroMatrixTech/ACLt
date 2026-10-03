@@ -1,0 +1,14 @@
+test_assumption_snapshot_accepts_complete_cause_set (test_validator.BootstrapValidatorTests.test_assumption_snapshot_accepts_complete_cause_set) ... ok
+test_bounded_gap_is_exact (test_validator.BootstrapValidatorTests.test_bounded_gap_is_exact) ... ok
+test_cause_reducer_preserves_multiple_facts (test_validator.BootstrapValidatorTests.test_cause_reducer_preserves_multiple_facts) ... ok
+test_duplicate_assumption_id_is_rejected (test_validator.BootstrapValidatorTests.test_duplicate_assumption_id_is_rejected) ... ok
+test_non_reexec_must_not_carry_safety_parameters (test_validator.BootstrapValidatorTests.test_non_reexec_must_not_carry_safety_parameters) ... ok
+test_rational_must_be_reduced (test_validator.BootstrapValidatorTests.test_rational_must_be_reduced) ... ok
+test_reducer_mismatch_is_rejected (test_validator.BootstrapValidatorTests.test_reducer_mismatch_is_rejected) ... ok
+test_trusted_rejects_invalid_safety_assumption (test_validator.BootstrapValidatorTests.test_trusted_rejects_invalid_safety_assumption) ... ok
+test_valid_bounded_profile (test_validator.BootstrapValidatorTests.test_valid_bounded_profile) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.001s
+
+OK

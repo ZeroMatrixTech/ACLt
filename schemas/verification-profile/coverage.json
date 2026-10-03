@@ -4,12 +4,23 @@
   "audit_baseline": "AUD-20260821-10",
   "implemented": {
     "L1a": [],
-    "L1b": ["SV-10", "SV-11", "SV-57", "SV-76"],
+    "L1b": [
+      "SV-10",
+      "SV-11",
+      "SV-76"
+    ],
     "L2": []
   },
   "partial": {
-    "L1a": ["SV-01", "SV-30", "SV-31"],
-    "L1b": ["SV-54a"],
+    "L1a": [
+      "SV-01",
+      "SV-30",
+      "SV-31"
+    ],
+    "L1b": [
+      "SV-54a",
+      "SV-57"
+    ],
     "L2": []
   },
   "not_implemented": {
@@ -18,6 +29,17 @@
     "registries": "当前只有种子数据，不是官方 ACTIVE 主网注册表。",
     "cross_implementation": "尚无第二语言实现。"
   },
-  "type_b_excluded_from_p0_1b_closure": ["SV-24", "SV-34", "SV-56", "SV-67", "SV-100", "SV-111", "D-08-c"],
-  "deferred": ["SV-40"]
+  "type_b_excluded_from_p0_1b_closure": [
+    "SV-24",
+    "SV-34",
+    "SV-56",
+    "SV-67",
+    "SV-100",
+    "SV-111",
+    "D-08-c"
+  ],
+  "deferred": [
+    "SV-40"
+  ],
+  "review_note": "2026-10-03: SV-57 helper is tested but COMPLETE/INVALIDATING envelope integration remains absent; classify partial. Expanded tests do not close P0-1B."
 }

@@ -1,0 +1,5 @@
+{
+  "case": "coordinator allows timeout 10000, passes delay 20000; worker rejected it even in normal mode",
+  "returncode": 1,
+  "stderr": "REJECT: invalid job arguments\n"
+}

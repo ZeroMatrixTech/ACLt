@@ -1,0 +1,8 @@
+   Compiling aclt-minimal-verifier v0.1.0 (/home/inpax-aki2/.codex/.chatgpt-projects/g-p-6a7f662fceb8819199e85fa2b9cf1203/outputs/aclt-singlehost-audit/experiments/aclt-minimal-verifier-state2)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.95s
+ACCEPT count=10 chunks=3 sum=28 min=-7 max=12
+PASS: 68 verification cases; worker input rejection and Python reference totals checked
+PASS: 12 multi-process scenarios; retries, late results, attempt limits, cleanup, and overwrite refusal checked
+PASS: 12 recovery scenarios; 13 actual coordinator SIGKILLs; maximum observed live workers=2
+PASS: 90 batch cases; 72 randomized SIGKILLs; groups={'atomic-write-interruption': 4, 'concurrent-recovery': 4, 'damaged-record': 29, 'injected-storage-error': 15, 'kernel-storage-error': 11, 'publication-regression': 3, 'random-interruption': 24}
+PASS: 22 lifecycle scenarios; permanent outcomes, authoritative snapshots, recovery limits and deadlines

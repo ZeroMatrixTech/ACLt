@@ -1,0 +1,445 @@
+{
+  "passed": 55,
+  "cases": [
+    {
+      "case": "verification-limit-0",
+      "passed": true,
+      "detail": "10 input integers; normal checks need exactly 20 comparison units",
+      "state": "ACLT-STATE-3\nab5a5827d9158b6302b411c48d7635649f2007877e7f878f81e9bb295460aa49\n4 1000 3 normal FAILED\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 PENDING\n1 1 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879040 0 10 VERIFY 0 0 1000000 100000 4abf5fd7-f924-40cb-b335-0f018174b8b9\nEND\n",
+      "publication": false,
+      "logical_bytes": 1429
+    },
+    {
+      "case": "verification-limit-19",
+      "passed": true,
+      "detail": "10 input integers; normal checks need exactly 20 comparison units",
+      "state": "ACLT-STATE-3\n329c32ffedcafc69b2177711d0f7fb3e42c12955b4b180a67fd683c006a3cf20\n4 1000 3 normal FAILED\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879070 0 10 VERIFY 10 19 1000000 100000 cc6c34f2-cf24-40bd-a991-442f6991dc85\nEND\n",
+      "publication": false,
+      "logical_bytes": 1667
+    },
+    {
+      "case": "verification-limit-20",
+      "passed": true,
+      "detail": "10 input integers; normal checks need exactly 20 comparison units",
+      "state": "ACLT-STATE-3\n3ac5a8895a6e6b8169d8e458cb8aaeb49cfd585c3e038168cd4f7def595d7547\n4 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879140 0 10 NONE 20 20 1000000 100000 0ffe8d1b-c057-4076-a9ff-92939a50beb5\nEND\n",
+      "publication": true,
+      "logical_bytes": 1738
+    },
+    {
+      "case": "verification-reservation-survives",
+      "passed": true,
+      "detail": "interrupted reserved units are not refunded",
+      "state": "ACLT-STATE-3\nc9c365143d0a8c32b99ada651186c0640d9d4a3658b26894d2c596a2bf78e8d5\n4 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 2 0 0 4 10 -1 8\n1 2 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879210 1 10 NONE 24 1000 1000000 100000 6f618442-6e75-4463-ae06-9d517c216839\nEND\n",
+      "publication": true,
+      "logical_bytes": 2001
+    },
+    {
+      "case": "verification-save-failed",
+      "passed": true,
+      "detail": "no result validation/acceptance before counter commit",
+      "state": "ACLT-STATE-3\n67c27fc73f10e9c2245e4b366dbd62e4e0f1dc68e07fa38165fd6563e2a48d41\n4 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 2 0 0 4 10 -1 8\n1 2 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879320 1 10 NONE 20 1000 1000000 100000 e6c1f58f-a0f6-48e2-b68a-63c27b4f5cfa\nEND\n",
+      "publication": true,
+      "logical_bytes": 1925
+    },
+    {
+      "case": "recovery-check-is-charged",
+      "passed": true,
+      "detail": "accepted block revalidation consumes units on active recovery",
+      "state": "ACLT-STATE-3\nb6bc28ad61470a757f8a762144d9b4eecbb986c79ba3ba5020ef757499b430c1\n4 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 2 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879410 1 10 NONE 24 1000 1000000 100000 d2d3bac5-9bdc-4490-b044-7911b59d9793\nEND\n",
+      "publication": true,
+      "logical_bytes": 1902
+    },
+    {
+      "case": "published-budget-spent",
+      "passed": true,
+      "detail": "published decisions remain valid; completed read-only audits do not restart work",
+      "state": "ACLT-STATE-3\n76d047170f0cce60ee4cb3d48706a3ac17ac8b1bf300cdcdf66b74de80fcd29f\n4 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879490 0 10 NONE 20 20 1000000 100000 25cff3f9-bbd4-4cb0-ac66-9bdac5ec9468\nEND\n",
+      "publication": true,
+      "logical_bytes": 1768
+    },
+    {
+      "case": "log-limit-0",
+      "passed": true,
+      "detail": "diagnostic append stops before byte limit and terminal state persists",
+      "state": "ACLT-STATE-3\n4ba6ff95c31091ef062ce8769eab19a65e424f521902df67d27e591f2b533ccb\n4 1000 3 normal FAILED\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879570 0 10 LOG 0 1000 1000000 0 0f8c3a5d-6ad0-4e42-8126-6b4b61078a6a\nEND\n",
+      "publication": false,
+      "logical_bytes": 1303
+    },
+    {
+      "case": "log-limit-100",
+      "passed": true,
+      "detail": "diagnostic append stops before byte limit and terminal state persists",
+      "state": "ACLT-STATE-3\n25e83d2d426522bb6f8e88dd64ee39832d6dccc4fd5f0c1f5d9f5db783377090\n4 1000 3 normal FAILED\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879600 0 10 LOG 8 1000 1000000 100 f504314d-bb87-4783-ae4e-a7e8048649d1\nEND\n",
+      "publication": false,
+      "logical_bytes": 1519
+    },
+    {
+      "case": "storage-limit",
+      "passed": true,
+      "detail": "reserve preserves space for terminal snapshot when work capacity is depleted",
+      "state": "ACLT-STATE-3\n9aa9d39574ef6aad6f8780a1c338ad45cd7d1f72b6d6bd93b8f50e48e5aae640\n4 1000 3 normal FAILED\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879650 0 10 STORAGE 0 1000 20000 100000 13355f7c-44aa-4b7e-a144-81a8e34d8d68\nEND\n",
+      "publication": false,
+      "logical_bytes": 17958
+    },
+    {
+      "case": "storage-admission-refused",
+      "passed": true,
+      "detail": "insufficient initial space fails before workers",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "worker-output-limit-stdout",
+      "passed": true,
+      "detail": "kernel file size limit bounds each direct worker output and error file",
+      "state": "ACLT-STATE-3\nc588259d451600aa38d063e4bccc7505247647069b699db4a36da4f7d0a1eab1\n4 1000 1 normal FAILED\n2f746d702f61636c742d73696e676c65686f73742d33363577303032672f6e6f6973792d7374646f7574\n49d989bc9e88af9a7452dabe7c7c6bbab067e754237cf515738287005a18e7bb\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 PENDING\n1 1 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879690 0 10 ATTEMPTS 4 1000 1000000 100000 948cb3a1-378f-4fe0-ae73-f85d7de673d2\nEND\n",
+      "publication": false,
+      "logical_bytes": 1638
+    },
+    {
+      "case": "worker-output-limit-stderr",
+      "passed": true,
+      "detail": "kernel file size limit bounds each direct worker output and error file",
+      "state": "ACLT-STATE-3\ne590bed2e0168b87d0dde00855b433f28c454659d46dfa193818036a7565ea77\n4 1000 1 normal FAILED\n2f746d702f61636c742d73696e676c65686f73742d33363577303032672f6e6f6973792d737464657272\n7b349ed8163186b29189ae0a7c857db22aaafd411cd081ff437652e5a4dca39f\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 PENDING\n1 1 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879730 0 10 ATTEMPTS 4 1000 1000000 100000 544f9fd7-2f9d-4749-b290-7a98079ee51f\nEND\n",
+      "publication": false,
+      "logical_bytes": 1478
+    },
+    {
+      "case": "cross-task-replay",
+      "passed": true,
+      "detail": "same numeric answer and attempt from a different task ID is rejected",
+      "state": "ACLT-STATE-3\n65157d23fadb446b35899f6e2371aeb8cced20ee32b93e2fd3cb0246d792333a\n4 1000 1 normal FAILED\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 PENDING\n1 1 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879830 0 10 ATTEMPTS 4 1000 1000000 100000 8d609b4e-8006-4df4-9fff-9dff27c9dfee\nEND\n",
+      "publication": false,
+      "logical_bytes": 1560
+    },
+    {
+      "case": "bound-chunk",
+      "passed": true,
+      "detail": "changing state while recomputing its checksum cannot bypass the frozen contract",
+      "state": "ACLT-STATE-3\n509e70f445b997161ddabf5e783c3c7a7e7f930b566de9faab12eb02ef041a2d\n5 1000 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879860 0 10 NONE 0 1000 1000000 100000 003552d2-7483-45fb-ac3f-ce1331143638\nEND\n",
+      "publication": false,
+      "logical_bytes": 1317
+    },
+    {
+      "case": "bound-timeout",
+      "passed": true,
+      "detail": "changing state while recomputing its checksum cannot bypass the frozen contract",
+      "state": "ACLT-STATE-3\n9efa4358dcf0677d2cf4b3ea6e208f0fe01078b388cf0be1a08bc29982e94cca\n4 999 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879880 0 10 NONE 0 1000 1000000 100000 2aa51b7a-7af2-4f60-b035-f3e7f2895531\nEND\n",
+      "publication": false,
+      "logical_bytes": 1316
+    },
+    {
+      "case": "bound-attempts",
+      "passed": true,
+      "detail": "changing state while recomputing its checksum cannot bypass the frozen contract",
+      "state": "ACLT-STATE-3\n0213a4405849476cc1185e5b5db993e244e60514eb1ecfe7cecccd375d2fc106\n4 1000 4 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879900 0 10 NONE 0 1000 1000000 100000 c82729e8-9ee9-4529-978b-e9ab69360513\nEND\n",
+      "publication": false,
+      "logical_bytes": 1317
+    },
+    {
+      "case": "bound-scenario",
+      "passed": true,
+      "detail": "changing state while recomputing its checksum cannot bypass the frozen contract",
+      "state": "ACLT-STATE-3\n5a5918c34e9de612ae7beb7894f82b2b8de2c05b938c5fdb4df0c95440048a49\n4 1000 3 slow RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879920 0 10 NONE 0 1000 1000000 100000 d90e88f1-c8e1-4052-b170-5b6f35eb6629\nEND\n",
+      "publication": false,
+      "logical_bytes": 1315
+    },
+    {
+      "case": "bound-deadline",
+      "passed": true,
+      "detail": "immutable limit changed in state is refused",
+      "state": "ACLT-STATE-3\n30fc69b8310345eb280a0078003965f40fce5a4a53788b5043f70451f7aa9e9a\n4 1000 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879951 0 10 NONE 0 1000 1000000 100000 09b9e684-3e3e-47fc-b32b-9e16c8364ab3\nEND\n",
+      "publication": false,
+      "logical_bytes": 1317
+    },
+    {
+      "case": "bound-recoveries",
+      "passed": true,
+      "detail": "immutable limit changed in state is refused",
+      "state": "ACLT-STATE-3\nb2ac4c81b541a77d13f1a8a4bf283963cde1ef3168bd6180ad8a6345236bc166\n4 1000 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49879970 0 11 NONE 0 1000 1000000 100000 5baee2d4-0a17-4458-9828-9cb5be8f83d8\nEND\n",
+      "publication": false,
+      "logical_bytes": 1317
+    },
+    {
+      "case": "bound-verify-budget",
+      "passed": true,
+      "detail": "immutable limit changed in state is refused",
+      "state": "ACLT-STATE-3\n3cebd18973b0cc54d8e7d2dc190f75c68a7537dfc88af0515696657db3a23e6d\n4 1000 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880000 0 10 NONE 0 1001 1000000 100000 977b4dff-751d-4a0e-a74c-2d5010d018d6\nEND\n",
+      "publication": false,
+      "logical_bytes": 1317
+    },
+    {
+      "case": "bound-storage-budget",
+      "passed": true,
+      "detail": "immutable limit changed in state is refused",
+      "state": "ACLT-STATE-3\ned574c7c1b86f65b99126534864f3bdf1eee1c50bb79ff3ad84a998a6be2f5f1\n4 1000 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880020 0 10 NONE 0 1000 1000001 100000 0028e141-56a1-43a9-a72f-3d658882b769\nEND\n",
+      "publication": false,
+      "logical_bytes": 1317
+    },
+    {
+      "case": "bound-log-budget",
+      "passed": true,
+      "detail": "immutable limit changed in state is refused",
+      "state": "ACLT-STATE-3\na37540ea0e7fbb8bf720fbe6de28aeb1fe28aefc2b4898f786aab3630ef23bd9\n4 1000 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880050 0 10 NONE 0 1000 1000000 100001 ae5ebd4d-0bda-44e6-953d-9935d080ba13\nEND\n",
+      "publication": false,
+      "logical_bytes": 1317
+    },
+    {
+      "case": "missing-contract",
+      "passed": true,
+      "detail": "missing or changed frozen contract fails closed",
+      "state": "ACLT-STATE-3\n724f04b6d409f323dc66bbb146c92935156b4a7b370f9c1ecdb31330fc07367d\n4 1000 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880080 0 10 NONE 0 1000 1000000 100000 b39bc6ba-14fb-473f-8bd5-5d3b902ef1a3\nEND\n",
+      "publication": false,
+      "logical_bytes": 705
+    },
+    {
+      "case": "unknown-contract-version",
+      "passed": true,
+      "detail": "missing or changed frozen contract fails closed",
+      "state": "ACLT-STATE-3\n4cca08646b593f800732c64f4ce5a2eb1af894e494e8e0c13f68b7d51b92c438\n4 1000 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880100 0 10 NONE 0 1000 1000000 100000 fbe227f0-ba97-4129-9301-0f590cbcc237\nEND\n",
+      "publication": false,
+      "logical_bytes": 1318
+    },
+    {
+      "case": "contract-rule-change",
+      "passed": true,
+      "detail": "missing or changed frozen contract fails closed",
+      "state": "ACLT-STATE-3\n633325a4e52dcf1fca05f52c554d94c4e302c053ad803f18dca4ad5726a3ad92\n4 1000 3 normal RUN\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880130 0 10 NONE 0 1000 1000000 100000 d9a183fb-af19-476a-becd-da9fedbb710b\nEND\n",
+      "publication": false,
+      "logical_bytes": 1317
+    },
+    {
+      "case": "deadline-and-verification-empty",
+      "passed": true,
+      "detail": "local deadline is checked before starting new budgeted work; not the funding DAG rule",
+      "state": "ACLT-STATE-3\nfa8bd4066757a3866c3ecd3aadc6dac3b0f7dbc1500e98b05ddf94d23532c27d\n4 1000 3 normal EXPIRED\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49850250 0 10 DEADLINE 0 0 1000000 100000 0bf39e52-12f6-4421-81dd-faa2a99b6045\nEND\n",
+      "publication": false,
+      "logical_bytes": 1319
+    },
+    {
+      "case": "timeout-boundary-50",
+      "passed": true,
+      "detail": "every declared timeout boundary remains usable; worker accepts doubled test delay",
+      "state": "ACLT-STATE-3\nea1819c81e1cb9b0fc7171eac3a58e1c8f77e640d0a2fd19f8cd45e179088745\n4 50 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880370 0 10 NONE 20 1000 1000000 100000 307b000e-cca8-414c-83ae-787aabe18ebc\nEND\n",
+      "publication": true,
+      "logical_bytes": 1738
+    },
+    {
+      "case": "timeout-boundary-5000",
+      "passed": true,
+      "detail": "every declared timeout boundary remains usable; worker accepts doubled test delay",
+      "state": "ACLT-STATE-3\na8987c3ae4963981e6749e7a0b0f3064ddd37439545b301ede0942eb86d188a9\n4 5000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880490 0 10 NONE 20 1000 1000000 100000 0f720a7c-2690-4f24-85f2-0c0133d3ac4d\nEND\n",
+      "publication": true,
+      "logical_bytes": 1742
+    },
+    {
+      "case": "timeout-boundary-5001",
+      "passed": true,
+      "detail": "every declared timeout boundary remains usable; worker accepts doubled test delay",
+      "state": "ACLT-STATE-3\na9b0d3f7b1d6764389bd3bcbe15729bdbcbd83f760c3ff9a6099777d60e162dc\n4 5001 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880550 0 10 NONE 20 1000 1000000 100000 53596565-595a-4c58-a830-41f49259086c\nEND\n",
+      "publication": true,
+      "logical_bytes": 1742
+    },
+    {
+      "case": "timeout-boundary-10000",
+      "passed": true,
+      "detail": "every declared timeout boundary remains usable; worker accepts doubled test delay",
+      "state": "ACLT-STATE-3\n2af65180ad8117ad44f5555bd00da6f29c9dcb45d40501552e3c2611a5ad6ffc\n4 10000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880620 0 10 NONE 20 1000 1000000 100000 2f7cead0-d432-4dd8-b890-cfb9683f5b52\nEND\n",
+      "publication": true,
+      "logical_bytes": 1744
+    },
+    {
+      "case": "chunk-boundary-1",
+      "passed": true,
+      "detail": "declared chunk boundaries",
+      "state": "ACLT-STATE-3\n62e717cc84e24b51782dbcd170bc7c125a1b3e3b895b5618a01246af46d22c7a\n1 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n10\n0 1 0 0 1 3 3 3\n1 1 1 1 1 -1 -1 -1\n2 1 2 2 1 8 8 8\n3 1 3 3 1 0 0 0\n4 1 4 4 1 -7 -7 -7\n5 1 5 5 1 12 12 12\n6 1 6 6 1 5 5 5\n7 1 7 7 1 2 2 2\n8 1 8 8 1 -3 -3 -3\n9 1 9 9 1 9 9 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880690 0 10 NONE 20 1000 1000000 100000 bf00a6d6-6c56-40b6-8841-07e63af17288\nEND\n",
+      "publication": true,
+      "logical_bytes": 2727
+    },
+    {
+      "case": "chunk-boundary-100000",
+      "passed": true,
+      "detail": "declared chunk boundaries",
+      "state": "ACLT-STATE-3\nb312a692337f7a8ed9bdca0c029d4a658e3419e7a2dbb545a11810a0473c28e5\n100000 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n1\n0 1 0 0 10 28 -7 12\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880850 0 10 NONE 20 1000 1000000 100000 f23d65cc-32b1-404e-a759-aed49d1b6446\nEND\n",
+      "publication": true,
+      "logical_bytes": 1470
+    },
+    {
+      "case": "attempt-boundary-1",
+      "passed": true,
+      "detail": "declared attempt boundaries",
+      "state": "ACLT-STATE-3\n87d19d52ab0b414fb6ce87df9e74d22dcd452809dfb8efb9dbf299da2d176504\n4 1000 1 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880890 0 10 NONE 20 1000 1000000 100000 ba37d99e-b9fe-4250-89d6-db25b98c8c73\nEND\n",
+      "publication": true,
+      "logical_bytes": 1742
+    },
+    {
+      "case": "attempt-boundary-5",
+      "passed": true,
+      "detail": "declared attempt boundaries",
+      "state": "ACLT-STATE-3\ne3a229018bde6452d65ac557b78bb58ff175bc6387892c0ac52b345a1a95323f\n4 1000 5 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49880960 0 10 NONE 20 1000 1000000 100000 f6a4de70-e3d2-45b8-bded-7c21b6b0ad2d\nEND\n",
+      "publication": true,
+      "logical_bytes": 1742
+    },
+    {
+      "case": "maximum-task-ttl",
+      "passed": true,
+      "detail": "maximum TTL is accepted",
+      "state": "ACLT-STATE-3\n89a084dacfb142a37ef738345127646132f8a8af6a112822702fa7cd9675fe73\n4 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 136251030 0 10 NONE 20 1000 1000000 100000 c6ffbbd7-faaa-4f8a-b807-402c0eb744b8\nEND\n",
+      "publication": true,
+      "logical_bytes": 1744
+    },
+    {
+      "case": "maximum-resource-values",
+      "passed": true,
+      "detail": "declared maximum quota values are accepted",
+      "state": "ACLT-STATE-3\n6b4d3bcbb876a75113d885a491deddd4f15166a49ba414b609bcdff7db9e20f9\n4 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49881100 0 100 NONE 20 100000000 268435456 16777216 21314a46-d682-41f7-b7a5-abfc2c500d63\nEND\n",
+      "publication": true,
+      "logical_bytes": 1762
+    },
+    {
+      "case": "minimum-ttl-admission",
+      "passed": true,
+      "detail": "minimum TTL is admitted, then expires without being extended",
+      "state": "ACLT-STATE-3\nf223672e5427a64f4c599dbfa7e23919fe6593f544b0275fcacc4ab428a0109b\n4 1000 3 normal EXPIRED\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 0 PENDING\n1 0 PENDING\n2 0 PENDING\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49851220 0 10 DEADLINE 0 1000 1000000 100000 2898c352-9ec6-4742-8010-08786b3bf606\nEND\n",
+      "publication": false,
+      "logical_bytes": 1325
+    },
+    {
+      "case": "invalid-timeout-49",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-timeout-10001",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-chunk-0",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-chunk-100001",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-attempts-0",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-attempts-6",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-ttl-49",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-ttl-86400001",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-recoveries-101",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-recoveries--1",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-units-100000001",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-units--1",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-storage-4095",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-storage-268435457",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-log-16777217",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "invalid-log--1",
+      "passed": true,
+      "detail": "invalid admission limit refused before execution",
+      "state": null,
+      "publication": false,
+      "logical_bytes": 0
+    },
+    {
+      "case": "publication-after-log-failure",
+      "passed": true,
+      "detail": "post-commit log failure cannot undo published success",
+      "state": "ACLT-STATE-3\n10657965779b490af020e5ea69f8067e35337b647197c77d61174a4bb68a43fa\n4 1000 3 normal DONE\n2f686f6d652f696e7061782d616b69322f2e636f6465782f2e636861746770742d70726f6a656374732f672d702d36613766363632666365623838313931393965383566613262396366313230332f6f7574707574732f61636c742d73696e676c65686f73742d61756469742f6578706572696d656e74732f61636c742d6d696e696d616c2d76657269666965722d7374617465322f6275696c642f776f726b6572\n91b72b4b57e2bec4fec73c03ea77fc235bcad830ac59b894c6e8ce2aab63c603\n3 -1 8 0 -7 12 5 2 -3 9\n3\n0 1 0 0 4 10 -1 8\n1 1 1 4 4 12 -7 12\n2 1 2 8 2 6 -3 9\nLIMITS 0aca3a15-1b85-4c75-9a76-4968bc92f8a9 49881360 0 10 NONE 20 1000 1000000 100000 0033bf49-306b-43e1-976e-42a4661c925f\nEND\n",
+      "publication": true,
+      "logical_bytes": 1709
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "passed": 22,
+  "cases": [
+    {
+      "case": "permanent-attempt-failure",
+      "passed": true
+    },
+    {
+      "case": "failed-cannot-adopt-result",
+      "passed": true
+    },
+    {
+      "case": "response-lost-DONE",
+      "passed": true
+    },
+    {
+      "case": "response-lost-FAILED",
+      "passed": true
+    },
+    {
+      "case": "transient-state-write",
+      "passed": true
+    },
+    {
+      "case": "terminal-save-failure",
+      "passed": true
+    },
+    {
+      "case": "zero-recoveries",
+      "passed": true
+    },
+    {
+      "case": "recovery-reservation-not-refunded",
+      "passed": true
+    },
+    {
+      "case": "failed-recovery-write-no-work",
+      "passed": true
+    },
+    {
+      "case": "deadline-survives-idle",
+      "passed": true
+    },
+    {
+      "case": "deadline-live-workers",
+      "passed": true
+    },
+    {
+      "case": "deadline-before-publication",
+      "passed": true
+    },
+    {
+      "case": "publication-wins-later-deadline",
+      "passed": true
+    },
+    {
+      "case": "deadline-unchanged-by-recovery",
+      "passed": true
+    },
+    {
+      "case": "aux-log-missing",
+      "passed": true
+    },
+    {
+      "case": "aux-log-truncated",
+      "passed": true
+    },
+    {
+      "case": "aux-log-duplicate",
+      "passed": true
+    },
+    {
+      "case": "aux-log-fabricated-complete",
+      "passed": true
+    },
+    {
+      "case": "accepted-before-log-error",
+      "passed": true
+    },
+    {
+      "case": "boot-change-refused",
+      "passed": true
+    },
+    {
+      "case": "invalid-phase-reason",
+      "passed": true
+    },
+    {
+      "case": "legacy-state-refused",
+      "passed": true
+    }
+  ]
+}
