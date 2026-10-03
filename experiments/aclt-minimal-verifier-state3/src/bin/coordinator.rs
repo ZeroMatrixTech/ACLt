@@ -147,26 +147,15 @@ fn load(directory: &Path) -> Result<State,String> {
             accepted.push(Some(row[2].to_string()));
         }
     }
-    let mut s=State {chunk,timeout_ms,maximum,scenario:config[3].into(),phase:config[4].into(),verify_used,verify_limit,storage_limit,log_limit,task_id:limits[10].into(),boot:limits[1].into(),deadline_ms,recoveries,recovery_limit,reason:limits[5].into(),worker,worker_hash:lines[2].into(),values,attempts,accepted};
+    let s=State {chunk,timeout_ms,maximum,scenario:config[3].into(),phase:config[4].into(),verify_used,verify_limit,storage_limit,log_limit,task_id:limits[10].into(),boot:limits[1].into(),deadline_ms,recoveries,recovery_limit,reason:limits[5].into(),worker,worker_hash:lines[2].into(),values,attempts,accepted};
     if read(directory.join("contract.txt").to_str().ok_or("non-UTF8 path")?,16_000_000)?!=contract(&s)? {
         return Err("frozen task contract mismatch".into());
     }
     if body(&s)?!=text { return Err("noncanonical state".into()); }
     if s.phase=="DONE" && s.accepted.iter().any(Option::is_none) { return Err("incomplete DONE state".into()); }
     if hash(&fs::read(&s.worker).map_err(|e|e.to_string())?)?!=s.worker_hash { return Err("worker binary mismatch".into()); }
-    if s.phase=="RUN" && !directory.join("results.txt").exists() {
-        configure_limits(&s)?;
-        let units=s.accepted.iter().enumerate().filter(|(_,row)|row.is_some()).map(|(id,_)|(s.values.len()-id*s.chunk).min(s.chunk) as u64).sum();
-        if units>0 {
-            if let Err(e)=charge_verification(directory,&mut s,units) {
-                if let Some(reason)=e.strip_prefix("quota:") {terminal(directory,&mut s,"FAILED",reason)?;}
-                return Err(e);
-            }
-        }
-    }
-    for (id,row) in s.accepted.iter().enumerate() {
-        if let Some(row)=row {if fields(row)?!=expected(&s.values,s.chunk,id) {return Err("saved result invalid".into());}}
-    }
+    // Loading validates the snapshot structure and contract without changing it.
+    // Recomputing accepted blocks is budgeted only after recovery admission.
     Ok(s)
 }
 fn checkpoint(directory: &Path,name: &str) -> Result<(),String> {
@@ -305,6 +294,14 @@ fn run() -> Result<(),String> {
         if s.recoveries>=s.recovery_limit { return terminal(&directory,&mut s,"FAILED","RECOVERIES"); }
         s.recoveries+=1; save(&directory,&s)?;
         checkpoint(&directory,"recovery-reserved")?;
+        let units=s.accepted.iter().enumerate().filter(|(_,row)|row.is_some())
+            .map(|(id,_)|(s.values.len()-id*s.chunk).min(s.chunk) as u64).sum();
+        if units>0 { charge_verification(&directory,&mut s,units)?; }
+        for (id,row) in s.accepted.iter().enumerate() {
+            if let Some(row)=row {
+                if fields(row)?!=expected(&s.values,s.chunk,id) {return Err("saved result invalid".into());}
+            }
+        }
     }
     if resume { event(&mut log,"RESUME",0,0,"unfinished old attempts invalidated; counts retained")?; }
     let mut queue=VecDeque::new();

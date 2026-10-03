@@ -31,7 +31,7 @@ def environment(root):
  selected={k:os.environ.get(k,'') for k in ['RUSTC','RUSTFLAGS','CARGO_ENCODED_RUSTFLAGS','CARGO_TARGET_DIR','LD_LIBRARY_PATH','LD_PRELOAD','PYTHONPATH','PYTHONHASHSEED','LANG','LC_ALL','TZ']}
  result['build_environment_sha256']=hashlib.sha256(json.dumps(selected,sort_keys=True).encode()).hexdigest()
  tools={'g++':['g++','--version'],'rustc':['rustc','--version'],'cargo':['cargo','--version']}
- local=root/'experiments/aclt-minimal-verifier-state2/.toolchain/usr'
+ local=root/'experiments/aclt-minimal-verifier-state3/.toolchain/usr'
  env=os.environ.copy()
  if local.exists():
   env['LD_LIBRARY_PATH']=str(local/'lib/x86_64-linux-gnu')+':'+env.get('LD_LIBRARY_PATH','')

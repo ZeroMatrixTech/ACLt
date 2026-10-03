@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "coverage": "schemas/verification-profile/coverage.json",
+  "rules": "docs/03-protocol/verification-profile-schema.md",
+  "jobs": [
+    {
+      "id": "workflow",
+      "title": "流程工具与仓库集成",
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/workflow",
+        "-v"
+      ],
+      "timeout_seconds": 300,
+      "inputs": [
+        "scripts/*.py",
+        "scripts/*.sh",
+        "tests/workflow/*.py",
+        ".aclt-flow/template.json",
+        "SINGLEHOST-SHA256SUMS",
+        "WORKFLOW-SHA256SUMS"
+      ],
+      "required_output": [
+        "re:Ran [1-9][0-9]* tests",
+        "OK"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "model",
+      "title": "精确模型验证",
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/verification_model",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "timeout_seconds": 300,
+      "inputs": [
+        "tests/verification_model/*.py",
+        "tests/verification_model/*.json",
+        "docs/06-research/verification-round-mathematical-model.md"
+      ],
+      "required_output": [
+        "re:Ran [1-9][0-9]* tests",
+        "OK"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "profile",
+      "title": "验证器规则与错误输入",
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests/verification_profile",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "timeout_seconds": 300,
+      "inputs": [
+        "tools/**/*.py",
+        "tests/verification_profile/*.py",
+        "schemas/**/*.json",
+        "docs/03-protocol/verification-profile-schema.md"
+      ],
+      "required_output": [
+        "re:Ran [1-9][0-9]* tests",
+        "OK",
+        "SingleHostValidationTests"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "singlehost",
+      "title": "当前单机验证",
+      "command": [
+        "bash",
+        "experiments/aclt-minimal-verifier-state3/scripts/run-ubuntu.sh"
+      ],
+      "timeout_seconds": 1800,
+      "inputs": [
+        "experiments/aclt-minimal-verifier-state3/src/**/*.rs",
+        "experiments/aclt-minimal-verifier-state3/cpp/*.cpp",
+        "experiments/aclt-minimal-verifier-state3/scripts/*",
+        "experiments/aclt-minimal-verifier-state3/Cargo.*",
+        "experiments/aclt-minimal-verifier-state3/examples/*.txt"
+      ],
+      "required_output": [
+        "re:PASS: [1-9][0-9]* verification cases",
+        "re:PASS: [1-9][0-9]* multi-process scenarios",
+        "re:PASS: [1-9][0-9]* recovery scenarios",
+        "re:PASS: [1-9][0-9]* batch cases",
+        "re:PASS: [1-9][0-9]* lifecycle scenarios",
+        "re:PASS: [1-9][0-9]* single-host quota",
+        "re:PASS: [1-9][0-9]* exact datasets"
+      ],
+      "evidence": [
+        "experiments/aclt-minimal-verifier-state3/build/*tests.json"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "completion",
+      "title": "正式任务在哪一步永久结束？",
+      "status": "OPEN",
+      "owner": "待指定",
+      "basis": "核对正式规范与本地发布规则",
+      "decision": ""
+    },
+    {
+      "id": "recovery",
+      "title": "正式流程采用哪份权威记录恢复？",
+      "status": "OPEN",
+      "owner": "待指定",
+      "basis": "当前只有本地快照，尚非正式日志协议",
+      "decision": ""
+    },
+    {
+      "id": "accounting",
+      "title": "正式资源账本包含哪些消耗？",
+      "status": "OPEN",
+      "owner": "待指定",
+      "basis": "现有比较单位和文件配额只有局部覆盖",
+      "decision": ""
+    }
+  ]
+}

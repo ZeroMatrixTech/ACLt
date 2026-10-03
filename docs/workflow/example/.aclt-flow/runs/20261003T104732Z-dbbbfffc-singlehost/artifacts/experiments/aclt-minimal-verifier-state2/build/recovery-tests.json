@@ -1,0 +1,68 @@
+{
+  "cases": [
+    {
+      "case": "R01",
+      "passed": true,
+      "checks": "resume from durable input or consumed reservation; no refunded attempt"
+    },
+    {
+      "case": "R02",
+      "passed": true,
+      "checks": "resume from durable input or consumed reservation; no refunded attempt"
+    },
+    {
+      "case": "R03",
+      "passed": true,
+      "checks": "two live workers die with coordinator; new workers start only after cleanup"
+    },
+    {
+      "case": "R04",
+      "passed": true,
+      "checks": "correct recovery at output; exact-once counting and final verification"
+    },
+    {
+      "case": "R05",
+      "passed": true,
+      "checks": "correct recovery at accepted; exact-once counting and final verification"
+    },
+    {
+      "case": "R06",
+      "passed": true,
+      "checks": "correct recovery at timeout; exact-once counting and final verification"
+    },
+    {
+      "case": "R07",
+      "passed": true,
+      "checks": "correct recovery at temp; exact-once counting and final verification"
+    },
+    {
+      "case": "R08",
+      "passed": true,
+      "checks": "correct recovery at published; exact-once counting and final verification"
+    },
+    {
+      "case": "R09",
+      "passed": true,
+      "checks": "concurrent recovery excluded by OS lock; completed resume is idempotent"
+    },
+    {
+      "case": "R10",
+      "passed": true,
+      "checks": "two interrupted reservations consume both attempts; restart cannot reset budget"
+    },
+    {
+      "case": "R11",
+      "passed": true,
+      "checks": "truncation, checksum corruption, snapshot mismatch, invalid count all fail closed"
+    },
+    {
+      "case": "R12",
+      "passed": true,
+      "checks": "delayed old-file replay after restart ignored; only attempt 2 accepted"
+    }
+  ],
+  "passed": 12,
+  "sigkill_count": 13,
+  "maximum_live_workers_observed": 2,
+  "scope": "SIGKILL of coordinator; OS remains alive; R12 replays old file, not a surviving old worker"
+}
