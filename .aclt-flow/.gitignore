@@ -1,0 +1,5 @@
+/state.json
+/rules-status.json
+/runs/
+/lock
+*.writing

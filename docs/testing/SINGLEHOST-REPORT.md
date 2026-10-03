@@ -22,7 +22,7 @@
 
 最终统一入口在同一主机正常环境中执行，退出码为 0；原始完整输出见 [full-suite-final.log](full-suite-final.log)。
 
-正常入口为仓库根目录的 `bash scripts/run-singlehost.sh`。仅跑实验使用 `bash experiments/aclt-minimal-verifier-state2/scripts/run-ubuntu.sh`。环境为 Ubuntu 26.04.1 LTS、Rust 1.93.1、g++ 15.2；没有引入第三方 Rust/Python 依赖。使用官方编译器的本地副本；交付不含工具链与二进制。
+正常入口为仓库根目录的 `bash scripts/run-singlehost.sh`。当前仅跑实验使用 `bash experiments/aclt-minimal-verifier-state3/scripts/run-ubuntu.sh`。环境为 Ubuntu 26.04.1 LTS、Rust 1.93.1、g++ 15.2；没有引入第三方 Rust/Python 依赖。使用官方编译器的本地副本；交付不含工具链与二进制。
 
 内存检测最初被受限执行环境的 ptrace 阻止，这是检测器环境失败，不是测试通过。取得执行授权后在沙箱外执行相同检测组并通过；未通过关闭泄漏检测来绕过该问题。
 
@@ -78,6 +78,6 @@
 
 ## 使用与交付
 
-更新包解压到仓库根目录，保留其中路径。实验仍放在 `experiments/aclt-minimal-verifier-state2/`；目录名保留以匹配用户当前位置，实际状态格式为 **ACLT-STATE-3**。旧 v1/v2 运行目录明确拒绝，新建任务目录；旧任务保留旧程序处理。
+更新包解压到仓库根目录，保留其中路径。当前实验位于 `experiments/aclt-minimal-verifier-state3/`，状态格式为 **ACLT-STATE-3**。本报告的 state2 基线名称和 259 项数量是当时工作副本的历史记录；本次集成修复见 [修复报告](INTEGRATION-FIX.md)。旧 v1/v2 运行目录明确拒绝，新建任务目录；旧任务保留旧程序处理。
 
 包同时包含 `tools/verification_profile/validator.py`、验证测试与覆盖登记修正，以及总测试入口、报告和证据。建议作为一个可审阅 PR 提交，不要只上传实验目录而遗漏验证器修复。没有代替同事批准或合并。

@@ -15,5 +15,7 @@
   "not_implemented": 111,
   "state_version": 3,
   "repository_head_checked": "7ee5dafc2edbff8991e9bb8b86c93c690a47c82b",
-  "full_protocol_pass": false
+  "full_protocol_pass": false,
+  "scope": "Historical 2026-10-03 pre-integration working-copy run; not a claim about current HEAD",
+  "latest_report": "integration-fix/RESULT-SUMMARY.json"
 }

@@ -1,0 +1,19 @@
+{
+  "status": "PASS_WITH_EXPLICIT_SCOPE",
+  "base_commit": "7f09c4bcb05ff8e26f6b9edc0dc1c447b2f0ada0",
+  "working_tree_patch": true,
+  "full_entrypoint_exit_code": 0,
+  "experiment_path": "experiments/aclt-minimal-verifier-state3",
+  "experiment_scenarios": 265,
+  "new_recovery_order_scenarios": 6,
+  "workflow_test_methods": 22,
+  "profile_test_methods": 24,
+  "model_test_methods": 13,
+  "differential_datasets": 204,
+  "result_mutations_rejected": 408,
+  "mutation_types": 2,
+  "sanitized_runs": 20,
+  "native_reducer_vectors": 22,
+  "python_reducer_differential": false,
+  "full_protocol_pass": false
+}

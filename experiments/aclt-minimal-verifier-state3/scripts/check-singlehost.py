@@ -67,6 +67,39 @@ with tempfile.TemporaryDirectory(prefix='aclt-singlehost-') as tmp:
   d,p=new('recovery-check-is-charged','accepted');stop(p,d,'accepted');before=int(state(d)[1][6]);resume(d)
   assert int(state(d)[1][6])>20 and int(state(d)[1][6])>before;record(d.name,d,'accepted block revalidation consumes units on active recovery')
 
+  # Regression: rejected recovery must not charge already accepted blocks.
+  # Use accepted > 0, with both available and exhausted verification budgets.
+  for cause in ['boot','deadline','recoveries']:
+   for empty in [False,True]:
+    d,p=new('recovery-order-'+cause+('-empty' if empty else '-available'),'accepted',recoveries=0 if cause=='recoveries' else 10)
+    stop(p,d,'accepted')
+    assert any('PENDING' not in row for row in state(d)[2][5:-2])
+    def change(lines):
+     limits=lines[-2].split()
+     if cause=='boot':limits[1]='different-boot'
+     if cause=='deadline':limits[2]='1'
+     if empty:limits[6]=limits[7]
+     lines[-2]=' '.join(limits)
+    mutate(d,change)
+    contract=d/'contract.txt';parts=contract.read_text().splitlines();limits=parts[-1].split()
+    if cause=='boot':limits[0]='different-boot'
+    if cause=='deadline':limits[1]='1'
+    parts[-1]=' '.join(limits);contract.write_text('\n'.join(parts)+'\n')
+    before=(d/'state.txt').read_bytes();used=state(d)[1][6];recoveries=state(d)[1][3]
+    blocks={p.name:p.read_bytes() for p in d.glob('block-*')}
+    for repeat in range(4):
+     resume(d,False,{'boot':'host reboot','deadline':'DEADLINE','recoveries':'RECOVERIES'}[cause])
+     phase,limits,_=state(d)
+     assert limits[6]==used and limits[3]==recoveries
+     assert {p.name:p.read_bytes() for p in d.glob('block-*')}==blocks
+     assert not (d/'results.txt').exists()
+     if cause=='boot':assert (d/'state.txt').read_bytes()==before and phase=='RUN'
+     else:
+      assert phase==('EXPIRED' if cause=='deadline' else 'FAILED') and limits[5]==cause.upper()
+      if repeat:assert (d/'state.txt').read_bytes()==before
+      before=(d/'state.txt').read_bytes()
+    record(d.name,d,'accepted blocks exist; four refused resumes preserve verification and recovery counters; correct terminal cause')
+
   d,p=new('published-budget-spent','published',units=20);stop(p,d,'published');resume(d)
   assert state(d)[0]=='DONE' and state(d)[1][6]=='20';resume(d)
   assert state(d)[1][6]=='20';record(d.name,d,'published decisions remain valid; completed read-only audits do not restart work')

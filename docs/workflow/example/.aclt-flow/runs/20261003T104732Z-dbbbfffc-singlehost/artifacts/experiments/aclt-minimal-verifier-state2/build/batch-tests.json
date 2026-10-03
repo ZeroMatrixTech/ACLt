@@ -1,0 +1,723 @@
+{
+  "passed": 90,
+  "groups": {
+    "atomic-write-interruption": 4,
+    "concurrent-recovery": 4,
+    "damaged-record": 29,
+    "injected-storage-error": 15,
+    "kernel-storage-error": 11,
+    "publication-regression": 3,
+    "random-interruption": 24
+  },
+  "actual_sigkills": 87,
+  "random_sigkills": 72,
+  "maximum_live_workers_observed": 0,
+  "cases": [
+    {
+      "group": "publication-regression",
+      "case": "temporary-result-changed",
+      "passed": true,
+      "rejection": "REJECT: temporary result changed before publication"
+    },
+    {
+      "group": "publication-regression",
+      "case": "existing-final-result",
+      "passed": true,
+      "rejection": "REJECT: publication failed: File exists (os error 17)"
+    },
+    {
+      "group": "publication-regression",
+      "case": "snapshot-changed",
+      "passed": true,
+      "rejection": "REJECT: input snapshot changed before publication"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-state.txt-open",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure state.txt:open: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-state.txt-write",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure state.txt:write: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-state.txt-file_sync",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure state.txt:file_sync: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-state.txt-rename",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure state.txt:rename: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-state.txt-dir_sync",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure state.txt:dir_sync: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-results.tmp-open",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure results.tmp:open: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-results.tmp-write",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure results.tmp:write: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-results.tmp-file_sync",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure results.tmp:file_sync: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-results.tmp-rename",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure results.tmp:rename: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-results.tmp-dir_sync",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure results.tmp:dir_sync: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-final-results.txt-publish",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure results.txt:publish: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-final-results.txt-dir_sync",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure results.txt:dir_sync: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-final-state.txt-file_sync",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure state.txt:file_sync: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "io-final-events.tsv-write",
+      "passed": true,
+      "rejection": "REJECT: injected I/O failure events.tsv:write: Input/output error (os error 5)"
+    },
+    {
+      "group": "injected-storage-error",
+      "case": "ENOSPC",
+      "passed": true,
+      "method": "injected errno 28; host disk was not filled"
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "EFBIG",
+      "passed": true,
+      "method": "kernel per-process file size limit"
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "permission-state.txt.writing",
+      "passed": true
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "permission-events.tsv",
+      "passed": true
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "permission-directory",
+      "passed": true
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "directory-conflict-state.txt.writing",
+      "passed": true
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "directory-conflict-block-0-attempt-1.txt",
+      "passed": true
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "directory-conflict-block-0-attempt-1.stderr",
+      "passed": true
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "directory-conflict-results.tmp.writing",
+      "passed": true
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "symlink-state.txt.writing",
+      "passed": true
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "symlink-block-0-attempt-1.txt",
+      "passed": true
+    },
+    {
+      "group": "kernel-storage-error",
+      "case": "symlink-events.tsv",
+      "passed": true
+    },
+    {
+      "group": "atomic-write-interruption",
+      "case": "created",
+      "passed": true
+    },
+    {
+      "group": "atomic-write-interruption",
+      "case": "partial",
+      "passed": true
+    },
+    {
+      "group": "atomic-write-interruption",
+      "case": "synced",
+      "passed": true
+    },
+    {
+      "group": "atomic-write-interruption",
+      "case": "renamed",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "bad-count",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "bad-phase",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "bad-chunk-zero",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "bad-timeout",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "bad-max-attempts",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "bad-worker-path-hex",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "negative-attempt",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "too-many-attempts",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "accepted-with-zero-attempt",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "wrong-saved-sum",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "duplicate-block",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "done-with-pending",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "extra-record",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "wrong-footer",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "noncanonical-number",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "truncated-state",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "bad-checksum",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "missing-state",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "oversized-state",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "missing-input",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "changed-input",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "missing-result",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "changed-result",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "oversized-result",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "result-symlink",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "input-fifo",
+      "passed": true,
+      "expected": "reject"
+    },
+    {
+      "group": "damaged-record",
+      "case": "stale-writing-file",
+      "passed": true,
+      "expected": "ignore stale temporary file"
+    },
+    {
+      "group": "damaged-record",
+      "case": "worker-changed",
+      "passed": true
+    },
+    {
+      "group": "damaged-record",
+      "case": "worker-missing",
+      "passed": true
+    },
+    {
+      "group": "concurrent-recovery",
+      "case": "eight-way-0",
+      "passed": true,
+      "contenders": 8,
+      "winners": 1
+    },
+    {
+      "group": "concurrent-recovery",
+      "case": "eight-way-1",
+      "passed": true,
+      "contenders": 8,
+      "winners": 1
+    },
+    {
+      "group": "concurrent-recovery",
+      "case": "eight-way-2",
+      "passed": true,
+      "contenders": 8,
+      "winners": 1
+    },
+    {
+      "group": "concurrent-recovery",
+      "case": "eight-way-3",
+      "passed": true,
+      "contenders": 8,
+      "winners": 1
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-0",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        16.973,
+        23.099,
+        2.875
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-1",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        10.218,
+        17.662,
+        5.756
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-2",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        22.26,
+        20.008,
+        20.258
+      ],
+      "sigkills": 3,
+      "max_attempts": 4,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-3",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        19.494,
+        6.493,
+        24.693
+      ],
+      "sigkills": 3,
+      "max_attempts": 2,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-4",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        12.213,
+        5.364,
+        16.274
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-5",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        16.172,
+        24.611,
+        14.677
+      ],
+      "sigkills": 3,
+      "max_attempts": 4,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-6",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        23.875,
+        3.987,
+        13.257
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-7",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        7.712,
+        3.472,
+        11.523
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-8",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        7.881,
+        2.453,
+        3.944
+      ],
+      "sigkills": 3,
+      "max_attempts": 2,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-9",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        20.62,
+        24.728,
+        14.029
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-10",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        6.157,
+        18.807,
+        1.272
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-11",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        3.639,
+        9.464,
+        24.563
+      ],
+      "sigkills": 3,
+      "max_attempts": 2,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-12",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        6.707,
+        3.729,
+        14.547
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-13",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        17.748,
+        6.07,
+        15.997
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-14",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        3.558,
+        2.545,
+        22.207
+      ],
+      "sigkills": 3,
+      "max_attempts": 1,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-15",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        23.09,
+        1.361,
+        3.461
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-16",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        4.247,
+        5.191,
+        2.398
+      ],
+      "sigkills": 3,
+      "max_attempts": 1,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-17",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        14.942,
+        19.604,
+        5.899
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-18",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        20.445,
+        16.608,
+        4.788
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-19",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        7.975,
+        2.352,
+        19.264
+      ],
+      "sigkills": 3,
+      "max_attempts": 2,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-20",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        22.315,
+        22.24,
+        21.726
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-21",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        6.919,
+        24.758,
+        8.229
+      ],
+      "sigkills": 3,
+      "max_attempts": 2,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-22",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        3.834,
+        4.217,
+        2.154
+      ],
+      "sigkills": 3,
+      "max_attempts": 1,
+      "blocks": 60
+    },
+    {
+      "group": "random-interruption",
+      "case": "random-23",
+      "passed": true,
+      "seed": 20261002,
+      "delay_ms": [
+        22.597,
+        1.458,
+        19.368
+      ],
+      "sigkills": 3,
+      "max_attempts": 3,
+      "blocks": 60
+    }
+  ],
+  "scope": "single-host process and file faults; EIO/ENOSPC injected, EFBIG/EACCES real kernel errors; no disk filling or power cut"
+}

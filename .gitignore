@@ -22,3 +22,10 @@ dist/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Generated local workflow dashboard
+/ACLT-PROGRESS.md
+
+# Historical JSON evidence is source material, not a local build.
+!docs/workflow/example/**/artifacts/
+!docs/workflow/example/**/build/
