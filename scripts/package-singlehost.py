@@ -13,6 +13,7 @@ files=[]
 for directory in ['tools','tests','schemas','scripts','docs/testing','experiments/aclt-minimal-verifier-state2']:
  files.extend(p for p in (root/directory).rglob('*') if p.is_file() and not (exclude & set(p.relative_to(root).parts)))
 files.extend(root/p for p in ['docs/07-roadmap/current-status.md','docs/07-roadmap/open-questions.md'])
+files.extend(p for p in [root/'.aclt-flow/template.json',root/'.aclt-flow/.gitignore'] if p.is_file())
 files=sorted(set(files));manifest=''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(root).as_posix()}\n' for p in files)
 with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:
  for p in files:z.write(p,p.relative_to(root).as_posix())

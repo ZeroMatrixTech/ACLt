@@ -1,0 +1,24 @@
+test_bound_decision_change_invalidates_result (test_flow.FlowTests.test_bound_decision_change_invalidates_result) ... ok
+test_build_environment_change_invalidates_result (test_flow.FlowTests.test_build_environment_change_invalidates_result) ... ok
+test_concurrent_run_excluded (test_flow.FlowTests.test_concurrent_run_excluded) ... ok
+test_decision_edit_does_not_rerun_tests (test_flow.FlowTests.test_decision_edit_does_not_rerun_tests) ... ok
+test_deleted_artifact_invalidates_pass (test_flow.FlowTests.test_deleted_artifact_invalidates_pass) ... ok
+test_dependency_failure_blocks_following_job (test_flow.FlowTests.test_dependency_failure_blocks_following_job) ... ok
+test_duplicate_decision_id_rejected (test_flow.FlowTests.test_duplicate_decision_id_rejected) ... ok
+test_fail_not_promoted_by_ok_text (test_flow.FlowTests.test_fail_not_promoted_by_ok_text) ... ok
+test_midrun_source_mutation (test_flow.FlowTests.test_midrun_source_mutation) ... ok
+test_missing_decision_rejected (test_flow.FlowTests.test_missing_decision_rejected) ... ok
+test_missing_summary (test_flow.FlowTests.test_missing_summary) ... ok
+test_no_automatic_decision (test_flow.FlowTests.test_no_automatic_decision) ... ok
+test_open_decision_blocks_execution (test_flow.FlowTests.test_open_decision_blocks_execution) ... ok
+test_orphaned_running_record_is_interrupted (test_flow.FlowTests.test_orphaned_running_record_is_interrupted) ... ok
+test_pass_reused (test_flow.FlowTests.test_pass_reused) ... ok
+test_rule_coverage_not_closed_by_pass (test_flow.FlowTests.test_rule_coverage_not_closed_by_pass) ... ok
+test_source_change_marks_stale (test_flow.FlowTests.test_source_change_marks_stale) ... ok
+test_tampered_evidence (test_flow.FlowTests.test_tampered_evidence) ... ok
+test_timeout (test_flow.FlowTests.test_timeout) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 5.007s
+
+OK

@@ -1,0 +1,46 @@
+{
+  "job": "model",
+  "started": "2026-10-03T10:47:30.881242+00:00",
+  "fingerprint": "df0978b6267c559e63baf6215c65167db82b3a7f29dea3bb60150df6c2b4328f",
+  "source_files": {
+    "docs/06-research/verification-round-mathematical-model.md": "c625f5a71fe2a0490a57bc38cfe1f855cf2c894e62f09ed064a511eddd6b0316",
+    "tests/verification_model/closed_form_oracle.py": "cdd63154a0bad204e185f86b94e5ba9caea97e711173896f4e36a101fd335d13",
+    "tests/verification_model/conformance_vectors.json": "bdcaa143fce583561d04177a1eee26912101717006422514608bb23e25352bb3",
+    "tests/verification_model/manifest.json": "4edfa4767c9706e6800f6b5e3ef3af42dff56d2c28195d6561322affa86f2664",
+    "tests/verification_model/recursive_model.py": "4ecb67c73097fc339bf49a009e9e9238e0eb15809b80ef5e6cdc99ff31acb275",
+    "tests/verification_model/test_verification_model.py": "58d782660f6cf2f2635f08d4888fa418c935ab5d6804326847e15f356e40e67c"
+  },
+  "environment": {
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+    "PATH": "/home/inpax-aki2/.codex/tmp/arg0/codex-arg0gyKEpY:/home/inpax-aki2/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/inpax-aki2/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/usr/lib/chatgpt/resources",
+    "build_environment_sha256": "ae989237e2c2e15eabcc1d7472185eb8aa103f294e0ccff50f6e3d2eaab5b0b6",
+    "g++": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11) (built from a source tarball)",
+    "cargo": "cargo 1.93.1 (083ac5135 2025-12-15) (built from a source tarball)"
+  },
+  "git_commit": null,
+  "command": [
+    "python3",
+    "-B",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tests/verification_model",
+    "-p",
+    "test_*.py",
+    "-v"
+  ],
+  "status": "PASS",
+  "log": ".aclt-flow/runs/20261003T104730Z-b646f16f-model/output.log",
+  "exit_code": 0,
+  "seconds": 0.466,
+  "missing_output": [],
+  "summaries": [
+    "Ran 13 tests in 0.325s"
+  ],
+  "finished": "2026-10-03T10:47:31.367603+00:00",
+  "artifacts": {},
+  "log_sha256": "cf3e7ee7f03bfa630c74cc5ba10b856b6949d5d4175b8aeb2f8159cf4166fee1"
+}

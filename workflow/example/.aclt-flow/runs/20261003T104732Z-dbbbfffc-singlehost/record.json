@@ -1,0 +1,64 @@
+{
+  "job": "singlehost",
+  "started": "2026-10-03T10:47:32.232843+00:00",
+  "fingerprint": "442ed4a329bb8243f7facba64d0b7b8a49d617c94b590993a53006f1d81bea0d",
+  "source_files": {
+    "experiments/aclt-minimal-verifier-state2/Cargo.lock": "06e2f71b0920c7397537ddb8025b1e5511102568b5ea575fbecb0c4abeb29564",
+    "experiments/aclt-minimal-verifier-state2/Cargo.toml": "ef2e9963bc52a1dd5d13bd84ce46b0f8dcb7b41086ff42a4b681e165f452439f",
+    "experiments/aclt-minimal-verifier-state2/cpp/cause_reducer.cpp": "5bb4d0d1551ffe99fe34206d11258642d124c5f4aaa32f20b98209566204b18d",
+    "experiments/aclt-minimal-verifier-state2/cpp/worker.cpp": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2",
+    "experiments/aclt-minimal-verifier-state2/examples/input.txt": "ffeb1beb82e6ccae47a530031253d5e1512c9d1ab75f5cb71c98459760770913",
+    "experiments/aclt-minimal-verifier-state2/scripts/check-batch.py": "a091913a9af20e3ba43d5d0a874fda4f281164cfba873a1264b47743477ab01c",
+    "experiments/aclt-minimal-verifier-state2/scripts/check-differential.py": "40ef008b56df7b03699e9b90ef101360302cd95c5fc70a6c8526cff3f5bcb94d",
+    "experiments/aclt-minimal-verifier-state2/scripts/check-lifecycle.py": "e5519c0f1e54de47ccc46746f22f4b7404b9cf559994b41764a97932d689959c",
+    "experiments/aclt-minimal-verifier-state2/scripts/check-processes.py": "e0c44e005d004ac60099a08c682f8ebbb2904d09d22bc13074bb51ed5a38d4b8",
+    "experiments/aclt-minimal-verifier-state2/scripts/check-recovery.py": "41c84ae0efbe3654ec50917247e7b95d6df68c4e04135416d6991200a66f6b9e",
+    "experiments/aclt-minimal-verifier-state2/scripts/check-singlehost.py": "f2fed6302be1b9202867ede1b52bc4dbe455f93c89f92f2bb7571b700abe03f1",
+    "experiments/aclt-minimal-verifier-state2/scripts/check.py": "272d635111c08925f20fcdf00ad663cc7759ec0e96132a3c1888b8f85f7cfaca",
+    "experiments/aclt-minimal-verifier-state2/scripts/demo.sh": "a7a90bcb5c143f1d22cd9597b5b5cb5c79d6b481e088c6105bc794fb31490781",
+    "experiments/aclt-minimal-verifier-state2/scripts/package.py": "ba165db9782ce704dba7f3a4909149ae9e5af21579947f13271c1b2f9775930d",
+    "experiments/aclt-minimal-verifier-state2/scripts/run-ubuntu.sh": "f52dada736d64d131e6c08de3921662a8ea4912702d9ed0b763d53839f947ddd",
+    "experiments/aclt-minimal-verifier-state2/src/bin/cause-reducer.rs": "29c531920e2bf7037211f3e69fb22d3d94c348c53b0be68b1ffda16d70e1608f",
+    "experiments/aclt-minimal-verifier-state2/src/bin/coordinator.rs": "5858a1465dc312a8fbd9987e3c9f974022b5141ced5e33da8860c5563738d698",
+    "experiments/aclt-minimal-verifier-state2/src/lib.rs": "27c4166c9654ab0716327762c7ca8a7eb6551f651636047a44147c0ce462c1f5",
+    "experiments/aclt-minimal-verifier-state2/src/main.rs": "6df4023cd9cae118ca51c352649cc1e330572d7ec12748013737d5a5b167cd99"
+  },
+  "environment": {
+    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+    "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+    "PATH": "/home/inpax-aki2/.codex/tmp/arg0/codex-arg0gyKEpY:/home/inpax-aki2/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/home/inpax-aki2/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/usr/lib/chatgpt/resources",
+    "build_environment_sha256": "ae989237e2c2e15eabcc1d7472185eb8aa103f294e0ccff50f6e3d2eaab5b0b6",
+    "g++": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11) (built from a source tarball)",
+    "cargo": "cargo 1.93.1 (083ac5135 2025-12-15) (built from a source tarball)"
+  },
+  "git_commit": null,
+  "command": [
+    "bash",
+    "experiments/aclt-minimal-verifier-state2/scripts/run-ubuntu.sh"
+  ],
+  "status": "PASS",
+  "log": ".aclt-flow/runs/20261003T104732Z-dbbbfffc-singlehost/output.log",
+  "exit_code": 0,
+  "seconds": 46.221,
+  "missing_output": [],
+  "summaries": [
+    "PASS: 68 verification cases; worker input rejection and Python reference totals checked",
+    "PASS: 12 multi-process scenarios; retries, late results, attempt limits, cleanup, and overwrite refusal checked",
+    "PASS: 12 recovery scenarios; 13 actual coordinator SIGKILLs; maximum observed live workers=2",
+    "PASS: 90 batch cases; 72 randomized SIGKILLs; groups={'atomic-write-interruption': 4, 'concurrent-recovery': 4, 'damaged-record': 29, 'injected-storage-error': 15, 'kernel-storage-error': 11, 'publication-regression': 3, 'random-interruption': 24}",
+    "PASS: 22 lifecycle scenarios; permanent outcomes, authoritative snapshots, recovery limits and deadlines",
+    "PASS: 55 single-host quota, task-binding and boundary scenarios",
+    "PASS: 204 exact datasets, 408 mutated results, 20 sanitizer runs, 12 malformed inputs, 22 Rust/C++ reducer vectors"
+  ],
+  "finished": "2026-10-03T10:48:18.473948+00:00",
+  "artifacts": {
+    "experiments/aclt-minimal-verifier-state2/build/batch-tests.json": "831d26210cf1bfcba62b5cd4658c36d7a13a237ea700d289f58131c023e0e7cb",
+    "experiments/aclt-minimal-verifier-state2/build/differential-tests.json": "995685ea09cac45934f5660efe31e51c5b86bcd4c42242b48af131ecbeee3bc8",
+    "experiments/aclt-minimal-verifier-state2/build/lifecycle-tests.json": "faf657e8eb18ef22316c0bc1af4afd4746cb34789b43d34bcc49ef06d0e25485",
+    "experiments/aclt-minimal-verifier-state2/build/process-tests.json": "45aa2008b01c5a0a84c7f996d6758bd73f6e3a0392bf6531f0dd5b5407219d71",
+    "experiments/aclt-minimal-verifier-state2/build/recovery-tests.json": "65de06c71c1075851bdf1b4687e0cf1188f9a3912887c57c5e09537a51231ac6",
+    "experiments/aclt-minimal-verifier-state2/build/singlehost-tests.json": "400c6b39dcc6eab6399cda9b4c243a3563908263cbaa2b8bc3b74bbbe1676738"
+  },
+  "log_sha256": "52c84ce00f405d78de89c40b89705ac5470bab9a4368b115cea48010e61854dd"
+}
