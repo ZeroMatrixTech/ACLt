@@ -43,6 +43,8 @@
 
 ### 工程证据与维护
 
+- [运行与协作环境规范](08-governance/environment-standard.md)：ENV-1 工具版本、安装验收、Git 协作与交接约定。
+
 - [当前实验索引](../experiments/README.md)与 [state3 使用说明](../experiments/aclt-minimal-verifier-state3/README.md)。
 - [单机集成修复报告](testing/INTEGRATION-FIX.md)与[逐条规则覆盖账本](testing/SINGLEHOST-COVERAGE.json)。
 - [自动进度流程](workflow/README.md)：当前可复用测试状态由运行记录生成。

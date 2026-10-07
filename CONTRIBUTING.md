@@ -2,7 +2,7 @@
 
 > 文档状态：Living contribution policy  
 > 语义基线：v0.5  
-> 最后更新：2026-08-21
+> 最后更新：2026-10-07
 
 ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快速增加功能，而是让协议的前提、对象、状态转换、不变量、证明义务和失败边界更清晰、更可测试。
 
@@ -96,6 +96,8 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 5. 不让 FoundationReport、实现健康分数或历史履约进入个案真理权重。
 
 ## 5. 推荐工作流
+
+开发与交接前按 [运行与协作环境规范](docs/08-governance/environment-standard.md)核对 ENV-1、工具链版本、代码基线及验收记录。
 
 1. 先在 `docs/07-roadmap/open-questions.md` 中找到对应 Issue ID；
 2. 写明假设、候选方案、拒绝条件和证据层；
