@@ -2,7 +2,7 @@
 
 > 文档性质：持续更新的项目快照（living document）  
 > 基线版本：v0.5  
-> 快照日期：2026-08-21
+> 快照日期：2026-10-07  
 > 当前阶段：G0 — 语义与问题空间冻结  
 > 权威范围：记录“现在已经知道什么、还没有证明什么、下一步需要什么证据”；不替代协议规范、ADR 或测试结果。
 
@@ -50,7 +50,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | 维护边界 | `DECIDED`；流程 `OPEN` | `CORE` | Maintenance 不是运行时裁决者 | 发布、撤销、响应、密钥和最小组织流程 |
 | 主网工程 assurance | 原则 `DECIDED`；对象 `CANDIDATE` | `CORE` | 限 `network_id`、版本化、只减权、不进入个案权重 | Schema、组件注册、日志 contract、损失预算和撤销演练 |
 | 多原因假设状态 | 判决/诊断分层 `DECIDED` | `CORE` | 完整 CauseSet 派生唯一 EffectiveVerdict | reducer Schema、组合向量与迁移 |
-| 实现与适配器 | `OPEN` | `CORE` | Control Plane 是实现；基础设施可替换 | 参考实现、接口和互操作测试 |
+| 实现与适配器 | `OPEN` | `CORE` | 当前 state3 局部单机实验与自动进度流程已落地；Control Plane 是实现；基础设施可替换 | 完整参考实现、RIR/RPR、正式对象接口和互操作测试 |
 | 运营成熟度 | `OPEN` | — | 威胁与不变量登记已建立 | SLO、事件响应、灾难恢复和试点数据 |
 
 ## 4. 已完成的最小文档基线
@@ -89,7 +89,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 |---|---|---|---|
 | G0 | 规格化：术语、本体、二维状态、Abstract Machine、对象、RIR/RPR、Compile、Dispatch、状态机、不变量、统计与资金政策 | 每项 V1 CORE/P0 可由机器或测试表达；连续性审计无未登记冲突 | 进行中 |
 | G1 | 仿真与模型验证 | 能力、调度、验证、相关性、攻击、资金、行政成本和 RIR/RPR 模型的敏感性与反例 | 未开始 |
-| G2 | 单机参考实现 | Registry、RIR toolchain/RPR、Compile、Lease、Result、Verify、Settle、Event 通过并发/重放/崩溃性质测试 | 未开始 |
+| G2 | 单机参考实现 | Registry、RIR toolchain/RPR、Compile、Lease、Result、Verify、Settle、Event 通过并发/重放/崩溃性质测试 | 已有局部单机实验；完整 Gate 未通过 |
 | G3 | 局域网多 Provider MVP | 断连、退出、恢复、沙箱和初始 SLO 故障注入 | 未开始 |
 | G4 | 持久化与灾难恢复 | 数据库/日志/对象存储适配器、备份恢复、RPO/RTO 与 conformance | 未开始 |
 | G5 | 对抗验证 | Sybil、串谋、证据刷取、预算耗尽、compiler/runtime 与维护滥权的损失界或检测率 | 未开始 |
@@ -125,7 +125,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 8. 固定 Lease 派生 ExecutionCapability、Dispatch/RPR 检查接口和日志 finality/inclusion/consistency contract。
 9. 写出资金锁定、终态、退款、处罚和 at-most-once 结算矩阵。
 
-**P0-1 当前状态（2026-08-21）**：P0-1A 经 AUD-20260821-10 判定 `PASS / CLOSED`；P0-1B 已创建首批 L1a/L1b、注册表种子和单元测试工件，状态 `STARTED / NOT CLOSED`。L2、全量 119 项 Type A、完整五相位对象、18 摘要和第二语言对拍仍未完成；6 项 Type B 与 SV-40 不计入 P0-1B 关闭。
+**P0-1 当前状态（2026-10-07 复核）**：P0-1A 经 AUD-20260821-10 判定 `PASS / CLOSED`；P0-1B 已创建首批 L1a/L1b、注册表种子和单元测试工件，状态 `STARTED / NOT CLOSED`。L2、全量 119 项 Type A、完整五相位对象、18 摘要和第二语言对拍仍未完成；6 项 Type B 与 SV-40 不计入 P0-1B 关闭。
 
 ### P0 — 阻断公开发布
 
@@ -173,6 +173,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-10-07 | v0.5 / V1 target | 同步已合入的 state3 与流程入口及 2026-10-03 限域证据；P0-1B 未关闭 | `../testing/INTEGRATION-FIX.md`；本轮 Markdown 维护报告 | G0/G2 均未通过退出 |
 | 2026-08-17 | v0.5 | 建立最小 Markdown 文档基线；明确当前处于 G0 | `docs/` 全集 | G0 |
 | 2026-08-17 | v0.5 | 决定代码与参考实现采用 Apache License 2.0；其他工件维持独立许可边界 | `README.md`、`CONTRIBUTING.md`、OQ-01 | 公开发布/G6 |
 | 2026-08-17 20:51:52 CEST | v0.5 | 根目录 `LICENSE` 已切换并落地为 Apache License 2.0 英文全文 | `LICENSE`；提交 `e5d5bc149c2773332c944b000fa23f5f3a5bc97a` | 公开发布 |
@@ -210,3 +211,7 @@ v0.6 不代表生产就绪；它代表 v0.5 的核心开放问题已经被收敛
 ## 2026-10-03 主仓库集成与恢复顺序修复
 
 统一入口改为 state3；修复 workflow 的安装目录与缺失模板。恢复必须先通过启动标识、期限和恢复次数检查，再预留验证额度。新增 6 个已有接受分块的回归场景，单机场景合计 265；主仓库模型 13、验证器 24、流程与集成 22 项通过。旧报告的 state2 名称与 259 数量保留为历史基线，不代表当前目录或当前测试数。详见 [修复报告](../testing/INTEGRATION-FIX.md)。
+
+## 2026-10-07 文档维护复核
+
+当前目录基线为 `5e8263ae48aee30b7219275ddbf3686ff802374e`（main）。state3 为当前统一入口；265 场景等数字引用 2026-10-03 已存证据。本轮仅重跑 22 项流程/集成测试，不把历史记录转为新的全量 PASS。完整 P0-1B、G0/G2 退出和其余 Gate 的关闭结论不变；详见 [维护报告](../08-governance/audits/audit-20261007-01-markdown-maintenance.md)。

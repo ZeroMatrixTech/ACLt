@@ -2,7 +2,7 @@
 
 > 文档状态：Living index and governance  
 > 当前语义基线：v0.5  
-> 最后更新：2026-08-21
+> 最后更新：2026-10-07
 
 本目录是 ACLt Protocol 的权威文档中心。文档不是一次性说明材料，而是随反例、证明、仿真、实现、攻击测试和工程试点持续修订的规格系统。
 
@@ -40,6 +40,13 @@
 11. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
 12. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
 13. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
+
+### 工程证据与维护
+
+- [当前实验索引](../experiments/README.md)与 [state3 使用说明](../experiments/aclt-minimal-verifier-state3/README.md)。
+- [单机集成修复报告](testing/INTEGRATION-FIX.md)与[逐条规则覆盖账本](testing/SINGLEHOST-COVERAGE.json)。
+- [自动进度流程](workflow/README.md)：当前可复用测试状态由运行记录生成。
+- [2026-10-07 Markdown 维护报告](08-governance/audits/audit-20261007-01-markdown-maintenance.md)：本轮范围、检查与保留项。
 
 ## 2. 文档权威范围
 
@@ -197,6 +204,8 @@ Decision / evidence
 | `06-research` | 论断—来源—边界 | 持续核查 |
 | `07-roadmap` | 状态和未决问题 | 持续更新 |
 | `08-governance` | 审计程序、模板和审计记录 | 程序已接受；报告持续追加 |
+| `testing` | 单机实验、覆盖登记与集成证据；不替代规范 | 限域工程证据 |
+| `workflow` | 自动进度流程说明与历史示例 | 工具说明；实时状态由执行器生成 |
 | `codocs` | 历史版本与决策追踪；不构成当前规范 | archived / superseded where marked |
 
 ## 9. v0.5 的严格定位

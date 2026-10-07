@@ -4,7 +4,7 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-08-21**
+> **最后更新：2026-10-07**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -111,7 +111,7 @@ flowchart TD
 
 ## 仓库结构
 
-### 当前真实目录
+### 当前语义文档目录（节选）
 
 ```text
 .
@@ -168,7 +168,7 @@ flowchart TD
     └── verification_model/        # 精确有理数递推/闭式/DP 对拍资产
 ```
 
-上述列出当前语义文档及历史档案入口；`docs/codocs/` 中的旧版本仅用于决策追踪，不构成当前规范。
+上述是语义文档目录节选；工程目录另见下表。`docs/codocs/` 中的旧版本仅用于决策追踪，不构成当前规范。
 
 ### 已规划但尚未创建
 
@@ -184,13 +184,29 @@ flowchart TD
 
 这些路径是 G0 后续工程化规格工作的最小候选集，现在不应表述为已落地。`spec/` 与 `simulations/` 只在相应 P0 输入和产物边界确认后创建。目录只表示资料组织，不表示系统中存在同名特权实体。
 
+## 当前工程入口与证据
+
+截至 2026-10-07，当前单机实验入口为 [state3](experiments/aclt-minimal-verifier-state3/README.md)。[2026-10-03 集成报告](docs/testing/INTEGRATION-FIX.md)记录 265 个实验场景、13 项模型测试、24 项验证配置测试及 22 项流程/集成测试通过；这是已保存的历史证据，不是本次全量重跑结果。P0-1B 保持 `STARTED / NOT CLOSED`。
+
+| 目录/入口 | 用途 |
+|---|---|
+| `experiments/aclt-minimal-verifier-state3/` | 当前单机实现；旧代见 [实验索引](experiments/README.md) |
+| `schemas/verification-profile/`、`registries/` | Schema 骨架、覆盖登记与注册种子 |
+| `tools/verification_profile/`、`tests/verification_profile/` | 验证配置实现与测试 |
+| `tests/workflow/`、`docs/workflow/`、`.aclt-flow/` | 自动进度流程及其测试、模板与文档 |
+| `scripts/run-singlehost.sh` | 全量单机检查入口 |
+| `scripts/aclt-flow.py run` | 按输入与证据指纹执行并生成 `ACLT-PROGRESS.md` |
+| `docs/testing/` | 单机报告、规则覆盖账本和集成证据 |
+
+本轮维护范围与文件清单见 [维护报告](docs/08-governance/audits/audit-20261007-01-markdown-maintenance.md)。
+
 ## 当前工程 Gates
 
 | Gate | 内容 | 当前状态 |
 |---|---|---|
 | G0 | 规格、对象、RIR、状态机、不变量、威胁、统计和资金政策 | **进行中** |
 | G1 | 能力、调度、验证、Sybil、资金、RIR/runtime 和行政成本仿真 | 未开始 |
-| G2 | 单机参考实现、RIR toolchain/runtime 与确定性测试 | 未开始 |
+| G2 | 单机参考实现、RIR toolchain/runtime 与确定性测试 | 已有局部单机实验；完整 Gate 未通过 |
 | G3 | 局域网多 Provider MVP 与故障注入 | 未开始 |
 | G4 | 持久化、备份、恢复和适配器一致性 | 未开始 |
 | G5 | Sybil、串谋、预算耗尽和维护滥权对抗验证 | 未开始 |
