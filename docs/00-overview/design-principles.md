@@ -103,11 +103,11 @@ ACLt Abstract Machine、Logical Object Memory 和 Compile pipeline 是协议抽�
 
 ACLt 采用：
 
-\[
+$$
 PerformanceEvidence
 \rightarrow CapabilityEstimate \pm Uncertainty
 \rightarrow ExposureDecision
-\]
+$$
 
 历史证据用于估计某个 Principal 在特定任务族和条件下的履约能力。估计结果必须带有不确定度、有效期和证据版本，并仅用于具体任务的风险暴露决策。
 
