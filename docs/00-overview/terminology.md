@@ -294,9 +294,9 @@ Aggregate 函数依据预声明规则形成并原子提交的唯一验证终态�
 
 一次验证允许使用的最大不同抽样单位数量：
 
-\[
+$$
 N_{\max}=\min(N_{\text{population}},N_{\text{budget}},N_{\text{policy}})
-\]
+$$
 
 `Nmax` 不具有默认的 51% 含义，也不单独证明验证安全。
 

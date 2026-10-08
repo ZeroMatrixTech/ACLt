@@ -126,9 +126,9 @@ ACLt 当前采用以下安全顺序：
 
 当前选定但尚未完成证明的验证研究方向，是对冻结有限总体进行不放回抽样，并采用 anytime-valid 序贯推断。验证上限暂由以下边界表达：
 
-\[
+$$
 N_{\max}=\min(N_{\text{population}},N_{\text{budget}},N_{\text{policy}})
-\]
+$$
 
 该式只定义上限来源，不构成安全定理；具体总体、分层、相关性折减、误差目标和停止规则仍须规格化、证明和仿真。
 
@@ -144,9 +144,9 @@ N_{\max}=\min(N_{\text{population}},N_{\text{budget}},N_{\text{policy}})
 
 协议不指定唯一资金来源，但要求任务级、时间窗口级和全局级上限，以及以下守恒边界：
 
-\[
+$$
 Committed + Settled + RefundReserved \le AuthorizedFundingCap
-\]
+$$
 
 资金耗尽是合法的安全状态，不得通过未声明的临时资金或增发绕过。结算必须绑定唯一权利键，并在重试、超时、并发或实现迁移后仍保持最多一次提交。
 
