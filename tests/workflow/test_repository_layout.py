@@ -16,7 +16,7 @@ class RepositoryLayoutTests(unittest.TestCase):
         for pattern in job['inputs']:
             self.assertTrue(list(ROOT.glob(pattern)), pattern)
         runner = (ROOT / job['command'][1]).read_text()
-        for name in ['check-singlehost.py', 'check-differential.py']:
+        for name in ['check-strict.py', 'check-strict-adversarial.py', 'check-differential.py']:
             self.assertIn('python3 scripts/' + name, runner)
             self.assertTrue((ROOT / EXPERIMENT / 'scripts' / name).is_file())
         for script in ['update-manifests.py', 'aclt-flow.py']:

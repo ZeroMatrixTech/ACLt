@@ -1,3 +1,16 @@
+# Strict local admission revision (2026-10-10)
+
+The default coordinator now refuses **all** resume requests, uses one irreversible
+qualification per canonical input in a fixed local deployment registry, and accepts
+one whole-task receipt only after every block is verified. A failed attempt is not
+refunded. MAX_ATTEMPTS must be 1 and MAX_RECOVERIES must be 0. Blocks are computational
+partitions, not independent votes.
+
+See [strict policy](docs/STRICT-POLICY.md) for deployment, trust boundaries and tests.
+Historical recovery commands/tests below describe the pre-policy experiment and
+are not acceptance checks for this revision. Existing results are retained as
+historical evidence; they do not automatically become strict admission receipts.
+
 # ACLt 单机最小验证试验
 
 2026-10-03 单机扩展：当前入口执行 **265 个调度/验证场景**，另执行随机数据对拍、结果变异、内存检查和 Rust/C++ 原因归约器对拍。运行记录升级为 `ACLT-STATE-3`；旧版记录明确拒绝。最新范围见 [单机扩展说明](docs/SINGLEHOST-NOTES.md)。
