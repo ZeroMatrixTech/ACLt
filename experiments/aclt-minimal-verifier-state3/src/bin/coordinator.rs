@@ -1,3 +1,5 @@
+#[path = "support/admission.rs"]
+mod admission;
 use aclt_minimal_verifier::{chunk_size, expected, fields, input, read, summary, verify};
 use std::{collections::VecDeque, env, fs::{self, File, OpenOptions}, io::Write,
     os::unix::{process::CommandExt, fs::OpenOptionsExt}, path::{Path, PathBuf}, process::{self, Child, Command, Stdio},
@@ -242,22 +244,28 @@ fn charge_verification(directory: &Path,s: &mut State,units: u64) -> Result<(),S
     checkpoint(directory,"verification-reserved")?; Ok(())
 }
 fn run() -> Result<(),String> {
-    let args=env::args().collect::<Vec<_>>();
-    let resume=args.len()==3 && args[1]=="resume";
+    let mut args=env::args().collect::<Vec<_>>();
+    if args.get(1).map(String::as_str)==Some("resume") {
+        return Err("continuation disabled: interrupted qualification is never refunded".into());
+    }
+    if args.len()==3 && args[1]=="init-registry" {return admission::init(Path::new(&args[2]));}
+    if args.len()==4 && args[1]=="audit" {return admission::audit(Path::new(&args[2]),&input(&args[3])?);}
+    if ![9,11,14].contains(&args.len()) {return Err("strict usage: coordinator INPUT CHUNK WORKER NEW_RUN_DIR SCENARIO TIMEOUT_MS 1 [TASK_TTL_MS 0 [VERIFY_UNITS STORAGE_BYTES LOG_BYTES]] REGISTRY | init-registry REGISTRY | audit REGISTRY INPUT; legacy execution disabled".into());}
+    let registry=PathBuf::from(args.pop().unwrap());
+    let resume=false;
+    let mut admission=None;
     if !resume && args.len()!=8 && args.len()!=10 && args.len()!=13 { return Err("usage: coordinator INPUT CHUNK WORKER NEW_RUN_DIR SCENARIO TIMEOUT_MS MAX_ATTEMPTS [TASK_TTL_MS MAX_RECOVERIES [VERIFY_UNITS STORAGE_BYTES LOG_BYTES]] | coordinator resume RUN_DIR".into()); }
     let directory=PathBuf::from(if resume {&args[2]} else {&args[4]});
-    if !resume { fs::create_dir(&directory).map_err(|e|format!("new run directory required: {e}"))?; }
-    let lock=OpenOptions::new().read(true).write(true).create(true).truncate(false).custom_flags(0x20000).open(directory.join("run.lock")).map_err(|e|e.to_string())?;
-    lock.try_lock().map_err(|e|format!("run is locked by a coordinator or retiring workers: {e}"))?;
-    checkpoint(&directory,"locked")?;
     let mut s=if resume { load(&directory)? } else {
         let values=input(&args[1])?; let chunk=chunk_size(&args[2])?;
         let timeout_ms=chunk_size(&args[6])?; let maximum=chunk_size(&args[7])?;
+        if maximum!=1 {return Err("strict policy requires MAX_ATTEMPTS=1".into());}
         validate_config(chunk,timeout_ms,maximum,&args[5])?;
         let worker=fs::canonicalize(&args[3]).map_err(|e|e.to_string())?;
         let count=values.len().div_ceil(chunk);
         let ttl=if args.len()>=10 {args[8].parse::<u64>().map_err(|_|"invalid task TTL")?} else {300_000};
-        let recovery_limit=if args.len()>=10 {args[9].parse::<u64>().map_err(|_|"invalid recovery limit")?} else {32};
+        let recovery_limit=if args.len()>=10 {args[9].parse::<u64>().map_err(|_|"invalid recovery limit")?} else {0};
+        if recovery_limit!=0 {return Err("strict policy requires MAX_RECOVERIES=0".into());}
         if !(50..=86_400_000).contains(&ttl) || recovery_limit>100 {return Err("task limits out of range".into());}
         let verify_limit=if args.len()==13 {args[10].parse::<u64>().map_err(|_|"invalid verification budget")?} else {10_000_000};
         let storage_limit=if args.len()==13 {args[11].parse::<u64>().map_err(|_|"invalid storage budget")?} else {67_108_864};
@@ -269,10 +277,16 @@ fn run() -> Result<(),String> {
             recoveries:0,recovery_limit,reason:"NONE".into(),
             worker_hash:hash(&fs::read(&worker).map_err(|e|e.to_string())?)?,worker,values,attempts:vec![0;count],accepted:vec![None;count]};
         configure_limits(&state)?;
+        if directory.try_exists().map_err(|e|e.to_string())? {return Err("new run directory required".into());}
+        admission=Some(admission::Admission::reserve(&registry,&state)?);
+        fs::create_dir(&directory).map_err(|e|format!("qualification consumed, run creation failed: {e}"))?;
         atomic(&directory,"contract.txt",contract(&state)?.as_bytes())?;
         atomic(&directory,"input.txt",snapshot(&state.values).as_bytes())?;
         save(&directory,&state)?; state
     };
+    let lock=OpenOptions::new().read(true).write(true).create_new(true).custom_flags(0x20000).open(directory.join("run.lock")).map_err(|e|e.to_string())?;
+    lock.try_lock().map_err(|e|format!("run is locked: {e}"))?;
+    checkpoint(&directory,"locked")?;
     configure_limits(&s)?;
     checkpoint(&directory,"saved")?;
     if s.phase=="FAILED" || s.phase=="EXPIRED" {
@@ -407,6 +421,7 @@ fn run() -> Result<(),String> {
     s.phase="DONE".into();save(&directory,&s)?;
     checkpoint(&directory,"terminal-saved")?;
     event(&mut log,"COMPLETE",0,0,"all blocks verified")?;
+    admission.as_ref().ok_or("missing strict admission")?.accept(&s,&rows)?;
     println!("{}",summary(&s.values,s.chunk)); Ok(())
     })();
     if s.phase=="RUN" {

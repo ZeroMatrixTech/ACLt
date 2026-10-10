@@ -89,7 +89,7 @@
     },
     {
       "id": "singlehost",
-      "title": "当前单机验证",
+      "title": "严格单机资格与接纳验证",
       "command": [
         "bash",
         "experiments/aclt-minimal-verifier-state3/scripts/run-ubuntu.sh"
@@ -104,15 +104,14 @@
       ],
       "required_output": [
         "re:PASS: [1-9][0-9]* verification cases",
-        "re:PASS: [1-9][0-9]* multi-process scenarios",
-        "re:PASS: [1-9][0-9]* recovery scenarios",
-        "re:PASS: [1-9][0-9]* batch cases",
-        "re:PASS: [1-9][0-9]* lifecycle scenarios",
-        "re:PASS: [1-9][0-9]* single-host quota",
+        "PASS: strict local admission checks",
+        "PASS: strict adversarial checks",
         "re:PASS: [1-9][0-9]* exact datasets"
       ],
       "evidence": [
-        "experiments/aclt-minimal-verifier-state3/build/*tests.json"
+        "experiments/aclt-minimal-verifier-state3/build/strict-tests.json",
+        "experiments/aclt-minimal-verifier-state3/build/strict-adversarial-tests.json",
+        "experiments/aclt-minimal-verifier-state3/build/differential-tests.json"
       ]
     }
   ],
@@ -128,10 +127,10 @@
     {
       "id": "recovery",
       "title": "正式流程采用哪份权威记录恢复？",
-      "status": "OPEN",
-      "owner": "待指定",
-      "basis": "当前只有本地快照，尚非正式日志协议",
-      "decision": ""
+      "status": "DECIDED",
+      "owner": "用户（2026-10-10）",
+      "basis": "用户决定断电重启不续算，并要求本轮实现与验证",
+      "decision": "禁止跨启动及进程重启续算；已持久保留的资格不退还，同一逻辑主张同一本机单元最多一份接纳；允许只读审计。全局身份和网络账本另行实现。"
     },
     {
       "id": "accounting",
