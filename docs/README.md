@@ -2,7 +2,7 @@
 
 > 文档状态：Living index and governance  
 > 当前语义基线：v0.5  
-> 最后更新：2026-10-07
+> 最后更新：2026-10-13
 
 本目录是 ACLt Protocol 的权威文档中心。文档不是一次性说明材料，而是随反例、证明、仿真、实现、攻击测试和工程试点持续修订的规格系统。
 
@@ -43,12 +43,15 @@
 
 ### 工程证据与维护
 
+- [2026-10-13 导航维护记录](08-governance/audits/audit-20261013-01-document-navigation.md)：实验入口、复现边界与历史报告标注。
+
 - [运行与协作环境规范](08-governance/environment-standard.md)：ENV-1 工具版本、安装验收、Git 协作与交接约定。
 
-- [当前实验索引](../experiments/README.md)与 [state3 使用说明](../experiments/aclt-minimal-verifier-state3/README.md)。
+- [当前实验索引](../experiments/README.md)、[state3 使用说明](../experiments/aclt-minimal-verifier-state3/README.md)与[多节点 admission 原型](../experiments/aclt-multinode-admission/README.md)。
+- [架构阅读指南](00-overview/architecture-guide.md)与[交互演示](00-overview/aclt-theater.html)：帮助理解架构，不替代规范或验证证据。
 - [单机集成修复报告](testing/INTEGRATION-FIX.md)与[逐条规则覆盖账本](testing/SINGLEHOST-COVERAGE.json)。
 - [自动进度流程](workflow/README.md)：当前可复用测试状态由运行记录生成。
-- [2026-10-07 Markdown 维护报告](08-governance/audits/audit-20261007-01-markdown-maintenance.md)：本轮范围、检查与保留项。
+- [2026-10-07 Markdown 维护报告](08-governance/audits/audit-20261007-01-markdown-maintenance.md)：该轮范围、检查与保留项。
 
 ## 2. 文档权威范围
 

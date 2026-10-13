@@ -4,7 +4,7 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-10-07**
+> **最后更新：2026-10-13**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -191,6 +191,7 @@ flowchart TD
 | 目录/入口 | 用途 |
 |---|---|
 | `experiments/aclt-minimal-verifier-state3/` | 当前单机实现；旧代见 [实验索引](experiments/README.md) |
+| `experiments/aclt-multinode-admission/` | 预登记身份、持久接收器与故障注入原型；见[多节点实验说明](experiments/aclt-multinode-admission/README.md) |
 | `schemas/verification-profile/`、`registries/` | Schema 骨架、覆盖登记与注册种子 |
 | `tools/verification_profile/`、`tests/verification_profile/` | 验证配置实现与测试 |
 | `tests/workflow/`、`docs/workflow/`、`.aclt-flow/` | 自动进度流程及其测试、模板与文档 |
@@ -198,7 +199,9 @@ flowchart TD
 | `scripts/aclt-flow.py run` | 按输入与证据指纹执行并生成 `ACLT-PROGRESS.md` |
 | `docs/testing/` | 单机报告、规则覆盖账本和集成证据 |
 
-本轮维护范围与文件清单见 [维护报告](docs/08-governance/audits/audit-20261007-01-markdown-maintenance.md)。
+2026-10-07 的维护范围与文件清单见 [维护报告](docs/08-governance/audits/audit-20261007-01-markdown-maintenance.md)。
+
+多节点原型是独立的限域实验，不在 `scripts/run-singlehost.sh` 内。仓库内本地复查命令及 VM 外部证据边界见[实验索引](experiments/README.md)；原型可运行不表示 G3 已通过。
 
 ## 当前工程 Gates
 
