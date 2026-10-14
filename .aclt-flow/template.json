@@ -23,7 +23,8 @@
         "tests/workflow/*.py",
         ".aclt-flow/template.json",
         "SINGLEHOST-SHA256SUMS",
-        "WORKFLOW-SHA256SUMS"
+        "WORKFLOW-SHA256SUMS",
+        "Makefile"
       ],
       "required_output": [
         "re:Ran [1-9][0-9]* tests",
@@ -112,6 +113,26 @@
         "experiments/aclt-minimal-verifier-state3/build/strict-tests.json",
         "experiments/aclt-minimal-verifier-state3/build/strict-adversarial-tests.json",
         "experiments/aclt-minimal-verifier-state3/build/differential-tests.json"
+      ]
+    },
+    {
+      "id": "multinode",
+      "title": "多节点原型本地消息与接纳检查",
+      "command": [
+        "make",
+        "test-multinode"
+      ],
+      "timeout_seconds": 300,
+      "inputs": [
+        "Makefile",
+        "experiments/aclt-multinode-admission/*.py"
+      ],
+      "required_output": [
+        "re:PASS [1-9][0-9]* local checks",
+        "re:PASS [1-9][0-9]* orders / [1-9][0-9]* transitions"
+      ],
+      "evidence": [
+        "artifacts/multinode/local-tests.json"
       ]
     }
   ],

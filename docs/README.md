@@ -2,7 +2,7 @@
 
 > 文档状态：Living index and governance  
 > 当前语义基线：v0.5  
-> 最后更新：2026-10-13
+> 最后更新：2026-10-14
 
 本目录是 ACLt Protocol 的权威文档中心。文档不是一次性说明材料，而是随反例、证明、仿真、实现、攻击测试和工程试点持续修订的规格系统。
 
@@ -42,6 +42,10 @@
 13. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
 
 ### 工程证据与维护
+
+- [2026-10-14 工程维护记录](08-governance/audits/audit-20261014-01-repository-maintenance.md)：统一入口、交付完整性及连续重跑修复。
+
+- [开发与维护指南](development.md)：统一检查、目录职责、校验清单及更新包边界。
 
 - [2026-10-13 导航维护记录](08-governance/audits/audit-20261013-01-document-navigation.md)：实验入口、复现边界与历史报告标注。
 

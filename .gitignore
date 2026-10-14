@@ -29,3 +29,6 @@ Desktop.ini
 # Historical JSON evidence is source material, not a local build.
 !docs/workflow/example/**/artifacts/
 !docs/workflow/example/**/build/
+
+# Direct prototype invocation writes a local report; make uses artifacts/.
+/experiments/aclt-multinode-admission/local-tests.json

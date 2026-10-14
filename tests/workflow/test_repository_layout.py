@@ -19,7 +19,7 @@ class RepositoryLayoutTests(unittest.TestCase):
         for name in ['check-strict.py', 'check-strict-adversarial.py', 'check-differential.py']:
             self.assertIn('python3 scripts/' + name, runner)
             self.assertTrue((ROOT / EXPERIMENT / 'scripts' / name).is_file())
-        for script in ['update-manifests.py', 'aclt-flow.py']:
+        for script in ['repository_files.py', 'aclt-flow.py']:
             text = (ROOT / 'scripts' / script).read_text()
             self.assertIn(EXPERIMENT, text)
             self.assertNotIn('aclt-minimal-verifier-state2', text)
@@ -31,7 +31,8 @@ class RepositoryLayoutTests(unittest.TestCase):
 
     def test_delivery_manifests_match_installed_files(self):
         for root, name in [(ROOT, 'SINGLEHOST-SHA256SUMS'), (ROOT, 'WORKFLOW-SHA256SUMS'),
-                           (ROOT / EXPERIMENT, 'SHA256SUMS')]:
+                           (ROOT / EXPERIMENT, 'SHA256SUMS'),
+                           (ROOT / 'experiments/aclt-multinode-admission', 'SHA256SUMS')]:
             for line in (root / name).read_text().splitlines():
                 digest, relative = line.split('  ', 1)
                 with self.subTest(manifest=name, path=relative):

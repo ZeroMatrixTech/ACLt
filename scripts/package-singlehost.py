@@ -1,25 +1,50 @@
 #!/usr/bin/env python3
-"""Create a repository update bundle, excluding compilers and execution products."""
+"""Package the singlehost update only after its manifests have been reviewed."""
+import argparse
+import hashlib
 from pathlib import Path
-import hashlib,sys,zipfile,subprocess
-root=Path(__file__).resolve().parents[1]
-output=Path(sys.argv[1]).resolve() if len(sys.argv)==2 else root.parent/'aclt-singlehost-tested-update-2026-10-03.zip'
-exclude={'target','build','.toolchain','__pycache__','.git'}
-subprocess.run([sys.executable,str(root/'scripts/update-manifests.py')],check=True)
-manifest=(root/'SINGLEHOST-SHA256SUMS').read_text()
-files=[root/line.split('  ',1)[1] for line in manifest.splitlines()]
-with zipfile.ZipFile(output,'w',zipfile.ZIP_DEFLATED) as z:
- for p in files:z.write(p,p.relative_to(root).as_posix())
- z.writestr('SINGLEHOST-SHA256SUMS',manifest)
-with zipfile.ZipFile(output) as z:
- for line in z.read('SINGLEHOST-SHA256SUMS').decode().splitlines():
-  digest,name=line.split('  ',1)
-  assert hashlib.sha256(z.read(name)).hexdigest()==digest
-  assert z.read(name)==(root/name).read_bytes()
- for name in z.namelist():
-  blocked=exclude-{'build'} if name.startswith('docs/workflow/example/') else exclude
-  assert not blocked & set(Path(name).parts)
- for name in z.namelist():assert not Path(name).is_absolute() and '..' not in Path(name).parts
-(output.with_suffix(output.suffix+'.sha256')).write_text(hashlib.sha256(output.read_bytes()).hexdigest()+'  '+output.name+'\n')
-print(f'PASS: source equality, checksums, safe archive paths; {len(files)+1} files; {output.stat().st_size} bytes')
-print(output)
+import tempfile
+import zipfile
+from repository_files import verify
+
+def main():
+    root = Path(__file__).resolve().parents[1]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('output', nargs='?', type=Path,
+                        default=root / 'dist/aclt-singlehost-update.zip')
+    args = parser.parse_args()
+    output = args.output.resolve()
+    checksum = output.with_suffix(output.suffix + '.sha256')
+    if output.exists() or checksum.exists():
+        parser.error('Output already exists; choose a new filename')
+    errors = verify(root)
+    if errors:
+        parser.error('Stale manifests: ' + ', '.join(errors) + '; review and run make manifests')
+    source = (root / 'SINGLEHOST-SHA256SUMS').read_text()
+    entries = [line.split('  ', 1) for line in source.splitlines()]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.aclt-package-', dir=output.parent) as temp:
+        archive = Path(temp) / 'update.zip'
+        with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as bundle:
+            for digest, name in entries:
+                path = Path(name)
+                if path.is_absolute() or '..' in path.parts:
+                    raise ValueError('Unsafe archive path: ' + name)
+                data = (root / path).read_bytes()
+                if hashlib.sha256(data).hexdigest() != digest:
+                    raise ValueError('Source changed while packaging: ' + name)
+                bundle.writestr(name, data)
+            bundle.writestr('SINGLEHOST-SHA256SUMS', source)
+        with zipfile.ZipFile(archive) as bundle:
+            for digest, name in entries:
+                if hashlib.sha256(bundle.read(name)).hexdigest() != digest:
+                    raise ValueError('Archive checksum mismatch: ' + name)
+        # Exclusive creation prevents accidental replacement, including concurrent invocations.
+        with output.open('xb') as destination:
+            destination.write(archive.read_bytes())
+    with checksum.open('x') as destination:
+        destination.write(hashlib.sha256(output.read_bytes()).hexdigest() + '  ' + output.name + '\n')
+    print(f'PASS: verified archive; {len(entries) + 1} files; {output}')
+
+if __name__ == '__main__':
+    main()

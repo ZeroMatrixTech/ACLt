@@ -4,7 +4,7 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-10-13**
+> **最后更新：2026-10-14**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -109,80 +109,19 @@ flowchart TD
 
 完整索引见 [`docs/README.md`](docs/README.md)。
 
-## 仓库结构
+## 仓库结构与维护
 
-### 当前语义文档目录（节选）
+当前规范集中在 `docs/00-overview` 至 `docs/08-governance`；Schema 与种子分别在 `schemas/`、`registries/`；实现和测试在 `tools/`、`tests/` 及当前实验目录。
 
-```text
-.
-├── README.md
-├── CONTRIBUTING.md
-├── LICENSE                       # Apache License 2.0 英文全文（已存在）
-├── docs/
-    ├── README.md
-    ├── 00-overview/
-    │   ├── project-overview.md
-    │   ├── design-principles.md
-    │   ├── terminology.md
-    │   └── system-context.md
-    ├── 01-requirements/
-    │   ├── threat-model.md
-    │   └── invariants.md
-    ├── 02-architecture/
-    │   ├── system-architecture.md
-    │   ├── identities-and-roles.md
-    │   └── task-lifecycle.md
-    ├── 03-protocol/
-    │   ├── protocol-spec.md
-    │   ├── v1-profile.md
-    │   ├── result-validation.md
-    │   ├── verification-profile-schema.md
-    │   └── reputation.md
-    ├── 04-analysis/
-    │   ├── robustness.md
-    │   └── administrative-cost.md
-    ├── 05-decisions/
-    │   ├── ADR-0001-no-unnecessary-entities.md
-    │   ├── ADR-0002-normative-rir-and-v1-rust-profile.md
-    │   ├── ADR-0003-separate-semantic-status-and-version-disposition.md
-    │   ├── ADR-0004-verification-profiles-and-finite-population-e-process.md
-    │   └── ADR-0005-engineering-assumptions-and-mainnet-assurance.md
-    ├── 06-research/
-    │   ├── claims-and-sources.md
-    │   ├── verification-round-mathematical-model.md
-    │   └── last-two-problem-trees.md
-    ├── 07-roadmap/
-    │   ├── current-status.md
-    │   └── open-questions.md
-    ├── 08-governance/
-    │   ├── audit-procedure.md
-    │   ├── audit-report-template.md
-    │   └── audits/
-    │       ├── audit-20260818-01-semantic-structure.md
-    │       ├── audit-20260819-02-verification-model-closure.md
-    │       ├── audit-20260819-03-submission-scope.md
-    │       └── audit-20260821-04-engineering-closure-rollout.md
-    └── codocs/                    # 历史版本档案；不构成当前规范
-        └── README.md              # 历史状态与权威性说明
-└── tests/
-    └── verification_model/        # 精确有理数递推/闭式/DP 对拍资产
+统一操作、目录职责与打包边界见[开发与维护指南](docs/development.md)。根目录 `make help` 列出入口：
+
+```bash
+make check       # Python 回归与清单验证
+make test        # 当前全部本地检查，含编译及 sanitizer；不启动 VM
+make workflow    # 按指纹执行并收集各组证据
 ```
 
-上述是语义文档目录节选；工程目录另见下表。`docs/codocs/` 中的旧版本仅用于决策追踪，不构成当前规范。
-
-### 已规划但尚未创建
-
-```text
-.
-├── spec/
-│   ├── algorithms/                # 规范性算法与伪代码
-│   └── state-machines/            # 状态、转移与终态定义
-└── simulations/
-    ├── scenarios/                 # 可重现的仿真场景与参数
-    └── results/                   # 可追溯的仿真输出与摘要
-```
-
-这些路径是 G0 后续工程化规格工作的最小候选集，现在不应表述为已落地。`spec/` 与 `simulations/` 只在相应 P0 输入和产物边界确认后创建。目录只表示资料组织，不表示系统中存在同名特权实体。
+历史规范在 `docs/codocs/`，旧单机实验原位保留，不参与当前检查。`spec/`、`simulations/` 仍是后续候选目录，尚未建立；创建条件见当前状态与未决问题。
 
 ## 当前工程入口与证据
 

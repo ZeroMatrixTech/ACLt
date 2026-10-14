@@ -13,12 +13,15 @@ if command -v cargo >/dev/null; then
 else
   CARGO=cargo-1.93
 fi
-"$CARGO" build --offline --locked --bins --no-default-features
-cp target/debug/coordinator build/coordinator-deployment
-"$CARGO" build --offline --locked --bins --features admission-test-registry
-cp target/debug/coordinator target/debug/coordinator-test-registry
-# Keep the default entrypoint fixed to the production deployment namespace.
-cp build/coordinator-deployment target/debug/coordinator
+# Isolate feature fingerprints: never overwrite binaries owned by Cargo's cache.
+"$CARGO" build --offline --locked --bins --no-default-features --target-dir build/cargo-deployment
+"$CARGO" build --offline --locked --bins --features admission-test-registry --target-dir build/cargo-test-registry
+mkdir -p target/debug
+for binary in coordinator aclt-minimal-verifier cause-reducer; do
+  cp "build/cargo-deployment/debug/$binary" "target/debug/$binary"
+done
+cp build/cargo-deployment/debug/coordinator build/coordinator-deployment
+cp build/cargo-test-registry/debug/coordinator target/debug/coordinator-test-registry
 build/worker examples/input.txt 4 > build/results.txt
 target/debug/aclt-minimal-verifier examples/input.txt 4 build/results.txt
 python3 scripts/check.py
