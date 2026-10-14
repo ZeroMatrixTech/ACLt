@@ -7,7 +7,7 @@
 | [state3](aclt-minimal-verifier-state3/README.md) | 当前单机实现，运行记录 ACLT-STATE-3 | 仓库根目录执行 `bash scripts/run-singlehost.sh` |
 | [多节点 admission](aclt-multinode-admission/README.md) | 预登记模拟身份、持久接收器、重复消息与顺序检查 | 见下方独立命令 |
 
-根目录统一单机检查和打包不包含多节点原型。该原型不证明身份独立、Sybil 抵抗、共识、权威复制或磁盘回滚保护，也不表示 G3 已通过。
+`make test` 包含当前单机与多节点本地检查；`make workflow` 为各组分别登记证据。兼容入口 `scripts/run-singlehost.sh` 仍只运行单机相关分组。更新包包含两个当前实验；详情见[开发指南](../docs/development.md)。该原型不证明身份独立、Sybil 抵抗、共识、权威复制或磁盘回滚保护，也不表示 G3 已通过。
 
 ## 多节点原型的本地复查
 
