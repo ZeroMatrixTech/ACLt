@@ -134,6 +134,27 @@
       "evidence": [
         "artifacts/multinode/local-tests.json"
       ]
+    },
+    {
+      "id": "authority",
+      "title": "接纳端回滚与复制保护本地验证",
+      "command": [
+        "make",
+        "test-authority"
+      ],
+      "timeout_seconds": 300,
+      "inputs": [
+        "Makefile",
+        "experiments/aclt-authority-admission/*.py",
+        "experiments/aclt-minimal-verifier-state3/cpp/worker.cpp"
+      ],
+      "required_output": [
+        "re:Ran [1-9][0-9]* tests",
+        "OK"
+      ],
+      "evidence": [
+        "artifacts/authority/local-tests.json"
+      ]
     }
   ],
   "decisions": [

@@ -21,6 +21,10 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 
 这是本地逻辑和消息顺序检查，不会启动 VM。VM 驱动与原始磁盘证据位于项目工作区，未包含在本仓库；具体路径与历史测试数字见实验 README。仅凭 checkout 不能完整复现该轮 VM 证据。
 
+## 接纳端回滚与复制保护
+
+新增 [v2 外置权威账本实验](aclt-authority-admission/README.md)。本地复查运行 `make test-authority`；`make test` 与 `make workflow` 已接入。权威账本不随接纳端快照回滚；范围与剩余风险见实验说明，不能外推为任意系统回滚保护。
+
 ## 历史版本
 
 `aclt-minimal-verifier/` 和 `aclt-minimal-verifier-state2/` 保留为历史版本及其当时的证据，不参与根目录统一测试和打包。重复的历史结果不计为新增测试。旧任务只使用其对应版本处理。
