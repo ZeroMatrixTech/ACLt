@@ -2,14 +2,14 @@ PYTHON ?= python3
 REPORT_DIR ?= $(CURDIR)/artifacts/multinode
 PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip
 .DEFAULT_GOAL := help
-.PHONY: help check test test-python test-singlehost test-multinode workflow status manifests check-manifests package
+.PHONY: help check test test-python test-singlehost test-multinode test-authority build-worker workflow status manifests check-manifests package
 
 help:
 	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
 
 check: test-python check-manifests
 
-test: check test-singlehost test-multinode
+test: check test-singlehost test-multinode test-authority
 
 test-python:
 	$(PYTHON) -B -m unittest discover -s tests/verification_model -v
@@ -22,6 +22,13 @@ test-singlehost:
 test-multinode:
 	mkdir -p "$(REPORT_DIR)"
 	ACLT_REPORT_DIR="$(abspath $(REPORT_DIR))" $(PYTHON) -B experiments/aclt-multinode-admission/check.py
+
+build-worker:
+	mkdir -p experiments/aclt-minimal-verifier-state3/build
+	$(CXX) -std=c++17 -O2 -Wall -Wextra -Werror experiments/aclt-minimal-verifier-state3/cpp/worker.cpp -o experiments/aclt-minimal-verifier-state3/build/worker
+
+test-authority: build-worker
+	$(PYTHON) -B experiments/aclt-authority-admission/check.py
 
 workflow:
 	$(PYTHON) -B scripts/aclt-flow.py run

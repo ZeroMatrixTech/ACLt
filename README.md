@@ -4,7 +4,7 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-10-14**
+> **最后更新：2026-10-20**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -141,6 +141,8 @@ make workflow    # 按指纹执行并收集各组证据
 2026-10-07 的维护范围与文件清单见 [维护报告](docs/08-governance/audits/audit-20261007-01-markdown-maintenance.md)。
 
 多节点原型是独立的限域实验，不在 `scripts/run-singlehost.sh` 内。仓库内本地复查命令及 VM 外部证据边界见[实验索引](experiments/README.md)；原型可运行不表示 G3 已通过。
+
+新增实验：[接纳端回滚与复制保护](experiments/aclt-authority-admission/README.md)，本地入口 `make test-authority`。这是外置单一可信账本约束下的工程实验，不改变下列 Gate 状态。
 
 ## 当前工程 Gates
 

@@ -53,3 +53,7 @@
 ## 变更与交付
 
 按[贡献说明](../CONTRIBUTING.md)同步规范和不变量。结构维护不得改写协议语义或静默删除历史失败。报告记录基线、修改文件、真实检查结果及未覆盖项；提交、推送和发布按明确授权执行。局部检查通过不表示 Gate 退出或主网可用。
+
+## 外置权威账本实验（v2）
+
+`make test-authority` 使用临时回环网络、OpenSSL 与现有 C++ worker 检查接纳端回滚和复制边界，报告在 `artifacts/authority/`。`make test` 与流程已接入；QEMU 验证单独运行，外部运行时与证据不随源代码包分发。详见[实验说明](../experiments/aclt-authority-admission/README.md)。

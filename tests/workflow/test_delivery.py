@@ -38,6 +38,8 @@ class DeliveryTests(unittest.TestCase):
             for name in ['README.md', 'LICENSE', 'Makefile', 'docs/development.md',
                          'registries/verification-profile/mainnet_assurance.disabled.seed.json',
                          'experiments/aclt-multinode-admission/check.py',
+                         'experiments/aclt-authority-admission/authority.py',
+                         'experiments/aclt-authority-admission/run_vms.py',
                          'scripts/repository_files.py']:
                 self.assertEqual(bundle.read(name), (self.root / name).read_bytes())
 
