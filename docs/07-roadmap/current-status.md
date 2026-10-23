@@ -2,7 +2,7 @@
 
 > 文档性质：持续更新的项目快照（living document）  
 > 基线版本：v0.5  
-> 快照日期：2026-10-07  
+> 快照日期：2026-10-23
 > 当前阶段：G0 — 语义与问题空间冻结  
 > 权威范围：记录“现在已经知道什么、还没有证明什么、下一步需要什么证据”；不替代协议规范、ADR 或测试结果。
 
@@ -125,7 +125,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 8. 固定 Lease 派生 ExecutionCapability、Dispatch/RPR 检查接口和日志 finality/inclusion/consistency contract。
 9. 写出资金锁定、终态、退款、处罚和 at-most-once 结算矩阵。
 
-**P0-1 当前状态（2026-10-07 复核）**：P0-1A 经 AUD-20260821-10 判定 `PASS / CLOSED`；P0-1B 已创建首批 L1a/L1b、注册表种子和单元测试工件，状态 `STARTED / NOT CLOSED`。L2、全量 119 项 Type A、完整五相位对象、18 摘要和第二语言对拍仍未完成；6 项 Type B 与 SV-40 不计入 P0-1B 关闭。
+**P0-1 当前状态（2026-10-23 复核）**：P0-1A 经 AUD-20260821-10 判定 `PASS / CLOSED`；P0-1B 已创建首批 L1a/L1b、注册表种子和单元测试工件，状态 `STARTED / NOT CLOSED`。L2、全量 119 项 Type A、完整五相位对象、18 摘要和第二语言对拍仍未完成；6 项 Type B 与 SV-40 不计入 P0-1B 关闭。 全量盘点：119 项 Type A 中 3 项局部 implemented、8 项 partial、108 项未实现，18 个规范摘要均未实现；下一切片建议 ClaimTemplate 与结构化 ClaimBinding 的编码/摘要链，见[盘点报告](../testing/P0-1B-INVENTORY-20261023.md)。
 
 ### P0 — 阻断公开发布
 
@@ -173,6 +173,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-10-23 | v0.5 / V1 target | 完成 119 项规则与 18 摘要覆盖盘点；修正登记，运行时能力未改变 | [盘点报告](../testing/P0-1B-INVENTORY-20261023.md) | G0/G2 未通过退出 |
 | 2026-10-07 | v0.5 / V1 target | 同步已合入的 state3 与流程入口及 2026-10-03 限域证据；P0-1B 未关闭 | `../testing/INTEGRATION-FIX.md`；本轮 Markdown 维护报告 | G0/G2 均未通过退出 |
 | 2026-08-17 | v0.5 | 建立最小 Markdown 文档基线；明确当前处于 G0 | `docs/` 全集 | G0 |
 | 2026-08-17 | v0.5 | 决定代码与参考实现采用 Apache License 2.0；其他工件维持独立许可边界 | `README.md`、`CONTRIBUTING.md`、OQ-01 | 公开发布/G6 |

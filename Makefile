@@ -7,7 +7,7 @@ PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip
 help:
 	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
 
-check: test-python check-manifests
+check: test-python check-manifests check-profile-inventory
 
 test: check test-singlehost test-multinode test-authority
 
@@ -44,3 +44,7 @@ check-manifests:
 
 package: check-manifests
 	$(PYTHON) -B scripts/package-singlehost.py "$(PACKAGE)"
+
+.PHONY: check-profile-inventory
+check-profile-inventory:
+	$(PYTHON) -B scripts/check-profile-inventory.py

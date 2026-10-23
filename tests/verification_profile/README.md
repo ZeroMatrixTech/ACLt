@@ -17,3 +17,5 @@
 ```powershell
 python -m unittest discover -s tests/verification_profile -t . -v
 ```
+
+2026-10-23：全量盘点为 119 项 Type A（3 implemented、8 partial、108 not implemented），18 个规范摘要均未实现。详见 [逐项盘点](../../docs/testing/P0-1B-INVENTORY-20261023.md)。此次只修正覆盖登记，不新增验证能力；历史数量保留为当时快照。
