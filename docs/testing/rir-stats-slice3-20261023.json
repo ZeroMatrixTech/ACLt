@@ -1,0 +1,229 @@
+{
+  "status": "PASS",
+  "date": "2026-10-23",
+  "scope": "candidate stats-int arithmetic workload with explicit binary adapters; not formal RIR/RPR conformance",
+  "baseline_commit": "f157cc15d34f999cd0b509395b1fd1caee87399c",
+  "worktree": "clean before installation; slices 1/2 preserved as baseline",
+  "environment_policy": "ENV-1 + DUALHOST-SSH-1",
+  "physical_host_independence": "accepted finite-experiment assumption; no identity/statistical independence claim",
+  "builds": 4,
+  "cases_per_build": 69,
+  "case_records": 276,
+  "valid_cpp_cases_per_build": 40,
+  "cpp_comparisons": 160,
+  "outcomes_per_build": {
+    "OK": 45,
+    "ABORT": 12,
+    "TRAP_GAS_EXHAUSTED": 2,
+    "TRAP_OUTPUT_LIMIT": 2,
+    "TRAP_CALL_DEPTH": 1,
+    "REJECTED": 2,
+    "HOST_FAULT": 1,
+    "TRAP_INTEGER_DIVIDE_BY_ZERO": 1,
+    "TRAP_INTEGER_OVERFLOW": 1,
+    "TRAP_MEMORY_OOB": 1,
+    "TRAP_UNREACHABLE": 1
+  },
+  "comparison": {
+    "status": "PASS",
+    "physical_host_assumption": "user accepted; hostname difference is not a proof",
+    "builds": 4,
+    "sha256": {
+      "raw.wasm": "8a810eae22dfe5039bd5a4f41d1ad640c2e72b10861b3035961f6681d32a6d97",
+      "normalized.wasm": "09da4180e2d222bc8cc512daf428838d4377d32f897aaa759454c633bce25870",
+      "candidate-artifact.cbor": "560259eadf40292ea9872fb0ff9c5dbc8a809529d5239820dbc302f1abc59668",
+      "execution.json": "e7bf8ba4419f743fdc43dc6522a754a3d952b602f8720a2887a69a589ca973be"
+    },
+    "candidate_rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879",
+    "scope": "stats slice lowering reproducibility; not RIR/RPR conformance"
+  },
+  "semantic_oracle": {
+    "status": "PASS",
+    "node": "v24.22.1",
+    "oracle_sha256": "a02a564e084ae7a60f9a045de91f4b94285337e2b28f91829d5cbd4a8e240a82",
+    "scope": "Existing engine validates eight Wasm modules and checks semantic output/abort/output-limit only. Gas, call-depth and envelope binding are excluded.",
+    "checks": 440
+  },
+  "wasm_sizes": {
+    "raw_bytes": 1270,
+    "normalized_bytes": 735
+  },
+  "source_hashes": {
+    "build.py": "f0fc8566aa49f87403543e60bd95215c9771f32e78c2500b5219f6525c09c795",
+    "wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+    "runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+    "cases.py": "ec3fc96635228b59ce2858208036002ccb45c0674d48d026ac869be44d681670",
+    "toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+    "src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+    "src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+    "src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+    "src/reference.cpp": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2",
+    "tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77"
+  },
+  "deployment_source_hashes": {
+    "experiments/aclt-rir-stats-probe/README.md": "e952e9a123adfc2389f32e827cf188b2c5f7eee76247b62d6d5808cf368863c9",
+    "experiments/aclt-rir-stats-probe/build.py": "f0fc8566aa49f87403543e60bd95215c9771f32e78c2500b5219f6525c09c795",
+    "experiments/aclt-rir-stats-probe/cases.py": "ec3fc96635228b59ce2858208036002ccb45c0674d48d026ac869be44d681670",
+    "experiments/aclt-rir-stats-probe/compare.py": "699998f6631e9089ca9b119468e5d07499be9be80ca6491d849530d560ae19a3",
+    "experiments/aclt-rir-stats-probe/execute.py": "f265468ee7c7ddd41851148053633e04337b6efc2825654c8cef47544f3b23af",
+    "experiments/aclt-rir-stats-probe/oracle.cjs": "a02a564e084ae7a60f9a045de91f4b94285337e2b28f91829d5cbd4a8e240a82",
+    "experiments/aclt-rir-stats-probe/runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+    "experiments/aclt-rir-stats-probe/src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+    "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+    "experiments/aclt-rir-stats-probe/src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+    "experiments/aclt-rir-stats-probe/src/reference.cpp": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2",
+    "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "experiments/aclt-rir-stats-probe/tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77",
+    "experiments/aclt-rir-stats-probe/tests/test_stats.py": "651a913daa00300420d84125c3bf4d836564adc12b1e6d0e0eac59b772693487",
+    "experiments/aclt-rir-stats-probe/toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+    "experiments/aclt-rir-stats-probe/wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4"
+  },
+  "toolchain_lock_sha256": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+  "python_version": "3.14.4",
+  "gpp_version": "g++ (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+  "rustc_verbose": "rustc 1.93.1 (01f6ddf75 2026-02-11)\nbinary: rustc\ncommit-hash: 01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf\ncommit-date: 2026-02-11\nhost: x86_64-unknown-linux-gnu\nrelease: 1.93.1\nLLVM version: 21.1.8\n",
+  "small_stats_gas_golden": {
+    "input_chunk": 2,
+    "values": [
+      3,
+      -1,
+      5,
+      8
+    ],
+    "gas_used": 9126,
+    "independent_runtimes_agree": true,
+    "not_hand_derived_entire_program": true
+  },
+  "handwritten_instruction_goldens": [
+    {
+      "name": "golden-empty",
+      "input_sha256": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+      "limits": {
+        "gas_limit": 50000000,
+        "output_limit": 4800000,
+        "memory_pages_limit": 2,
+        "call_depth_limit": 8,
+        "max_steps": 20000000
+      },
+      "actual": {
+        "outcome": "OK",
+        "gas_used": 8192,
+        "outcome_digest": "13e9451829c941c0efc05256b3ba70962ab12a47b0c45b2afdd52012343a809c",
+        "output_hex": ""
+      }
+    },
+    {
+      "name": "golden-mul",
+      "input_sha256": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+      "limits": {
+        "gas_limit": 50000000,
+        "output_limit": 4800000,
+        "memory_pages_limit": 2,
+        "call_depth_limit": 8,
+        "max_steps": 20000000
+      },
+      "actual": {
+        "outcome": "OK",
+        "gas_used": 8198,
+        "outcome_digest": "dc6978be0c6574cda06f6df27014d62436da651d3da43b4875c70ce408ae520b",
+        "output_hex": ""
+      }
+    },
+    {
+      "name": "golden-divzero",
+      "input_sha256": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+      "limits": {
+        "gas_limit": 50000000,
+        "output_limit": 4800000,
+        "memory_pages_limit": 2,
+        "call_depth_limit": 8,
+        "max_steps": 20000000
+      },
+      "actual": {
+        "outcome": "TRAP_INTEGER_DIVIDE_BY_ZERO",
+        "gas_used": 8202,
+        "outcome_digest": "872cb8376f6eb9571f1626bea20d81e5aa47b78da10faead1b627c23638f55b7"
+      }
+    },
+    {
+      "name": "golden-divoverflow",
+      "input_sha256": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+      "limits": {
+        "gas_limit": 50000000,
+        "output_limit": 4800000,
+        "memory_pages_limit": 2,
+        "call_depth_limit": 8,
+        "max_steps": 20000000
+      },
+      "actual": {
+        "outcome": "TRAP_INTEGER_OVERFLOW",
+        "gas_used": 8202,
+        "outcome_digest": "1879884108a225e9cd209f39781fee755dc2a08bf5b23b4dd47a0bfe69425508"
+      }
+    },
+    {
+      "name": "golden-memory",
+      "input_sha256": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+      "limits": {
+        "gas_limit": 50000000,
+        "output_limit": 4800000,
+        "memory_pages_limit": 2,
+        "call_depth_limit": 8,
+        "max_steps": 20000000
+      },
+      "actual": {
+        "outcome": "TRAP_MEMORY_OOB",
+        "gas_used": 8195,
+        "outcome_digest": "173b606c4432332c3d51c642a9fcbc97d29574668eace5759fd94cf67390b5ca"
+      }
+    },
+    {
+      "name": "golden-unreachable",
+      "input_sha256": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+      "limits": {
+        "gas_limit": 50000000,
+        "output_limit": 4800000,
+        "memory_pages_limit": 2,
+        "call_depth_limit": 8,
+        "max_steps": 20000000
+      },
+      "actual": {
+        "outcome": "TRAP_UNREACHABLE",
+        "gas_used": 8193,
+        "outcome_digest": "d3efcbfdc5b1107e5d8fa76ea85e088eb02262e4d22a8da9cf565879944f2e97"
+      }
+    },
+    {
+      "name": "golden-host-gas-first",
+      "input_sha256": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+      "limits": {
+        "gas_limit": 8194,
+        "output_limit": 4800000,
+        "memory_pages_limit": 2,
+        "call_depth_limit": 8,
+        "max_steps": 20000000
+      },
+      "actual": {
+        "outcome": "TRAP_GAS_EXHAUSTED",
+        "gas_used": 8194,
+        "outcome_digest": "b4fd29e106e75bbb37f8661f22f43913b5e934e8a4ee56fc175fb79cabcc13b5"
+      }
+    }
+  ],
+  "regression_methods": 14,
+  "default_make_check_total_methods": 117,
+  "limits": [
+    "Rust independently decodes prevalidated canonical Wasm; full validator/envelope independence not established",
+    "outcome CBOR/digest post-processing shared Python",
+    "fixed memory and restricted integer/void subset only",
+    "candidate wire differs from C++ text; row adapters explicit",
+    "SSH transports source/evidence; no LAN task protocol tested",
+    "no formal ReceiptID, verification decision, settlement or Gate closure"
+  ],
+  "evidence_files": {
+    "comparison.json": "138361767b7229e3d00cf9281134313b6337d0d895f7704d9e5b113bec1fb242",
+    "oracle-result.json": "3be120df57a34052c816d4a0c3e8578bbd1af67a00523b73b9f5ff0337a314b6",
+    "source-lock.json": "028a424a94581894525ad724d0295ef6afc80017f5dae245b775d017c55f6b1e"
+  }
+}

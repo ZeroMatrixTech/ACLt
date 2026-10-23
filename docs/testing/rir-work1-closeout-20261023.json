@@ -1,0 +1,162 @@
+{
+  "status": "PASS",
+  "work_item": "RIR-WORK1",
+  "completed_scope": "candidate Rust-to-RIR execution and exact stats comparison",
+  "evidence_action": "rehash retained dual-host runs; no new compilation or remote execution",
+  "retained_builds": 12,
+  "retained_execution_records": 496,
+  "continuity": {
+    "toolchain_lock_sha256": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+    "entry_sha256": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+    "sdk_sha256": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "cpp_baseline_sha256": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2"
+  },
+  "slices": [
+    {
+      "slice": 1,
+      "comparison": {
+        "status": "PASS",
+        "physical_host_assumption": "user accepted; hostname difference is not a proof",
+        "builds": 4,
+        "sha256": {
+          "raw.wasm": "211c4d8dd586f47d665c65ae0e46cfceb2f89627d6c9df50a5fdb95981847ccf",
+          "normalized.wasm": "028500823203e069891ca3b3b80bced8d54f7333217d2e9af369b3f348d5e3f5",
+          "candidate-artifact.cbor": "282aafc1cfb0b759ad87e4434ea57cf33f54a0299240c83ceff11b7ca7a6be0b"
+        },
+        "candidate_rir_digest": "430a1314d303e8c35fc9291b6ab49335df22d187a424fb9c36f2c10ebf465aff",
+        "scope": "empty-run lowering reproducibility; not RIR/RPR conformance"
+      },
+      "execution_records": 0,
+      "source_hashes": {
+        "build.py": "92b09a9451034542fa161c66765bb7c21838182f9c42b32411ff98c8a084fc66",
+        "normalize.py": "e3d5146df29847b4ed3b1c9509b18eabe631d7a023eb0e0e49167e05c47fb031",
+        "toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+        "src/program.rs": "fa572eebf5d77c00ae5269d27c2330dee1ea3881ab7557851e3f1a02b2a5a476",
+        "src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df"
+      },
+      "run_report_sha256": [
+        "513e8a9163d1867afdca15200483b3732b4fe2669ff203740d72fde956106cd8",
+        "050722ff899784a84f7c028468f673fd268a53049f2f29e23e92836efa370d13"
+      ]
+    },
+    {
+      "slice": 2,
+      "comparison": {
+        "status": "PASS",
+        "physical_host_assumption": "user accepted; hostname difference is not a proof",
+        "builds": 4,
+        "sha256": {
+          "raw.wasm": "4b0f5ff5a0e1db9cdf06efb9c78e821a7bf07f628524c87c7a39f582bacc02f0",
+          "normalized.wasm": "ed63eb8a3a5e5923d4009e40d456c23defe223a3c89d6cefe5c69732676e505e",
+          "candidate-artifact.cbor": "0fb8cb84bc945ff8910968e72681ccc1a45b28735bc0e4b86033857e89eeb15d",
+          "execution.json": "58436fc78dfad1ec2ad66acfd6e3513fdf3c9fbfed6faf5578ef13a419c4685d"
+        },
+        "candidate_rir_digest": "7b1ffdc9f3c677f4ab7beff0dfaa406d4af5cfb1e430d3304c76570a5a9cb95b",
+        "scope": "I/O slice lowering reproducibility; not RIR/RPR conformance"
+      },
+      "execution_records": 220,
+      "source_hashes": {
+        "build.py": "2a1fda032dff33250ef6f1a9efca66b38155b7f97e627861f665c719038cd754",
+        "wasm.py": "4065d1642510e930bc4110770f8eed5333ba565088794f190c14ec73a2306065",
+        "runtime.py": "9fb25a62584fab059dc41e51be9a1eb333cc4a34a6bfac91a6cfae24dba74fcf",
+        "cases.py": "11a62b11d10809bdc7bb8a6bc4667fed77fce06ad98c77410c24253e60b3d784",
+        "toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+        "src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+        "src/program.rs": "1b70e86207257703ebedf298389161b59dc44247a95532df6d60cf986f2657ba",
+        "src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df"
+      },
+      "run_report_sha256": [
+        "0f844b624699abf5789b917d0f2f29497a865edb25953ceffa5c41c42966a09c",
+        "c9ebedc2f5e537d374d8c914470e17273b2a637b543dcc05acf081be3393da32"
+      ]
+    },
+    {
+      "slice": 3,
+      "comparison": {
+        "status": "PASS",
+        "physical_host_assumption": "user accepted; hostname difference is not a proof",
+        "builds": 4,
+        "sha256": {
+          "raw.wasm": "8a810eae22dfe5039bd5a4f41d1ad640c2e72b10861b3035961f6681d32a6d97",
+          "normalized.wasm": "09da4180e2d222bc8cc512daf428838d4377d32f897aaa759454c633bce25870",
+          "candidate-artifact.cbor": "560259eadf40292ea9872fb0ff9c5dbc8a809529d5239820dbc302f1abc59668",
+          "execution.json": "e7bf8ba4419f743fdc43dc6522a754a3d952b602f8720a2887a69a589ca973be"
+        },
+        "candidate_rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879",
+        "scope": "stats slice lowering reproducibility; not RIR/RPR conformance"
+      },
+      "execution_records": 276,
+      "source_hashes": {
+        "build.py": "f0fc8566aa49f87403543e60bd95215c9771f32e78c2500b5219f6525c09c795",
+        "wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+        "runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+        "cases.py": "ec3fc96635228b59ce2858208036002ccb45c0674d48d026ac869be44d681670",
+        "toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+        "src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+        "src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+        "src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+        "src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+        "src/reference.cpp": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2",
+        "tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77"
+      },
+      "run_report_sha256": [
+        "c56d1f0c8046568bab18dfd55ea2fc538b8a20d110e760a3f25c16630e104e96",
+        "a6601b25480d0e6bd02d46dfe5f8e3fbf694fe4d697efd50d38df5ad63d3cdc2"
+      ]
+    }
+  ],
+  "ADR_status": "PROPOSED",
+  "gate_change": false,
+  "limitations": [
+    "three progressively extended programs, not one identical artifact",
+    "physical independence remains the accepted DUALHOST-SSH-1 assumption",
+    "hash consistency is not authenticated provenance or statistical independence",
+    "not complete RIR/RPR conformance, formal Receipt, verification verdict or settlement"
+  ],
+  "date": "2026-10-23",
+  "engineering_status": "COMPLETE_WITHIN_CANDIDATE_SCOPE",
+  "baseline_commit": "f157cc15d34f999cd0b509395b1fd1caee87399c",
+  "baseline_worktree": "includes preserved slice-3 uncommitted changes",
+  "fresh_dualhost_suite": true,
+  "regression_methods": 122,
+  "cpp_comparisons": 160,
+  "next_work": "formal Receipt encoding and frozen artifact/input/limits binding before verdict/settlement",
+  "verification_tool_sha256": "6203fb81d270bcf8bb7593bf9c2da08bf7638174e980bc6159cd57cfcb5e9158",
+  "negative_controls": [
+    {
+      "case": "artifact-tamper",
+      "status": "PASS: rejected",
+      "reason": "retained artifact differs from report: raw.wasm"
+    },
+    {
+      "case": "missing-source-pin",
+      "status": "PASS: rejected",
+      "reason": "unexpected or missing source pins: aclt-rir-build-probe"
+    },
+    {
+      "case": "native-tamper",
+      "status": "PASS: rejected",
+      "reason": "retained native binary changed: executor"
+    }
+  ],
+  "semantic_oracles": [
+    {
+      "status": "PASS",
+      "node": "v24.22.1",
+      "oracle_sha256": "dc2bc600e83e9317e77baf1ae25d19531deefe8c84777fe2e3fda52a561e0648",
+      "scope": "Existing engine validates eight Wasm modules and checks semantic output/abort/output-limit only. Gas, call-depth and envelope binding are excluded.",
+      "checks": 360
+    },
+    {
+      "status": "PASS",
+      "node": "v24.22.1",
+      "oracle_sha256": "a02a564e084ae7a60f9a045de91f4b94285337e2b28f91829d5cbd4a8e240a82",
+      "scope": "Existing engine validates eight Wasm modules and checks semantic output/abort/output-limit only. Gas, call-depth and envelope binding are excluded.",
+      "checks": 440
+    }
+  ],
+  "suite_report_sha256": {
+    "A": "85d6eda1dfea3be444697ec765c1569a400a64fe2e1a76539d854563d3f0cc98",
+    "B": "85d6eda1dfea3be444697ec765c1569a400a64fe2e1a76539d854563d3f0cc98"
+  }
+}

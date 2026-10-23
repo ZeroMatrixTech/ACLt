@@ -309,6 +309,8 @@ RPR 不得把 C 类改写为 B 类：宿主内存不足不得报告为 `memory.g
 
 9. I/O 候选探针：安全 SDK 与受信入口已在固定 16 字节原样输出负载上实现；候选外壳、局部类型检查与受限 Python 解释器在双机运行通过，并有现有 Wasm 引擎对拍语义。该引擎不核对 gas/调用深度/绑定，尚无独立 Rust RPR，不替代本 ADR §13 的接受证据。见 [切片 2](../testing/RIR-IO-SLICE2-20261023.md)。
 
+切片 3 补记：[stats-int-v1 候选双机报告](../testing/RIR-STATS-SLICE3-20261023.md)已增加独立 Rust Wasm 解码/执行器，四组构建与 276 条 Python/Rust 执行记录一致，160 次 C++ 统计行比较通过。输入/输出使用显式候选二进制适配器。Rust 仍依赖 Python 预验证；完整外壳/类型/规范验证器、全指令 conformance 与正式 Receipt 尚缺，不把本轮视为 §13 全部接受证据。上文“尚无独立 Rust RPR”为切片 2 的历史范围。
+
 ## 9. 版本与 Receipt 绑定（候选）
 
 - RIRVersion 使用 SemVer，独立于 ProtocolVersion 演进。一个 RIRVersion 同时固定：子集、规范编码、静态上限、成本表、结果枚举、宿主 ABI 与默认等价谓词。其中任何一项变化都产生新的 RIRVersion、新的 `rir_digest` 和新的 ReceiptID（ADR-0002 §6 第 7 项）。
@@ -380,3 +382,5 @@ RPR 不得把 C 类改写为 B 类：宿主内存不足不得报告为 `memory.g
 ## 14. 连续性结论
 
 本草案在 ADR-0002 的范围内细化 RIR，不改变以下内容：RIR 是规范执行表示，Rust Profile 是参考前端，不允许静默原生回退，V1 不支持 unsafe Rust、完整宿主 effects、原生执行、GPU 和非确定性任务。它在此基础上进一步收窄：RIR-0 不含浮点。它不新增 Principal 或权威实体；Wasm 规范、引擎及其维护组织都不进入 ACLt 的真理权重。G0 未通过退出。
+
+工程证据补记（2026-10-23）：[第一项三切片收尾](../testing/RIR-WORK1-CLOSEOUT-20261023.md)完成统一双机复现与证据连续性核对。该工程状态不接受本 ADR，§13 的完整独立编解码、验证与 conformance 要求仍适用。

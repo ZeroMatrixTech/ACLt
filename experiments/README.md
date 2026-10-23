@@ -35,4 +35,12 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 
 ## RIR 切片 2：安全 SDK / I/O 候选执行
 
-[aclt-rir-io-probe](aclt-rir-io-probe/README.md)提供 16 字节原样输出负载、受限候选解释器和显式执行入口。18 项回归纳入 make check，工具链及双机执行必须通过显式构建命令启动；同样纳入源码交付。它不替代正式 RIR/RPR 或结算验收。
+[aclt-rir-io-probe](aclt-rir-io-probe/README.md)提供 16 字节原样输出负载、受限候选解释器和显式执行入口。19 项回归纳入 make check，工具链及双机执行必须通过显式构建命令启动；同样纳入源码交付。它不替代正式 RIR/RPR 或结算验收。
+
+## RIR 切片 3：整数统计与独立执行
+
+[aclt-rir-stats-probe](aclt-rir-stats-probe/README.md)实现候选二进制统计适配、Python 参考机和独立 Rust Wasm 解码/执行器，使用原 C++ worker 和数学基准核对六字段结果行。14 项局部回归纳入 make check；双机构建/执行通过显式工具链和新输出目录启动。Rust 外壳验证器、正式 Receipt 与完整 conformance 仍待实现。
+
+## 第一项工作：三切片组合收尾
+
+上述三个 RIR 探针共同完成候选源码到执行与精确统计比较的第一项工程工作。`make test-rir-work1` 提供单主机全套复现，`scripts/rir-work1.py verify` 组合核对两台主机的保留证据；完整命令、假设与下一项见 [收尾报告](../docs/testing/RIR-WORK1-CLOSEOUT-20261023.md)。不以该工程完成状态代替 RIR/RPR conformance 或 Gate 验收。
