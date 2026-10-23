@@ -2,6 +2,7 @@
 
 > 状态：`PROPOSED`（草案，未接受）  
 > 起草日期：2026-10-23  
+> 最后修订：2026-10-23（审阅建议落实；仍为候选）
 > 影响范围：RIR 编码、validator、RPR 执行语义、资源计量、Receipt 执行绑定与 Rust Profile lowering  
 > 关联：ADR-0002、ADR-0003、ADR-0005；OQ-02、OQ-05；INV-01、INV-02、INV-09、INV-16；TH-14、TH-33、TH-34
 
@@ -69,7 +70,9 @@ RIR 主体以 WebAssembly Core 1.0 的一个确定性子集为基础。RIR 的�
 | 算术与位运算 | `clz`、`ctz`、`popcnt`、`add`、`sub`、`mul`、`div_s/u`、`rem_s/u`、`and`、`or`、`xor`、`shl`、`shr_s/u`、`rotl`、`rotr`（`i32` 与 `i64` 各一组） |
 | 转换 | `i32.wrap_i64`、`i64.extend_i32_s`、`i64.extend_i32_u` |
 
-其他指令一律 `RIR_REJECT_UNSUPPORTED`，包括全部 `f32`/`f64` 指令、浮点与整数之间的转换和 reinterpret，以及 Wasm 1.0 之后加入的符号扩展、非陷入浮点截断、multi-value、引用类型、bulk memory、SIMD、尾调用、异常、线程/原子、memory64、多内存和 GC。
+Wasm 1.0 可以解码、但不在本表内的指令（包括全部 `f32`/`f64` 指令、浮点与整数之间的转换和 reinterpret）在 §4.4 阶段 4 返回 `RIR_REJECT_UNSUPPORTED`。Wasm 1.0 grammar 无法解码的字节在阶段 3 返回 `RIR_REJECT_ENCODING`；例如符号扩展指令 `i32.extend8_s` 的 opcode `0xc0`，不得要求 1.0 解码器先理解该扩展再返回 `UNSUPPORTED`。
+
+Wasm 1.0 之后加入的符号扩展、非陷入浮点截断、multi-value、引用类型、bulk memory、SIMD、尾调用、异常、线程/原子、memory64、多内存和 GC 全部不在 RIR-0 内。具体拒绝代码依 §4.4 的首失败阶段确定；这不要求 parser 支持任何未来扩展。
 
 ### 3.3 模块结构
 
@@ -85,7 +88,9 @@ RIR 主体以 WebAssembly Core 1.0 的一个确定性子集为基础。RIR 的�
 | data | 仅主动段，内存索引 0，偏移为 `i32.const`；必须静态落在内存的初始大小内 |
 | 自定义段 | 全部禁止，包括 `name`、`producers`、`target_features` |
 
-element 与 data 段在 validator 中做静态边界检查，因此实例化阶段不会出现运行时失败。
+element 与 data 段的结构限制（主动段、索引、常量偏移的表达式形式、不得引用导入函数）属于 §4.4 阶段 4；引用索引合法性和 Wasm 类型规则属于阶段 5；段是否落在表/内存初始大小内的数值边界检查只属于阶段 6。内存声明 `max` 的存在性属于阶段 4，其数值上限属于阶段 6。这些规则不在两个阶段重复裁定。
+
+通过上述检查后，element/data 初始化不会因段越界而失败；宿主实际分配失败仍属于 §6.3 的 C 类故障，不属于 Task trap。
 
 ### 3.4 静态上限（RIRVersion 常量，数值待用 rustc 实际产物校准）
 
@@ -117,10 +122,12 @@ RIRArtifact = {
   encoding_profile_id : "acl.enc.rir-0@1"
   rir_version         : SemVer            # RIR-0 为 0.1.0
   entry               : "run"             # RIR-0 只允许该值
-  input_arity         : uint              # Receipt 绑定的 Logical Object 输入个数
+  input_arity         : uint32            # 0 ≤ input_arity ≤ 2^32−1；Receipt 输入个数
   body                : bstr              # §4.2 的规范 Wasm 字节
 }
 ```
+
+`input_arity` 在阶段 2 先要求为无符号整数，在阶段 6 检查 uint32 上界。Receipt 创建时还必须在阶段 7 校验 `input_arity = |Receipt 的有序输入引用列表|`；不相等为绑定错误 `RIR_REJECT_INVALID`，不得截断、取模或从宿主补充隐藏输入。`0` 个输入合法。仅对独立工件做阶段 1—6 检查，不能声称已通过 Receipt 绑定检查。
 
 `acl.enc.rir-0@1` 的 CBOR 原语与容器规则逐条沿用 `acl.enc.p0-1@1`（确定长度、最短整数、键按编码字节排序、禁止浮点/null/tag 等）。之所以另起标识，是因为 P0-1 规定新增 tag 必须提升其 `encoding_profile_id` 版本；RIR 的 tag 位于独立命名空间，不进入 P0-1 tag 集合。是否以后合并为全项目统一的编码 Profile，留给 OQ-02。
 
@@ -133,7 +140,8 @@ RIRArtifact = {
 3. 全部 LEB128（段长、向量长度、索引、`memarg`、常量立即数）取最短形式；有符号数取最短的符号一致形式；
 4. 函数体局部变量声明把相邻同类型合并为一组，不出现计数为 0 的组；
 5. `memory.size`、`memory.grow`、`call_indirect` 的保留字节为单个 `0x00`；
-6. 无自定义段。
+6. 无自定义段；
+7. `if` 的 else 分支指令序列为空时，必须省略 `0x05`，编码为 `0x04 blocktype then_instr* 0x0b`；非空时必须使用 `0x05`。显式空 else 与省略空 else 解码为同一 AST，`CanonEncode` 只选择省略形式，前者在阶段 3 返回 `RIR_REJECT_ENCODING`。
 
 `memarg` 的对齐值属于抽象语法，按原值保留，只要求满足 Wasm 验证规则。
 
@@ -153,14 +161,16 @@ H_{\mathrm{tag}}(x)=\mathrm{SHA256}\big(\mathrm{u8}(|\mathrm{tag}|)\ \|\ \mathrm
 validator 按以下顺序执行，返回第一个失败阶段对应的代码；各实现必须对同一输入给出相同代码。
 
 1. 外壳 CBOR 解码与 canonical 检查 → `RIR_REJECT_ENCODING`
-2. 外壳字段值（版本、`entry`、未知字段） → `RIR_REJECT_UNSUPPORTED`
-3. Wasm 解码与 §4.2 重编码一致性 → `RIR_REJECT_ENCODING`
-4. 子集检查（§3.1—§3.3） → `RIR_REJECT_UNSUPPORTED`
-5. Wasm 1.0 类型验证 → `RIR_REJECT_INVALID`
-6. 静态上限、段边界（§3.4） → `RIR_REJECT_LIMITS`
-7. 与 Receipt 执行上限的兼容性（§5.1） → `RIR_REJECT_LIMITS`
+2. 外壳字段集合、类型及已知值（版本、`entry`、未知/缺失字段；`input_arity` 此时只检查无符号整数类型） → `RIR_REJECT_UNSUPPORTED`
+3. **仅按 Wasm 1.0 grammar** 解码，再检查 §4.2 重编码一致性 → `RIR_REJECT_ENCODING`。未知 opcode、1.0 无法解码的扩展、截断及非规范表示均在本阶段终止；不做未来扩展探测。
+4. 可解码模块的子集结构检查（§3.1—§3.3，排除阶段 3 已管的编码规则、阶段 5 的 Wasm 有效性和阶段 6 的数值上限/段边界） → `RIR_REJECT_UNSUPPORTED`
+5. Wasm 1.0 有效性/类型验证，包括函数和其他引用索引合法性 → `RIR_REJECT_INVALID`
+6. §3.4 静态数值上限、`input_arity ≤ 2^32−1`、element/data 相对于表/内存初始大小的数值边界 → `RIR_REJECT_LIMITS`
+7. Receipt 绑定检查：先检查输入列表长度与 `input_arity` 相等，不等 → `RIR_REJECT_INVALID`；再检查 §5.1 执行上限兼容性 → `RIR_REJECT_LIMITS`。本阶段内部也按此顺序返回首个失败。
 
-阶段 7 需要 Receipt 绑定的上限，因此在 Receipt 创建时执行；RPR 执行前对阶段 1—7 全部复验。
+实现不得把阶段 4/6 的语义条件提前当成阶段 3 的解码失败。存在多项错误时，只返回最早失败阶段的代码：例如可解码的非法导入与 data 越界同时存在时为阶段 4 `UNSUPPORTED`；Wasm 类型错误与 data 越界同时存在时为阶段 5 `INVALID`；非规范显式空 else 即使同时带有非法导入，也先返回阶段 3 `ENCODING`。
+
+阶段 7 需要 Receipt 的输入列表和绑定上限，因此在 Receipt 创建时执行；RPR 执行前对阶段 1—7 全部复验。这里规定的是候选 validator 的规范拒绝码。
 
 ## 5. 资源上限与计量（候选）
 
@@ -225,7 +235,7 @@ RPR 必须在 Lease 接受前声明自己支持的上限范围；超出范围的
 
 ### 6.2 B 类：Task 语义结果
 
-B 类结果是确定的，可以通过重执行复核，并进入 `REEXEC_EXACT` 的比较范围。
+B 类结果是确定的，可以通过适用重执行 Profile 引用的精确结果等价谓词（本草案为 §6.2 的 `acl.rir.eq.exact@0`）复核。它不是新的 `VerificationMethod`：当前方法仍是 `DIRECT_VERIFIED | PROOF_VERIFIED | REEXEC_BOUNDED | REEXEC_AUDIT_ONLY`。结果相等只构成对应 Profile 的比较输入；它不自动满足 `REEXEC_BOUNDED` 的假设/接受条件，也不能让 `REEXEC_AUDIT_ONLY` 产生 `TRUSTED`。
 
 | outcome | 触发条件 |
 |---|---|
@@ -274,18 +284,22 @@ RPR 不得把 C 类改写为 B 类：宿主内存不足不得报告为 `memory.g
 
 | 函数 | 签名 | 语义 | 成本 |
 |---|---|---|---|
-| `input_count` | `() → i32` | 返回 `input_arity` | 4 |
+| `input_count` | `() → i32` | 返回 `input_arity` 的无符号 32 位位模式；不截断，§4.4 已保证数量可表示 | 4 |
 | `input_len` | `(index: i32) → i64` | 返回该输入的字节长度；`index ≥ input_arity` 时 `TRAP_HOST_ARGUMENT` | 4 |
 | `input_read` | `(index: i32, offset: i64, dst: i32, len: i32) → ()` | 精确复制 `len` 字节；`index` 越界、`offset + len` 超过输入长度或 `dst + len` 超过内存大小时 `TRAP_HOST_ARGUMENT`；`len = 0` 合法 | `16 + ⌈len/8⌉` |
-| `output_write` | `(src: i32, len: i32) → ()` | 追加输出；源地址越界时 `TRAP_HOST_ARGUMENT`；累计超过上限时 `TRAP_OUTPUT_LIMIT` | `16 + ⌈len/8⌉` |
+| `output_write` | `(src: i32, len: i32) → ()` | 先检查源地址范围，越界时 `TRAP_HOST_ARGUMENT`；仅在地址合法后检查累计输出上限，超过时 `TRAP_OUTPUT_LIMIT`；全部检查成功后追加输出 | `16 + ⌈len/8⌉` |
 | `abort` | `(code: i32) → ()` | 以 `ABORT(code)` 立即终止 | 1 |
 
-宿主调用同样遵循 §5.2：先扣费，再检查参数，最后产生效果。RIR-0 不提供时间、随机数、环境变量、命令行参数、文件、网络、线程或日志。调试输出通道作为不影响语义的诊断能力，留待以后单独评估。
+宿主调用同样遵循 §5.2，并明确以下顺序：计算成本 → gas 不足则 `TRAP_GAS_EXHAUSTED` 且不扣该次成本 → 扣费 → 检查输入索引及内存/输入地址参数（失败为 `TRAP_HOST_ARGUMENT`）→ 仅对 `output_write` 检查输出额度（失败为 `TRAP_OUTPUT_LIMIT`）→ 复制/追加等效果。同一次调用只返回首个失败；无部分复制或追加。`abort` 在扣费后产生 `ABORT`。
+
+所有范围加法（`offset + len`、`dst + len`、`src + len` 与累计输出加 `len`）都使用数学非负整数，不按机器位宽回绕。`len = 0` 不跳过索引/地址检查，端点恰等于对象或内存长度合法，端点大于长度仍为参数错误。
+
+例如初始内存为 1 页、`output_bytes_limit = 0`，且在扣除本次成本后 gas 足够时，`output_write(65536, 1)` 必须为 `TRAP_HOST_ARGUMENT`，而非 `TRAP_OUTPUT_LIMIT`；若 gas 不足则先为 `TRAP_GAS_EXHAUSTED`。RIR-0 不提供时间、随机数、环境变量、命令行参数、文件、网络、线程或日志。调试输出通道作为不影响语义的诊断能力，留待以后单独评估。
 
 ## 8. 对 Rust Profile 的约束（候选，细则另行起草）
 
 1. 目标为 `wasm32v1-none`（S16）。用户 crate 使用 `#![no_std]` 与 `#![forbid(unsafe_code)]`；SDK crate 以安全接口封装 §7 的导入，其摘要属于 lowering provenance，SDK 内部的 `unsafe` 属于 Profile 的受信 lowering 基础。
-2. 源码层面禁止 `f32`/`f64` 以便尽早诊断，但最终以 validator 为准：产物中出现任何浮点指令即 `RIR_REJECT_UNSUPPORTED`。
+2. 源码层面禁止 `f32`/`f64` 以便尽早诊断，但最终以 validator 为准：通过 §4.4 阶段 3 的产物若仍含浮点指令，则在阶段 4 返回 `RIR_REJECT_UNSUPPORTED`；较早的编码错误仍按首失败优先级处理。
 3. 该目标启用 mutable-globals；RIR-0 禁止全局变量的导入/导出，产物若包含此类导入/导出即被拒绝。
 4. 如果默认工具链产物包含自定义段（如 `producers`、`target_features`）或 `run`/`memory` 以外的导出，必须由一个固定且带版本的链接后处理步骤去除；该步骤属于 lowering provenance，validator 不为此放宽。
 5. lowering provenance 至少包括：rustc 版本与提交、目标、完整编译和链接参数、SDK 摘要、源码包摘要、`Cargo.lock` 摘要、后处理工具版本。
@@ -297,6 +311,7 @@ RPR 不得把 C 类改写为 B 类：宿主内存不足不得报告为 `memory.g
 - RIRVersion 使用 SemVer，独立于 ProtocolVersion 演进。一个 RIRVersion 同时固定：子集、规范编码、静态上限、成本表、结果枚举、宿主 ABI 与默认等价谓词。其中任何一项变化都产生新的 RIRVersion、新的 `rir_digest` 和新的 ReceiptID（ADR-0002 §6 第 7 项）。
 - `0.x` 为实验系列，各次版本之间不承诺兼容。
 - Receipt 的 Computation 部分绑定 `rir_digest` 与输入 Logical Object 引用；Environment 部分绑定 `RIRExecutionLimits`，并按 REF-6 以 `ExternalVersionedObjectRef` 绑定 RPR。
+- **工件身份与执行实例身份分开。** 在 RIRVersion 与工件字节不变时，只改变 `RIRExecutionLimits` 不改变 `rir_digest`，但改变 Receipt 的绑定内容并必须产生新的 ReceiptID；不得把执行上限搬入工件以满足错误的摘要测试。只有规则/成本表变化导致 RIRVersion 改变，或工件内容本身改变时，才要求新 `rir_digest`。
 
 ## 10. 不关闭的事项
 
@@ -347,7 +362,17 @@ RPR 不得把 C 类改写为 B 类：宿主内存不足不得报告为 `memory.g
 3. 可选的第三方 Wasm 引擎只对拍不计量的语义（outcome 与 output，不含 `gas_used`）；引入前需要依赖许可。
 4. 用 RIR 重写现有 `stats-int-v1` 负载，并与 C++ worker 的结果对拍。
 5. 故障注入：宿主内存不足不得表现为 B 类结果；能检测到 validator 分歧。
-6. RIRVersion、成本表或执行上限的变化产生新 `rir_digest`/ReceiptID 的测试。
+6. 分开验证身份变化：RIRVersion/成本表变化必须通过新 RIRVersion 产生新 `rir_digest` 和新 ReceiptID；工件和版本不变、只变 Receipt 执行上限时，`rir_digest` 必须相同，ReceiptID 必须不同。该条在正式 Receipt 编码实现后做实际 ID 测试，不能用临时对象哈希冒充 ReceiptID。
+
+### 13.1 本次审阅必须保留的边界向量
+
+候选向量清单见 [RIR ADR 修订向量](../testing/rir-adr-revision-vectors-20261023.json)，修订映射见 [记录](../testing/RIR-ADR-REVISION-20261023.md)。这些是实现前的候选预期，不是已通过 conformance：
+
+- 同 AST 的省略/显式空 else：前者通过规范形式检查，后者阶段 3 `ENCODING`；不要求所有语义等价程序具有相同摘要。
+- post-1.0 opcode `0xc0` → 阶段 3 `ENCODING`；1.0 可解码的浮点指令 → 阶段 4 `UNSUPPORTED`；data/element 越初始边界 → 阶段 6 `LIMITS`；另测上述多错误的首失败优先级。
+- `output_write` 同时地址越界与输出超限时，先返回 `HOST_ARGUMENT`；若 gas 不足则先 `GAS_EXHAUSTED`。另测地址合法但输出超限、零长度端点与数学加法不回绕。
+- `input_arity` 的 0、`2^32−1`、`2^32` 边界；最大值可通过工件数量范围检查，不要求在测试中实际分配数十亿输入。Receipt 输入列表与工件数量不等为阶段 7 `INVALID`，与资源上限不兼容同时存在时也先返回它。
+- 工件摘要/ReceiptID 分离，以及当前 MethodEnum 不因精确结果比较而扩展。
 
 ## 14. 连续性结论
 
