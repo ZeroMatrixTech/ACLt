@@ -40,7 +40,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | Compile | 三阶段边界 `DECIDED`；算法 `OPEN` | `CORE` | `Lowering + Decomposition + Packing`，不得扩大 Receipt | TaskGraph、合法性谓词、等价证明和 vectors |
 | Provider Dispatch | 握手与单一权威边界 `DECIDED`；算法 `OPEN` | `CORE` | proposal 不产生义务；Provider accept 后 Lease 生效；Dispatch/RPR 消费 Lease capability | capability Schema、候选选择、API、时钟、旁路和竞态测试 |
 | Task 与 Receipt | `INVARIANT` 接口；Schema `OPEN` | `CORE` | 任务语义在结果揭示前冻结 | canonical encoding、哈希域、版本兼容 |
-| 执行表示与前端 | 方向 `DECIDED`；形式语义 `OPEN` | `CORE` | RIR 规范表示；Rust Profile reference frontend | RIR schema/validator、Rust lowering 和 conformance |
+| 执行表示与前端 | 方向 `DECIDED`；Wasm 子集路线 `DECIDED`（2026-10-23 项目决定）；子集/编码/计量/结果/ABI `CANDIDATE`（ADR-0006 草案）；形式语义 `OPEN` | `CORE` | RIR 规范表示；Rust Profile reference frontend；RIR 主体基于 Wasm Core 1.0 子集 | ADR-0006 审查与接受、RIR validator/解释器双实现与向量、Rust lowering 和 conformance |
 | RPR 与 Host OS | 边界 `DECIDED`；contract `OPEN` | `CORE` | 默认隐藏宿主状态；不支持时 fail closed | capability ABI、effects、计量、错误、checkpoint |
 | 结果验证 | Profile/条件数学内核 `DECIDED`；部署前提 `CANDIDATE` | `CORE` | DIRECT/PROOF/REEXEC_BOUNDED/AUDIT_ONLY；有限总体 e-process；Bayesian 仅作效率层 | VerifiedClaim、部署 \(B/Q\)、独立性证据、固定算术和跨实现 conformance |
 | Sybil 与相关性 | 原则 `DECIDED`；算法 `OPEN` | `CORE` | 不假设身份独立；保守折减并叠加硬暴露上限 | 信号、隐私、分组算法和最坏损失校准 |
@@ -173,6 +173,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-10-23 | v0.5 / V1 target | 项目决定 RIR 主体采用确定性 Wasm 核心子集；起草 ADR-0006（`PROPOSED`），未改规范对象与 V1 处置 | [ADR-0006 草案](../05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md) | G0 未通过退出 |
 | 2026-10-23 | v0.5 / V1 target | 候选模板/claim 编码、2 摘要与 Python/Rust 对拍；规则仍为局部覆盖 | [编码记录](../testing/CLAIM-CODEC-20261023.md) | G0/G2 未通过退出 |
 | 2026-10-23 | v0.5 / V1 target | 完成 119 项规则与 18 摘要覆盖盘点；修正登记，运行时能力未改变 | [盘点报告](../testing/P0-1B-INVENTORY-20261023.md) | G0/G2 未通过退出 |
 | 2026-10-07 | v0.5 / V1 target | 同步已合入的 state3 与流程入口及 2026-10-03 限域证据；P0-1B 未关闭 | `../testing/INTEGRATION-FIX.md`；本轮 Markdown 维护报告 | G0/G2 均未通过退出 |

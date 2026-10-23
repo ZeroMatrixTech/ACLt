@@ -2,7 +2,7 @@
 
 > 文档状态：Living evidence registry  
 > 语义基线：v0.5  
-> 最后核查：2026-08-19
+> 最后核查：2026-10-23
 > 规则：文献支持理论边界、方法或先例，不替 ACLt Protocol 证明组合系统
 
 ## 1. 证据纪律
@@ -47,6 +47,8 @@
 | CLM-113 | active Lease 作为唯一执行范围权威，并派生由 Dispatch 与 RPR 分别校验的 `ExecutionCapability`，比维护第三份可写 Scope 更容易保持一致 | `DECIDED` | `DESIGN_VALID` | ADR-0005、INV-16、任务生命周期 | 不证明 Lease 来源天然忠实；需要派生、拒绝、竞态和对拍测试 |
 | CLM-114 | Schema 只能证明输入结构与确定算法，不能单独证明日志、时钟、Registry 或运维系统如实产生了输入 | `DECIDED` | `ENGINEERING_BOUNDARY` | ADR-0005、威胁模型 | 工程实现仍须提供追加性、终局性、访问审计、故障注入和恢复证据 |
 | CLM-115 | 版本化且只能收紧能力的官方主网保障 Profile，可以在不授予基金会个案真理权的前提下承接有限部署风险 | `CANDIDATE` | `ENGINEERING_HYPOTHESIS` | ADR-0005、行政成本分析 | 只适用于明示网络和范围；净价值、误暂停率、发布密钥与组织捕获仍需试点数据 |
+| CLM-116 | Wasm 官方规范（含其确定性 profile）仍允许非最短 LEB128、`memory.grow` 非确定失败、NaN payload 非确定和实现自定的栈限制，不能原样作为 RIR | `DECIDED` | `SOURCE_ESTABLISHED` | S14、S15 | 只陈述 Wasm 规范行为；不说明 ACLt 规则足以消除全部分歧 |
+| CLM-117 | 以 `wasm32v1-none` 产出、再由 ACLt 子集规则、规范编码与计量收窄的 Wasm 1.0 整数子集，可以作为 RIR-0 主体并支撑 Rust Profile lowering | `CANDIDATE` | `ENGINEERING_HYPOTHESIS` | S16、ADR-0006 草案 | 不证明 rustc 产物稳定落在子集内、成本表合理或 RPR 正确；需要 ADR-0006 §13 的双实现对拍与向量 |
 
 ## 3. 来源登记与边界
 
@@ -153,6 +155,30 @@ NIST, *The Cybersecurity Framework 2.0*.
 
 - 支持：Govern、Identify、Protect、Detect、Respond、Recover 的持续治理视角；
 - 不支持：新增 Foundation 或治理实体的必要性。
+
+### S14 — WebAssembly Core Specification 1.0
+
+W3C, *WebAssembly Core Specification*, W3C Recommendation, 2019-12-05.  
+[官方规范](https://www.w3.org/TR/wasm-core-1/)
+
+- 支持：RIR-0 子集的基线指令、类型、模块结构与执行语义；
+- 不支持：ACLt 的规范编码、计量、宿主 ABI 或跨实现一致性。
+
+### S15 — WebAssembly Core Specification 3.0（在线版）
+
+WebAssembly Community Group, *WebAssembly Core Specification*, Release 3.0 online edition, 2026-10-23 核查。  
+[二进制整数编码](https://webassembly.github.io/spec/core/binary/values.html)、[执行指令](https://webassembly.github.io/spec/core/exec/instructions.html)、[数值运算](https://webassembly.github.io/spec/core/exec/numerics.html)、[Profiles](https://webassembly.github.io/spec/core/appendix/profiles.html)、[实现限制](https://webassembly.github.io/spec/core/appendix/implementation.html)
+
+- 支持：LEB128 允许补零、`memory.grow` 非确定、NaN payload 非确定、确定性 profile 的范围、实现可限制栈帧与值栈、`div_s`/`rem_s` 的边界语义；
+- 不支持：任何 Wasm 引擎满足 ACLt 的确定性或资源语义。
+
+### S16 — rustc `wasm32v1-none` 目标说明
+
+The Rust Project, *The rustc book*, Platform Support: `wasm32v1-none`.  
+[官方文档](https://doc.rust-lang.org/rustc/platform-support/wasm32v1-none.html)
+
+- 支持：该目标为 Tier 2，只启用 Wasm Core 1.0 与 mutable-globals，`core`/`alloc` 按同一特性预编译，默认 `panic=abort`，无需 nightly；
+- 不支持：rustc 产物稳定落在 RIR-0 子集内，或 lowering 正确、可复现。
 
 ## 4. 内部来源优先级
 

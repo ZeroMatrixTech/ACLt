@@ -34,12 +34,13 @@
 5. [`05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md`](05-decisions/ADR-0003-separate-semantic-status-and-version-disposition.md)
 6. [`05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md`](05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md)
 7. [`05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md`](05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md)
-8. [`06-research/verification-round-mathematical-model.md`](06-research/verification-round-mathematical-model.md)
-9. [`06-research/last-two-problem-trees.md`](06-research/last-two-problem-trees.md)
-10. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
-11. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
-12. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
-13. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
+8. [`05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md`](05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md)（`PROPOSED` 草案）
+9. [`06-research/verification-round-mathematical-model.md`](06-research/verification-round-mathematical-model.md)
+10. [`06-research/last-two-problem-trees.md`](06-research/last-two-problem-trees.md)
+11. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
+12. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
+13. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
+14. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
 
 ### 工程证据与维护
 

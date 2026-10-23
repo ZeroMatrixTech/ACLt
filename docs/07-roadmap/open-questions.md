@@ -148,6 +148,8 @@
 
 **关闭证据。** Logical Object Schema/可用性、RIR grammar/canonical encoding/validator、Rust Profile 允许与禁止构造、lowering golden vectors、RPR capability ABI、runtime/effects/resource/error semantics、ExecutionCapability golden vectors、Dispatch/RPR 旁路与换环境测试、执行状态机、重复/迟到/分区测试、资源耗尽与逃逸威胁测试、恢复目标、Receipt 幂等性和故障注入结果。
 
+**2026-10-23 进展。** 项目决定 RIR 主体采用确定性 Wasm 核心子集，不自研指令集。子集、规范编码、计量、结果分类与宿主 ABI 的候选条款见 [ADR-0006 草案](../05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md)，状态 `PROPOSED`；其中 RIRVersion 独立演进也回应 OQ-02 第 6 项。OQ-05 仍为 `OPEN`，直到 ADR 接受并有 §13 的证据。
+
 **依赖。** OQ-02、OQ-10、OQ-11、OQ-12。
 
 ## 8. OQ-06 — 验证器、结果等价与验证会话
