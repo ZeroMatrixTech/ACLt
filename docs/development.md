@@ -58,3 +58,9 @@
 ## 外置权威账本实验（v2）
 
 `make test-authority` 使用临时回环网络、OpenSSL 与现有 C++ worker 检查接纳端回滚和复制边界，报告在 `artifacts/authority/`。`make test` 与流程已接入；QEMU 验证单独运行，外部运行时与证据不随源代码包分发。详见[实验说明](../experiments/aclt-authority-admission/README.md)。
+
+## 当前后续验证环境：双物理机 SSH
+
+自 2026-10-23 起遵循 [DUALHOST-SSH-1](08-governance/dualhost-ssh-validation.md)。本地入口继续提供各自范围的回归，部署/网络/故障结论须来自真实双机运行；不再默认运行 VM 矩阵。下一轮优先为外置权威账本 v2 建立跨机驱动和证据核对，不将 SSH 连通当作分布式实验通过。
+
+双机第 1 轮已完成，见 [环境与双机实测报告](testing/DUALHOST-SSH-20261023.md)。当前驱动为保存在工作区产物中的一次性适配器，尚未新增通用 make 双机目标；下一轮先做角色互换与 worker 中断，再整理参数化入口。
