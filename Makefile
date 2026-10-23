@@ -5,9 +5,9 @@ PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip
 .PHONY: help check test test-python test-singlehost test-multinode test-authority build-worker workflow status manifests check-manifests package
 
 help:
-	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
+	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make check-rir-build-probe Empty-run lowering adapter regressions' 'make test-rir-build-probe RIR_TOOLCHAIN=/prefix RIR_OUTPUT=/new/path' 'make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
 
-check: test-python check-manifests check-profile-inventory
+check: test-python check-manifests check-profile-inventory check-rir-build-probe check-rir-io-probe
 
 test: check test-singlehost test-multinode test-authority test-claim-codec
 
@@ -52,3 +52,17 @@ check-profile-inventory:
 .PHONY: test-claim-codec
 test-claim-codec:
 	$(PYTHON) -B scripts/check-claim-codec.py --report artifacts/claim-codec/cross-language.json
+
+.PHONY: check-rir-build-probe test-rir-build-probe
+check-rir-build-probe:
+	$(PYTHON) -B -m unittest discover -s experiments/aclt-rir-build-probe/tests -v
+
+test-rir-build-probe:
+	$(PYTHON) -B experiments/aclt-rir-build-probe/build.py --toolchain "$(RIR_TOOLCHAIN)" --output "$(RIR_OUTPUT)"
+
+.PHONY: check-rir-io-probe test-rir-io-probe
+check-rir-io-probe:
+	$(PYTHON) -B -m unittest discover -s experiments/aclt-rir-io-probe/tests -v
+
+test-rir-io-probe:
+	$(PYTHON) -B experiments/aclt-rir-io-probe/build.py --toolchain "$(RIR_TOOLCHAIN)" --output "$(RIR_IO_OUTPUT)"

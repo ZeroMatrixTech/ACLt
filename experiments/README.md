@@ -28,3 +28,11 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 ## 历史版本
 
 `aclt-minimal-verifier/` 和 `aclt-minimal-verifier-state2/` 保留为历史版本及其当时的证据，不参与根目录统一测试和打包。重复的历史结果不计为新增测试。旧任务只使用其对应版本处理。
+
+## RIR 最小构建探针（切片 1）
+
+新增 [aclt-rir-build-probe](aclt-rir-build-probe/README.md)。`make check` 包含限定适配器与证据工具回归；`make test-rir-build-probe` 需显式指定工具链和新输出目录。它是候选 lowering 构建实验，已纳入交付包，不代替 RIR validator/RPR 或现有实验。
+
+## RIR 切片 2：安全 SDK / I/O 候选执行
+
+[aclt-rir-io-probe](aclt-rir-io-probe/README.md)提供 16 字节原样输出负载、受限候选解释器和显式执行入口。18 项回归纳入 make check，工具链及双机执行必须通过显式构建命令启动；同样纳入源码交付。它不替代正式 RIR/RPR 或结算验收。

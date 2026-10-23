@@ -1,0 +1,205 @@
+{
+  "status": "PASS",
+  "scope": "slice 2: safe SDK and bounded candidate I/O execution",
+  "baseline": "677f244cb289a8b1432ec9ace4803d9deb331ea8",
+  "builds": 4,
+  "cases_per_build": 55,
+  "case_records": 220,
+  "per_build_counts": {
+    "OK": 38,
+    "ABORT": 7,
+    "REJECTED": 4,
+    "TRAP_GAS_EXHAUSTED": 2,
+    "TRAP_OUTPUT_LIMIT": 2,
+    "TRAP_CALL_DEPTH": 1,
+    "HOST_FAULT": 1
+  },
+  "unbound_module_abi_cases_per_build": 2,
+  "semantic_engine_checks": 360,
+  "engine_modules": 8,
+  "engine_does_not_check": [
+    "gas",
+    "call depth",
+    "envelope/input binding"
+  ],
+  "normal_gas_hand_count": 8271,
+  "normal_gas_ledger": [
+    {
+      "step": "initial memory 2 pages",
+      "cost": 8192
+    },
+    {
+      "step": "global.get",
+      "cost": 1
+    },
+    {
+      "step": "i32.const 16",
+      "cost": 1
+    },
+    {
+      "step": "i32.sub",
+      "cost": 1
+    },
+    {
+      "step": "local.tee",
+      "cost": 1
+    },
+    {
+      "step": "global.set",
+      "cost": 1
+    },
+    {
+      "step": "block outer",
+      "cost": 1
+    },
+    {
+      "step": "block inner",
+      "cost": 1
+    },
+    {
+      "step": "input_count",
+      "cost": 4
+    },
+    {
+      "step": "i32.const 1",
+      "cost": 1
+    },
+    {
+      "step": "i32.ne",
+      "cost": 1
+    },
+    {
+      "step": "br_if 0 not taken",
+      "cost": 1
+    },
+    {
+      "step": "i32.const 0",
+      "cost": 1
+    },
+    {
+      "step": "input_len",
+      "cost": 4
+    },
+    {
+      "step": "i64.const 16",
+      "cost": 1
+    },
+    {
+      "step": "i64.ne",
+      "cost": 1
+    },
+    {
+      "step": "br_if 1 not taken",
+      "cost": 1
+    },
+    {
+      "step": "local.get",
+      "cost": 1
+    },
+    {
+      "step": "i32.const 8",
+      "cost": 1
+    },
+    {
+      "step": "i32.add",
+      "cost": 1
+    },
+    {
+      "step": "i64.const 0",
+      "cost": 1
+    },
+    {
+      "step": "i64.store",
+      "cost": 2
+    },
+    {
+      "step": "local.get",
+      "cost": 1
+    },
+    {
+      "step": "i64.const 0",
+      "cost": 1
+    },
+    {
+      "step": "i64.store",
+      "cost": 2
+    },
+    {
+      "step": "i32.const 0",
+      "cost": 1
+    },
+    {
+      "step": "i64.const 0",
+      "cost": 1
+    },
+    {
+      "step": "local.get",
+      "cost": 1
+    },
+    {
+      "step": "i32.const 16",
+      "cost": 1
+    },
+    {
+      "step": "input_read 16 bytes",
+      "cost": 18
+    },
+    {
+      "step": "local.get",
+      "cost": 1
+    },
+    {
+      "step": "i32.const 16",
+      "cost": 1
+    },
+    {
+      "step": "output_write 16 bytes",
+      "cost": 18
+    },
+    {
+      "step": "local.get",
+      "cost": 1
+    },
+    {
+      "step": "i32.const 16",
+      "cost": 1
+    },
+    {
+      "step": "i32.add",
+      "cost": 1
+    },
+    {
+      "step": "global.set",
+      "cost": 1
+    },
+    {
+      "step": "return",
+      "cost": 1
+    }
+  ],
+  "regression_methods": 19,
+  "repository_total_regression_methods": 103,
+  "candidate_rir_digest": "7b1ffdc9f3c677f4ab7beff0dfaa406d4af5cfb1e430d3304c76570a5a9cb95b",
+  "sha256": {
+    "raw.wasm": "4b0f5ff5a0e1db9cdf06efb9c78e821a7bf07f628524c87c7a39f582bacc02f0",
+    "normalized.wasm": "ed63eb8a3a5e5923d4009e40d456c23defe223a3c89d6cefe5c69732676e505e",
+    "candidate-artifact.cbor": "0fb8cb84bc945ff8910968e72681ccc1a45b28735bc0e4b86033857e89eeb15d",
+    "execution.json": "58436fc78dfad1ec2ad66acfd6e3513fdf3c9fbfed6faf5578ef13a419c4685d"
+  },
+  "core_source_hashes": {
+    "build.py": "2a1fda032dff33250ef6f1a9efca66b38155b7f97e627861f665c719038cd754",
+    "wasm.py": "4065d1642510e930bc4110770f8eed5333ba565088794f190c14ec73a2306065",
+    "runtime.py": "9fb25a62584fab059dc41e51be9a1eb333cc4a34a6bfac91a6cfae24dba74fcf",
+    "cases.py": "11a62b11d10809bdc7bb8a6bc4667fed77fce06ad98c77410c24253e60b3d784",
+    "toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+    "src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "src/program.rs": "1b70e86207257703ebedf298389161b59dc44247a95532df6d60cf986f2657ba",
+    "src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df"
+  },
+  "final_source_lock_sha256": "ddd55c177d82923186bbae97eae39bbf4ec93da92634f86bbd190cabd0ec9df5",
+  "runtime_implementation": "bounded Python reference; no Rust RPR implementation",
+  "ADR_status": "PROPOSED",
+  "gates_changed": false,
+  "host_call_stack_exhaustion_regression": "PASS on A and B",
+  "final_evidence_subdirectory": "final-run"
+}

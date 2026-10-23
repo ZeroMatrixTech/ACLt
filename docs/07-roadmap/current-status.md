@@ -226,3 +226,15 @@ v0.6 不代表生产就绪；它代表 v0.5 的核心开放问题已经被收敛
 ## 2026-10-23 ADR-0006 审阅修订（候选）
 
 已修订空 else 的唯一编码、validator 首失败归属、宿主多 trap 优先级、输入数量位宽、工件/Receipt 身份分离与重执行术语，并保存候选边界向量；见 [修订记录](../testing/RIR-ADR-REVISION-20261023.md)。ADR 仍为 PROPOSED，规则仍为 CANDIDATE；向量未在 RIR validator/解释器中执行，G0/P0-1B/G2 不关闭。
+
+## 2026-10-23 RIR 构建切片 1（候选可行性证据）
+
+[双机最小构建报告](../testing/RIR-BUILD-SLICE1-20261023.md)：固定官方工具链下，A/B 各两次最小 no_std 空 run 编译，raw Wasm、限定后处理 Wasm 与候选工件均一致；导出属性与 forbid(unsafe_code) 的边界由受信入口层显式承接。证据不覆盖完整 SDK、RIR validator/runtime、gas 或 stats-int-v1。ADR-0006 仍 PROPOSED，G0/P0-1B/G2 不关闭；下一切片为显式输入输出 SDK 和执行路径。
+
+### RIR 切片 1 收尾
+
+[可复用构建入口](../../experiments/aclt-rir-build-probe/README.md)及离线安装、跨机证据比较和 10 项回归已入库；两端按维护入口重跑共四次构建通过。第一个切片在最小空 run 构建范围内完成，见 [收尾记录](../testing/RIR-BUILD-SLICE1-20261023.md)。该完成状态不改变 ADR-0006 PROPOSED、OQ-05 OPEN 或协议 Gate。
+
+## 2026-10-23 RIR 切片 2：安全 SDK / I/O 候选闭环
+
+[切片 2 报告](../testing/RIR-IO-SLICE2-20261023.md)：两端四次独立构建与受限 Python 执行，220 条用例记录一致；现有独立 Wasm 引擎 360 次语义对拍一致，不覆盖 gas/深度/绑定。安全 SDK、候选外壳 reader、限定类型检查/解释执行及显式 CLI 已入库；19 项回归纳入 make check。仍缺独立 Rust RPR 和完整 conformance，不关闭 ADR 接受或 G0/G2。

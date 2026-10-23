@@ -167,3 +167,13 @@ VM 复查另需 QEMU、cpio、ext4 工具、匹配的内核/驱动与 Python 最
 ## 2026-10-23 远端环境实际验收
 
 B（aki2）已补齐 Ubuntu 官方 rustc/Cargo 1.93.1，独立 ext4 目录上全量 make test（含 sanitizer 和编码对拍）通过。已完成首轮真实 LAN 双机实验；实际版本、源码 pin、命令与证据见 [验收报告](../testing/DUALHOST-SSH-20261023.md)。上文缺项清单为历史快照，不能替代本轮记录，也不能将本轮通过外推到其他主机/代码版本。
+
+## 2026-10-23 RIR 最小构建探针工具链
+
+A/B 在各自实验目录内使用官方 Rust 1.93.1 独立 prefix（compiler、x86_64 库、wasm32v1-none 库及随包 rust-lld），不替换系统 Rust。四次空 run 构建与限定后处理产物一致；实际版本、摘要、编译参数、移除清单和证据范围见 [切片 1 报告](../testing/RIR-BUILD-SLICE1-20261023.md)。系统 sysroot 仍缺 wasm 目标库；后续命令必须显式选择实验工具链。未新增 Cargo/Python 依赖，现有 Node 引擎只用于本地复核，不成为项目运行依赖。
+
+RIR 切片 1 的固定工具链 lock、离线安装与显式参数构建命令现已随 [维护入口](../../experiments/aclt-rir-build-probe/README.md)交付。工具链和产物继续存放仓库外或 artifacts/.toolchain 目录；未配置时默认 make check 只做纯 Python 回归，不会联网、安装软件或启动远端任务。
+
+## 2026-10-23 RIR I/O 切片环境
+
+切片 2 复用两端已锁定的 1.93.1 prefix，SDK/用户/入口均由各自 rustc 构建。受限 Python 参考执行只用标准库；可选现有 Node 引擎只在 A 上核对收集产物的语义，不是默认依赖。固定源码、输入、gas 账单和结果范围见 [报告](../testing/RIR-IO-SLICE2-20261023.md)。默认 make check 不连接远端、不自动下载工具链。

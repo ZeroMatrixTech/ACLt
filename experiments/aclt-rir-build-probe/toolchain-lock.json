@@ -1,0 +1,38 @@
+{
+  "version": "1.93.1",
+  "release_date": "2026-02-12",
+  "manifest_url": "https://static.rust-lang.org/dist/channel-rust-1.93.1.toml",
+  "manifest_sha256": "4812a3c610bacc74eed12c89c312e540722dccccd867bd55096402da13b3a516",
+  "components": [
+    {
+      "package": "rustc",
+      "target": "x86_64-unknown-linux-gnu",
+      "url": "https://static.rust-lang.org/dist/2026-02-12/rustc-1.93.1-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "b9db2636f5a101c4cdaf46a26f8a0c8e4b5767ecdb02ae9c7ccc3ead577732bc",
+      "file": "rustc-1.93.1-x86_64-unknown-linux-gnu.tar.xz"
+    },
+    {
+      "package": "rust-std",
+      "target": "x86_64-unknown-linux-gnu",
+      "url": "https://static.rust-lang.org/dist/2026-02-12/rust-std-1.93.1-x86_64-unknown-linux-gnu.tar.xz",
+      "sha256": "82c4e41268f1741e4eb68796aeb6ca5042406ae858dd56144155c4ef8d87d8b6",
+      "file": "rust-std-1.93.1-x86_64-unknown-linux-gnu.tar.xz"
+    },
+    {
+      "package": "rust-std",
+      "target": "wasm32v1-none",
+      "url": "https://static.rust-lang.org/dist/2026-02-12/rust-std-1.93.1-wasm32v1-none.tar.xz",
+      "sha256": "78df7a947e3531d2aa3c545d384d41648d4a8f6ada496f878f8bc46567c6f614",
+      "file": "rust-std-1.93.1-wasm32v1-none.tar.xz"
+    }
+  ],
+  "binaries": {
+    "bin/rustc": "bd1875234c27f9f0c9f9c700ade69f7e83d25e368f38407d32b4b0e2cbc2426d",
+    "lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld": "ed7d2923baca14739c3df6ce3393ba07116e7f529b785bcec2d1e25f90d28173"
+  },
+  "target_libraries": {
+    "lib/rustlib/wasm32v1-none/lib/liballoc-ab7285863d9cf421.rlib": "8148a620ab836d3c41a5d4527311ef930649ac3b9feebe8dc5017572778a16f5",
+    "lib/rustlib/wasm32v1-none/lib/libcompiler_builtins-261918af3d3ee2c9.rlib": "80f37e0917e18a773daa3e97f8f210fc88f2a6176fa26887458eb61dddad8b60",
+    "lib/rustlib/wasm32v1-none/lib/libcore-7bdefb8e00255eca.rlib": "719cb3902f4fe282ea59e832e3e113792258223d162cc8bff590087d0fa52ca9"
+  }
+}

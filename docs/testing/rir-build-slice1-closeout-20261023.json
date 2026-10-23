@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "completed_scope": "slice 1: reusable minimal Rust-to-Wasm build path",
+  "builds": 4,
+  "hosts": "A and B, physical independence is an accepted experiment assumption",
+  "raw_sha256": "211c4d8dd586f47d665c65ae0e46cfceb2f89627d6c9df50a5fdb95981847ccf",
+  "normalized_sha256": "028500823203e069891ca3b3b80bced8d54f7333217d2e9af369b3f348d5e3f5",
+  "candidate_artifact_sha256": "282aafc1cfb0b759ad87e4434ea57cf33f54a0299240c83ceff11b7ca7a6be0b",
+  "candidate_rir_digest": "430a1314d303e8c35fc9291b6ab49335df22d187a424fb9c36f2c10ebf465aff",
+  "regression_methods": 10,
+  "retained_output_overwrite_refusal": "PASS",
+  "offline_component_installation_both_hosts": "PASS",
+  "source_hashes": {
+    "build.py": "92b09a9451034542fa161c66765bb7c21838182f9c42b32411ff98c8a084fc66",
+    "normalize.py": "e3d5146df29847b4ed3b1c9509b18eabe631d7a023eb0e0e49167e05c47fb031",
+    "toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+    "src/program.rs": "fa572eebf5d77c00ae5269d27c2330dee1ea3881ab7557851e3f1a02b2a5a476",
+    "src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df"
+  },
+  "not_covered": [
+    "SDK input/output",
+    "general validator or RPR",
+    "gas",
+    "stats-int-v1",
+    "Receipt and settlement"
+  ],
+  "ADR_status": "PROPOSED",
+  "gate_change": false
+}
