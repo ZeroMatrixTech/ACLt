@@ -1,0 +1,176 @@
+{
+  "id": "claim-codec-candidate-1",
+  "status": "CANDIDATE_LOCAL_SLICE",
+  "normative_source": "docs/03-protocol/verification-profile-schema.md",
+  "encoding_profile_id": "acl.enc.p0-1@1",
+  "schema_version": 1,
+  "unicode_version": "16.0.0",
+  "wire_keys": "UTF-8 text field names, identity mapping; only VersionRange uses integer keys 0 and 1",
+  "types": {
+    "Header": {
+      "schema_version": "uint",
+      "encoding_profile_id": "text",
+      "id": "text",
+      "version": "semver",
+      "digest": "digest"
+    },
+    "VersionedObjectRef": {
+      "id": "text",
+      "version": "semver",
+      "digest": "digest"
+    },
+    "ClaimTemplate": {
+      "header": {
+        "schema_version": "uint",
+        "encoding_profile_id": "text",
+        "id": "text",
+        "version": "semver",
+        "digest": "digest"
+      },
+      "normative_text": "text",
+      "slot_decls": [
+        {
+          "slot": "text",
+          "decl": {
+            "kind": "text",
+            "value_type": "text",
+            "source": "text"
+          }
+        }
+      ],
+      "translations": [
+        {
+          "lang": "text",
+          "text": "text"
+        }
+      ]
+    },
+    "ClaimDigestInput": [
+      "tuple",
+      {
+        "id": "text",
+        "version": "semver",
+        "digest": "digest"
+      },
+      [
+        {
+          "slot_id": "text",
+          "value": {
+            "schema_ref": {
+              "id": "text",
+              "version": "semver",
+              "digest": "digest"
+            },
+            "canonical_bytes": "bytes",
+            "object_digest": "digest"
+          }
+        }
+      ]
+    ],
+    "ChainTestEnvelope": {
+      "template": {
+        "header": {
+          "schema_version": "uint",
+          "encoding_profile_id": "text",
+          "id": "text",
+          "version": "semver",
+          "digest": "digest"
+        },
+        "normative_text": "text",
+        "slot_decls": [
+          {
+            "slot": "text",
+            "decl": {
+              "kind": "text",
+              "value_type": "text",
+              "source": "text"
+            }
+          }
+        ],
+        "translations": [
+          {
+            "lang": "text",
+            "text": "text"
+          }
+        ]
+      },
+      "claim_input": [
+        "tuple",
+        {
+          "id": "text",
+          "version": "semver",
+          "digest": "digest"
+        },
+        [
+          {
+            "slot_id": "text",
+            "value": {
+              "schema_ref": {
+                "id": "text",
+                "version": "semver",
+                "digest": "digest"
+              },
+              "canonical_bytes": "bytes",
+              "object_digest": "digest"
+            }
+          }
+        ]
+      ],
+      "rendered_claim_digest": "digest"
+    }
+  },
+  "primitive_types": {
+    "uint": "uint",
+    "int": "int",
+    "bool": "bool",
+    "text": "text",
+    "bytes": "bytes",
+    "digest": "digest",
+    "semver": "semver",
+    "rational": "rational",
+    "version-range": "version-range",
+    "text-set": [
+      "text"
+    ]
+  },
+  "schema_notation": "objects are closed field maps; [T] means homogeneous array; [tuple, T1, T2] means positional tuple",
+  "version_range_wire_keys": {
+    "min_inclusive": 0,
+    "max_exclusive": 1
+  },
+  "pair_array_order": "strict ascending encoded key bytes; slot_decls by slot, translations by lang, concrete_bindings by slot_id",
+  "local_external_import": {
+    "schema_id": "acl.schema.claim-test-bytes@1",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "digest": "10cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d",
+    "file": "schemas/verification-profile/claim-test-bytes.schema.txt",
+    "reference_shape": {
+      "id": "text",
+      "version": "semver",
+      "digest": "digest"
+    },
+    "production_eligible": false
+  },
+  "domain_tags": {
+    "template_digest": "ACLt/P0-1/ClaimTemplate/1",
+    "rendered_claim_digest": "ACLt/P0-1/RenderedClaim/1"
+  },
+  "limits": {
+    "max_cbor_bytes": 1048576,
+    "max_depth": 48,
+    "max_decoded_items": 10000
+  },
+  "unsupported": [
+    "ENUM slot declarations",
+    "official external schema imports",
+    "complete Profile and Decision envelopes",
+    "registry authority and lifecycle",
+    "slot value semantics and STATIC bindings",
+    "claim text rendering",
+    "production admission"
+  ]
+}

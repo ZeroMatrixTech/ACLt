@@ -18,19 +18,31 @@
       "SV-31",
       "SV-03",
       "SV-32",
-      "SV-80"
+      "SV-80",
+      "SV-86a",
+      "SV-86c"
     ],
     "L1b": [
       "SV-54a",
-      "SV-57"
+      "SV-57",
+      "SV-35",
+      "SV-62"
     ],
-    "L2": []
+    "L2": [
+      "SV-25",
+      "SV-42",
+      "SV-46",
+      "SV-52",
+      "SV-60",
+      "SV-70",
+      "SV-118"
+    ]
   },
   "not_implemented": {
     "policy": "§13.2 Type A 中既不在 implemented 也不在 partial 的规则均为 NOT_IMPLEMENTED；生产模式保持 fail closed。",
-    "l2": "canonical CBOR、Schema View 可逆投影及 18 个摘要尚未实现。",
+    "l2": "候选模板/claim 切片已有 CBOR 与 Schema View 和 2 项摘要的局部实现；其余 16 项摘要及完整五相位 L2 未实现。",
     "registries": "当前只有种子数据，不是官方 ACTIVE 主网注册表。",
-    "cross_implementation": "尚无第二语言实现。"
+    "cross_implementation": "Python/Rust 已对拍候选切片；尚非全量第二语言 conformance。"
   },
   "type_b_excluded_from_p0_1b_closure": [
     "SV-24",
@@ -43,7 +55,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-10-23: 127 行逐项盘点；119 Type A = 3 implemented + 8 partial + 108 not implemented。新增 SV-03/32/80 为保守部分覆盖登记，不新增 validator 功能、不关闭规则或 Gate。D-08-c 单列，不计入 6 项 SV Type B。",
+  "review_note": "2026-10-23: 编码切片后 119 Type A = 3 implemented + 19 partial + 97 not implemented；template_digest/rendered_claim_digest 为 partial，其他 16 摘要未实现。候选 wire 表及本地测试 import 不等于正式准入；生产模式继续拒绝。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],

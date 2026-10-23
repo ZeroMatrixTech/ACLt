@@ -155,3 +155,7 @@ git diff --stat
 新增 `experiments/aclt-authority-admission/` 为独立实验 v2。Python/Cargo 无新增下载依赖；签名适配使用系统 OpenSSL CLI（本轮观测 OpenSSL 3.5.5，RSA-2048/SHA-256），测试需要本地回环网络权限。`make test-authority` 构建现有 C++ worker 并运行临时网络检查，纳入 `make test` 与流程证据。测试密钥仅在临时/证据目录生成，不放进源码更新包。
 
 VM 复查另需 QEMU、cpio、ext4 工具、匹配的内核/驱动与 Python 最小运行时；必须显式提供资源路径并写入环境与摘要记录。无 KVM 时可以用 TCG，不能把 QEMU 来宾中断外推为宿主物理断电。外置账本与接纳端快照位于不同故障范围；本轮不证明账本自身回滚保护。详见[新实验说明](../../experiments/aclt-authority-admission/README.md)。
+
+## 2026-10-23 候选编码切片环境复核
+
+本轮实际可用 CPython 3.14.4、Unicode 数据库 16.0.0 与 rustc 1.93.1；上文“本机缺项”是此前快照，不再适用于本轮检查。新切片固定 Unicode 16.0.0，版本不同显式拒绝，避免跨实现规范化漂移。Rust 直接由 rustc 构建，无新增 Cargo/Python 下载依赖；SHA 对拍另用现有 OpenSSL。固定 Unicode 数据来源、生成器与许可证见 [Rust README](../../tools/verification_profile/rust/README.md)。本轮不重新认证完整 state3 环境或所有平台。

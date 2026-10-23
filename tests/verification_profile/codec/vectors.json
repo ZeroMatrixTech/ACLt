@@ -1,0 +1,971 @@
+{
+  "slice": "claim-codec-candidate-1",
+  "vectors": [
+    {
+      "id": "zero",
+      "kind": "uint",
+      "cbor_hex": "00",
+      "valid": true,
+      "schema_view": "0"
+    },
+    {
+      "id": "23",
+      "kind": "uint",
+      "cbor_hex": "17",
+      "valid": true,
+      "schema_view": "23"
+    },
+    {
+      "id": "24",
+      "kind": "uint",
+      "cbor_hex": "1818",
+      "valid": true,
+      "schema_view": "24"
+    },
+    {
+      "id": "255",
+      "kind": "uint",
+      "cbor_hex": "18ff",
+      "valid": true,
+      "schema_view": "255"
+    },
+    {
+      "id": "256",
+      "kind": "uint",
+      "cbor_hex": "190100",
+      "valid": true,
+      "schema_view": "256"
+    },
+    {
+      "id": "65535",
+      "kind": "uint",
+      "cbor_hex": "19ffff",
+      "valid": true,
+      "schema_view": "65535"
+    },
+    {
+      "id": "65536",
+      "kind": "uint",
+      "cbor_hex": "1a00010000",
+      "valid": true,
+      "schema_view": "65536"
+    },
+    {
+      "id": "uint32-max",
+      "kind": "uint",
+      "cbor_hex": "1affffffff",
+      "valid": true,
+      "schema_view": "4294967295"
+    },
+    {
+      "id": "uint32-next",
+      "kind": "uint",
+      "cbor_hex": "1b0000000100000000",
+      "valid": true,
+      "schema_view": "4294967296"
+    },
+    {
+      "id": "uint64-max",
+      "kind": "uint",
+      "cbor_hex": "1bffffffffffffffff",
+      "valid": true,
+      "schema_view": "18446744073709551615"
+    },
+    {
+      "id": "int64-max",
+      "kind": "int",
+      "cbor_hex": "1b7fffffffffffffff",
+      "valid": true,
+      "schema_view": "9223372036854775807"
+    },
+    {
+      "id": "int64-min",
+      "kind": "int",
+      "cbor_hex": "3b7fffffffffffffff",
+      "valid": true,
+      "schema_view": "-9223372036854775808"
+    },
+    {
+      "id": "minus-one",
+      "kind": "int",
+      "cbor_hex": "20",
+      "valid": true,
+      "schema_view": "-1"
+    },
+    {
+      "id": "false",
+      "kind": "bool",
+      "cbor_hex": "f4",
+      "valid": true,
+      "schema_view": false
+    },
+    {
+      "id": "true",
+      "kind": "bool",
+      "cbor_hex": "f5",
+      "valid": true,
+      "schema_view": true
+    },
+    {
+      "id": "bytes",
+      "kind": "bytes",
+      "cbor_hex": "430001ff",
+      "valid": true,
+      "schema_view": "0001ff"
+    },
+    {
+      "id": "empty-text",
+      "kind": "text",
+      "cbor_hex": "60",
+      "valid": true,
+      "schema_view": ""
+    },
+    {
+      "id": "nfc-accent",
+      "kind": "text",
+      "cbor_hex": "62c3a9",
+      "valid": true,
+      "schema_view": "é"
+    },
+    {
+      "id": "han",
+      "kind": "text",
+      "cbor_hex": "63e4b8ad",
+      "valid": true,
+      "schema_view": "中"
+    },
+    {
+      "id": "hangul",
+      "kind": "text",
+      "cbor_hex": "63eab080",
+      "valid": true,
+      "schema_view": "가"
+    },
+    {
+      "id": "rational-zero",
+      "kind": "rational",
+      "cbor_hex": "820001",
+      "valid": true,
+      "schema_view": [
+        "0",
+        "1"
+      ]
+    },
+    {
+      "id": "rational-negative",
+      "kind": "rational",
+      "cbor_hex": "822002",
+      "valid": true,
+      "schema_view": [
+        "-1",
+        "2"
+      ]
+    },
+    {
+      "id": "semver",
+      "kind": "semver",
+      "cbor_hex": "83010000",
+      "valid": true,
+      "schema_view": [
+        "1",
+        "0",
+        "0"
+      ]
+    },
+    {
+      "id": "range-open",
+      "kind": "version-range",
+      "cbor_hex": "a10083010000",
+      "valid": true,
+      "schema_view": {
+        "min_inclusive": [
+          "1",
+          "0",
+          "0"
+        ]
+      }
+    },
+    {
+      "id": "range-closed",
+      "kind": "version-range",
+      "cbor_hex": "a200830100000183020000",
+      "valid": true,
+      "schema_view": {
+        "min_inclusive": [
+          "1",
+          "0",
+          "0"
+        ],
+        "max_exclusive": [
+          "2",
+          "0",
+          "0"
+        ]
+      }
+    },
+    {
+      "id": "set-byte-order",
+      "kind": "text-set",
+      "cbor_hex": "82617a626161",
+      "valid": true,
+      "schema_view": [
+        "z",
+        "aa"
+      ]
+    },
+    {
+      "id": "short-uint",
+      "kind": "text",
+      "cbor_hex": "1800",
+      "valid": false
+    },
+    {
+      "id": "short-length",
+      "kind": "text",
+      "cbor_hex": "780161",
+      "valid": false
+    },
+    {
+      "id": "short-array",
+      "kind": "text",
+      "cbor_hex": "9800",
+      "valid": false
+    },
+    {
+      "id": "short-map",
+      "kind": "text",
+      "cbor_hex": "b800",
+      "valid": false
+    },
+    {
+      "id": "null",
+      "kind": "text",
+      "cbor_hex": "f6",
+      "valid": false
+    },
+    {
+      "id": "undefined",
+      "kind": "text",
+      "cbor_hex": "f7",
+      "valid": false
+    },
+    {
+      "id": "float16",
+      "kind": "text",
+      "cbor_hex": "f90000",
+      "valid": false
+    },
+    {
+      "id": "float32",
+      "kind": "text",
+      "cbor_hex": "fa00000000",
+      "valid": false
+    },
+    {
+      "id": "float64",
+      "kind": "text",
+      "cbor_hex": "fb0000000000000000",
+      "valid": false
+    },
+    {
+      "id": "simple",
+      "kind": "text",
+      "cbor_hex": "e0",
+      "valid": false
+    },
+    {
+      "id": "simple24",
+      "kind": "text",
+      "cbor_hex": "f818",
+      "valid": false
+    },
+    {
+      "id": "tag",
+      "kind": "text",
+      "cbor_hex": "c06161",
+      "valid": false
+    },
+    {
+      "id": "bignum",
+      "kind": "text",
+      "cbor_hex": "c249010000000000000000",
+      "valid": false
+    },
+    {
+      "id": "indef-bstr",
+      "kind": "text",
+      "cbor_hex": "5fff",
+      "valid": false
+    },
+    {
+      "id": "indef-text",
+      "kind": "text",
+      "cbor_hex": "7fff",
+      "valid": false
+    },
+    {
+      "id": "indef-array",
+      "kind": "text",
+      "cbor_hex": "9fff",
+      "valid": false
+    },
+    {
+      "id": "indef-map",
+      "kind": "text",
+      "cbor_hex": "bfff",
+      "valid": false
+    },
+    {
+      "id": "reserved",
+      "kind": "text",
+      "cbor_hex": "1c",
+      "valid": false
+    },
+    {
+      "id": "break",
+      "kind": "text",
+      "cbor_hex": "ff",
+      "valid": false
+    },
+    {
+      "id": "bad-utf8",
+      "kind": "text",
+      "cbor_hex": "61ff",
+      "valid": false
+    },
+    {
+      "id": "surrogate",
+      "kind": "text",
+      "cbor_hex": "63eda080",
+      "valid": false
+    },
+    {
+      "id": "non-nfc",
+      "kind": "text",
+      "cbor_hex": "6365cc81",
+      "valid": false
+    },
+    {
+      "id": "hangul-decomposed",
+      "kind": "text",
+      "cbor_hex": "66e18480e185a1",
+      "valid": false
+    },
+    {
+      "id": "truncated",
+      "kind": "text",
+      "cbor_hex": "1901",
+      "valid": false
+    },
+    {
+      "id": "trailing",
+      "kind": "text",
+      "cbor_hex": "0000",
+      "valid": false
+    },
+    {
+      "id": "huge-length",
+      "kind": "text",
+      "cbor_hex": "5bffffffffffffffff",
+      "valid": false
+    },
+    {
+      "id": "huge-array",
+      "kind": "text",
+      "cbor_hex": "9bffffffffffffffff",
+      "valid": false
+    },
+    {
+      "id": "deep-array",
+      "kind": "text",
+      "cbor_hex": "818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818181818100",
+      "valid": false
+    },
+    {
+      "id": "unsigned-negative",
+      "kind": "uint",
+      "cbor_hex": "20",
+      "valid": false
+    },
+    {
+      "id": "int-overflow",
+      "kind": "int",
+      "cbor_hex": "1b8000000000000000",
+      "valid": false
+    },
+    {
+      "id": "negative-overflow",
+      "kind": "int",
+      "cbor_hex": "3b8000000000000000",
+      "valid": false
+    },
+    {
+      "id": "bool-not-int",
+      "kind": "uint",
+      "cbor_hex": "f5",
+      "valid": false
+    },
+    {
+      "id": "unreduced",
+      "kind": "rational",
+      "cbor_hex": "820204",
+      "valid": false
+    },
+    {
+      "id": "zero-noncanonical",
+      "kind": "rational",
+      "cbor_hex": "820002",
+      "valid": false
+    },
+    {
+      "id": "zero-denominator",
+      "kind": "rational",
+      "cbor_hex": "820100",
+      "valid": false
+    },
+    {
+      "id": "rational-short",
+      "kind": "rational",
+      "cbor_hex": "8101",
+      "valid": false
+    },
+    {
+      "id": "digest-short",
+      "kind": "digest",
+      "cbor_hex": "40",
+      "valid": false
+    },
+    {
+      "id": "semver-short",
+      "kind": "semver",
+      "cbor_hex": "820100",
+      "valid": false
+    },
+    {
+      "id": "range-reverse-keys",
+      "kind": "version-range",
+      "cbor_hex": "a201830200000083010000",
+      "valid": false
+    },
+    {
+      "id": "range-duplicate-key",
+      "kind": "version-range",
+      "cbor_hex": "a200830100000083020000",
+      "valid": false
+    },
+    {
+      "id": "range-unknown-key",
+      "kind": "version-range",
+      "cbor_hex": "a200830100000283020000",
+      "valid": false
+    },
+    {
+      "id": "range-null-bound",
+      "kind": "version-range",
+      "cbor_hex": "a2008301000001f6",
+      "valid": false
+    },
+    {
+      "id": "range-empty",
+      "kind": "version-range",
+      "cbor_hex": "a200830100000183010000",
+      "valid": false
+    },
+    {
+      "id": "set-reverse",
+      "kind": "text-set",
+      "cbor_hex": "82626161617a",
+      "valid": false
+    },
+    {
+      "id": "set-duplicate",
+      "kind": "text-set",
+      "cbor_hex": "8261616161",
+      "valid": false
+    },
+    {
+      "id": "template",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": true,
+      "schema_view": {
+        "header": {
+          "schema_version": "1",
+          "encoding_profile_id": "acl.enc.p0-1@1",
+          "id": "acl.ct.demo",
+          "version": [
+            "1",
+            "0",
+            "0"
+          ],
+          "digest": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+        },
+        "normative_text": "Observed {output}.",
+        "slot_decls": [
+          {
+            "slot": "output",
+            "decl": {
+              "kind": "RUNTIME",
+              "value_type": "DIGEST",
+              "source": "EVIDENCE_CHAIN"
+            }
+          }
+        ],
+        "translations": [
+          {
+            "lang": "zh",
+            "text": "非规范翻译：结果 {output}。"
+          }
+        ]
+      },
+      "digest_hex": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+    },
+    {
+      "id": "claim",
+      "kind": "claim",
+      "cbor_hex": "82a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f7574707574",
+      "valid": true,
+      "schema_view": [
+        {
+          "id": "acl.ct.demo",
+          "version": [
+            "1",
+            "0",
+            "0"
+          ],
+          "digest": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+        },
+        [
+          {
+            "slot_id": "output",
+            "value": {
+              "schema_ref": {
+                "id": "acl.schema.claim-test-bytes@1",
+                "version": [
+                  "1",
+                  "0",
+                  "0"
+                ],
+                "digest": "10cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d"
+              },
+              "canonical_bytes": "4e6578616d706c6520726573756c74",
+              "object_digest": "8b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc756"
+            }
+          }
+        ]
+      ],
+      "digest_hex": "8130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d"
+    },
+    {
+      "id": "chain",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": true,
+      "schema_view": {
+        "template": {
+          "header": {
+            "schema_version": "1",
+            "encoding_profile_id": "acl.enc.p0-1@1",
+            "id": "acl.ct.demo",
+            "version": [
+              "1",
+              "0",
+              "0"
+            ],
+            "digest": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+          },
+          "normative_text": "Observed {output}.",
+          "slot_decls": [
+            {
+              "slot": "output",
+              "decl": {
+                "kind": "RUNTIME",
+                "value_type": "DIGEST",
+                "source": "EVIDENCE_CHAIN"
+              }
+            }
+          ],
+          "translations": [
+            {
+              "lang": "zh",
+              "text": "非规范翻译：结果 {output}。"
+            }
+          ]
+        },
+        "claim_input": [
+          {
+            "id": "acl.ct.demo",
+            "version": [
+              "1",
+              "0",
+              "0"
+            ],
+            "digest": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+          },
+          [
+            {
+              "slot_id": "output",
+              "value": {
+                "schema_ref": {
+                  "id": "acl.schema.claim-test-bytes@1",
+                  "version": [
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  "digest": "10cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d"
+                },
+                "canonical_bytes": "4e6578616d706c6520726573756c74",
+                "object_digest": "8b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc756"
+              }
+            }
+          ]
+        ],
+        "rendered_claim_digest": "8130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d"
+      },
+      "digest_hex": "8130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d"
+    },
+    {
+      "id": "template-identity",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646e61636c2e63742e72656e616d65646664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": true,
+      "schema_view": {
+        "header": {
+          "schema_version": "1",
+          "encoding_profile_id": "acl.enc.p0-1@1",
+          "id": "acl.ct.renamed",
+          "version": [
+            "1",
+            "0",
+            "0"
+          ],
+          "digest": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+        },
+        "normative_text": "Observed {output}.",
+        "slot_decls": [
+          {
+            "slot": "output",
+            "decl": {
+              "kind": "RUNTIME",
+              "value_type": "DIGEST",
+              "source": "EVIDENCE_CHAIN"
+            }
+          }
+        ],
+        "translations": [
+          {
+            "lang": "zh",
+            "text": "非规范翻译：结果 {output}。"
+          }
+        ]
+      },
+      "digest_hex": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+    },
+    {
+      "id": "template-version",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830203046e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": true,
+      "schema_view": {
+        "header": {
+          "schema_version": "1",
+          "encoding_profile_id": "acl.enc.p0-1@1",
+          "id": "acl.ct.demo",
+          "version": [
+            "2",
+            "3",
+            "4"
+          ],
+          "digest": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+        },
+        "normative_text": "Observed {output}.",
+        "slot_decls": [
+          {
+            "slot": "output",
+            "decl": {
+              "kind": "RUNTIME",
+              "value_type": "DIGEST",
+              "source": "EVIDENCE_CHAIN"
+            }
+          }
+        ],
+        "translations": [
+          {
+            "lang": "zh",
+            "text": "非规范翻译：结果 {output}。"
+          }
+        ]
+      },
+      "digest_hex": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+    },
+    {
+      "id": "template-advisory",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e73806e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": true,
+      "schema_view": {
+        "header": {
+          "schema_version": "1",
+          "encoding_profile_id": "acl.enc.p0-1@1",
+          "id": "acl.ct.demo",
+          "version": [
+            "1",
+            "0",
+            "0"
+          ],
+          "digest": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+        },
+        "normative_text": "Observed {output}.",
+        "slot_decls": [
+          {
+            "slot": "output",
+            "decl": {
+              "kind": "RUNTIME",
+              "value_type": "DIGEST",
+              "source": "EVIDENCE_CHAIN"
+            }
+          }
+        ],
+        "translations": []
+      },
+      "digest_hex": "2c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de2"
+    },
+    {
+      "id": "template-text",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f666469676573745820b309e2f2b5c8ae92127a9583a22dd69bf8730d426306893a25f1917cb9e86a836776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874714368616e676564207b6f75747075747d2e",
+      "valid": true,
+      "schema_view": {
+        "header": {
+          "schema_version": "1",
+          "encoding_profile_id": "acl.enc.p0-1@1",
+          "id": "acl.ct.demo",
+          "version": [
+            "1",
+            "0",
+            "0"
+          ],
+          "digest": "b309e2f2b5c8ae92127a9583a22dd69bf8730d426306893a25f1917cb9e86a83"
+        },
+        "normative_text": "Changed {output}.",
+        "slot_decls": [
+          {
+            "slot": "output",
+            "decl": {
+              "kind": "RUNTIME",
+              "value_type": "DIGEST",
+              "source": "EVIDENCE_CHAIN"
+            }
+          }
+        ],
+        "translations": [
+          {
+            "lang": "zh",
+            "text": "非规范翻译：结果 {output}。"
+          }
+        ]
+      },
+      "digest_hex": "b309e2f2b5c8ae92127a9583a22dd69bf8730d426306893a25f1917cb9e86a83"
+    },
+    {
+      "id": "template-declaration",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f666469676573745820fd7c37a29b74c79e16addf7d6aa14e126b938c47511edaaebe0258481c0937366776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f7572636568534e415053484f546a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": true,
+      "schema_view": {
+        "header": {
+          "schema_version": "1",
+          "encoding_profile_id": "acl.enc.p0-1@1",
+          "id": "acl.ct.demo",
+          "version": [
+            "1",
+            "0",
+            "0"
+          ],
+          "digest": "fd7c37a29b74c79e16addf7d6aa14e126b938c47511edaaebe0258481c093736"
+        },
+        "normative_text": "Observed {output}.",
+        "slot_decls": [
+          {
+            "slot": "output",
+            "decl": {
+              "kind": "RUNTIME",
+              "value_type": "DIGEST",
+              "source": "SNAPSHOT"
+            }
+          }
+        ],
+        "translations": [
+          {
+            "lang": "zh",
+            "text": "非规范翻译：结果 {output}。"
+          }
+        ]
+      },
+      "digest_hex": "fd7c37a29b74c79e16addf7d6aa14e126b938c47511edaaebe0258481c093736"
+    },
+    {
+      "id": "template-wrong-digest",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f66646967657374582001010101010101010101010101010101010101010101010101010101010101016776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-schema-version",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0273656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-encoding-version",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140326a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-unknown-field",
+      "kind": "template",
+      "cbor_hex": "a5656578747261f566686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-flat-identity",
+      "kind": "template",
+      "cbor_hex": "a56269646b61636c2e63742e64656d6f66686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-header-extra",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a66269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006b74656d706c6174655f69646b61636c2e63742e64656d6f6e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-missing-translations",
+      "kind": "template",
+      "cbor_hex": "a366686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-bad-id",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269647261636c2e76702e64656d6f2e6469726563746664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-bool-version",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e83f500006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-duplicate-slots",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7382a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f7574707574a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-slot-source",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656750524f46494c456a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-enum-not-frozen",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f7479706569454e554d28412c422964736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "template-bad-text-type",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f7465787401",
+      "valid": false
+    },
+    {
+      "id": "template-duplicate-translations",
+      "kind": "template",
+      "cbor_hex": "a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7382a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de38082a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e",
+      "valid": false
+    },
+    {
+      "id": "chain-ref-id",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646c61636c2e63742e6f746865726664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-ref-version",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8302000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-ref-digest",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f66646967657374582000000000000000000000000000000000000000000000000000000000000000006776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-claim-digest",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458200000000000000000000000000000000000000000000000000000000000000000",
+      "valid": false
+    },
+    {
+      "id": "chain-slot",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964656f746865727572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-import-id",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a36269647461636c2e736368656d612e756e6b6e6f776e403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-import-digest",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582000000000000000000000000000000000000000000000000000000000000000006776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-payload",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f6279746573414067736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-object-digest",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f646967657374582000000000000000000000000000000000000000000000000000000000000000006f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-binding-extra",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000081a365657874726161786576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-binding-duplicate",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e70757482a36269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e8301000082a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f7574707574a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "chain-ref-bare-digest",
+      "kind": "chain",
+      "cbor_hex": "a36874656d706c617465a466686561646572a56269646b61636c2e63742e64656d6f6664696765737458202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de26776657273696f6e830100006e736368656d615f76657273696f6e0173656e636f64696e675f70726f66696c655f69646e61636c2e656e632e70302d3140316a736c6f745f6465636c7381a2646465636ca3646b696e646752554e54494d4566736f757263656e45564944454e43455f434841494e6a76616c75655f747970656644494745535464736c6f74666f75747075746c7472616e736c6174696f6e7381a2646c616e67627a6864746578747824e99d9ee8a784e88c83e7bfbbe8af91efbc9ae7bb93e69e9c207b6f75747075747de380826e6e6f726d61746976655f74657874724f62736572766564207b6f75747075747d2e6b636c61696d5f696e7075748258202c5419dd58e1515e7436303c7128750d09571395e38cad962c143511d4208de281a26576616c7565a36a736368656d615f726566a3626964781d61636c2e736368656d612e636c61696d2d746573742d6279746573403166646967657374582010cde305573e5a310223dac0cae85f29a96f9d670c08441eb55482a5ff892c5d6776657273696f6e830100006d6f626a6563745f64696765737458208b459de4f59592f8ce5892761dc87e1e1c2d48f2e636823586017943455cc7566f63616e6f6e6963616c5f62797465734f4e6578616d706c6520726573756c7467736c6f745f6964666f75747075747572656e64657265645f636c61696d5f64696765737458208130cb133e90c0eabfe0615aa002c08724a12d2c62518d2fd6cc0f91afebd66d",
+      "valid": false
+    },
+    {
+      "id": "rendered-text-instead-of-tuple",
+      "kind": "claim",
+      "cbor_hex": "78184f62736572766564206578616d706c6520726573756c742e",
+      "valid": false
+    }
+  ]
+}

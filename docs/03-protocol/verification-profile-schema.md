@@ -2852,7 +2852,7 @@ H_{\mathrm{tag}}(x)=\mathrm{SHA256}\big(\ \mathrm{u8}(|\mathrm{tag}|)\ \|\ \math
 | `intent_digest` | `ACLt/P0-1/ReceiptIntent/1` | `cbor(ContentMap_ReceiptIntent)`（§3.3.3、CTX-13） | **SV-104** | L2 |
 | `event_frontier_digest` | `ACLt/P0-1/EventFrontierSnapshot/1` | `cbor(ContentMap_EventFrontierSnapshot)`（§3.3.3、§13.0.1） | **SV-108** | L2 |
 
-SV-42 因此**收窄**为「数值与集合的编码形态合规」（既约 `Rational`、集合有序去重、最短整数、无浮点/null/bignum），**不再声称覆盖全部摘要**；SV-41 收窄为「slot index 唯一、gate 按 slot 携带」，**不再检查 `policy_digest`**（该职责归 SV-53b）；SV-54 拆为 SV-54a（结构覆盖，L1b）与 SV-54b（摘要重算，L2）。
+SV-42 按 §13.2 **仅负责容器 canonicality**（map 键序、集合/规范 pair-array 排序去重、既约 `Rational`）；primitive 禁令归 SV-25，整数范围、最短整数与 bignum 禁令归 SV-52，**不再声称覆盖全部摘要**；SV-41 收窄为「slot index 唯一、gate 按 slot 携带」，**不再检查 `policy_digest`**（该职责归 SV-53b）；SV-54 拆为 SV-54a（结构覆盖，L1b）与 SV-54b（摘要重算，L2）。
 
 新增 tag MUST 提升 `encoding_profile_id` 的版本号。tag 复用 MUST NOT 发生。
 
