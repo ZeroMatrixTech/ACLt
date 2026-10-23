@@ -1,0 +1,1 @@
+ACLt local test import v1: payload is canonical CBOR bstr; object_digest is SHA256 of canonical_bytes.

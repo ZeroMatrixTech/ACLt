@@ -5,11 +5,11 @@ PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip
 .PHONY: help check test test-python test-singlehost test-multinode test-authority build-worker workflow status manifests check-manifests package
 
 help:
-	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
+	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
 
 check: test-python check-manifests check-profile-inventory
 
-test: check test-singlehost test-multinode test-authority
+test: check test-singlehost test-multinode test-authority test-claim-codec
 
 test-python:
 	$(PYTHON) -B -m unittest discover -s tests/verification_model -v
@@ -48,3 +48,7 @@ package: check-manifests
 .PHONY: check-profile-inventory
 check-profile-inventory:
 	$(PYTHON) -B scripts/check-profile-inventory.py
+
+.PHONY: test-claim-codec
+test-claim-codec:
+	$(PYTHON) -B scripts/check-claim-codec.py --report artifacts/claim-codec/cross-language.json

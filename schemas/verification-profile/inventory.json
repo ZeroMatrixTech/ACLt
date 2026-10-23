@@ -1,6 +1,6 @@
 {
   "review_date": "2026-10-23",
-  "baseline_commit": "01e8ee2d27c7081dde6c9a0805b242947db54901",
+  "baseline_commit": "6750c18c391e3b44407fa86486eab48fb9d31673",
   "normative_source": "docs/03-protocol/verification-profile-schema.md",
   "scope": "覆盖盘点，不是独立 conformance 认证；实现状态以 coverage.json 为唯一登记。",
   "rules": [
@@ -301,11 +301,15 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`encoding_profile_id = acl.enc.p0-1@1`；原始 CBOR 无 float/null/undefined/其他 simple value、无 indefinite-length；不检查整数范围或集合排序",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#decode"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+      ],
+      "gap": "已检查切片 primitive/禁令；未接入五相位全部对象及 encoding profile contract。"
     },
     {
       "id": "SV-26",
@@ -434,11 +438,15 @@
       "phase": "D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`concrete_bindings` 键集合 = `binding_schema`；`STATIC` 槽位值与 `static_bindings` 逐位相同（CB-1）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#verify_chain"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_claim_transitive_binding"
+      ],
+      "gap": "测试 envelope 检查模板槽位与绑定集合；未接 Profile binding_schema/STATIC 值等式。"
     },
     {
       "id": "SV-36",
@@ -511,11 +519,15 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "容器 canonicality：map key 顺序、集合/规范 pair-array 排序去重、`Rational` 既约；不检查 primitive 禁令、整数域或摘要",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#validate_kind"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_unicode_nfc_and_key_byte_order"
+      ],
+      "gap": "支持切片 map、pair-array、text-set、Rational；全协议容器类型未覆盖。"
     },
     {
       "id": "SV-43",
@@ -555,11 +567,15 @@
       "phase": "D",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`rendered_claim_digest` 按 §5.1.1 与 §17.4 正确（CB-2）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#claim_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_claim_transitive_binding"
+      ],
+      "gap": "结构化二元组摘要与显式模板引用链已对拍；仅锁定本地测试 import，无完整 Phase D。"
     },
     {
       "id": "SV-47",
@@ -621,11 +637,15 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "整数唯一 owner：无 CBOR bignum（tag 2/3）、最短整数；`int` ∈ [−2⁶³, 2⁶³−1]，`uint` ∈ [0, 2⁶⁴−1]（§17.5A）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#decode"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+      ],
+      "gap": "最短编码、int64/uint64 和 bignum 拒绝已对拍；完整类型表与所有对象尚未接入。"
     },
     {
       "id": "SV-53a",
@@ -740,11 +760,15 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "**仅对版本化对象**：若 `ContentMap(a) == ContentMap(b)` 且二者只在 ID/Version 上不同，则 `Digest(a) == Digest(b)`（UVP-1V）。运行期对象因 `id` 入 ContentMap 不适用",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#content_map"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_template_identity_and_advisory_exclusion"
+      ],
+      "gap": "只验证 ClaimTemplate 身份/版本/advisory 排除；其他版本化对象未覆盖。"
     },
     {
       "id": "SV-61",
@@ -762,11 +786,15 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "引用类型正确：版本化 UVP 对象用 `VersionedObjectRef`；不版本化运行期产物用对应 `RuntimeObjectRef<IDType>` 具体别名；外部工程组件用 `ExternalVersionedObjectRef`，不得伪装成 `RegistryObjectKind`；任何引用不得只给 `Digest`（REF-1—REF-6）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#ref"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_claim_transitive_binding"
+      ],
+      "gap": "只覆盖模板三元引用与本地外部 import；运行期对象及官方 import 未覆盖。"
     },
     {
       "id": "SV-63",
@@ -850,11 +878,15 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`template_digest` 按 §17.4 与 UVP-1V 重算一致（owner）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#template_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+      ],
+      "gap": "ClaimTemplate 候选 wire 表、非 ENUM 子集与摘要已对拍；完整模板类型/注册入口未完成。"
     },
     {
       "id": "SV-71",
@@ -984,7 +1016,7 @@
         "tests/verification_profile/test_singlehost.py#test_required_unknown_and_identifier_fields",
         "tests/verification_profile/test_singlehost.py#test_assumption_rows_and_unique_ids"
       ],
-      "gap": "只有 ProfileID/TaskTypeID/AssumptionID 等局部检查；完整封闭 ID 类型和注册域缺失。"
+      "gap": "只有 ProfileID/TaskTypeID/AssumptionID 等局部检查；完整封闭 ID 类型和注册域缺失。 新切片补 ClaimTemplateID 语法；注册域仍未实现。"
     },
     {
       "id": "SV-81",
@@ -1035,11 +1067,15 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "版本化对象严格使用 §3.3.2 为该对象冻结的唯一 wire shape；不得同时接受嵌套/展开两种形态",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#template"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+      ],
+      "gap": "只覆盖模板 NESTED_HEADER；其他版本化对象未覆盖。"
     },
     {
       "id": "SV-86b",
@@ -1057,11 +1093,15 @@
       "phase": "R/I/F/B/D",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "对象未在 header 外重复声明 `id`/`version`/`digest`；扁平 Profile 不得额外出现 `header`",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#template"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+      ],
+      "gap": "模板拒绝重复/扁平身份字段；其他对象未覆盖。"
     },
     {
       "id": "SV-87",
@@ -1409,11 +1449,15 @@
       "phase": "R/I/F/B/D",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`ToSchemaView/FromSchemaView` 可逆；输入满足 primitive/key 限制；`cbor_hex` 与 `schema_view` 向量逐位一致",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/codec.py#project"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_view_rejects_wrong_types_and_noncanonical_strings"
+      ],
+      "gap": "候选切片 typed Schema View 双向对拍；完整对象 wire-key 表未冻结。"
     },
     {
       "id": "SV-119",
@@ -1478,10 +1522,14 @@
       "input": "`cbor(ContentMap_Template)`（§3.3.3）",
       "owner": "SV-70",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "status": "PARTIAL",
+      "implementation": [
+        "tools/verification_profile/codec.py#template_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+      ],
+      "gap": "ClaimTemplate 候选 wire 表、非 ENUM 子集与摘要已对拍；完整模板类型/注册入口未完成。"
     },
     {
       "name": "`rendered_claim_digest`",
@@ -1489,10 +1537,14 @@
       "input": "`cbor([claim_template_ref, concrete_bindings])`",
       "owner": "SV-46",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "status": "PARTIAL",
+      "implementation": [
+        "tools/verification_profile/codec.py#claim_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_codec.py#test_claim_transitive_binding"
+      ],
+      "gap": "结构化二元组摘要与显式模板引用链已对拍；仅锁定本地测试 import，无完整 Phase D。"
     },
     {
       "name": "`assumption_state_digest`",
@@ -1648,5 +1700,14 @@
       "tests": [],
       "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
     }
-  ]
+  ],
+  "slice_evidence": {
+    "id": "claim-codec-candidate-1",
+    "contract": "schemas/verification-profile/claim-codec-slice.json",
+    "independent_rust": "tools/verification_profile/rust/main.rs",
+    "cross_check": "scripts/check-claim-codec.py",
+    "report": "docs/testing/CLAIM-CODEC-20261023.md",
+    "baseline_commit": "6750c18",
+    "scope": "有限候选切片，不升级任何规则为完整 implemented。"
+  }
 }

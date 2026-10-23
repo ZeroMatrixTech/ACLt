@@ -11,6 +11,7 @@
 | `make check` | 模型、配置、流程与交付回归测试，加清单检查 | 不编译或启动 VM |
 | `make test` | 上述检查、当前 state3 单机实验及多节点本地检查 | 含 sanitizer；不包含 VM 故障注入 |
 | `make test-singlehost` | 仅当前 Rust/C++ 实验 | 不含 Python 模型/流程组 |
+| `make test-claim-codec` | 候选模板/claim 编码 Python/Rust 对拍 | 需要 Unicode 16.0.0、rustc、OpenSSL；不代表完整 P0-1B |
 | `make test-multinode` | admission 本地检查及消息顺序 | 报告默认在 `artifacts/multinode/`，不启动 VM |
 | `make workflow` | 按输入指纹执行分组并留存证据 | 已通过且未变化的分组可复用 |
 | `make status` | 更新进度看板 | 不运行测试 |

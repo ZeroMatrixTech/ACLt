@@ -79,7 +79,9 @@
         "tools/**/*.py",
         "tests/verification_profile/*.py",
         "schemas/**/*.json",
-        "docs/03-protocol/verification-profile-schema.md"
+        "docs/03-protocol/verification-profile-schema.md",
+        "tests/verification_profile/codec/*.json",
+        "schemas/verification-profile/*.txt"
       ],
       "required_output": [
         "re:Ran [1-9][0-9]* tests",
@@ -154,6 +156,30 @@
       ],
       "evidence": [
         "artifacts/authority/local-tests.json"
+      ]
+    },
+    {
+      "id": "claim-codec",
+      "title": "候选模板/claim 编码 Python 与 Rust 对拍",
+      "command": [
+        "make",
+        "test-claim-codec"
+      ],
+      "timeout_seconds": 300,
+      "inputs": [
+        "tools/verification_profile/codec.py",
+        "tools/verification_profile/rust/*.rs",
+        "tools/verification_profile/rust/*.py",
+        "scripts/check-claim-codec.py",
+        "tests/verification_profile/codec/*.json",
+        "schemas/verification-profile/claim*",
+        "docs/03-protocol/verification-profile-schema.md"
+      ],
+      "required_output": [
+        "\"status\": \"PASS\""
+      ],
+      "evidence": [
+        "artifacts/claim-codec/cross-language.json"
       ]
     }
   ],
