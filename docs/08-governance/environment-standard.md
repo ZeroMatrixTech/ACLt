@@ -159,3 +159,11 @@ VM 复查另需 QEMU、cpio、ext4 工具、匹配的内核/驱动与 Python 最
 ## 2026-10-23 候选编码切片环境复核
 
 本轮实际可用 CPython 3.14.4、Unicode 数据库 16.0.0 与 rustc 1.93.1；上文“本机缺项”是此前快照，不再适用于本轮检查。新切片固定 Unicode 16.0.0，版本不同显式拒绝，避免跨实现规范化漂移。Rust 直接由 rustc 构建，无新增 Cargo/Python 下载依赖；SHA 对拍另用现有 OpenSSL。固定 Unicode 数据来源、生成器与许可证见 [Rust README](../../tools/verification_profile/rust/README.md)。本轮不重新认证完整 state3 环境或所有平台。
+
+## 2026-10-23 后续验证环境切换（DUALHOST-SSH-1）
+
+用户已撤销单机/同宿主 VM 替代真实双机验证的实验许可；后续集成、网络与故障验证采用两台物理机，通过 SSH 控制。新接受的独立主机假设仅限本轮实验，不扩张为统计/身份独立或主网保证。本地回归继续保留，历史记录不改写，P0-1B/G2 不关闭。连接事实、撤销条件、预检缺项及下一轮验收见 [双机 SSH 验证约定](dualhost-ssh-validation.md)。前文 VM 命令保留供历史审计，不作为后续默认执行许可。
+
+## 2026-10-23 远端环境实际验收
+
+B（aki2）已补齐 Ubuntu 官方 rustc/Cargo 1.93.1，独立 ext4 目录上全量 make test（含 sanitizer 和编码对拍）通过。已完成首轮真实 LAN 双机实验；实际版本、源码 pin、命令与证据见 [验收报告](../testing/DUALHOST-SSH-20261023.md)。上文缺项清单为历史快照，不能替代本轮记录，也不能将本轮通过外推到其他主机/代码版本。
