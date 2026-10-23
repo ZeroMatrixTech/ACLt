@@ -64,3 +64,11 @@
 自 2026-10-23 起遵循 [DUALHOST-SSH-1](08-governance/dualhost-ssh-validation.md)。本地入口继续提供各自范围的回归，部署/网络/故障结论须来自真实双机运行；不再默认运行 VM 矩阵。下一轮优先为外置权威账本 v2 建立跨机驱动和证据核对，不将 SSH 连通当作分布式实验通过。
 
 双机第 1 轮已完成，见 [环境与双机实测报告](testing/DUALHOST-SSH-20261023.md)。当前驱动为保存在工作区产物中的一次性适配器，尚未新增通用 make 双机目标；下一轮先做角色互换与 worker 中断，再整理参数化入口。
+
+## RIR 构建切片 1 的维护入口
+
+[最小构建探针](../experiments/aclt-rir-build-probe/README.md)已入库；`make check-rir-build-probe` 运行 10 项纯 Python 回归，纳入 `make check`。`make test-rir-build-probe RIR_TOOLCHAIN=/prefix RIR_OUTPUT=/new/path` 使用固定离线工具链生成新证据；`compare.py` 对账两台主机的四组构建。默认检查不自动安装工具链或连接远端；所有运行目录均拒绝覆盖。
+
+## RIR 切片 2 的维护入口
+
+[安全 SDK 与 I/O 探针](../experiments/aclt-rir-io-probe/README.md)：`make check-rir-io-probe` 运行 19 项纯 Python 回归；`make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path` 独立编译两次并执行固定用例；`execute.py` 可单独运行一个保存的候选工件。所有命令显式选择新输出，错误分类保留。可选现有 Node oracle 只对拍语义，不对拍 gas。

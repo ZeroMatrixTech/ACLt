@@ -305,6 +305,9 @@ RPR 不得把 C 类改写为 B 类：宿主内存不足不得报告为 `memory.g
 5. lowering provenance 至少包括：rustc 版本与提交、目标、完整编译和链接参数、SDK 摘要、源码包摘要、`Cargo.lock` 摘要、后处理工具版本。
 6. 可复现性证据：两次独立构建得到相同 `rir_digest`，例如在 [DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md) 的 A、B 两台主机上分别构建。这只证明 lowering 可复现，不证明 lowering 正确（`EXC-BASE-LOWERING` 不变）。
 7. 环境缺项（2026-10-23 观测）：A 主机 rustc 1.93.1 的目标列表包含 `wasm32v1-none`，但 sysroot 中只有 `x86_64-unknown-linux-gnu`，缺少该目标的 `core`/`alloc`。B 主机按[双机报告](../testing/DUALHOST-SSH-20261023.md)已有 Rust/Cargo 1.93.1，其 wasm 目标库尚未核查。
+8. 后续构建探针：A/B 已在独立实验 prefix 安装固定官方 Rust 1.93.1 及 wasm32v1-none 库和 rust-lld；四次最小空 run 构建的 raw/后处理/候选工件均一致。用户库保持 forbid(unsafe_code)，no_mangle 导出放在单独受信入口层，并保留直接在用户库导出的预期编译失败。系统 sysroot 缺项仍是事实；实验 prefix 可用不等于系统已补齐。见 [切片 1 报告](../testing/RIR-BUILD-SLICE1-20261023.md)。该探针不是已接受实现依据、完整 SDK 允许集合或 RIR conformance 证据。
+
+9. I/O 候选探针：安全 SDK 与受信入口已在固定 16 字节原样输出负载上实现；候选外壳、局部类型检查与受限 Python 解释器在双机运行通过，并有现有 Wasm 引擎对拍语义。该引擎不核对 gas/调用深度/绑定，尚无独立 Rust RPR，不替代本 ADR §13 的接受证据。见 [切片 2](../testing/RIR-IO-SLICE2-20261023.md)。
 
 ## 9. 版本与 Receipt 绑定（候选）
 
