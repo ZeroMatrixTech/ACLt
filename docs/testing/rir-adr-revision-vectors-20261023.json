@@ -1,0 +1,258 @@
+{
+  "status": "CANDIDATE",
+  "execution_status": "NOT_RUN_AGAINST_RIR_IMPLEMENTATIONS",
+  "scope": "ADR design expectations; not normative before acceptance",
+  "cases": [
+    {
+      "id": "RV-01a",
+      "kind": "wasm_bytes",
+      "wasm_hex": "0061736d01000000010401600000030201000504010101010707010372756e00000a09010700410004400b0b",
+      "expected": {
+        "artifact_stages_1_to_6": "ACCEPT_WITH_VALID_ENVELOPE",
+        "receipt_binding": "NOT_TESTED"
+      }
+    },
+    {
+      "id": "RV-01b",
+      "kind": "wasm_bytes",
+      "wasm_hex": "0061736d01000000010401600000030201000504010101010707010372756e00000a0a01080041000440050b0b",
+      "expected": {
+        "stage": 3,
+        "code": "RIR_REJECT_ENCODING"
+      }
+    },
+    {
+      "id": "RV-02a",
+      "kind": "wasm_bytes",
+      "wasm_hex": "0061736d01000000010401600000030201000504010101010707010372756e00000a080106004100c01a0b",
+      "expected": {
+        "stage": 3,
+        "code": "RIR_REJECT_ENCODING"
+      }
+    },
+    {
+      "id": "RV-02b",
+      "kind": "semantic_case",
+      "input": "Wasm 1.0 well-formed module containing f32.const + drop",
+      "expected": {
+        "stage": 4,
+        "code": "RIR_REJECT_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "RV-02c",
+      "kind": "semantic_case",
+      "input": "Otherwise valid module; data offset=65536 and length=1, initial memory pages=1",
+      "expected": {
+        "stage": 6,
+        "code": "RIR_REJECT_LIMITS"
+      }
+    },
+    {
+      "id": "RV-02d",
+      "kind": "semantic_case",
+      "input": "Otherwise valid module; element offset=1 and length=1, initial table size=1",
+      "expected": {
+        "stage": 6,
+        "code": "RIR_REJECT_LIMITS"
+      }
+    },
+    {
+      "id": "RV-02e",
+      "kind": "semantic_case",
+      "input": "Well-formed unsupported import plus data out of initial bounds",
+      "expected": {
+        "stage": 4,
+        "code": "RIR_REJECT_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "RV-02f",
+      "kind": "semantic_case",
+      "input": "Subset-compatible structure with Wasm type error plus data out of initial bounds",
+      "expected": {
+        "stage": 5,
+        "code": "RIR_REJECT_INVALID"
+      }
+    },
+    {
+      "id": "RV-02g",
+      "kind": "semantic_case",
+      "input": "Noncanonical explicit empty else plus well-formed unsupported import",
+      "expected": {
+        "stage": 3,
+        "code": "RIR_REJECT_ENCODING"
+      }
+    },
+    {
+      "id": "RV-03a",
+      "kind": "host_call",
+      "memory_bytes": 65536,
+      "output_bytes_limit": 0,
+      "already_output_bytes": 0,
+      "function": "output_write",
+      "args": [
+        65536,
+        1
+      ],
+      "remaining_gas_before_call": 17,
+      "expected": {
+        "outcome": "TRAP_HOST_ARGUMENT",
+        "call_gas_charged": 17,
+        "appended_bytes": 0
+      }
+    },
+    {
+      "id": "RV-03b",
+      "kind": "host_call",
+      "memory_bytes": 65536,
+      "output_bytes_limit": 0,
+      "already_output_bytes": 0,
+      "function": "output_write",
+      "args": [
+        65536,
+        1
+      ],
+      "remaining_gas_before_call": 16,
+      "expected": {
+        "outcome": "TRAP_GAS_EXHAUSTED",
+        "call_gas_charged": 0,
+        "appended_bytes": 0
+      }
+    },
+    {
+      "id": "RV-03c",
+      "kind": "host_call",
+      "memory_bytes": 65536,
+      "output_bytes_limit": 0,
+      "already_output_bytes": 0,
+      "function": "output_write",
+      "args": [
+        0,
+        1
+      ],
+      "remaining_gas_before_call": 17,
+      "expected": {
+        "outcome": "TRAP_OUTPUT_LIMIT",
+        "call_gas_charged": 17,
+        "appended_bytes": 0
+      }
+    },
+    {
+      "id": "RV-03d",
+      "kind": "host_call",
+      "memory_bytes": 65536,
+      "output_bytes_limit": 0,
+      "already_output_bytes": 0,
+      "function": "output_write",
+      "args": [
+        65536,
+        0
+      ],
+      "remaining_gas_before_call": 16,
+      "expected": {
+        "outcome": "CONTINUE",
+        "call_gas_charged": 16,
+        "appended_bytes": 0
+      }
+    },
+    {
+      "id": "RV-03e",
+      "kind": "host_call",
+      "memory_bytes": 65536,
+      "output_bytes_limit": 0,
+      "already_output_bytes": 0,
+      "function": "output_write",
+      "args": [
+        65537,
+        0
+      ],
+      "remaining_gas_before_call": 16,
+      "expected": {
+        "outcome": "TRAP_HOST_ARGUMENT",
+        "call_gas_charged": 16,
+        "appended_bytes": 0
+      }
+    },
+    {
+      "id": "RV-03f",
+      "kind": "host_call",
+      "memory_bytes": 65536,
+      "output_bytes_limit": 4294967295,
+      "already_output_bytes": 0,
+      "function": "output_write",
+      "args": [
+        4294967295,
+        1
+      ],
+      "remaining_gas_before_call": 17,
+      "expected": {
+        "outcome": "TRAP_HOST_ARGUMENT",
+        "call_gas_charged": 17,
+        "appended_bytes": 0
+      }
+    },
+    {
+      "id": "RV-04a",
+      "kind": "field_range_only",
+      "input_arity": 0,
+      "expected": "IN_RANGE"
+    },
+    {
+      "id": "RV-04b",
+      "kind": "field_range_only",
+      "input_arity": 4294967295,
+      "expected": "IN_RANGE_NO_INPUT_ALLOCATION_REQUIRED"
+    },
+    {
+      "id": "RV-04c",
+      "kind": "field_range_only",
+      "input_arity": 4294967296,
+      "expected": {
+        "stage": 6,
+        "code": "RIR_REJECT_LIMITS"
+      }
+    },
+    {
+      "id": "RV-04d",
+      "kind": "receipt_binding",
+      "input_arity": 1,
+      "receipt_input_count": 0,
+      "execution_limits_compatible": false,
+      "expected": {
+        "stage": 7,
+        "code": "RIR_REJECT_INVALID"
+      }
+    },
+    {
+      "id": "RV-05a",
+      "kind": "identity_property",
+      "change": "Receipt execution limits only; same Artifact bytes/version",
+      "expected": {
+        "rir_digest": "UNCHANGED",
+        "ReceiptID": "CHANGED_AFTER_FORMAL_RECEIPT_ENCODING_IMPLEMENTED"
+      }
+    },
+    {
+      "id": "RV-05b",
+      "kind": "identity_property",
+      "change": "Cost table changed with new RIRVersion in Artifact",
+      "expected": {
+        "rir_digest": "CHANGED",
+        "ReceiptID": "CHANGED_AFTER_FORMAL_RECEIPT_ENCODING_IMPLEMENTED"
+      }
+    },
+    {
+      "id": "RV-06",
+      "kind": "method_binding",
+      "expected_methods": [
+        "DIRECT_VERIFIED",
+        "PROOF_VERIFIED",
+        "REEXEC_BOUNDED",
+        "REEXEC_AUDIT_ONLY"
+      ],
+      "equality_predicate": "acl.rir.eq.exact@0",
+      "equality_alone_implies_TRUSTED": false
+    }
+  ]
+}
