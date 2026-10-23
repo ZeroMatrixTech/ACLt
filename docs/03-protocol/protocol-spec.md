@@ -290,3 +290,7 @@ Maintenance MAY 发布版本化 `MainnetAssuranceProfile`，但只能限于声�
 - 发布、升级、漏洞和紧急响应。
 
 这些缺口关闭前，本文件保持 G0 draft。
+
+### 2026-10-23 实验承诺对象说明
+
+[ExperimentalTaskCommitment 切片](../testing/TASK-COMMITMENT-SLICE1-20261023.md)是独立命名/版本化的实验替身，用于 RIR、输入和上限绑定测试；其 experimental_task_id 不得标为 ReceiptID。它不满足 §5 的完整 ComputeReceipt 字段/签名/登记要求，不改变本文对象状态或函数合法性。

@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:aclt:experiment:task-commitment-view:1",
+  "title": "ExperimentalTaskCommitment typed JSON view; not ComputeReceipt",
+  "$comment": "Canonical CBOR is authoritative. Only named x-wire-type fields convert lowercase hex to bstr; arbitrary strings are never guessed as bytes. Runtime checks also require current pinned execution profile and RIR validation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "encoding_profile_id",
+    "context_id",
+    "task_family",
+    "requester_ref",
+    "nonce",
+    "rir_version",
+    "rir_digest",
+    "entry",
+    "inputs",
+    "execution_profile_id",
+    "execution_profile_digest",
+    "execution_limits",
+    "result_equivalence"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "aclt.exp.task-commitment@1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "encoding_profile_id": {
+      "const": "aclt.exp.task-commitment.cbor@1"
+    },
+    "context_id": {
+      "const": "aclt.v0.5-experiment"
+    },
+    "task_family": {
+      "const": "stats-int-v1"
+    },
+    "requester_ref": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "x-wire-type": "bstr32"
+    },
+    "nonce": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$",
+      "x-wire-type": "bstr16"
+    },
+    "rir_version": {
+      "const": [
+        0,
+        1,
+        0
+      ]
+    },
+    "rir_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "x-wire-type": "bstr32"
+    },
+    "entry": {
+      "const": "run"
+    },
+    "inputs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "object_type",
+          "object_digest",
+          "byte_length"
+        ],
+        "properties": {
+          "object_type": {
+            "const": "aclt.exp.bytes@1"
+          },
+          "object_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "x-wire-type": "bstr32"
+          },
+          "byte_length": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2000000
+          }
+        }
+      }
+    },
+    "execution_profile_id": {
+      "const": "aclt.exp.rir-stats-bound@1"
+    },
+    "execution_profile_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "x-wire-type": "bstr32"
+    },
+    "execution_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gas_limit",
+        "output_limit",
+        "memory_pages_limit",
+        "call_depth_limit"
+      ],
+      "properties": {
+        "gas_limit": {
+          "type": "integer",
+          "minimum": 8192,
+          "maximum": 50000000
+        },
+        "output_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4800000
+        },
+        "memory_pages_limit": {
+          "const": 2
+        },
+        "call_depth_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        }
+      }
+    },
+    "result_equivalence": {
+      "const": "aclt.exp.outcome-exact@1"
+    }
+  }
+}

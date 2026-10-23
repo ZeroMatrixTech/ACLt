@@ -248,3 +248,7 @@ v0.6 不代表生产就绪；它代表 v0.5 的核心开放问题已经被收敛
 ## 2026-10-23 第一项工作收尾：三切片候选执行链
 
 **工程范围完成**：[总收尾与交接](../testing/RIR-WORK1-CLOSEOUT-20261023.md)。统一入口在双机重新完成 12 次构建、496 条记录、160 次 C++ 比较及 800 次现有引擎语义对拍；122 项本地回归通过。受限子集与预验证依赖保留，不等于正式 RIR/RPR conformance 或 G0/G2/P0-1B 退出。下一项为正式 Receipt 候选编码及工件/输入/执行上限冻结绑定，然后接入重执行比较记录。
+
+## 2026-10-23 第二项切片 1：最小任务承诺候选
+
+[任务承诺报告](../testing/TASK-COMMITMENT-SLICE1-20261023.md)：ExperimentalTaskCommitment 与专用实验身份绑定 RIR、输入、Profile 和显式执行上限；双机 48 条探针记录一致，19 项新增回归纳入默认检查。调用方保存的 expected ID 用于拒绝替换和错绑，执行入口仍是无授权的诊断探针。正式 ComputeReceipt/签名/Lease/ExecutionCapability/EventRecord 不因此实现，Gate 状态不变。下一切片为实验授权与启动前持久化。

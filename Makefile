@@ -5,9 +5,9 @@ PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip
 .PHONY: help check test test-python test-singlehost test-multinode test-authority build-worker workflow status manifests check-manifests package
 
 help:
-	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make check-rir-build-probe Empty-run lowering adapter regressions' 'make test-rir-build-probe RIR_TOOLCHAIN=/prefix RIR_OUTPUT=/new/path' 'make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path' 'make test-rir-stats-probe RIR_TOOLCHAIN=/prefix RIR_STATS_OUTPUT=/new/path' 'make test-rir-work1 RIR_TOOLCHAIN=/prefix RIR_WORK1_OUTPUT=/new/host-run' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
+	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make check-rir-build-probe Empty-run lowering adapter regressions' 'make test-rir-build-probe RIR_TOOLCHAIN=/prefix RIR_OUTPUT=/new/path' 'make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path' 'make test-rir-stats-probe RIR_TOOLCHAIN=/prefix RIR_STATS_OUTPUT=/new/path' 'make test-rir-work1 RIR_TOOLCHAIN=/prefix RIR_WORK1_OUTPUT=/new/host-run' 'make test-task-commitment TASK_COMMITMENT_OUTPUT=/new/host-run' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
 
-check: test-python check-manifests check-profile-inventory check-rir-build-probe check-rir-io-probe check-rir-stats-probe
+check: test-python check-manifests check-profile-inventory check-rir-build-probe check-rir-io-probe check-rir-stats-probe check-task-commitment
 
 test: check test-singlehost test-multinode test-authority test-claim-codec
 
@@ -77,3 +77,10 @@ test-rir-stats-probe:
 .PHONY: test-rir-work1
 test-rir-work1:
 	$(PYTHON) -B scripts/rir-work1.py build --toolchain "$(RIR_TOOLCHAIN)" --output "$(RIR_WORK1_OUTPUT)"
+
+.PHONY: check-task-commitment test-task-commitment
+check-task-commitment:
+	$(PYTHON) -B -m unittest discover -s experiments/aclt-task-commitment/tests -v
+
+test-task-commitment:
+	$(PYTHON) -B experiments/aclt-task-commitment/probe.py --output "$(TASK_COMMITMENT_OUTPUT)"

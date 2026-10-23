@@ -1,0 +1,101 @@
+{
+  "status": "PASS",
+  "scope": "same implementation on two physical hosts; not independent codec validation or authorized execution",
+  "physical_independence": "user-accepted DUALHOST-SSH-1 assumption; hostname difference alone is insufficient",
+  "cases_per_host": 24,
+  "records": 48,
+  "experimental_task_id": "5a0765d5b4c40a147b74525ead5b80fba0fa2d89e1b3238a13b5f75f589ea319",
+  "rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879",
+  "execution_profile_digest": "5d241e193fc424145c4b29aa23a6d166d4736d1a4f98ac0fe018cf157fe71078",
+  "artifacts": {
+    "input.bin": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+    "commitment.cbor": "3da23e3b00be4558290154a4418c267c950b1d482ddc8097bf57309aa21654da",
+    "cases.json": "6f1c69a2b9b78f587ccdb85c80c652060bbcd2693e185fe53dd207b9088052f3",
+    "artifact.cbor": "560259eadf40292ea9872fb0ff9c5dbc8a809529d5239820dbc302f1abc59668",
+    "identity.json": "90f83b5c620ed961ffa2d13953ac44edc1bc1de587128528d0ffa9a541e083a8",
+    "view.json": "0395534455258d54691aedeaf7dba38020f3a5eda5f3f221be17346697a52b8e"
+  },
+  "source_hashes": {
+    "experiments/aclt-rir-stats-probe/runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+    "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+    "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "experiments/aclt-rir-stats-probe/tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77",
+    "experiments/aclt-rir-stats-probe/wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+    "experiments/aclt-task-commitment/README.md": "e6a2247aea9a5c033b701df33697105f4c67cf3d94023d3b9282d4447af3a09f",
+    "experiments/aclt-task-commitment/cbor_codec.py": "7cb16275c2ec5e38c628997fa414cbff9ba5be3b94946caf6502bf9f28287633",
+    "experiments/aclt-task-commitment/cli.py": "fb3e5337a3cfbf530518f1ea40c65bab45b99190bb9022a1d617df1872ed6eb2",
+    "experiments/aclt-task-commitment/commitment.py": "cea63d78ce1dc0324ba15f89df9a846b12d2f2c5455362c17b72da89bc0cfa77",
+    "experiments/aclt-task-commitment/compare.py": "77ba7bad4125db69ae8b5617115cbdfc37a77974492d26754df25fcbc37b381e",
+    "experiments/aclt-task-commitment/execution-profile.json": "3735566e6e3e06f07209d32f6e2c39e86d4249ea7604b18ac38644bcc0ce2d5a",
+    "experiments/aclt-task-commitment/probe.py": "f99d81ab9456b3db9b8fa0d475172305dad9c80fddcb999a61623df6294430e4",
+    "experiments/aclt-task-commitment/rir_adapter.py": "e403b66123f5dece0b38a0d4c771b16be630dcad36d0730eec6e66526fcffbed",
+    "experiments/aclt-task-commitment/schema.json": "e31ec7964ecd32a953bf7684827de84520628724a624216f273644820247ae59",
+    "experiments/aclt-task-commitment/tests/golden.json": "8a0360bc1e7c790dc06384a92b4befd6d427489e5ff6594861e2f1e8dbc410ec",
+    "experiments/aclt-task-commitment/tests/test_commitment.py": "39278c15e85cb80d316bd16a3c4ac00ee3783d876840e81c96ea9d2d4469d06d"
+  },
+  "run_report_sha256": [
+    "0b86dbefe1a26c928d6d712f60b07422949bd7e76ec5c08d2a402eb066ad0d9c",
+    "84dd71b14495b73a70e9ad6c1ebd033dbaae24c783b11b9bb4c6bb69403c8d40"
+  ],
+  "date": "2026-10-23",
+  "baseline_commit": "233d5fac514340ca231cf76e6d39cc8af80ed227",
+  "baseline_worktree": "clean at installation precheck",
+  "completed_scope": "work 2 slice 1: experimental task commitment canonical encoding, identity and binding probe",
+  "regression_methods": 19,
+  "default_make_check_total_methods": 141,
+  "record_statuses_per_host": {
+    "TASK_OUTCOME": 5,
+    "PASS": 1,
+    "REJECTED": 18
+  },
+  "identity_variants": [
+    {
+      "name": "input-change",
+      "experimental_task_id": "6eae9574657d5f4289efc1c142a89e75a796868053681626435450f05ced78c2",
+      "rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879"
+    },
+    {
+      "name": "gas-change",
+      "experimental_task_id": "00c93ea5d35a501e27a5566c4d247fdc4effeb48b72d4dcdcf16a8a210e7ba57",
+      "rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879"
+    },
+    {
+      "name": "output-limit-change",
+      "experimental_task_id": "a24736e99969619b88a31d219b4d44b5179181e4d96c8dcd0037688f2eb25f8e",
+      "rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879"
+    },
+    {
+      "name": "depth-change",
+      "experimental_task_id": "e639afe87919c397aafb8264a8e1680a74bc8f39ded22020e6151263e257316e",
+      "rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879"
+    },
+    {
+      "name": "artifact-change",
+      "experimental_task_id": "b36644fb0b43845b9a7915138c154f116932ca42419c987791a3a872573ab92f",
+      "rir_digest": "f2be2af2f44cd756519df7ff24e5adeaff233153559a059be02f12b435e8c5a0"
+    }
+  ],
+  "formal_objects": {
+    "ComputeReceipt": "NOT_IMPLEMENTED",
+    "Lease": "NOT_IMPLEMENTED",
+    "ExecutionCapability": "NOT_IMPLEMENTED",
+    "EventRecord": "NOT_IMPLEMENTED"
+  },
+  "ADR_status": "PROPOSED",
+  "gate_change": false,
+  "limitations": [
+    "Python-only commitment codec; two hosts do not establish implementation independence",
+    "existing checked-in Rust/Wasm fixture reused; no fresh compiler run",
+    "requester reference is opaque and unsigned",
+    "caller must independently retain expected experimental task id",
+    "source pins and hashes are consistency checks under trusted deployment, not authentication",
+    "execute-probe explicitly has no authorization and cannot be deployed as an authorized worker",
+    "no durable registration, event replay, formal verdict, settlement or production admission"
+  ],
+  "cli_freeze_and_reload": "PASS: identical identity and bound outcome as probe",
+  "evidence_sha256": {
+    "source-lock.json": "54bbc88f9f15b73c4c464a990302df05b5882e15c2c71a23f191f272cc730360",
+    "comparison.json": "8bc7c05a367ddd177e8f4c57cc6e1c21276204a7de486b91ea0e28ed8240e896",
+    "cli-execution.json": "ddc64aff73fd5867f64a080c2a8bc77bb0c9845c32fbe8e02551510af1b38585"
+  }
+}

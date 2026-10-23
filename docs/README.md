@@ -225,3 +225,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [2026-10-20 接纳端回滚与复制工程记录](testing/AUTHORITY-ADMISSION-20261020.md)：实验 v2、限定故障矩阵和独立离线证据。
 
 - [2026-10-23 第一项工作三切片收尾](testing/RIR-WORK1-CLOSEOUT-20261023.md)：候选 RIR 执行链、统一复现、双机新证据与 Receipt 绑定交接；不关闭协议 Gate。
+
+- [2026-10-23 第二项工作切片 1](testing/TASK-COMMITMENT-SLICE1-20261023.md)：实验最小任务承诺、身份/执行绑定和双机证据；正式对象与授权仍单列。
