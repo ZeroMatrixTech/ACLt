@@ -223,3 +223,5 @@ Decision / evidence
 v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 ConformanceTarget，两者不是相互替代的版本号。V1 的能力处置见唯一 Profile；它已选择 RIR 和 Rust Profile，但仍处于 G0。有限总体验证的条件数学内核与工程闭合原则已决定；具体主网的 \(B/Q\)、assurance 组件、相关性折减、资金退款、RIR/RPR conformance、实现一致性和参数化最大损失仍需工程证据和冻结配置。
 
 - [2026-10-20 接纳端回滚与复制工程记录](testing/AUTHORITY-ADMISSION-20261020.md)：实验 v2、限定故障矩阵和独立离线证据。
+
+- [2026-10-23 第一项工作三切片收尾](testing/RIR-WORK1-CLOSEOUT-20261023.md)：候选 RIR 执行链、统一复现、双机新证据与 Receipt 绑定交接；不关闭协议 Gate。

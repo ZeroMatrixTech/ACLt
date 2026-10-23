@@ -72,3 +72,11 @@
 ## RIR 切片 2 的维护入口
 
 [安全 SDK 与 I/O 探针](../experiments/aclt-rir-io-probe/README.md)：`make check-rir-io-probe` 运行 19 项纯 Python 回归；`make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path` 独立编译两次并执行固定用例；`execute.py` 可单独运行一个保存的候选工件。所有命令显式选择新输出，错误分类保留。可选现有 Node oracle 只对拍语义，不对拍 gas。
+
+## RIR 切片 3 的维护入口
+
+[整数统计探针](../experiments/aclt-rir-stats-probe/README.md)：`make check-rir-stats-probe` 运行 14 项局部回归；`make test-rir-stats-probe RIR_TOOLCHAIN=/prefix RIR_STATS_OUTPUT=/new/path` 编译两次并比较 Python/Rust 执行和 C++ 基准。编译与原始证据留在显式新目录，前两切片保持独立。Rust 执行器直接解码 Wasm，但要求 Python 预验证，不能代替完整 conformance。双机通过范围见 [报告](testing/RIR-STATS-SLICE3-20261023.md)。
+
+## 第一项工作（三切片）的统一入口
+
+`make test-rir-work1 RIR_TOOLCHAIN=/prefix RIR_WORK1_OUTPUT=/new/host-run` 在一台主机依次重建三个切片；两台物理机分别运行后，用 `scripts/rir-work1.py verify --slice1 A1 B1 --slice2 A2 B2 --slice3 A3 B3 --report /new/report.json` 核对保留证据与当前源码。它不自动联网/安装、不覆盖旧产物；详细范围与下一项见 [总收尾报告](testing/RIR-WORK1-CLOSEOUT-20261023.md)。
