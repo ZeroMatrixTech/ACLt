@@ -302,3 +302,7 @@ Maintenance MAY 发布版本化 `MainnetAssuranceProfile`，但只能限于声�
 ### 实验因果日志与接纳补记（2026-10-24）
 
 [第三切片](../testing/TASK-REPLAY-SLICE3-20261024.md)使用专用 causal-event/submission/acceptance-receipt schema，区分 A 接纳与 B ACK，并对完整封存包实行同字节幂等重传及独立离线状态重建。这些都是受信单账本实验对象，不满足本规范正式 EventRecord/ComputeReceipt/验证裁决/结算契约；签名 checkpoint 也不解决 issuer 分叉或回滚。正式状态机和资格不变。
+
+### 实验资金预留补记（2026-10-24）
+
+[测试资金切片](../testing/FUNDING-RESERVATION-SLICE1-20261024.md)使用专用 funding-policy/reservation/event schema，对固定预置整数测试资产实现冻结和原子预留。它不实现正式 FundingPolicy/SettlementPolicy/EntitlementKey、终态/故障归因矩阵、支付/退款或生产发行；两个余额桶的守恒检查不能代替 §13 完整不变量。旧执行入口尚未接入资金门禁，预留不构成启动能力或正确性判决。OQ-10 与规范状态保持不变。

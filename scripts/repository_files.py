@@ -11,6 +11,7 @@ RIR_STATS = 'experiments/aclt-rir-stats-probe'
 TASK_COMMITMENT = 'experiments/aclt-task-commitment'
 TASK_AUTHORIZATION = 'experiments/aclt-task-authorization'
 TASK_REPLAY = 'experiments/aclt-task-replay'
+FUNDING_RESERVATION = 'experiments/aclt-funding-reservation'
 EXCLUDE = {'target', 'build', '.toolchain', '__pycache__', '.git', 'artifacts', 'dist'}
 
 def files(root, directory):
@@ -40,7 +41,7 @@ def inventories(root):
         '.aclt-flow/template.json', '.aclt-flow/.gitignore', 'scripts/aclt-flow.py',
         'scripts/package-singlehost.py', 'scripts/repository_files.py']]
     delivery = []
-    for directory in ['tools', 'tests', 'schemas', 'registries', 'scripts', 'docs', EXPERIMENT, MULTINODE, AUTHORITY, RIR_BUILD, RIR_IO, RIR_STATS, TASK_COMMITMENT, TASK_AUTHORIZATION, TASK_REPLAY]:
+    for directory in ['tools', 'tests', 'schemas', 'registries', 'scripts', 'docs', EXPERIMENT, MULTINODE, AUTHORITY, RIR_BUILD, RIR_IO, RIR_STATS, TASK_COMMITMENT, TASK_AUTHORIZATION, TASK_REPLAY, FUNDING_RESERVATION]:
         delivery.extend(p for p in files(root, directory)
                         if not p.relative_to(root).as_posix().startswith('docs/codocs/'))
     delivery += [root / name for name in [
