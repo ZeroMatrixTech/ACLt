@@ -5,7 +5,7 @@ PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip
 .PHONY: help check test test-python test-singlehost test-multinode test-authority build-worker workflow status manifests check-manifests package
 
 help:
-	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make check-rir-build-probe Empty-run lowering adapter regressions' 'make test-rir-build-probe RIR_TOOLCHAIN=/prefix RIR_OUTPUT=/new/path' 'make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path' 'make test-rir-stats-probe RIR_TOOLCHAIN=/prefix RIR_STATS_OUTPUT=/new/path' 'make test-rir-work1 RIR_TOOLCHAIN=/prefix RIR_WORK1_OUTPUT=/new/host-run' 'make test-task-commitment TASK_COMMITMENT_OUTPUT=/new/host-run' 'make check-task-authorization Local authorization/startup regressions; OpenSSL required' 'make check-task-replay Local causal journal/replay regressions' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
+	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make check-rir-build-probe Empty-run lowering adapter regressions' 'make test-rir-build-probe RIR_TOOLCHAIN=/prefix RIR_OUTPUT=/new/path' 'make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path' 'make test-rir-stats-probe RIR_TOOLCHAIN=/prefix RIR_STATS_OUTPUT=/new/path' 'make test-rir-work1 RIR_TOOLCHAIN=/prefix RIR_WORK1_OUTPUT=/new/host-run' 'make test-task-commitment TASK_COMMITMENT_OUTPUT=/new/host-run' 'make check-task-authorization Local authorization/startup regressions; OpenSSL required' 'make check-task-replay Local causal journal/replay regressions' 'make test-task-work2 TASK_WORK2_PEER=user@B TASK_WORK2_A_HOST=A_LAN_IP TASK_WORK2_REMOTE_ROOT=/new/B/path TASK_WORK2_OUTPUT=/new/A/path' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
 
 check: test-python check-manifests check-profile-inventory check-rir-build-probe check-rir-io-probe check-rir-stats-probe check-task-commitment check-task-authorization check-task-replay
 
@@ -92,3 +92,7 @@ check-task-authorization:
 .PHONY: check-task-replay
 check-task-replay:
 	$(PYTHON) -B -W error::ResourceWarning -m unittest discover -s experiments/aclt-task-replay/tests -v
+
+.PHONY: test-task-work2
+test-task-work2:
+	$(PYTHON) -B scripts/task-work2.py run --peer "$(TASK_WORK2_PEER)" --a-host "$(TASK_WORK2_A_HOST)" --remote-root "$(TASK_WORK2_REMOTE_ROOT)" --output "$(TASK_WORK2_OUTPUT)"

@@ -56,3 +56,7 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 ## 第二项切片 3：可重放事件链与不可变提交
 
 [aclt-task-replay](aclt-task-replay/README.md)串起任务注册、授权、启动、outcome、封存提交、接纳与 ACK；独立离线 reducer 用分离保存的 checkpoint/key 重建状态。新增 26 项局部回归纳入默认检查，真实 LAN 12 场景和 7 个篡改反例通过。接纳不判断计算正确性，不实现正式 EventRecord/Receipt 或结算；上一切片源码保持历史范围。
+
+## 第二项工作组合入口
+
+[`scripts/task-work2.py`](../scripts/task-work2.py)提供显式 `run`（真实双机新目录）和 `verify`（当前源码下只读核对证据、无网络/guest）模式。三个任务实验源码不改，授权与重放使用独立部署；第三片包含完整组合链。限定工程收尾结果见 [总报告](../docs/testing/TASK-WORK2-CLOSEOUT-20261024.md)，恢复/信任边界及参数见 [维护入口](../docs/testing/TASK-WORK2-MAINTENANCE.md)。
