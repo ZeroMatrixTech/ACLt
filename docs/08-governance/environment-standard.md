@@ -213,3 +213,7 @@ RIR 切片 1 的固定工具链 lock、离线安装与显式参数构建命令�
 ## 2026-10-24 结算故障恢复环境
 
 [第三资金切片](../testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)复用未改动 v2 结算/审计及已有 Python/SQLite/OpenSSL，无新依赖/安装/编译/VM。显式双机在真实 COMMIT 前后及 worker fsync 点，仅 SIGKILL 本轮创建且匹配 ready/PID/start ticks 的实验进程；TCP reply loss 真实关闭测试连接，管理 SSH 不断开。A 服务/账本/A worker 同故障域，B 独立状态，key/config 不入公共取证/源码包。进程及 SQLite 热日志证据不冒充断电、failover 或账本抗回滚。默认新增 16 项回归、不联网。
+
+## 2026-10-24 第三项工作组合收尾
+
+新增 `scripts/funding-work3.py` 与显式 `make test-funding-work3`，复用已有 SSH、Python/SQLite/OpenSSL 和保存 Wasm fixture，无新依赖/安装/编译。三套独立 genesis/账本经真实双机新目录重跑，不合并余额/权利；仅恢复矩阵受控中断本轮创建进程，管理 SSH 与系统服务不改。只读 `verify` 要求独立保存三份 key/11 份 checkpoint pin，默认局部检查不联网。环境和交接见 [总报告](../testing/FUNDING-WORK3-CLOSEOUT-20261024.md) 与 [维护入口](../testing/FUNDING-WORK3-MAINTENANCE.md)。

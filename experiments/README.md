@@ -72,3 +72,7 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 ## 第三项切片 3：真实结算故障与恢复
 
 [aclt-settlement-recovery](aclt-settlement-recovery/README.md)复用未改动 v2 转移/独立 auditor，以显式测试 gate 验证真实 TCP 丢回复、COMMIT 前后服务 SIGKILL、首次并发和 worker 持久边界中断。正常 `recover` 只查询原权利，不自动结算/退款/重算。16 项新回归、双机 14 场景/6 个篡改反例及 9 份中间/最终离线重放通过，见 [报告](../docs/testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)。
+
+## 第三项工作组合入口
+
+[`scripts/funding-work3.py`](../scripts/funding-work3.py)提供显式 `run`（三套独立双机测试部署）和 `verify`（当前源码下只读核对原证据/11 个 checkpoint，无网络/guest）。第一片 v1 与后两片 v2 的版本差异保留；不合并资产或迁移旧库。实验源码未改，限定收尾结论见 [总报告](../docs/testing/FUNDING-WORK3-CLOSEOUT-20261024.md)，参数/信任/恢复边界见 [维护入口](../docs/testing/FUNDING-WORK3-MAINTENANCE.md)。

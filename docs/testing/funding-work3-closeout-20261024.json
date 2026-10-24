@@ -1,0 +1,502 @@
+{
+  "schema_id": "aclt.evidence.funding-work3-closeout@1",
+  "date": "2026-10-24",
+  "status": "PASS_BOUNDED_ENGINEERING_CLOSEOUT",
+  "work_item": "FUNDING-WORK3",
+  "source_baseline": "6bc557276b5c955ae4dc9544c991044e7ab01e8e",
+  "precheck_clean": true,
+  "prior_experiment_sources_unchanged": true,
+  "fresh_run": "dualhost-run1",
+  "environment_policy": "DUALHOST-SSH-1; distinct physical hosts accepted for bounded tests; three independent deployments/supplies, never aggregate balances or entitlement counts as one task",
+  "environment": {
+    "reservation": {
+      "A": {
+        "kernel": "7.0.0-38-generic",
+        "machine": "x86_64",
+        "python": "3.14.4",
+        "sqlite": "3.46.1",
+        "openssl": "OpenSSL 3.5.5 27 Jan 2026"
+      },
+      "B": {
+        "kernel": "7.0.0-38-generic",
+        "machine": "x86_64",
+        "python": "3.14.4",
+        "sqlite": "3.46.1",
+        "openssl": "OpenSSL 3.5.5 27 Jan 2026"
+      }
+    },
+    "fixed": {
+      "A": {
+        "python": "3.14.4",
+        "kernel": "7.0.0-38-generic",
+        "sqlite": "3.46.1",
+        "openssl": "OpenSSL 3.5.5 27 Jan 2026"
+      },
+      "B": {
+        "python": "3.14.4",
+        "kernel": "7.0.0-38-generic",
+        "sqlite": "3.46.1",
+        "openssl": "OpenSSL 3.5.5 27 Jan 2026"
+      }
+    },
+    "recovery": {
+      "A": {
+        "python": "3.14.4",
+        "kernel": "7.0.0-38-generic",
+        "sqlite": "3.46.1",
+        "openssl": "OpenSSL 3.5.5 27 Jan 2026"
+      },
+      "B": {
+        "python": "3.14.4",
+        "kernel": "7.0.0-38-generic",
+        "sqlite": "3.46.1",
+        "openssl": "OpenSSL 3.5.5 27 Jan 2026"
+      }
+    }
+  },
+  "local_slice_regression_methods": 64,
+  "remote_slice_regression_methods": 64,
+  "new_closeout_tool_regression_methods": 5,
+  "default_make_check_total_methods": 265,
+  "source_sha256": {
+    "experiments/aclt-fixed-settlement/README.md": "3435edb7f4a8bc87c6eafb598d0d0a858e7c132346806d3b01bc97542b0f8e5c",
+    "experiments/aclt-fixed-settlement/audit.py": "eac6a47598ee7bb90cd23155c4bd4cc6a33858ab0363a1e92547c7f25ff56d38",
+    "experiments/aclt-fixed-settlement/client.py": "3ca4b44964d4a84e32bca58c8b2732aee3a318ea4fcdfd097971d2fb3bb5652f",
+    "experiments/aclt-fixed-settlement/dualhost.py": "6198264cf08800b72f1eb2a78258970d68af096b17a62271aba89f05a6efbad5",
+    "experiments/aclt-fixed-settlement/executor.py": "93d5523aa5a7d1d2368dc1662bfad33853b984fd786615df5f97fea0d4db04d7",
+    "experiments/aclt-fixed-settlement/ledger.py": "4cf1473640444e4713a9a2b3c30445d0444a1beeaebe6d88a3434d08aa3b06f1",
+    "experiments/aclt-fixed-settlement/service.py": "00ebde3669f8d9d624515478f48092e150a70617f50f56f559dc08f361e35ef3",
+    "experiments/aclt-fixed-settlement/tests/test_settlement.py": "83ba08ed436ccc0d5eb31b771d077492c1a62268bab5f74740a6d1dcf62fd05a",
+    "experiments/aclt-fixed-settlement/wire.py": "1425b762befabc37466eb946823608adf86634f8163b9c63323ab39d7856388f",
+    "experiments/aclt-funding-reservation/README.md": "e4cb5c28f7d8868fa1c3aec70024634724a9db65b0d0b64efa2c51a063bcabfd",
+    "experiments/aclt-funding-reservation/audit.py": "bd26e840ddd642c407049a2df739f633e40952171d1087dcd632dc8bd1235bc9",
+    "experiments/aclt-funding-reservation/client.py": "01878a2212496d978ab328c77178f3d705d27e41a94650faf77473018dc3d76f",
+    "experiments/aclt-funding-reservation/dualhost.py": "ac8eb72666bd97ca027423ec2a24b161de5b86d8022373f3f53b215a6cf69f7c",
+    "experiments/aclt-funding-reservation/ledger.py": "9348fea6cbaad5b474b416a0db46aaaba8a880846765bec51c6706f2ba4e9813",
+    "experiments/aclt-funding-reservation/service.py": "70968cb5ed17172453bb4b955c887aac9781ce6f2b22b2e2334bfcc624ae6d69",
+    "experiments/aclt-funding-reservation/tests/test_funding.py": "62b25e6efc0162319df9071063265f973bfa4063838ed8ed859d9c53b03a871f",
+    "experiments/aclt-funding-reservation/wire.py": "a4d134b0b239cd6cd268ed187c032c939a75db07448117422e4b70d44ef01e57",
+    "experiments/aclt-rir-stats-probe/README.md": "e952e9a123adfc2389f32e827cf188b2c5f7eee76247b62d6d5808cf368863c9",
+    "experiments/aclt-rir-stats-probe/build.py": "f0fc8566aa49f87403543e60bd95215c9771f32e78c2500b5219f6525c09c795",
+    "experiments/aclt-rir-stats-probe/cases.py": "ec3fc96635228b59ce2858208036002ccb45c0674d48d026ac869be44d681670",
+    "experiments/aclt-rir-stats-probe/compare.py": "699998f6631e9089ca9b119468e5d07499be9be80ca6491d849530d560ae19a3",
+    "experiments/aclt-rir-stats-probe/execute.py": "f265468ee7c7ddd41851148053633e04337b6efc2825654c8cef47544f3b23af",
+    "experiments/aclt-rir-stats-probe/oracle.cjs": "a02a564e084ae7a60f9a045de91f4b94285337e2b28f91829d5cbd4a8e240a82",
+    "experiments/aclt-rir-stats-probe/runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+    "experiments/aclt-rir-stats-probe/src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+    "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+    "experiments/aclt-rir-stats-probe/src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+    "experiments/aclt-rir-stats-probe/src/reference.cpp": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2",
+    "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "experiments/aclt-rir-stats-probe/tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77",
+    "experiments/aclt-rir-stats-probe/tests/test_stats.py": "651a913daa00300420d84125c3bf4d836564adc12b1e6d0e0eac59b772693487",
+    "experiments/aclt-rir-stats-probe/toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+    "experiments/aclt-rir-stats-probe/wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+    "experiments/aclt-settlement-recovery/README.md": "2e466c563aef8f23f657103f155e41ba4f48143bdac6c47ae0e39cdbf0a9d126",
+    "experiments/aclt-settlement-recovery/client.py": "6a37c46625a77ba9c8af779498c21c63fb55324e1f3c480e7c89051500d4f580",
+    "experiments/aclt-settlement-recovery/context.py": "6338b72920c71f16f43484b137b37e605711b2b2093f4208477d3aa53fc677c6",
+    "experiments/aclt-settlement-recovery/dualhost.py": "5c9b7f79f02c540bf5366914dceceefbed9b630e91905dc773aee74cd529365b",
+    "experiments/aclt-settlement-recovery/executor.py": "7a58fb09bdd4929def6cb55a3e51da4b073426f2de6d7064fa3814daf618886a",
+    "experiments/aclt-settlement-recovery/fault_driver.py": "69421277e6a6c3c6fa4dce4ad902fb577968d005844484cf3db5186a11616c90",
+    "experiments/aclt-settlement-recovery/recovery.py": "d4564a067ef5a4c58a758d4ed1578dff281469300a6b5201491920e8075273ca",
+    "experiments/aclt-settlement-recovery/service.py": "2970f5dd019da33f3779019af4aaa335290b9e5e10c86f07437ab8a2c37d3216",
+    "experiments/aclt-settlement-recovery/tests/test_recovery.py": "1406f91e072c16815f407560c151a6bada938607e2a597715b336cb6b06cc055",
+    "experiments/aclt-task-authorization/README.md": "2f6c0220762318dea99b71a3304c38271d23f2d534c965e6d486266759d39ce1",
+    "experiments/aclt-task-authorization/auth_crypto.py": "0c910ae2d7cf9b6e5fdf8d89051665b0bde5c97d0c2e1f4b2ec39a151c573b0a",
+    "experiments/aclt-task-authorization/authorization.py": "c1cebfb130f8cd5050fa0c71b07c2a0b338b028002a6c79e0ee6165be3779ef8",
+    "experiments/aclt-task-authorization/common.py": "8312066c279fab03dabddea444ce3fd428493db5a13f257de4b1a382c10e4137",
+    "experiments/aclt-task-authorization/dualhost.py": "2db1dd969ec6c7032e7efdfc8122135db2b3c1fafce3180d4ae19ebe5e98fcf0",
+    "experiments/aclt-task-authorization/durability.py": "d9832380786ccaff14cab516f2189028d51034a28a98f35643d1cebd3a32720d",
+    "experiments/aclt-task-authorization/fault_driver.py": "5055c2445812240c557f3a258fc7d334a1d1f69ffed4be55f80da6b8fcda5ee6",
+    "experiments/aclt-task-authorization/fixtures.py": "088d60282e29cb5c147aa539057acf3b241ddd3f851375bafeafce36f70a0bf0",
+    "experiments/aclt-task-authorization/runner.py": "d85772f658dc7b34699ad084430e1217b4c5e275475c0e917bb0878b7b6cbec3",
+    "experiments/aclt-task-authorization/service.py": "91621aeec031e16a89aec54890de0aba54dd3382d94871808c01967a7d568cbe",
+    "experiments/aclt-task-authorization/tests/test_authorization.py": "737ef405e689fdb39d87bfcd5d2d4c4e79578d77e1927dfa4b1d8aa68ef97ed1",
+    "experiments/aclt-task-authorization/wire.py": "c8078562508c313720c3ef74486d7b88f4c59d21519cb67274d212ca94aa9f01",
+    "experiments/aclt-task-commitment/README.md": "e6a2247aea9a5c033b701df33697105f4c67cf3d94023d3b9282d4447af3a09f",
+    "experiments/aclt-task-commitment/cbor_codec.py": "7cb16275c2ec5e38c628997fa414cbff9ba5be3b94946caf6502bf9f28287633",
+    "experiments/aclt-task-commitment/cli.py": "fb3e5337a3cfbf530518f1ea40c65bab45b99190bb9022a1d617df1872ed6eb2",
+    "experiments/aclt-task-commitment/commitment.py": "cea63d78ce1dc0324ba15f89df9a846b12d2f2c5455362c17b72da89bc0cfa77",
+    "experiments/aclt-task-commitment/compare.py": "77ba7bad4125db69ae8b5617115cbdfc37a77974492d26754df25fcbc37b381e",
+    "experiments/aclt-task-commitment/execution-profile.json": "3735566e6e3e06f07209d32f6e2c39e86d4249ea7604b18ac38644bcc0ce2d5a",
+    "experiments/aclt-task-commitment/probe.py": "f99d81ab9456b3db9b8fa0d475172305dad9c80fddcb999a61623df6294430e4",
+    "experiments/aclt-task-commitment/rir_adapter.py": "e403b66123f5dece0b38a0d4c771b16be630dcad36d0730eec6e66526fcffbed",
+    "experiments/aclt-task-commitment/schema.json": "e31ec7964ecd32a953bf7684827de84520628724a624216f273644820247ae59",
+    "experiments/aclt-task-commitment/tests/golden.json": "8a0360bc1e7c790dc06384a92b4befd6d427489e5ff6594861e2f1e8dbc410ec",
+    "experiments/aclt-task-commitment/tests/test_commitment.py": "39278c15e85cb80d316bd16a3c4ac00ee3783d876840e81c96ea9d2d4469d06d",
+    "scripts/funding-work3.py": "b7e58141c97d33f593f15843421cf2e4e1a47987f767ba0cc7d66a991dab3996",
+    "tests/workflow/test_funding_work3.py": "ef5f2e10f0727a9e2fe068bf117f041c4942a83cf4f759f36b628e12bad3f0b3"
+  },
+  "suite_summary": {
+    "status": "PASS",
+    "work_item": "FUNDING-WORK3",
+    "scope": "bounded prefunded test-asset reserve, fixed comparison/allocation and process recovery",
+    "evidence_action": "offline rehash/byte comparison/reduction; no network, guest, compiler or live ledger mutation",
+    "source_files": 67,
+    "public_inventory_sha256": "e0a81a9832b9531911af62fee1743c7389c945685fbf300c6806d6b19dbd1527",
+    "caller_pins": {
+      "reservation": {
+        "public_digest": "fa735bd8740cba09727939ca63d277ab589c80d0e11ec323aee8f555e11ae590",
+        "checkpoints": {
+          "final": "9284ea3a8936d5578129cbc0a34fa4fefdfbf23ba724077fec7fa82a0f9e8914"
+        }
+      },
+      "fixed": {
+        "public_digest": "aef2943e2bc4cf1a437671dc7aefa2899477a6fd0a99106a9958ef496c6d2fa7",
+        "checkpoints": {
+          "final": "ce7ce02e1e0305503eeb018d04702647e6328dd6b39ecaee1e5c1c23e585fd47"
+        }
+      },
+      "recovery": {
+        "public_digest": "8438ba201c2e07b795d03fad14fb0314460f6f448eac41678f7581b72df9b38e",
+        "checkpoints": {
+          "lost-pay-without-reply": "e2b25da07d88a3071746f527989d1f40972c668557ce0f8fa42c522451f07e7b",
+          "lost-refund-without-reply": "db249823b78b852fdc82658527e6b5348ab84d187b65dd7b4f1fe6156021773e",
+          "before-commit-baseline": "48dd7ea4ab1d58bf53694a8eed5c20446accc073aa8892bfae9956c91220c246",
+          "before-commit-rolled-back": "48dd7ea4ab1d58bf53694a8eed5c20446accc073aa8892bfae9956c91220c246",
+          "after-commit-before-recovery": "d20850ccbf8628640137459375d2eb8153efebc34db4ef01491a7454ee85bf4f",
+          "race-before-release": "151023cb2e88693aebf9bc523ba6039a10bccd70889bc658da06a4293f305401",
+          "saved-outcome-not-submitted": "8954f9d54de1ac0921fde83ce5aea3669bbc6242f1e2d32f7fa93099ee2c34f8",
+          "permit-only-held": "7ce1ddf9ec451ab6de6f24221742d467fb9cc55f2c28b4a5983b46eec682e992",
+          "final": "3447bb22c3d9ec7b8eb7dc0b166d15b96189ef6485061bcf071efed5316a7351"
+        }
+      }
+    },
+    "regressions": {
+      "reservation": {
+        "local_methods": 22,
+        "remote_methods": 22
+      },
+      "fixed": {
+        "local_methods": 26,
+        "remote_methods": 26
+      },
+      "recovery": {
+        "local_methods": 16,
+        "remote_methods": 16
+      }
+    },
+    "scenarios": {
+      "reservation": {
+        "scenarios": 12,
+        "negative_controls": 5
+      },
+      "fixed": {
+        "scenarios": 12,
+        "negative_controls": 6
+      },
+      "recovery": {
+        "scenarios": 14,
+        "negative_controls": 6
+      }
+    },
+    "checkpoints_reduced": 11,
+    "continuity": {
+      "experimental_task_id": "d9ccb07057d4acb7d482563fbd27ea20606340c4b11d35bdeaea00aded0945ac",
+      "rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879",
+      "profile_digest": "5d241e193fc424145c4b29aa23a6d166d4736d1a4f98ac0fe018cf157fe71078",
+      "execution_limits": {
+        "gas_limit": 50000000,
+        "output_limit": 4800000,
+        "call_depth_limit": 8,
+        "memory_pages_limit": 2
+      },
+      "input_sha256": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+      "artifact_sha256": "560259eadf40292ea9872fb0ff9c5dbc8a809529d5239820dbc302f1abc59668",
+      "policy_schemas": [
+        "aclt.exp.funding-policy@1",
+        "aclt.exp.funding-policy@2",
+        "aclt.exp.funding-policy@2"
+      ],
+      "cap": 100,
+      "fee": 30,
+      "payee_bound_within_each_deployment": true,
+      "normal_outcome_digest": "60f82d5c7bc0ebe566ec4e660c7c02a8f836aca70485007a14927bd5b54d6fcf",
+      "normal_outcome": "OK",
+      "normal_gas": 9126,
+      "normal_output_bytes": 96,
+      "scope": "same retained fixture/reference implementation; distinct authority/reservation/entitlement scopes, no merged funds"
+    },
+    "gate_change": false,
+    "OQ_10_status": "OPEN",
+    "limitations": [
+      "independent test deployments and supplies, never aggregate their balances or count them as one production task",
+      "v1 reservation policy and v2 comparison policy are explicit versions; old stores/entries are not migrated",
+      "same Python reference implementation and accepted DUALHOST-SSH-1 physical-host assumption",
+      "honest pinned hosts/storage/config, issuer/enrollment and single non-rollback/non-forked authority",
+      "hash inventory is integrity, not authenticated provenance; retain key/checkpoint digests independently",
+      "historical checkpoint validity is not freshness, rollback protection, failover or power-cut proof",
+      "no formal objects/TRUSTED/full terminal-fault-source matrix/real assets or external payment assurance"
+    ],
+    "execution_action": "fresh independent two-host runs of all three slices, then offline verification",
+    "checkpoint_summaries": {
+      "reservation": {
+        "final": {
+          "status": "PASS",
+          "events": 18,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 5,
+            "RESERVE": 10,
+            "STATUS": 1,
+            "BALANCE": 1
+          },
+          "initial_total": 300,
+          "available": 50,
+          "reserved": 250,
+          "policies": 4,
+          "reservations": 2,
+          "scope": "test-asset reservation only; no payment/refund, task execution or correctness verdict"
+        }
+      },
+      "fixed": {
+        "final": {
+          "status": "PASS",
+          "events": 30,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 4,
+            "RESERVE": 3,
+            "START": 6,
+            "SUBMIT": 6,
+            "SETTLE": 9,
+            "STATUS": 1
+          },
+          "initial_total": 1000,
+          "available": 900,
+          "reserved": 100,
+          "paid": 30,
+          "refunded": 170,
+          "settlements": 2,
+          "starts": 5,
+          "outcomes": 5
+        }
+      },
+      "recovery": {
+        "lost-pay-without-reply": {
+          "status": "PASS",
+          "events": 8,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 1,
+            "RESERVE": 1,
+            "START": 2,
+            "SUBMIT": 2,
+            "SETTLE": 1
+          },
+          "initial_total": 1000,
+          "available": 1000,
+          "reserved": 0,
+          "paid": 30,
+          "refunded": 70,
+          "settlements": 1,
+          "starts": 2,
+          "outcomes": 2
+        },
+        "lost-refund-without-reply": {
+          "status": "PASS",
+          "events": 17,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 2,
+            "RESERVE": 2,
+            "START": 4,
+            "SUBMIT": 4,
+            "SETTLE": 3,
+            "STATUS": 1
+          },
+          "initial_total": 1000,
+          "available": 1000,
+          "reserved": 0,
+          "paid": 30,
+          "refunded": 170,
+          "settlements": 2,
+          "starts": 4,
+          "outcomes": 4
+        },
+        "before-commit-baseline": {
+          "status": "PASS",
+          "events": 25,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 3,
+            "RESERVE": 3,
+            "START": 6,
+            "SUBMIT": 6,
+            "SETTLE": 4,
+            "STATUS": 2
+          },
+          "initial_total": 1000,
+          "available": 900,
+          "reserved": 100,
+          "paid": 30,
+          "refunded": 170,
+          "settlements": 2,
+          "starts": 6,
+          "outcomes": 6
+        },
+        "before-commit-rolled-back": {
+          "status": "PASS",
+          "events": 25,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 3,
+            "RESERVE": 3,
+            "START": 6,
+            "SUBMIT": 6,
+            "SETTLE": 4,
+            "STATUS": 2
+          },
+          "initial_total": 1000,
+          "available": 900,
+          "reserved": 100,
+          "paid": 30,
+          "refunded": 170,
+          "settlements": 2,
+          "starts": 6,
+          "outcomes": 6
+        },
+        "after-commit-before-recovery": {
+          "status": "PASS",
+          "events": 34,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 4,
+            "RESERVE": 4,
+            "START": 8,
+            "SUBMIT": 8,
+            "SETTLE": 6,
+            "STATUS": 3
+          },
+          "initial_total": 1000,
+          "available": 1000,
+          "reserved": 0,
+          "paid": 90,
+          "refunded": 310,
+          "settlements": 4,
+          "starts": 8,
+          "outcomes": 8
+        },
+        "race-before-release": {
+          "status": "PASS",
+          "events": 42,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 5,
+            "RESERVE": 5,
+            "START": 10,
+            "SUBMIT": 10,
+            "SETTLE": 7,
+            "STATUS": 4
+          },
+          "initial_total": 1000,
+          "available": 900,
+          "reserved": 100,
+          "paid": 90,
+          "refunded": 310,
+          "settlements": 4,
+          "starts": 10,
+          "outcomes": 10
+        },
+        "saved-outcome-not-submitted": {
+          "status": "PASS",
+          "events": 50,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 6,
+            "RESERVE": 6,
+            "START": 12,
+            "SUBMIT": 11,
+            "SETTLE": 10,
+            "STATUS": 4
+          },
+          "initial_total": 1000,
+          "available": 900,
+          "reserved": 100,
+          "paid": 120,
+          "refunded": 380,
+          "settlements": 5,
+          "starts": 12,
+          "outcomes": 11
+        },
+        "permit-only-held": {
+          "status": "PASS",
+          "events": 60,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 7,
+            "RESERVE": 7,
+            "START": 16,
+            "SUBMIT": 13,
+            "SETTLE": 12,
+            "STATUS": 4
+          },
+          "initial_total": 1000,
+          "available": 900,
+          "reserved": 100,
+          "paid": 150,
+          "refunded": 450,
+          "settlements": 6,
+          "starts": 14,
+          "outcomes": 13
+        },
+        "final": {
+          "status": "PASS",
+          "events": 61,
+          "event_counts": {
+            "GENESIS": 1,
+            "FREEZE": 7,
+            "RESERVE": 7,
+            "START": 16,
+            "SUBMIT": 13,
+            "SETTLE": 12,
+            "STATUS": 5
+          },
+          "initial_total": 1000,
+          "available": 900,
+          "reserved": 100,
+          "paid": 150,
+          "refunded": 450,
+          "settlements": 6,
+          "starts": 14,
+          "outcomes": 13
+        }
+      }
+    }
+  },
+  "standalone_verification_sha256": "4a1dc6f248997579640a254c03cece4b2bc70e577413a156dcc6549e0e8b5c82",
+  "closeout_negative_controls": [
+    {
+      "control": "wrong-recovery-public-pin",
+      "status": "REJECTED",
+      "exit_code": 1
+    },
+    {
+      "control": "wrong-final-anchor",
+      "status": "REJECTED",
+      "exit_code": 1
+    },
+    {
+      "control": "missing-rollback-pin",
+      "status": "REJECTED",
+      "exit_code": 1
+    },
+    {
+      "control": "modified-public-evidence-copy",
+      "status": "REJECTED",
+      "exit_code": 1
+    }
+  ],
+  "evidence_sha256": {
+    "source-lock.json": "d09da3fbd7f0f3d3c0af6855e02716b13052a52c679d9a1d7571bdc9ac3f8d41",
+    "public-inventory.json": "e0a81a9832b9531911af62fee1743c7389c945685fbf300c6806d6b19dbd1527",
+    "retained-pins.json": "49ff020d6286caa8eeb047a99551047d17bca91975ee412893c4ee132955a757",
+    "suite.json": "756ad307bf69bb65bb7b58536369397c4e019eaf3c0cecabdefc07272817de72",
+    "reservation/report.json": "2994674e67a208a07f3a863bdf36b3de6d92c4ed80da030d480b819462846a4a",
+    "fixed/report.json": "70cd1616554ec2c68f40e06216e4d6dc7744c945113ee3a254fd6a4b6d735aaf",
+    "recovery/report.json": "559c097406537c546a894e79bedb66d77c38b386b1df239dabc34caec927fb1a"
+  },
+  "scope": "prefunded integer test reserve, two-role exact comparison/fixed internal allocation, actual reply-loss/process recovery",
+  "formal_status_changed": false,
+  "next_work": "Consolidate formal object/admission/interface gaps and minimal migration/conformance criteria before expanding pricing or adapters; OQ-10/G0/G2 remain open"
+}
