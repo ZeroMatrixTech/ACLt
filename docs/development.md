@@ -92,3 +92,7 @@
 ## 第二项切片 3：因果记录与完整包重传
 
 [aclt-task-replay](../experiments/aclt-task-replay/README.md)新增独立实验部署，保留旧实验源文件。`make check-task-replay` 新增 26 项本地回归，默认合计 191 项，依赖已有 OpenSSL/Python/SQLite。显式双机入口使用全新目录，实际 LAN 走 CHECK/CONSUME/SUBMIT；正常 `replay` 仅重传封存包，`offline.py` 仅检查导出证据并要求调用者另存 key/checkpoint digest。不得把不完整状态自动续算，或把实验接纳解释成正确性/TRUSTED。字段、恢复规则、依赖与复现见 [报告](testing/TASK-REPLAY-SLICE3-20261024.md)。
+
+## 第二项工作统一收尾入口
+
+`make test-task-work2` 显式使用现有 SSH、LAN 和全新两端目录，重跑承诺、授权及因果重放三个切片；`scripts/task-work2.py verify` 只核对保存证据，需要独立留存的 key/checkpoint pin，不连接 B 或重新执行任务。五项收尾工具回归纳入默认检查（合计 196 项）；原三个实验源码保持不变。完整命令、证据布局、恢复边界与交接见 [维护入口](testing/TASK-WORK2-MAINTENANCE.md) 和 [总报告](testing/TASK-WORK2-CLOSEOUT-20261024.md)。

@@ -197,3 +197,7 @@ RIR 切片 1 的固定工具链 lock、离线安装与显式参数构建命令�
 ## 第二项切片 3 环境补记（2026-10-24）
 
 [因果日志/重放切片](../testing/TASK-REPLAY-SLICE3-20261024.md)复用现有 Python/SQLite/fsync/OpenSSL，不安装新软件，不改旧 Profile/gas 或授权实验源码。新增 26 项局部回归纳入默认检查；真实 LAN 仍显式 opt-in，A 临时可信服务、B 独立物理 worker，CHECK/CONSUME/SUBMIT 经 TCP，SSH 只部署/控制/取证。key/HMAC 运行材料不入源码包。完整包重传无 guest 调用；离线检查需要独立留存的 checkpoint/key pin，不能发现更新或解决权威回滚。进程 SIGKILL/重启不代表断电。
+
+## 2026-10-24 第二项工作组合收尾
+
+新增 `scripts/task-work2.py` 与显式 `make test-task-work2`，复用现有 SSH、Python/SQLite/OpenSSL 和已保存 Wasm fixture，无新依赖、安装或 Rust 重编译。A/B 独立新目录重跑三个切片，真实 LAN CHECK/CONSUME/SUBMIT 与受控进程故障继续遵守 DUALHOST-SSH-1；本地默认检查不联网。独立留存 checkpoint/key pin 后可只读复核原始证据；SHA 清单不是认证根或权威抗回滚。见 [总报告](../testing/TASK-WORK2-CLOSEOUT-20261024.md) 与 [维护入口](../testing/TASK-WORK2-MAINTENANCE.md)。

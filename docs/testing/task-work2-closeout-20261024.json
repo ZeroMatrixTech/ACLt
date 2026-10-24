@@ -1,0 +1,383 @@
+{
+  "schema_id": "aclt.evidence.task-work2-closeout@1",
+  "date": "2026-10-24",
+  "status": "PASS_BOUNDED_ENGINEERING_CLOSEOUT",
+  "work_item": "TASK-WORK2",
+  "source_baseline": "fe75389784de0e29ce401857bebefdd8ad0065eb",
+  "precheck_clean": true,
+  "prior_experiment_sources_unchanged": true,
+  "fresh_run": "dualhost-run1",
+  "environment_both_hosts": {
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "python": "3.14.4",
+    "sqlite": "3.46.1",
+    "openssl": "OpenSSL 3.5.5 27 Jan 2026"
+  },
+  "environment_policy": "DUALHOST-SSH-1; two physical hosts is an accepted bounded assumption, not proven statistical independence",
+  "local_slice_regression_methods": 69,
+  "remote_slice_regression_methods": 69,
+  "new_closeout_tool_regression_methods": 5,
+  "default_make_check_total_methods": 196,
+  "standalone_verification_sha256": "dc9303e5cb91085e3b3de0c3eeaed2a0ea1efff7e7ade887caedbd4d4a6a4f54",
+  "closeout_pin_negative_controls": [
+    {
+      "control": "wrong-public-pin",
+      "status": "REJECTED",
+      "exit_code": 1
+    },
+    {
+      "control": "wrong-final-anchor",
+      "status": "REJECTED",
+      "exit_code": 1
+    }
+  ],
+  "current_evidence_sha256": {
+    "source-lock.json": "6d30263e6302b20d30afb4b6ea2321507b3b8e6f5665c0bf16c2fb5cacab63ce",
+    "public-inventory.json": "27c5eb780dc4295f9a3aeeb5d0ffb36d62fa87aad2f727ddd3166ad8db3411fc",
+    "suite.json": "0d65ecee976611d60792edf696fc03eb36be9bd61ea13f8282e453385a5f7117",
+    "retained-pins.json": "3277b9a2b4a0fe7d4fa4829e2f997ec80f97273ececc26cab252f1711df47357",
+    "authorization/report.json": "476f6949e37523ff17ea0126807d40ba622cce32a3611683f40e1626df4b9cda",
+    "replay/report.json": "4ae37a8e2954f0b24ba97e97de619d74356029d098fab2bd66af0cc4c1d9a871",
+    "commitment-A/report.json": "0b86dbefe1a26c928d6d712f60b07422949bd7e76ec5c08d2a402eb066ad0d9c",
+    "commitment-B/report.json": "84dd71b14495b73a70e9ad6c1ebd033dbaae24c783b11b9bb4c6bb69403c8d40"
+  },
+  "suite": {
+    "status": "PASS",
+    "work_item": "TASK-WORK2",
+    "scope": "bounded experimental commitment, authorization and causal submission/ACK replay",
+    "evidence_action": "offline rehash/reduce only; no guest or network execution during verify",
+    "source_files": 53,
+    "source_sha256": {
+      "experiments/aclt-rir-stats-probe/README.md": "e952e9a123adfc2389f32e827cf188b2c5f7eee76247b62d6d5808cf368863c9",
+      "experiments/aclt-rir-stats-probe/build.py": "f0fc8566aa49f87403543e60bd95215c9771f32e78c2500b5219f6525c09c795",
+      "experiments/aclt-rir-stats-probe/cases.py": "ec3fc96635228b59ce2858208036002ccb45c0674d48d026ac869be44d681670",
+      "experiments/aclt-rir-stats-probe/compare.py": "699998f6631e9089ca9b119468e5d07499be9be80ca6491d849530d560ae19a3",
+      "experiments/aclt-rir-stats-probe/execute.py": "f265468ee7c7ddd41851148053633e04337b6efc2825654c8cef47544f3b23af",
+      "experiments/aclt-rir-stats-probe/oracle.cjs": "a02a564e084ae7a60f9a045de91f4b94285337e2b28f91829d5cbd4a8e240a82",
+      "experiments/aclt-rir-stats-probe/runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+      "experiments/aclt-rir-stats-probe/src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+      "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+      "experiments/aclt-rir-stats-probe/src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+      "experiments/aclt-rir-stats-probe/src/reference.cpp": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2",
+      "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+      "experiments/aclt-rir-stats-probe/tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77",
+      "experiments/aclt-rir-stats-probe/tests/test_stats.py": "651a913daa00300420d84125c3bf4d836564adc12b1e6d0e0eac59b772693487",
+      "experiments/aclt-rir-stats-probe/toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+      "experiments/aclt-rir-stats-probe/wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+      "experiments/aclt-task-authorization/README.md": "2f6c0220762318dea99b71a3304c38271d23f2d534c965e6d486266759d39ce1",
+      "experiments/aclt-task-authorization/auth_crypto.py": "0c910ae2d7cf9b6e5fdf8d89051665b0bde5c97d0c2e1f4b2ec39a151c573b0a",
+      "experiments/aclt-task-authorization/authorization.py": "c1cebfb130f8cd5050fa0c71b07c2a0b338b028002a6c79e0ee6165be3779ef8",
+      "experiments/aclt-task-authorization/common.py": "8312066c279fab03dabddea444ce3fd428493db5a13f257de4b1a382c10e4137",
+      "experiments/aclt-task-authorization/dualhost.py": "2db1dd969ec6c7032e7efdfc8122135db2b3c1fafce3180d4ae19ebe5e98fcf0",
+      "experiments/aclt-task-authorization/durability.py": "d9832380786ccaff14cab516f2189028d51034a28a98f35643d1cebd3a32720d",
+      "experiments/aclt-task-authorization/fault_driver.py": "5055c2445812240c557f3a258fc7d334a1d1f69ffed4be55f80da6b8fcda5ee6",
+      "experiments/aclt-task-authorization/fixtures.py": "088d60282e29cb5c147aa539057acf3b241ddd3f851375bafeafce36f70a0bf0",
+      "experiments/aclt-task-authorization/runner.py": "d85772f658dc7b34699ad084430e1217b4c5e275475c0e917bb0878b7b6cbec3",
+      "experiments/aclt-task-authorization/service.py": "91621aeec031e16a89aec54890de0aba54dd3382d94871808c01967a7d568cbe",
+      "experiments/aclt-task-authorization/tests/test_authorization.py": "737ef405e689fdb39d87bfcd5d2d4c4e79578d77e1927dfa4b1d8aa68ef97ed1",
+      "experiments/aclt-task-authorization/wire.py": "c8078562508c313720c3ef74486d7b88f4c59d21519cb67274d212ca94aa9f01",
+      "experiments/aclt-task-commitment/README.md": "e6a2247aea9a5c033b701df33697105f4c67cf3d94023d3b9282d4447af3a09f",
+      "experiments/aclt-task-commitment/cbor_codec.py": "7cb16275c2ec5e38c628997fa414cbff9ba5be3b94946caf6502bf9f28287633",
+      "experiments/aclt-task-commitment/cli.py": "fb3e5337a3cfbf530518f1ea40c65bab45b99190bb9022a1d617df1872ed6eb2",
+      "experiments/aclt-task-commitment/commitment.py": "cea63d78ce1dc0324ba15f89df9a846b12d2f2c5455362c17b72da89bc0cfa77",
+      "experiments/aclt-task-commitment/compare.py": "77ba7bad4125db69ae8b5617115cbdfc37a77974492d26754df25fcbc37b381e",
+      "experiments/aclt-task-commitment/execution-profile.json": "3735566e6e3e06f07209d32f6e2c39e86d4249ea7604b18ac38644bcc0ce2d5a",
+      "experiments/aclt-task-commitment/probe.py": "f99d81ab9456b3db9b8fa0d475172305dad9c80fddcb999a61623df6294430e4",
+      "experiments/aclt-task-commitment/rir_adapter.py": "e403b66123f5dece0b38a0d4c771b16be630dcad36d0730eec6e66526fcffbed",
+      "experiments/aclt-task-commitment/schema.json": "e31ec7964ecd32a953bf7684827de84520628724a624216f273644820247ae59",
+      "experiments/aclt-task-commitment/tests/golden.json": "8a0360bc1e7c790dc06384a92b4befd6d427489e5ff6594861e2f1e8dbc410ec",
+      "experiments/aclt-task-commitment/tests/test_commitment.py": "39278c15e85cb80d316bd16a3c4ac00ee3783d876840e81c96ea9d2d4469d06d",
+      "experiments/aclt-task-replay/README.md": "c5b96aa10ccd00942010c7793f5e9281eba4f88dc561aa42168b50e58ec49a3e",
+      "experiments/aclt-task-replay/codec.py": "b79a6599e3d4ee33a2a286c6659eb2f3ad631c3de735b7f7e5ccf5da97e9d8e4",
+      "experiments/aclt-task-replay/context.py": "bac9a4a325220f00ea0faa6587726fa8cdbeb3b937fc76653dbec36d9f26f599",
+      "experiments/aclt-task-replay/dualhost.py": "cf8de3ba4c7f98f8632169e86b08fd98cda8abf06c237443c1d3f366cf10048d",
+      "experiments/aclt-task-replay/fault_driver.py": "e136fed9beda42fe752a8c375359c496e4664cb0fe62ad2ecdfaff1bb6ff083b",
+      "experiments/aclt-task-replay/journal.py": "c89772b683333c213b81299e971dd17ea6a7f0486b0cb52781db07afbb287568",
+      "experiments/aclt-task-replay/ledger.py": "a6f246fe17c682b34930115d86b80abfedc493932443333a4bacdf0c2a089374",
+      "experiments/aclt-task-replay/network.py": "4449622c2bcd6454c5ea31a1d26bd756b9ae22fe63e3bcf4607da3ea4ed69049",
+      "experiments/aclt-task-replay/offline.py": "efa0d98fe6420999d2ae15ba82eb5144762b62d3a4809e8687e6825be906a991",
+      "experiments/aclt-task-replay/service.py": "c3b303aac4d7cb8fc540b26537d7355180ff2962003ea0e9f56f8557393d6ba6",
+      "experiments/aclt-task-replay/tests/test_replay.py": "4148f00e3cd5c54c5cc01a4f5d30bb5317b63d29f2680ef89dea76d5ca6f60fa",
+      "experiments/aclt-task-replay/worker.py": "f11545d7d3eaabb4039638faf8b3298ff78a9c588836abe26b18836105e586a2",
+      "scripts/task-work2.py": "c2db48a308c3a97457497f40246fafcbbde125c062f4585adcf0b269bb458971",
+      "tests/workflow/test_task_work2.py": "e4cda2b2e493661512d6b3ec2e9c826f503ad024a739f8f015b2ee898c890043"
+    },
+    "public_inventory_sha256": "27c5eb780dc4295f9a3aeeb5d0ffb36d62fa87aad2f727ddd3166ad8db3411fc",
+    "caller_pins": {
+      "public_digest": "bbdc3833c152ae4364d3969b01b3925d19e6d523f9a99269d2514a991b0f62b1",
+      "pending-ack": "e6e86474d4fc3038fc263033f3d51dadcf7d02558232c8bbc237b694e566cee7",
+      "final": "f706389edc7b84b388e1145a138e48293d759a6c06112b2d8db03081d9c4421c"
+    },
+    "commitment": {
+      "status": "PASS",
+      "scope": "same implementation on two physical hosts; not independent codec validation or authorized execution",
+      "physical_independence": "user-accepted DUALHOST-SSH-1 assumption; hostname difference alone is insufficient",
+      "cases_per_host": 24,
+      "records": 48,
+      "experimental_task_id": "5a0765d5b4c40a147b74525ead5b80fba0fa2d89e1b3238a13b5f75f589ea319",
+      "rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879",
+      "execution_profile_digest": "5d241e193fc424145c4b29aa23a6d166d4736d1a4f98ac0fe018cf157fe71078",
+      "artifacts": {
+        "input.bin": "6b90df0b57c8c9ccdd814657dd4e40fa7b806536017b56d9dbbb5edb938ad0d8",
+        "commitment.cbor": "3da23e3b00be4558290154a4418c267c950b1d482ddc8097bf57309aa21654da",
+        "cases.json": "6f1c69a2b9b78f587ccdb85c80c652060bbcd2693e185fe53dd207b9088052f3",
+        "artifact.cbor": "560259eadf40292ea9872fb0ff9c5dbc8a809529d5239820dbc302f1abc59668",
+        "identity.json": "90f83b5c620ed961ffa2d13953ac44edc1bc1de587128528d0ffa9a541e083a8",
+        "view.json": "0395534455258d54691aedeaf7dba38020f3a5eda5f3f221be17346697a52b8e"
+      },
+      "source_hashes": {
+        "experiments/aclt-rir-stats-probe/runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+        "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+        "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+        "experiments/aclt-rir-stats-probe/tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77",
+        "experiments/aclt-rir-stats-probe/wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+        "experiments/aclt-task-commitment/README.md": "e6a2247aea9a5c033b701df33697105f4c67cf3d94023d3b9282d4447af3a09f",
+        "experiments/aclt-task-commitment/cbor_codec.py": "7cb16275c2ec5e38c628997fa414cbff9ba5be3b94946caf6502bf9f28287633",
+        "experiments/aclt-task-commitment/cli.py": "fb3e5337a3cfbf530518f1ea40c65bab45b99190bb9022a1d617df1872ed6eb2",
+        "experiments/aclt-task-commitment/commitment.py": "cea63d78ce1dc0324ba15f89df9a846b12d2f2c5455362c17b72da89bc0cfa77",
+        "experiments/aclt-task-commitment/compare.py": "77ba7bad4125db69ae8b5617115cbdfc37a77974492d26754df25fcbc37b381e",
+        "experiments/aclt-task-commitment/execution-profile.json": "3735566e6e3e06f07209d32f6e2c39e86d4249ea7604b18ac38644bcc0ce2d5a",
+        "experiments/aclt-task-commitment/probe.py": "f99d81ab9456b3db9b8fa0d475172305dad9c80fddcb999a61623df6294430e4",
+        "experiments/aclt-task-commitment/rir_adapter.py": "e403b66123f5dece0b38a0d4c771b16be630dcad36d0730eec6e66526fcffbed",
+        "experiments/aclt-task-commitment/schema.json": "e31ec7964ecd32a953bf7684827de84520628724a624216f273644820247ae59",
+        "experiments/aclt-task-commitment/tests/golden.json": "8a0360bc1e7c790dc06384a92b4befd6d427489e5ff6594861e2f1e8dbc410ec",
+        "experiments/aclt-task-commitment/tests/test_commitment.py": "39278c15e85cb80d316bd16a3c4ac00ee3783d876840e81c96ea9d2d4469d06d"
+      },
+      "run_report_sha256": [
+        "0b86dbefe1a26c928d6d712f60b07422949bd7e76ec5c08d2a402eb066ad0d9c",
+        "84dd71b14495b73a70e9ad6c1ebd033dbaae24c783b11b9bb4c6bb69403c8d40"
+      ]
+    },
+    "authorization": {
+      "scenarios": 16,
+      "completed_guest_executions": 2,
+      "verification": "retained matrix assertions and evidence hashes; not independent slice-2 transition reduction"
+    },
+    "replay": {
+      "scenarios": 12,
+      "negative_controls": [
+        {
+          "control": "truncate-authority",
+          "status": "REJECTED",
+          "reason": "truncated/extended checkpoint log"
+        },
+        {
+          "control": "drop-worker",
+          "status": "REJECTED",
+          "reason": "referenced worker prefix missing/forked"
+        },
+        {
+          "control": "alter-object",
+          "status": "REJECTED",
+          "reason": "object hash mismatch"
+        },
+        {
+          "control": "projection",
+          "status": "REJECTED",
+          "reason": "replayed state differs from signed/materialized projection"
+        },
+        {
+          "control": "fork-worker",
+          "status": "REJECTED",
+          "reason": "worker journal fork"
+        },
+        {
+          "control": "wrong-anchor",
+          "status": "REJECTED",
+          "reason": "caller-retained checkpoint digest mismatch"
+        },
+        {
+          "control": "wrong-public-pin",
+          "status": "REJECTED",
+          "reason": "issuer public-key pin mismatch"
+        }
+      ],
+      "checkpoints": {
+        "pending-ack": {
+          "status": "PASS",
+          "authority_events": 15,
+          "worker_events": 25,
+          "accepted": 2,
+          "consumed": 2,
+          "authority_counts": {
+            "REGISTER": 2,
+            "ISSUE": 2,
+            "CHECK": 2,
+            "CONSUME": 2,
+            "ACCEPT": 2,
+            "SUBMIT_DUPLICATE": 4,
+            "SUBMIT_CONFLICT": 1
+          },
+          "workers": [
+            {
+              "stream": "75df84ca31b81adc277eeda7171021560cc07e0f30190d3c800f2dff9ab67a84",
+              "phase": "SENDING",
+              "accepted": true,
+              "acknowledged": false
+            },
+            {
+              "stream": "ea055b7598d149d5c570fbc0a19513948cf5c727c451a7a04ed9e8ad8bc741cb",
+              "phase": "ACKED",
+              "accepted": true,
+              "acknowledged": true
+            }
+          ],
+          "projection": {
+            "tasks": [
+              "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+              "cddb2e961357cfdf4838b0fd89f24306d420396c8d9443738cf50b81bcc1895f"
+            ],
+            "slots": {
+              "e77de97503a9685a1edb6f76532fecbe9abaaab1f5b3ed7244c75df5a3ca475d": {
+                "task": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+                "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+                "epoch": 1,
+                "consumed": "910b0a0c45913bba654fd266c3b76aba1b241e1f6c75ca97d82443043e4213a8",
+                "accepted": "84373dd9a29e3b71fcf679a025a5e43b492b74853bc49be7a9873ebf38dc61f3"
+              },
+              "d86d07ed2bd34a4db736fe62111b610c61d4b587b68331c6bcfb47cc6c850d6c": {
+                "task": "cddb2e961357cfdf4838b0fd89f24306d420396c8d9443738cf50b81bcc1895f",
+                "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+                "epoch": 1,
+                "consumed": "289cdec094c0efd7fd588943fd17f1497b9e8c41fa2ee21a1fc77a1a0bbc3529",
+                "accepted": "2fd5a7d160ae00047927492a190f1ea0e2c41688158f80265da956a58b1f3e42"
+              }
+            }
+          },
+          "guest_executions_during_replay": 0
+        },
+        "final": {
+          "status": "PASS",
+          "authority_events": 34,
+          "worker_events": 55,
+          "accepted": 4,
+          "consumed": 5,
+          "authority_counts": {
+            "REGISTER": 6,
+            "ISSUE": 6,
+            "CHECK": 6,
+            "CONSUME": 5,
+            "ACCEPT": 4,
+            "SUBMIT_DUPLICATE": 5,
+            "SUBMIT_CONFLICT": 1,
+            "SUBMIT_REJECTED": 1
+          },
+          "workers": [
+            {
+              "stream": "1b484eec60f0ff4b4da1c7c6f0b14c90c1bd040d9df4709b9e322588d9dc000d",
+              "phase": "ACKED",
+              "accepted": true,
+              "acknowledged": true
+            },
+            {
+              "stream": "19a6f5fc140139c338e29358c9ae950b7c1098d078b3f28583f70d9a0feb23dc",
+              "phase": "INTENT",
+              "accepted": false,
+              "acknowledged": false
+            },
+            {
+              "stream": "5f69b5b54b04594d88df50be0293e8f621090f6541f1664d029e5201e686c5de",
+              "phase": "OUTCOME",
+              "accepted": false,
+              "acknowledged": false
+            },
+            {
+              "stream": "8be0f2193cd00dcee51b478423582db0a484db9369b3cf1dbd771bf36c3645ff",
+              "phase": "ACKED",
+              "accepted": true,
+              "acknowledged": true
+            },
+            {
+              "stream": "75df84ca31b81adc277eeda7171021560cc07e0f30190d3c800f2dff9ab67a84",
+              "phase": "ACKED",
+              "accepted": true,
+              "acknowledged": true
+            },
+            {
+              "stream": "ea055b7598d149d5c570fbc0a19513948cf5c727c451a7a04ed9e8ad8bc741cb",
+              "phase": "ACKED",
+              "accepted": true,
+              "acknowledged": true
+            }
+          ],
+          "projection": {
+            "tasks": [
+              "2fcfe11f537e01b1dbb4aacac25c8d62e179cd99393012857fa95f0fa659d7c1",
+              "67be8b7da258bb01672eaa4fc0021b3981cc29b5df997d5bda6853c2853a37cb",
+              "71a9d011cac8a3b4fa6bbc1957d4102dfd244b5da3c8e9d9853770400ab0a0fe",
+              "a79a41b0143f41950ef7d1a684d54e93572a6b5f54ff3f91e33a162ff11b1543",
+              "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+              "cddb2e961357cfdf4838b0fd89f24306d420396c8d9443738cf50b81bcc1895f"
+            ],
+            "slots": {
+              "e77de97503a9685a1edb6f76532fecbe9abaaab1f5b3ed7244c75df5a3ca475d": {
+                "task": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+                "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+                "epoch": 1,
+                "consumed": "910b0a0c45913bba654fd266c3b76aba1b241e1f6c75ca97d82443043e4213a8",
+                "accepted": "84373dd9a29e3b71fcf679a025a5e43b492b74853bc49be7a9873ebf38dc61f3"
+              },
+              "d86d07ed2bd34a4db736fe62111b610c61d4b587b68331c6bcfb47cc6c850d6c": {
+                "task": "cddb2e961357cfdf4838b0fd89f24306d420396c8d9443738cf50b81bcc1895f",
+                "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+                "epoch": 1,
+                "consumed": "289cdec094c0efd7fd588943fd17f1497b9e8c41fa2ee21a1fc77a1a0bbc3529",
+                "accepted": "2fd5a7d160ae00047927492a190f1ea0e2c41688158f80265da956a58b1f3e42"
+              },
+              "2f9c3b8aac1689417cae0b2c5bd67ca7c44af6b3f13d8da56d2d70bed7a3bcd8": {
+                "task": "67be8b7da258bb01672eaa4fc0021b3981cc29b5df997d5bda6853c2853a37cb",
+                "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+                "epoch": 1,
+                "consumed": "d3b97676203539d4bc6e2974e4034bf19bd50fcfbcd7d50e2aab90e9922ed636",
+                "accepted": "de8396a82c31782eef86f25264b684d75ec53a96a014617976a01bf1dac42c30"
+              },
+              "a9215324441644229f3ff302fb096b0f5f7d72e524a50ab2ccb362fdc06698f8": {
+                "task": "a79a41b0143f41950ef7d1a684d54e93572a6b5f54ff3f91e33a162ff11b1543",
+                "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+                "epoch": 1,
+                "consumed": "",
+                "accepted": ""
+              },
+              "17edd981e2948645e11f9a03e4b3ce58809aaa38f2e64517aad06c1f157c8464": {
+                "task": "71a9d011cac8a3b4fa6bbc1957d4102dfd244b5da3c8e9d9853770400ab0a0fe",
+                "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+                "epoch": 1,
+                "consumed": "a5a4d28da27eda23257f8a85496b6478f959a478078a0d5ae39750f217f336e7",
+                "accepted": ""
+              },
+              "24e56012a62844a9e0111141f212b8de897a995461f4b7fa6eaf9c659ddfe245": {
+                "task": "2fcfe11f537e01b1dbb4aacac25c8d62e179cd99393012857fa95f0fa659d7c1",
+                "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+                "epoch": 1,
+                "consumed": "0b5ac1fbbb8e97edf84469449e9787fa15de62bbbdcb26753d8d972699d6f695",
+                "accepted": "b4628d4a3ebc36d7f1c1905e453741ece8ec7003f272b5d56ebad48453612cde"
+              }
+            }
+          },
+          "guest_executions_during_replay": 0
+        }
+      }
+    },
+    "cross_slice_continuity": [
+      "RIR bytes/digest",
+      "input bytes/references",
+      "Profile",
+      "limits",
+      "equivalence"
+    ],
+    "gate_change": false,
+    "ADR_status": "PROPOSED",
+    "limitations": [
+      "two physical hosts under accepted DUALHOST-SSH-1 assumption",
+      "separate regression deployments, not one shared ledger or formal object migration",
+      "hash inventory is integrity, not authenticated provenance; retain key/checkpoint pins independently",
+      "valid historical anchors do not establish freshness or prevent issuer rollback/equivocation",
+      "honest pinned worker/config/filesystem and single trusted issuer/key/clock/enrollment",
+      "acceptance is not arithmetic correctness, verification verdict/TRUSTED or settlement",
+      "no formal ComputeReceipt/Lease/ExecutionCapability/EventRecord or production conformance"
+    ],
+    "execution_action": "fresh two-host run of all three slices, followed by offline verification"
+  },
+  "conclusion": "Three slices complete within experimental task freeze/authorization/causal submission and ACK recovery scope; no formal protocol status change",
+  "next_work": "Bind two-host outcomes and exact comparison evidence to one frozen experimental task; separately track formal object/signature/conformance gaps; no automatic TRUSTED or settlement"
+}
