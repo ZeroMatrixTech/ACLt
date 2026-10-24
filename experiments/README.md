@@ -60,3 +60,7 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 ## 第二项工作组合入口
 
 [`scripts/task-work2.py`](../scripts/task-work2.py)提供显式 `run`（真实双机新目录）和 `verify`（当前源码下只读核对证据、无网络/guest）模式。三个任务实验源码不改，授权与重放使用独立部署；第三片包含完整组合链。限定工程收尾结果见 [总报告](../docs/testing/TASK-WORK2-CLOSEOUT-20261024.md)，恢复/信任边界及参数见 [维护入口](../docs/testing/TASK-WORK2-MAINTENANCE.md)。
+
+## 第三项切片 1：测试资金冻结与原子预留
+
+[aclt-funding-reservation](aclt-funding-reservation/README.md)实现预置整数测试资产、绑定原始任务的冻结政策、单一可信账本和原子预留/幂等查询；不实现支付、退款或执行授权联动。22 项局部回归纳入默认检查，真实双机 12 场景和 5 个篡改反例通过。独立离线 reducer 检查余额/预留守恒，见 [报告](../docs/testing/FUNDING-RESERVATION-SLICE1-20261024.md)。

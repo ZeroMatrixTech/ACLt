@@ -219,3 +219,7 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 ### 实验提交/ACK 与恢复补记（2026-10-24）
 
 [可重放链切片](../testing/TASK-REPLAY-SLICE3-20261024.md)在独立实验部署记录授权到提交接纳的完整因果链。ACCEPT 是 A 保存完整实验包，ACK 是 B 收到原回执，两者可以暂时分离。已封存完整包可重传而不重新消费/计算；未封存状态不自动恢复 guest。接纳不证明正确执行，不替代正式终态、EventRecord、验证判决和结算，也不改变本文章节的规范要求。
+
+### 实验资金冻结/预留补记（2026-10-24）
+
+[资金切片](../testing/FUNDING-RESERVATION-SLICE1-20261024.md)在独立测试部署冻结任务相关资金政策并将可用余额原子转为预留。冻结本身不授权资金/执行，预留也不是 active Lease；旧启动入口未接该账本。不存在付款、退款或自动取消；未知状态保留占用，现有 ACCEPT/Task OK 不作为结算依据。后续须在统一准入中确保冻结/预留先于 grant 与调用，本片不改变正式生命周期或终态要求。

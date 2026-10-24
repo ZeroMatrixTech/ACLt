@@ -201,3 +201,7 @@ RIR 切片 1 的固定工具链 lock、离线安装与显式参数构建命令�
 ## 2026-10-24 第二项工作组合收尾
 
 新增 `scripts/task-work2.py` 与显式 `make test-task-work2`，复用现有 SSH、Python/SQLite/OpenSSL 和已保存 Wasm fixture，无新依赖、安装或 Rust 重编译。A/B 独立新目录重跑三个切片，真实 LAN CHECK/CONSUME/SUBMIT 与受控进程故障继续遵守 DUALHOST-SSH-1；本地默认检查不联网。独立留存 checkpoint/key pin 后可只读复核原始证据；SHA 清单不是认证根或权威抗回滚。见 [总报告](../testing/TASK-WORK2-CLOSEOUT-20261024.md) 与 [维护入口](../testing/TASK-WORK2-MAINTENANCE.md)。
+
+## 2026-10-24 测试资金预留环境
+
+[资金预留切片](../testing/FUNDING-RESERVATION-SLICE1-20261024.md)复用已有 Python/SQLite/fsync/OpenSSL 和候选 CBOR/签名适配，无新增依赖、软件安装、Rust 重编译或 guest 计算。默认新增 22 项回归，真实 LAN 集成显式 opt-in；A 单一可信测试资金服务/账本，B 认证请求端，严格 SSH 只部署/控制/取证。仅预置整数测试资产，运行密钥/config/数据库不入源码包；进程重启不代表断电，权威不回滚仍为接受假设。

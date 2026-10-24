@@ -96,3 +96,7 @@
 ## 第二项工作统一收尾入口
 
 `make test-task-work2` 显式使用现有 SSH、LAN 和全新两端目录，重跑承诺、授权及因果重放三个切片；`scripts/task-work2.py verify` 只核对保存证据，需要独立留存的 key/checkpoint pin，不连接 B 或重新执行任务。五项收尾工具回归纳入默认检查（合计 196 项）；原三个实验源码保持不变。完整命令、证据布局、恢复边界与交接见 [维护入口](testing/TASK-WORK2-MAINTENANCE.md) 和 [总报告](testing/TASK-WORK2-CLOSEOUT-20261024.md)。
+
+## 第三项切片 1：资金政策与预留
+
+`make check-funding-reservation` 运行新增 22 项本地回归，默认合计 218 项，使用既有 Python/SQLite/OpenSSL。真实 LAN 矩阵显式运行 [实验目录](../experiments/aclt-funding-reservation/README.md)的 `dualhost.py`，仅全新目录，A 为单一测试资金账本、B 为请求端。`audit.py` 按独立保存的 key/checkpoint pin 只读重建账目。没有真实资金、付款/退款或旧执行入口资金门禁；字段、恢复边界和证据见 [报告](testing/FUNDING-RESERVATION-SLICE1-20261024.md)。

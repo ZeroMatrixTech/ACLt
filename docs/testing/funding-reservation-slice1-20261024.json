@@ -1,0 +1,243 @@
+{
+  "schema_id": "aclt.evidence.funding-reservation-slice1@1",
+  "date": "2026-10-24",
+  "status": "PASS_BOUNDED_EXPERIMENT",
+  "source_baseline": "74d9201344c0127e6c585e674cc1f41ec2ac73bb",
+  "precheck_clean": true,
+  "prior_experiment_sources_unchanged": true,
+  "physical_hosts": 2,
+  "environment_policy": "DUALHOST-SSH-1; A trusted funding ledger/service, B requester; physical independence is an accepted bounded assumption",
+  "environment": [
+    {
+      "kernel": "7.0.0-38-generic",
+      "machine": "x86_64",
+      "python": "3.14.4",
+      "sqlite": "3.46.1",
+      "openssl": "OpenSSL 3.5.5 27 Jan 2026"
+    },
+    {
+      "kernel": "7.0.0-38-generic",
+      "machine": "x86_64",
+      "python": "3.14.4",
+      "sqlite": "3.46.1",
+      "openssl": "OpenSSL 3.5.5 27 Jan 2026"
+    }
+  ],
+  "asset": "aclt.exp.test-unit@1",
+  "decimal_places": 0,
+  "real_assets_used": false,
+  "local_regression_methods": 22,
+  "remote_regression_methods": 22,
+  "default_make_check_total_methods": 218,
+  "source_sha256": {
+    "experiments/aclt-funding-reservation/README.md": "e4cb5c28f7d8868fa1c3aec70024634724a9db65b0d0b64efa2c51a063bcabfd",
+    "experiments/aclt-funding-reservation/audit.py": "bd26e840ddd642c407049a2df739f633e40952171d1087dcd632dc8bd1235bc9",
+    "experiments/aclt-funding-reservation/client.py": "01878a2212496d978ab328c77178f3d705d27e41a94650faf77473018dc3d76f",
+    "experiments/aclt-funding-reservation/dualhost.py": "ac8eb72666bd97ca027423ec2a24b161de5b86d8022373f3f53b215a6cf69f7c",
+    "experiments/aclt-funding-reservation/ledger.py": "9348fea6cbaad5b474b416a0db46aaaba8a880846765bec51c6706f2ba4e9813",
+    "experiments/aclt-funding-reservation/service.py": "70968cb5ed17172453bb4b955c887aac9781ce6f2b22b2e2334bfcc624ae6d69",
+    "experiments/aclt-funding-reservation/tests/test_funding.py": "62b25e6efc0162319df9071063265f973bfa4063838ed8ed859d9c53b03a871f",
+    "experiments/aclt-funding-reservation/wire.py": "a4d134b0b239cd6cd268ed187c032c939a75db07448117422e4b70d44ef01e57",
+    "experiments/aclt-rir-stats-probe/README.md": "e952e9a123adfc2389f32e827cf188b2c5f7eee76247b62d6d5808cf368863c9",
+    "experiments/aclt-rir-stats-probe/build.py": "f0fc8566aa49f87403543e60bd95215c9771f32e78c2500b5219f6525c09c795",
+    "experiments/aclt-rir-stats-probe/cases.py": "ec3fc96635228b59ce2858208036002ccb45c0674d48d026ac869be44d681670",
+    "experiments/aclt-rir-stats-probe/compare.py": "699998f6631e9089ca9b119468e5d07499be9be80ca6491d849530d560ae19a3",
+    "experiments/aclt-rir-stats-probe/execute.py": "f265468ee7c7ddd41851148053633e04337b6efc2825654c8cef47544f3b23af",
+    "experiments/aclt-rir-stats-probe/oracle.cjs": "a02a564e084ae7a60f9a045de91f4b94285337e2b28f91829d5cbd4a8e240a82",
+    "experiments/aclt-rir-stats-probe/runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+    "experiments/aclt-rir-stats-probe/src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+    "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+    "experiments/aclt-rir-stats-probe/src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+    "experiments/aclt-rir-stats-probe/src/reference.cpp": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2",
+    "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "experiments/aclt-rir-stats-probe/tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77",
+    "experiments/aclt-rir-stats-probe/tests/test_stats.py": "651a913daa00300420d84125c3bf4d836564adc12b1e6d0e0eac59b772693487",
+    "experiments/aclt-rir-stats-probe/toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+    "experiments/aclt-rir-stats-probe/wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+    "experiments/aclt-task-authorization/README.md": "2f6c0220762318dea99b71a3304c38271d23f2d534c965e6d486266759d39ce1",
+    "experiments/aclt-task-authorization/auth_crypto.py": "0c910ae2d7cf9b6e5fdf8d89051665b0bde5c97d0c2e1f4b2ec39a151c573b0a",
+    "experiments/aclt-task-authorization/authorization.py": "c1cebfb130f8cd5050fa0c71b07c2a0b338b028002a6c79e0ee6165be3779ef8",
+    "experiments/aclt-task-authorization/common.py": "8312066c279fab03dabddea444ce3fd428493db5a13f257de4b1a382c10e4137",
+    "experiments/aclt-task-authorization/dualhost.py": "2db1dd969ec6c7032e7efdfc8122135db2b3c1fafce3180d4ae19ebe5e98fcf0",
+    "experiments/aclt-task-authorization/durability.py": "d9832380786ccaff14cab516f2189028d51034a28a98f35643d1cebd3a32720d",
+    "experiments/aclt-task-authorization/fault_driver.py": "5055c2445812240c557f3a258fc7d334a1d1f69ffed4be55f80da6b8fcda5ee6",
+    "experiments/aclt-task-authorization/fixtures.py": "088d60282e29cb5c147aa539057acf3b241ddd3f851375bafeafce36f70a0bf0",
+    "experiments/aclt-task-authorization/runner.py": "d85772f658dc7b34699ad084430e1217b4c5e275475c0e917bb0878b7b6cbec3",
+    "experiments/aclt-task-authorization/service.py": "91621aeec031e16a89aec54890de0aba54dd3382d94871808c01967a7d568cbe",
+    "experiments/aclt-task-authorization/tests/test_authorization.py": "737ef405e689fdb39d87bfcd5d2d4c4e79578d77e1927dfa4b1d8aa68ef97ed1",
+    "experiments/aclt-task-authorization/wire.py": "c8078562508c313720c3ef74486d7b88f4c59d21519cb67274d212ca94aa9f01",
+    "experiments/aclt-task-commitment/README.md": "e6a2247aea9a5c033b701df33697105f4c67cf3d94023d3b9282d4447af3a09f",
+    "experiments/aclt-task-commitment/cbor_codec.py": "7cb16275c2ec5e38c628997fa414cbff9ba5be3b94946caf6502bf9f28287633",
+    "experiments/aclt-task-commitment/cli.py": "fb3e5337a3cfbf530518f1ea40c65bab45b99190bb9022a1d617df1872ed6eb2",
+    "experiments/aclt-task-commitment/commitment.py": "cea63d78ce1dc0324ba15f89df9a846b12d2f2c5455362c17b72da89bc0cfa77",
+    "experiments/aclt-task-commitment/compare.py": "77ba7bad4125db69ae8b5617115cbdfc37a77974492d26754df25fcbc37b381e",
+    "experiments/aclt-task-commitment/execution-profile.json": "3735566e6e3e06f07209d32f6e2c39e86d4249ea7604b18ac38644bcc0ce2d5a",
+    "experiments/aclt-task-commitment/probe.py": "f99d81ab9456b3db9b8fa0d475172305dad9c80fddcb999a61623df6294430e4",
+    "experiments/aclt-task-commitment/rir_adapter.py": "e403b66123f5dece0b38a0d4c771b16be630dcad36d0730eec6e66526fcffbed",
+    "experiments/aclt-task-commitment/schema.json": "e31ec7964ecd32a953bf7684827de84520628724a624216f273644820247ae59",
+    "experiments/aclt-task-commitment/tests/golden.json": "8a0360bc1e7c790dc06384a92b4befd6d427489e5ff6594861e2f1e8dbc410ec",
+    "experiments/aclt-task-commitment/tests/test_commitment.py": "39278c15e85cb80d316bd16a3c4ac00ee3783d876840e81c96ea9d2d4469d06d"
+  },
+  "matrix": {
+    "status": "PASS",
+    "scenarios": 12,
+    "records": [
+      {
+        "scenario": "freeze-without-debit",
+        "status": "PASS"
+      },
+      {
+        "scenario": "reserve-frozen-cap",
+        "status": "PASS"
+      },
+      {
+        "scenario": "new-nonce-idempotence",
+        "status": "PASS"
+      },
+      {
+        "scenario": "concurrent-identical-reservations",
+        "status": "PASS"
+      },
+      {
+        "scenario": "frozen-policy-conflict",
+        "status": "PASS"
+      },
+      {
+        "scenario": "different-tasks-compete-without-overdraft",
+        "status": "PASS"
+      },
+      {
+        "scenario": "insufficient-no-partial-lock-or-credit",
+        "status": "PASS"
+      },
+      {
+        "scenario": "wrong-payer-denied",
+        "status": "PASS"
+      },
+      {
+        "scenario": "unknown-policy-denied",
+        "status": "PASS"
+      },
+      {
+        "scenario": "restart-query-stable-reservation",
+        "status": "PASS"
+      },
+      {
+        "scenario": "service-offline-no-local-funding-fallback",
+        "status": "PASS"
+      },
+      {
+        "scenario": "conservation-and-reservation-retained",
+        "status": "PASS"
+      }
+    ],
+    "negative_controls": [
+      {
+        "control": "truncate",
+        "status": "REJECTED",
+        "reason": "checkpoint count"
+      },
+      {
+        "control": "projection",
+        "status": "REJECTED",
+        "reason": "signed head/projection mismatch"
+      },
+      {
+        "control": "event-bytes",
+        "status": "REJECTED",
+        "reason": "event sequence/previous/schema"
+      },
+      {
+        "control": "wrong-key",
+        "status": "REJECTED",
+        "reason": "issuer public-key pin mismatch"
+      },
+      {
+        "control": "wrong-anchor",
+        "status": "REJECTED",
+        "reason": "caller checkpoint digest"
+      }
+    ],
+    "public_digest": "194cf4f01505f8dbff9f718d95043490277540f08f3955b1980c5fbceeed8bca",
+    "anchor_digest": "b09f0f8d805b599f8aff909a1806baad7f782661bb1be25f26f5f3210708592b",
+    "signed_B_responses": 17,
+    "reduced": {
+      "status": "PASS",
+      "events": 18,
+      "event_counts": {
+        "GENESIS": 1,
+        "FREEZE": 5,
+        "RESERVE": 10,
+        "STATUS": 1,
+        "BALANCE": 1
+      },
+      "initial_total": 300,
+      "available": 50,
+      "reserved": 250,
+      "policies": 4,
+      "reservations": 2,
+      "projection": {
+        "accounts": {
+          "0000000000000000000000000000000000000000000000000000000000000000": {
+            "available": 50,
+            "reserved": 250
+          },
+          "84095eb7de39d979f2291e2ac630d748570a4b68fde56bba076dc516f519f9c9": {
+            "available": 0,
+            "reserved": 0
+          },
+          "c1299ffbe9fc3cf9c49020adb191b9e8062ca8f0b8dc8c9bc168b74b1f107e04": {
+            "available": 0,
+            "reserved": 0
+          }
+        },
+        "policies": {
+          "3e9732ddf6c2403b1cb00385c198ee23feab87d8398ffdfbb5e157de6107d3b0": "ac647461736b5820d9ccb07057d4acb7d482563fbd27ea20606340c4b11d35bdeaea00aded0945ac6561737365747461636c742e6578702e746573742d756e697440316570617965655820c1299ffbe9fc3cf9c49020adb191b9e8062ca8f0b8dc8c9bc168b74b1f107e0466736f757263657670726566756e6465642d746573742d62616c616e6365697265717565737465725820000000000000000000000000000000000000000000000000000000000000000069736368656d615f6964781961636c742e6578702e66756e64696e672d706f6c69637940316b726566756e645f72756c65782461636c742e6578702e636c6f7365642d6e6f2d7061792d66756c6c2d726566756e6440316b737563636573735f666565181e6c70656e64696e675f72756c65782361636c742e6578702e756e6b6e6f776e2d686f6c642d7265736572766174696f6e40316e617574686f72697a65645f63617018646e646563696d616c5f706c61636573006f736574746c656d656e745f72756c65782361636c742e6578702e65786163742d65766964656e63652d66697865642d6665654031",
+          "ad043498c4763b1f2e3b946a811dd65ec655e144a27d4d2020d625552da424d0": "ac647461736b5820c2ab3f45097e086aab1c8ce495731935b8ef63d7ea1a759aefcd3579d5149beb6561737365747461636c742e6578702e746573742d756e697440316570617965655820c1299ffbe9fc3cf9c49020adb191b9e8062ca8f0b8dc8c9bc168b74b1f107e0466736f757263657670726566756e6465642d746573742d62616c616e6365697265717565737465725820000000000000000000000000000000000000000000000000000000000000000069736368656d615f6964781961636c742e6578702e66756e64696e672d706f6c69637940316b726566756e645f72756c65782461636c742e6578702e636c6f7365642d6e6f2d7061792d66756c6c2d726566756e6440316b737563636573735f666565181e6c70656e64696e675f72756c65782361636c742e6578702e756e6b6e6f776e2d686f6c642d7265736572766174696f6e40316e617574686f72697a65645f63617018966e646563696d616c5f706c61636573006f736574746c656d656e745f72756c65782361636c742e6578702e65786163742d65766964656e63652d66697865642d6665654031",
+          "564c46badb46723380bdea2c17677cef7d626794cd37c4dc0efd6548d525f06a": "ac647461736b582087f47c8fce7d6070c87a09b866212ac89e5e9005ae6b1b3110bb0ae26bb8147e6561737365747461636c742e6578702e746573742d756e697440316570617965655820c1299ffbe9fc3cf9c49020adb191b9e8062ca8f0b8dc8c9bc168b74b1f107e0466736f757263657670726566756e6465642d746573742d62616c616e6365697265717565737465725820000000000000000000000000000000000000000000000000000000000000000069736368656d615f6964781961636c742e6578702e66756e64696e672d706f6c69637940316b726566756e645f72756c65782461636c742e6578702e636c6f7365642d6e6f2d7061792d66756c6c2d726566756e6440316b737563636573735f666565181e6c70656e64696e675f72756c65782361636c742e6578702e756e6b6e6f776e2d686f6c642d7265736572766174696f6e40316e617574686f72697a65645f63617018966e646563696d616c5f706c61636573006f736574746c656d656e745f72756c65782361636c742e6578702e65786163742d65766964656e63652d66697865642d6665654031",
+          "39125a4b47142230349bfa9180bd527cdd31e3830bdd6a2227e7e644e119923d": "ac647461736b582056d6cd81e7aa8fabab8610972edbff720b8b3d2047699735163d2305473e10e46561737365747461636c742e6578702e746573742d756e697440316570617965655820c1299ffbe9fc3cf9c49020adb191b9e8062ca8f0b8dc8c9bc168b74b1f107e0466736f757263657670726566756e6465642d746573742d62616c616e6365697265717565737465725820000000000000000000000000000000000000000000000000000000000000000069736368656d615f6964781961636c742e6578702e66756e64696e672d706f6c69637940316b726566756e645f72756c65782461636c742e6578702e636c6f7365642d6e6f2d7061792d66756c6c2d726566756e6440316b737563636573735f6665650a6c70656e64696e675f72756c65782361636c742e6578702e756e6b6e6f776e2d686f6c642d7265736572766174696f6e40316e617574686f72697a65645f63617018336e646563696d616c5f706c61636573006f736574746c656d656e745f72756c65782361636c742e6578702e65786163742d65766964656e63652d66697865642d6665654031"
+        },
+        "reservations": {
+          "6cd28285cc5d536cfec6babfc9781983b7ece2f69ceb85177774a4ce3da79b18": {
+            "policy_id": "3e9732ddf6c2403b1cb00385c198ee23feab87d8398ffdfbb5e157de6107d3b0",
+            "account": "0000000000000000000000000000000000000000000000000000000000000000",
+            "amount": 100,
+            "receipt": "a2677061796c6f6164590145a9647461736b5820d9ccb07057d4acb7d482563fbd27ea20606340c4b11d35bdeaea00aded0945ac6561737365747461636c742e6578702e746573742d756e697440316570617965655820c1299ffbe9fc3cf9c49020adb191b9e8062ca8f0b8dc8c9bc168b74b1f107e0466616d6f756e74186469706f6c6963795f696458203e9732ddf6c2403b1cb00385c198ee23feab87d8398ffdfbb5e157de6107d3b0697265717565737465725820000000000000000000000000000000000000000000000000000000000000000069736368656d615f6964781e61636c742e6578702e66756e64696e672d7265736572766174696f6e40316c617574686f726974795f696450116f67477c2e37781f18e8fcd5e5aed66e7265736572766174696f6e5f696458206cd28285cc5d536cfec6babfc9781983b7ece2f69ceb85177774a4ce3da79b18697369676e61747572655901006e475552b4d1c92ce1bdd5fa2e2215dd3e05edd0409a3990957ef660e6325d7216d0c4149daeec980501fdb290dbf37f0ec4cdd2f486c1ad50bdb48c18e8f19649054a50dd45f7f63656c9ee3122000524723f10c4ae5f582214493d3b51c7e12166a1101b2dfe5c34d8dc12c2f65b4ba786e3b8fb02a26fd618f93b50324042e81f88a36fb7af0137cbbfd80dd113c2193bee9cc9e374026c856c2a78570482ccae03914e2919b561c8292cb10c87953a7854a1c056255c2a663a938b56683713731c27ab8e1aa2ac04e6445d6db8217e86b95ae3d8ec9f340001e2f89e675fa7d85c0af03470ed49677f02461e7cc32667094b1d91281aaced9a02bdda9784"
+          },
+          "225af57ebbbcc340ebf2de74773c33f29dbacb22d54269776d3017febf0f54f0": {
+            "policy_id": "564c46badb46723380bdea2c17677cef7d626794cd37c4dc0efd6548d525f06a",
+            "account": "0000000000000000000000000000000000000000000000000000000000000000",
+            "amount": 150,
+            "receipt": "a2677061796c6f6164590145a9647461736b582087f47c8fce7d6070c87a09b866212ac89e5e9005ae6b1b3110bb0ae26bb8147e6561737365747461636c742e6578702e746573742d756e697440316570617965655820c1299ffbe9fc3cf9c49020adb191b9e8062ca8f0b8dc8c9bc168b74b1f107e0466616d6f756e74189669706f6c6963795f69645820564c46badb46723380bdea2c17677cef7d626794cd37c4dc0efd6548d525f06a697265717565737465725820000000000000000000000000000000000000000000000000000000000000000069736368656d615f6964781e61636c742e6578702e66756e64696e672d7265736572766174696f6e40316c617574686f726974795f696450116f67477c2e37781f18e8fcd5e5aed66e7265736572766174696f6e5f69645820225af57ebbbcc340ebf2de74773c33f29dbacb22d54269776d3017febf0f54f0697369676e61747572655901008762416b54cb2997fd8117f9a90402b88b4c470c73f53123b9b1b9fad883b8958114fdd7d5a2c96280197ee55c027270c9a67187b697cd6154ac2d73e5f104c6b760c5a921e3ca074eba48f6a903b96263ad535952c60c3f0df84b7a27778afd4fd8004eeb7c443d2b863643feea8a5f1e8a88083e095f1d5153287bf750118364e50396d4ac1e0c1013884d66f32467f12fbd6d4d7cf69469c012756c8eb1d98489a6157b9efcba787662403e734e8c7933a3764da9c9d78960a82a2a6557e02d7cd6b756d058f13fdd15648d5d7403ff43dfb40a846e1970259acf2f781fc890ee933526c6dda66504fc9db86c5c31f8e057988dd47a2647000f1141ce4c20"
+          }
+        }
+      },
+      "scope": "test-asset reservation only; no payment/refund, task execution or correctness verdict"
+    },
+    "scope": "integer prefunded test-asset freeze/reserve only; no payment/refund or execution grant",
+    "topology": "A single trusted test funding ledger/service; B authenticated requester over real LAN TCP"
+  },
+  "standalone_audit_matches": true,
+  "standalone_audit_sha256": "3377870e117484ab6eb3318fd01a958ee0eaa06336684544475729a2bc1b885d",
+  "evidence_sha256": {
+    "source-lock.json": "c6b9f3610739722dedc640d5f2d086cca6ed0beab8c90829c4b95d244e5c808e",
+    "report.json": "3ac015ab6c310874bbceeba53e367d84644c026f4eb047ee587a03c65750f0d8",
+    "remote-source-check.log": "8d0ccdc2d8dcfa47a1fa6d4768324bfe7a685209c3caa7b707e234362c4ce3be",
+    "remote-unit.log": "918f0d4a24e8f7dbfeeb1241ba9d49d5b4a0b68550b2dfb9c01f8e882beecc54",
+    "ledger-export.json": "d7061f11c27c8a9ac49e98940dd75eb8f0b46431bd053688f109b34718a0ac6d",
+    "checkpoint.cbor": "b09f0f8d805b599f8aff909a1806baad7f782661bb1be25f26f5f3210708592b",
+    "reduced.json": "3377870e117484ab6eb3318fd01a958ee0eaa06336684544475729a2bc1b885d",
+    "A/issuer.pub": "194cf4f01505f8dbff9f718d95043490277540f08f3955b1980c5fbceeed8bca"
+  },
+  "scope": "frozen test policy, integer balances and atomic reservation only",
+  "not_implemented": [
+    "payment/refund/cancel/runtime credit",
+    "settlement entitlement or exact-comparison decision validation",
+    "combined grant/startup gate consulting funding reservation",
+    "formal FundingPolicy/SettlementPolicy/ComputeReceipt/EventRecord",
+    "real money/external payment adapters/production identity-key lifecycle",
+    "TLS/DoS/attestation/authority rollback protection/failover/physical power-cut testing"
+  ],
+  "gate_status_changed": false,
+  "OQ_10_status": "OPEN"
+}
