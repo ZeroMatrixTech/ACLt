@@ -205,3 +205,7 @@ RIR 切片 1 的固定工具链 lock、离线安装与显式参数构建命令�
 ## 2026-10-24 测试资金预留环境
 
 [资金预留切片](../testing/FUNDING-RESERVATION-SLICE1-20261024.md)复用已有 Python/SQLite/fsync/OpenSSL 和候选 CBOR/签名适配，无新增依赖、软件安装、Rust 重编译或 guest 计算。默认新增 22 项回归，真实 LAN 集成显式 opt-in；A 单一可信测试资金服务/账本，B 认证请求端，严格 SSH 只部署/控制/取证。仅预置整数测试资产，运行密钥/config/数据库不入源码包；进程重启不代表断电，权威不回滚仍为接受假设。
+
+## 2026-10-24 双端固定测试结算环境
+
+[固定结算切片](../testing/FIXED-SETTLEMENT-SLICE2-20261024.md)复用已有 Python/SQLite/OpenSSL 与保存的 Wasm fixture，无新依赖/安装/Rust 编译。A 服务/账本和 A reference worker 同故障域，B Requester/B worker 独立运行目录；实际 LAN 发送资金/START/结果/结算请求，严格 SSH 仅控制取证。两端执行同一 Python 实现，不称独立实现或统计独立。测试 HMAC 角色分开，A issuer/角色密钥留 A；实际运行 private 材料不入源码包。默认新增 26 项回归，双机仍显式 opt-in。

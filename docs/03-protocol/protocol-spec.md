@@ -306,3 +306,7 @@ Maintenance MAY 发布版本化 `MainnetAssuranceProfile`，但只能限于声�
 ### 实验资金预留补记（2026-10-24）
 
 [测试资金切片](../testing/FUNDING-RESERVATION-SLICE1-20261024.md)使用专用 funding-policy/reservation/event schema，对固定预置整数测试资产实现冻结和原子预留。它不实现正式 FundingPolicy/SettlementPolicy/EntitlementKey、终态/故障归因矩阵、支付/退款或生产发行；两个余额桶的守恒检查不能代替 §13 完整不变量。旧执行入口尚未接入资金门禁，预留不构成启动能力或正确性判决。OQ-10 与规范状态保持不变。
+
+### 实验固定分配补记（2026-10-24）
+
+[独立 v2 固定结算](../testing/FIXED-SETTLEMENT-SLICE2-20261024.md)在资金预留后使用一次性角色许可，按冻结双端 outcome 规则派生实验 comparison 和单一整笔权利，原子记账 fixed fee/退款。其 no-pay/PENDING 是实验政策分支，不是正式终态、故障归因或 TRUSTED；不新增 `REEXEC_EXACT` 方法。正式 FundingPolicy/SettlementPolicy/EntitlementKey/EventRecord 与完整 §13 要求仍未实现；旧入口/旧库不迁移，OQ-10 与资格不变。

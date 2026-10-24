@@ -64,3 +64,7 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 ## 第三项切片 1：测试资金冻结与原子预留
 
 [aclt-funding-reservation](aclt-funding-reservation/README.md)实现预置整数测试资产、绑定原始任务的冻结政策、单一可信账本和原子预留/幂等查询；不实现支付、退款或执行授权联动。22 项局部回归纳入默认检查，真实双机 12 场景和 5 个篡改反例通过。独立离线 reducer 检查余额/预留守恒，见 [报告](../docs/testing/FUNDING-RESERVATION-SLICE1-20261024.md)。
+
+## 第三项切片 2：双端比较与固定测试结算
+
+[aclt-fixed-settlement](aclt-fixed-settlement/README.md)独立 v2 部署冻结比较规则，资金预留后以一次性角色许可运行同一任务，封存双端 outcome，派生唯一权利并原子支付/退款。缺失/未知保持占用。26 项新增局部回归、真实双机 12 场景和 6 个篡改反例通过；不迁移旧库或产生正式 TRUSTED/结算资格。见 [报告](../docs/testing/FIXED-SETTLEMENT-SLICE2-20261024.md)。

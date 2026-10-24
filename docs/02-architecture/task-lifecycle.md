@@ -223,3 +223,7 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 ### 实验资金冻结/预留补记（2026-10-24）
 
 [资金切片](../testing/FUNDING-RESERVATION-SLICE1-20261024.md)在独立测试部署冻结任务相关资金政策并将可用余额原子转为预留。冻结本身不授权资金/执行，预留也不是 active Lease；旧启动入口未接该账本。不存在付款、退款或自动取消；未知状态保留占用，现有 ACCEPT/Task OK 不作为结算依据。后续须在统一准入中确保冻结/预留先于 grant 与调用，本片不改变正式生命周期或终态要求。
+
+### 实验资金前置与唯一分配补记（2026-10-24）
+
+[第二资金切片](../testing/FIXED-SETTLEMENT-SLICE2-20261024.md)仅在新 v2 入口执行资金冻结/预留→角色 START→完整双端 outcome→比较→唯一原子分配。缺少一端/HostFault 保持资金占用；重复分配取原回执，不重算或重开槽位。完整不一致/非 OK 的 no-pay 是预先冻结的测试政策，不解释为本文正式 FAILED/UNRESOLVED。旧入口尚未联动，funded-start 不是正式 active Lease/ExecutionCapability，协议状态不变。

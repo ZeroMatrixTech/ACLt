@@ -100,3 +100,7 @@
 ## 第三项切片 1：资金政策与预留
 
 `make check-funding-reservation` 运行新增 22 项本地回归，默认合计 218 项，使用既有 Python/SQLite/OpenSSL。真实 LAN 矩阵显式运行 [实验目录](../experiments/aclt-funding-reservation/README.md)的 `dualhost.py`，仅全新目录，A 为单一测试资金账本、B 为请求端。`audit.py` 按独立保存的 key/checkpoint pin 只读重建账目。没有真实资金、付款/退款或旧执行入口资金门禁；字段、恢复边界和证据见 [报告](testing/FUNDING-RESERVATION-SLICE1-20261024.md)。
+
+## 第三项切片 2：固定结算实验入口
+
+`make check-fixed-settlement` 新增 26 项局部回归，默认合计 244 项，不联网。独立 [v2 实验](../experiments/aclt-fixed-settlement/README.md)提供 `executor.py execute|submit`、`client.py settle|status` 和只读 `audit.py`；真实双机矩阵显式使用全新目录、严格 SSH 和实际 LAN。比较/费用在执行前冻结，完整报告重传不续算；旧执行/账本入口不迁移。恢复与信任边界见 [报告](testing/FIXED-SETTLEMENT-SLICE2-20261024.md)。

@@ -353,3 +353,7 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 ### 测试资金预留补记（2026-10-24）
 
 [实验预留](../testing/FUNDING-RESERVATION-SLICE1-20261024.md)依赖单一可信不回滚资金账本、HMAC enrollment、A 签名密钥及诚实 pinned 宿主/存储；只涉及无现实价值的预置整数测试单位。独立离线检查检测给定签名锚点下的账目/政策/预留不一致，不能证明新鲜性、外部偿付或阻止权威分叉。旧执行入口资金门禁、支付/退款、生产身份/密钥/TLS/DoS、断电与 failover 未覆盖，正式威胁模型与 Gate 不变。
+
+### 双端 outcome 固定结算实验补记（2026-10-24）
+
+[固定测试结算](../testing/FIXED-SETTLEMENT-SLICE2-20261024.md)依赖诚实 pinned A/B worker、独立 HMAC 角色 enrollment、A issuer/账本不回滚及受信持久状态。签名 funded-start/结算回执绑定冻结对象，无法证明恶意宿主执行或阻止其旁路；相同 Python 实现的双机一致性不证明统计/身份独立或产生 TRUSTED。不一致 no-pay 仅是实验付款政策，不是过错认定；真实支付、生产密钥/TLS/DoS、failover、断电和正式故障矩阵仍未覆盖。
