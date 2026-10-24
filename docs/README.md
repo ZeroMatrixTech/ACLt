@@ -40,7 +40,8 @@
 11. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
 12. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
 13. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
-14. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
+14. [`07-roadmap/formal-object-migration.md`](07-roadmap/formal-object-migration.md)（工程规划草案，非规范）
+15. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
 
 ### 工程证据与维护
 
