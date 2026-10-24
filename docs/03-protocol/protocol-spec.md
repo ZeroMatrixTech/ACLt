@@ -310,3 +310,7 @@ Maintenance MAY 发布版本化 `MainnetAssuranceProfile`，但只能限于声�
 ### 实验固定分配补记（2026-10-24）
 
 [独立 v2 固定结算](../testing/FIXED-SETTLEMENT-SLICE2-20261024.md)在资金预留后使用一次性角色许可，按冻结双端 outcome 规则派生实验 comparison 和单一整笔权利，原子记账 fixed fee/退款。其 no-pay/PENDING 是实验政策分支，不是正式终态、故障归因或 TRUSTED；不新增 `REEXEC_EXACT` 方法。正式 FundingPolicy/SettlementPolicy/EntitlementKey/EventRecord 与完整 §13 要求仍未实现；旧入口/旧库不迁移，OQ-10 与资格不变。
+
+### 实验结算恢复证据补记（2026-10-24）
+
+[恢复切片](../testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)保留原 v2 实验政策/转移/权利，新增只读查询优先的恢复及显式故障仪器，验证真实 reply loss 和进程中断不会创建重复分配；未知仍占用。它不改变正式 SettlementPolicy/EntitlementKey/EventRecord、终态/故障矩阵或最终性要求，不引入管理覆盖/紧急退款。过程 SIGKILL 不证明物理断电或权威抗回滚，正式资格/Gate 不变。

@@ -227,3 +227,7 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 ### 实验资金前置与唯一分配补记（2026-10-24）
 
 [第二资金切片](../testing/FIXED-SETTLEMENT-SLICE2-20261024.md)仅在新 v2 入口执行资金冻结/预留→角色 START→完整双端 outcome→比较→唯一原子分配。缺少一端/HostFault 保持资金占用；重复分配取原回执，不重算或重开槽位。完整不一致/非 OK 的 no-pay 是预先冻结的测试政策，不解释为本文正式 FAILED/UNRESOLVED。旧入口尚未联动，funded-start 不是正式 active Lease/ExecutionCapability，协议状态不变。
+
+### 实验查询优先恢复补记（2026-10-24）
+
+[第三资金切片](../testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)用原 v2 转移验证：COMMIT 前进程中断回滚未提交权利，COMMIT 后回复丢失查询原回执；只保存 outcome 的 worker 可重传，只有 permit 的 worker 不续算/不自动退款。RECOVERED/HELD/UNFUNDED 是客户端诊断，不是新协议状态，旧生命周期与正式结算终局要求不改。

@@ -68,3 +68,7 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 ## 第三项切片 2：双端比较与固定测试结算
 
 [aclt-fixed-settlement](aclt-fixed-settlement/README.md)独立 v2 部署冻结比较规则，资金预留后以一次性角色许可运行同一任务，封存双端 outcome，派生唯一权利并原子支付/退款。缺失/未知保持占用。26 项新增局部回归、真实双机 12 场景和 6 个篡改反例通过；不迁移旧库或产生正式 TRUSTED/结算资格。见 [报告](../docs/testing/FIXED-SETTLEMENT-SLICE2-20261024.md)。
+
+## 第三项切片 3：真实结算故障与恢复
+
+[aclt-settlement-recovery](aclt-settlement-recovery/README.md)复用未改动 v2 转移/独立 auditor，以显式测试 gate 验证真实 TCP 丢回复、COMMIT 前后服务 SIGKILL、首次并发和 worker 持久边界中断。正常 `recover` 只查询原权利，不自动结算/退款/重算。16 项新回归、双机 14 场景/6 个篡改反例及 9 份中间/最终离线重放通过，见 [报告](../docs/testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)。

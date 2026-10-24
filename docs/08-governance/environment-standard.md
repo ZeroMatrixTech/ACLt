@@ -209,3 +209,7 @@ RIR 切片 1 的固定工具链 lock、离线安装与显式参数构建命令�
 ## 2026-10-24 双端固定测试结算环境
 
 [固定结算切片](../testing/FIXED-SETTLEMENT-SLICE2-20261024.md)复用已有 Python/SQLite/OpenSSL 与保存的 Wasm fixture，无新依赖/安装/Rust 编译。A 服务/账本和 A reference worker 同故障域，B Requester/B worker 独立运行目录；实际 LAN 发送资金/START/结果/结算请求，严格 SSH 仅控制取证。两端执行同一 Python 实现，不称独立实现或统计独立。测试 HMAC 角色分开，A issuer/角色密钥留 A；实际运行 private 材料不入源码包。默认新增 26 项回归，双机仍显式 opt-in。
+
+## 2026-10-24 结算故障恢复环境
+
+[第三资金切片](../testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)复用未改动 v2 结算/审计及已有 Python/SQLite/OpenSSL，无新依赖/安装/编译/VM。显式双机在真实 COMMIT 前后及 worker fsync 点，仅 SIGKILL 本轮创建且匹配 ready/PID/start ticks 的实验进程；TCP reply loss 真实关闭测试连接，管理 SSH 不断开。A 服务/账本/A worker 同故障域，B 独立状态，key/config 不入公共取证/源码包。进程及 SQLite 热日志证据不冒充断电、failover 或账本抗回滚。默认新增 16 项回归、不联网。
