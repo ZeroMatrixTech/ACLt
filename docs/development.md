@@ -80,3 +80,7 @@
 ## 第一项工作（三切片）的统一入口
 
 `make test-rir-work1 RIR_TOOLCHAIN=/prefix RIR_WORK1_OUTPUT=/new/host-run` 在一台主机依次重建三个切片；两台物理机分别运行后，用 `scripts/rir-work1.py verify --slice1 A1 B1 --slice2 A2 B2 --slice3 A3 B3 --report /new/report.json` 核对保留证据与当前源码。它不自动联网/安装、不覆盖旧产物；详细范围与下一项见 [总收尾报告](testing/RIR-WORK1-CLOSEOUT-20261023.md)。
+
+## 第二项工作切片 1：候选最小任务承诺
+
+[aclt-task-commitment](../experiments/aclt-task-commitment/README.md)提供显式候选 schema/CBOR、experimental_task_id 与绑定探针。`make check-task-commitment` 运行 19 项局部回归；`make test-task-commitment TASK_COMMITMENT_OUTPUT=/new/path` 保存每机证据，再用 `compare.py` 比较双机。CLI freeze 要求所有上限显式给定；execute-probe 不允许覆盖冻结上限且明确没有授权。见 [本轮报告](testing/TASK-COMMITMENT-SLICE1-20261023.md)。

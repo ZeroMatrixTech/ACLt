@@ -44,3 +44,7 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 ## 第一项工作：三切片组合收尾
 
 上述三个 RIR 探针共同完成候选源码到执行与精确统计比较的第一项工程工作。`make test-rir-work1` 提供单主机全套复现，`scripts/rir-work1.py verify` 组合核对两台主机的保留证据；完整命令、假设与下一项见 [收尾报告](../docs/testing/RIR-WORK1-CLOSEOUT-20261023.md)。不以该工程完成状态代替 RIR/RPR conformance 或 Gate 验收。
+
+## 第二项切片 1：任务承诺与身份绑定
+
+[aclt-task-commitment](aclt-task-commitment/README.md)实现 ExperimentalTaskCommitment、候选 canonical CBOR、域分离实验 ID、Profile/输入/工件绑定和显式诊断 CLI。19 项回归纳入默认检查，双机通过独立探针执行与证据比较核对。该对象不是 ComputeReceipt；尚无签名授权、一次执行保证或可重放事件链。

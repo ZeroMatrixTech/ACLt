@@ -207,3 +207,7 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 - 事务、幂等、分区和灾难恢复；
 - Evidence 更正、隐私与保留。
 - Logical Object 生命周期、RIR validator、Rust Profile lowering、RPR/Host OS capability、runtime/effects/resource 与 checkpoint 可移植语义。
+
+### 2026-10-23 工程映射说明（非规范对象）
+
+[最小承诺切片](../testing/TASK-COMMITMENT-SLICE1-20261023.md)用 ExperimentalTaskCommitment / experimental_task_id 探索执行前冻结与输入/工件/上限绑定。它不构成本文的 ComputeReceipt 登记，也未实现 active Lease、ExecutionCapability 或 EventRecord；无授权诊断执行不进入本协议状态机。正式生命周期与冻结字段要求保持不变。

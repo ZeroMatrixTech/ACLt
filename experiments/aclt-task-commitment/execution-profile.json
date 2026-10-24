@@ -1,0 +1,39 @@
+{
+  "schema_id": "aclt.exp.execution-profile@1",
+  "profile_id": "aclt.exp.rir-stats-bound@1",
+  "rir_version": [
+    0,
+    1,
+    0
+  ],
+  "abi_id": "aclt.exp.rir-five-imports@1",
+  "effects": [
+    "explicit-input-read",
+    "append-output",
+    "abort"
+  ],
+  "result_equivalence": "aclt.exp.outcome-exact@1",
+  "outcome_fields": [
+    "outcome",
+    "gas_used",
+    "output-bytes-only-if-OK",
+    "abort_code-only-if-ABORT"
+  ],
+  "module_subset": "slice3-integer-void-fixed-two-pages",
+  "gas_schedule": "ADR-0006-candidate-slice3-implementation",
+  "supported_limits": {
+    "gas_limit_min": 8192,
+    "gas_limit_max": 50000000,
+    "output_limit_min": 0,
+    "output_limit_max": 4800000,
+    "memory_pages_limit": 2,
+    "call_depth_limit_min": 1,
+    "call_depth_limit_max": 64
+  },
+  "implementation_pins": {
+    "experiments/aclt-rir-stats-probe/wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+    "experiments/aclt-rir-stats-probe/runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+    "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+    "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b"
+  }
+}
