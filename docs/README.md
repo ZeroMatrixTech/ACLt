@@ -235,3 +235,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [第二项工作统一收尾](testing/TASK-WORK2-CLOSEOUT-20261024.md)：任务承诺、实验授权和因果提交/ACK 重放三片组合验收；[复现与交接](testing/TASK-WORK2-MAINTENANCE.md)提供显式双机运行和只读证据核对命令。
 
 - [2026-10-24 第三项工作切片 1](testing/FUNDING-RESERVATION-SLICE1-20261024.md)：冻结实验资金政策、整数余额与原子预留，含真实双机和独立离线守恒检查；尚无支付/退款或正式结算语义。
+
+- [2026-10-24 第三项工作切片 2](testing/FIXED-SETTLEMENT-SLICE2-20261024.md)：同一冻结任务双端 outcome、资金前置许可、唯一固定测试分配及支付/退款；不替代正式验证/结算矩阵。
