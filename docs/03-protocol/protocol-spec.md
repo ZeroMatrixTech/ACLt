@@ -298,3 +298,7 @@ Maintenance MAY 发布版本化 `MainnetAssuranceProfile`，但只能限于声�
 ### 2026-10-24 实验授权对象说明
 
 [ExperimentalExecutionGrant 切片](../testing/TASK-AUTHORIZATION-SLICE2-20261024.md)独立命名并绑定实验任务、Provider/unit、环境、scope、epoch 和期限，只有有限实验的可信 issuer/消费账本语义。它不满足本规范完整 Lease、ExecutionCapability、签名责任/注册和恢复契约，也不把该服务引入协议 Principal 或验证权威。
+
+### 实验因果日志与接纳补记（2026-10-24）
+
+[第三切片](../testing/TASK-REPLAY-SLICE3-20261024.md)使用专用 causal-event/submission/acceptance-receipt schema，区分 A 接纳与 B ACK，并对完整封存包实行同字节幂等重传及独立离线状态重建。这些都是受信单账本实验对象，不满足本规范正式 EventRecord/ComputeReceipt/验证裁决/结算契约；签名 checkpoint 也不解决 issuer 分叉或回滚。正式状态机和资格不变。

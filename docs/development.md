@@ -88,3 +88,7 @@
 ## 第二项切片 2：实验授权与启动边界
 
 [aclt-task-authorization](../experiments/aclt-task-authorization/README.md)接入签名 grant、调度/启动双检查、单一在线消费账本和持久启动意图。`make check-task-authorization` 及默认检查需要已有 OpenSSL，新增 24 项无网络回归。真实双机矩阵必须显式调用 `dualhost.py`，使用全新本地/远端目录与严格 SSH 主机密钥检查；它会启动并清理本轮测试服务/进程。范围与下一切片见 [报告](testing/TASK-AUTHORIZATION-SLICE2-20261024.md)。
+
+## 第二项切片 3：因果记录与完整包重传
+
+[aclt-task-replay](../experiments/aclt-task-replay/README.md)新增独立实验部署，保留旧实验源文件。`make check-task-replay` 新增 26 项本地回归，默认合计 191 项，依赖已有 OpenSSL/Python/SQLite。显式双机入口使用全新目录，实际 LAN 走 CHECK/CONSUME/SUBMIT；正常 `replay` 仅重传封存包，`offline.py` 仅检查导出证据并要求调用者另存 key/checkpoint digest。不得把不完整状态自动续算，或把实验接纳解释成正确性/TRUSTED。字段、恢复规则、依赖与复现见 [报告](testing/TASK-REPLAY-SLICE3-20261024.md)。

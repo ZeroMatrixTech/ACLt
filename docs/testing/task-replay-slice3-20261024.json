@@ -1,0 +1,401 @@
+{
+  "schema_id": "aclt.evidence.task-replay-slice3@1",
+  "date": "2026-10-24",
+  "status": "PASS_BOUNDED_EXPERIMENT",
+  "source_baseline": "a71f866c10c5fc1f28163bd9d7af1d1d61de3241",
+  "precheck_clean": true,
+  "prior_experiment_sources_unchanged": true,
+  "current_run": "dualhost-run2",
+  "superseded_evidence": "dualhost-run1 preserved; predates stricter server prefix/header and reducer object-reference checks; not counted as final-source evidence",
+  "physical_hosts": 2,
+  "topology": "A trusted signed journal/acceptance; B reference worker; CHECK/CONSUME/SUBMIT via real LAN TCP; SSH for provisioning/control/evidence",
+  "scope": "experimental task/grant/causal journal/immutable submission/acceptance ACK; not arithmetic verification or formal protocol objects",
+  "local_regression_methods": 26,
+  "remote_regression_methods": 26,
+  "default_make_check_total_methods": 191,
+  "standalone_reducer_matches_final": true,
+  "standalone_reduced_sha256": "09f53d64708331679af7d684869c5ada808c179938e688979f296fccbd625d37",
+  "guest_executions_during_replay": 0,
+  "trust_assumptions": [
+    "honest pinned worker/config and durable local filesystem",
+    "single trusted non-rollback/non-forked issuer/ledger and A clock",
+    "pinned issuer key, HMAC enrollment and caller-retained checkpoint digest"
+  ],
+  "unimplemented": [
+    "formal ComputeReceipt/ReceiptID/Lease/ExecutionCapability/EventRecord",
+    "verification decision/TRUSTED/settlement",
+    "arbitrary malicious-host enforcement or remote attestation",
+    "TLS/DoS and production key/enrollment lifecycle",
+    "authority rollback protection/external checkpoint witness/failover",
+    "physical power cuts",
+    "independent native Rust authorization/replay entry"
+  ],
+  "gate_status_changed": false,
+  "matrix": {
+    "status": "PASS",
+    "scenarios": 12,
+    "records": [
+      {
+        "scenario": "normal-complete-chain",
+        "status": "PASS",
+        "experimental_task_id": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+        "grant_id": "06cfa020387cf3ccd8c26a96424b3a17e2d02ed57f87ac6af530c2fb0fd8d61c",
+        "result": {
+          "status": "ACCEPTED",
+          "experimental_task_id": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+          "submission_digest": "bcfbc4ba66cf432f59c273161c617f9ab4e685698d2c9267e09d0f2959b5ce0e",
+          "receipt_digest": "c489e38ce7ce8bad69fed226fde0eeaf826e0908e05513438813950bf5b81493"
+        }
+      },
+      {
+        "scenario": "identical-packet-replay",
+        "status": "PASS",
+        "experimental_task_id": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+        "grant_id": "06cfa020387cf3ccd8c26a96424b3a17e2d02ed57f87ac6af530c2fb0fd8d61c",
+        "result": {
+          "status": "DUPLICATE",
+          "experimental_task_id": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+          "submission_digest": "bcfbc4ba66cf432f59c273161c617f9ab4e685698d2c9267e09d0f2959b5ce0e",
+          "receipt_digest": "c489e38ce7ce8bad69fed226fde0eeaf826e0908e05513438813950bf5b81493"
+        }
+      },
+      {
+        "scenario": "concurrent-identical-retransmissions",
+        "status": "PASS",
+        "experimental_task_id": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+        "grant_id": "06cfa020387cf3ccd8c26a96424b3a17e2d02ed57f87ac6af530c2fb0fd8d61c",
+        "result": {
+          "status": "TWO_DUPLICATES"
+        }
+      },
+      {
+        "scenario": "authority-restart-stable-receipt",
+        "status": "PASS",
+        "experimental_task_id": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+        "grant_id": "06cfa020387cf3ccd8c26a96424b3a17e2d02ed57f87ac6af530c2fb0fd8d61c",
+        "result": {
+          "status": "DUPLICATE",
+          "experimental_task_id": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+          "submission_digest": "bcfbc4ba66cf432f59c273161c617f9ab4e685698d2c9267e09d0f2959b5ce0e",
+          "receipt_digest": "c489e38ce7ce8bad69fed226fde0eeaf826e0908e05513438813950bf5b81493"
+        }
+      },
+      {
+        "scenario": "conflicting-packet-preserves-original",
+        "status": "PASS",
+        "experimental_task_id": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+        "grant_id": "06cfa020387cf3ccd8c26a96424b3a17e2d02ed57f87ac6af530c2fb0fd8d61c",
+        "result": {
+          "status": "CONFLICT"
+        }
+      },
+      {
+        "scenario": "accepted-without-worker-ack",
+        "status": "PASS",
+        "experimental_task_id": "cddb2e961357cfdf4838b0fd89f24306d420396c8d9443738cf50b81bcc1895f",
+        "grant_id": "f3a78a955cb1432424e212a4aa94d082611626497d8ee9938561813e93e0806d",
+        "result": {
+          "status": "HOST_FAULT",
+          "reason": "HostFault: connection closed"
+        }
+      },
+      {
+        "scenario": "lost-reply-recovers-same-receipt",
+        "status": "PASS",
+        "experimental_task_id": "cddb2e961357cfdf4838b0fd89f24306d420396c8d9443738cf50b81bcc1895f",
+        "grant_id": "f3a78a955cb1432424e212a4aa94d082611626497d8ee9938561813e93e0806d",
+        "result": {
+          "status": "DUPLICATE",
+          "experimental_task_id": "cddb2e961357cfdf4838b0fd89f24306d420396c8d9443738cf50b81bcc1895f",
+          "submission_digest": "c4676850e21f9c61c573b16e3a518da2c13e375e51d568a313ff30ec4161fbe1",
+          "receipt_digest": "7a9e73c3dc8a98b00ecfebd6eafbc0eff2f949a8dbcaced900b05d9b266fff74"
+        }
+      },
+      {
+        "scenario": "offline-replay-does-not-recompute",
+        "status": "PASS",
+        "experimental_task_id": "67be8b7da258bb01672eaa4fc0021b3981cc29b5df997d5bda6853c2853a37cb",
+        "grant_id": "a95e83616378f5d7c99b5283c0b1e75526f37e5553188a15dbeb9beb60d1ebd2",
+        "result": {
+          "status": "HOST_FAULT",
+          "reason": "HostFault: causal endpoint unavailable"
+        }
+      },
+      {
+        "scenario": "prepared-process-kill-retransmits-complete-packet",
+        "status": "PASS",
+        "experimental_task_id": "67be8b7da258bb01672eaa4fc0021b3981cc29b5df997d5bda6853c2853a37cb",
+        "grant_id": "a95e83616378f5d7c99b5283c0b1e75526f37e5553188a15dbeb9beb60d1ebd2",
+        "result": {
+          "status": "ACCEPTED",
+          "experimental_task_id": "67be8b7da258bb01672eaa4fc0021b3981cc29b5df997d5bda6853c2853a37cb",
+          "submission_digest": "14365e1e10f4d346dbe9f95442360a637a50df0e0caeed272d5f24aa98ad9d3e",
+          "receipt_digest": "ceb1ad581de3aff4624795636795a1662b749d0e1f9870e8125bd36f0645d313"
+        }
+      },
+      {
+        "scenario": "incomplete-after-intent-never-recomputed",
+        "status": "PASS",
+        "experimental_task_id": "a79a41b0143f41950ef7d1a684d54e93572a6b5f54ff3f91e33a162ff11b1543",
+        "grant_id": "8ac0f24b24e5caf778eed276dc606bee268ba7b45dd84c3bd20d291a0941c521",
+        "result": {
+          "status": "HOST_FAULT",
+          "reason": "HostFault: regular file required"
+        }
+      },
+      {
+        "scenario": "incomplete-after-outcome-never-recomputed",
+        "status": "PASS",
+        "experimental_task_id": "71a9d011cac8a3b4fa6bbc1957d4102dfd244b5da3c8e9d9853770400ab0a0fe",
+        "grant_id": "b201f32c43ae7c0beda426fe3b52d221738778ee92e83c93794e1728a20d1738",
+        "result": {
+          "status": "HOST_FAULT",
+          "reason": "HostFault: regular file required"
+        }
+      },
+      {
+        "scenario": "corrupt-copy-rejected-original-replayed",
+        "status": "PASS",
+        "experimental_task_id": "2fcfe11f537e01b1dbb4aacac25c8d62e179cd99393012857fa95f0fa659d7c1",
+        "grant_id": "e4dc7cad954949ddc9873f3f5bb5a64034b24529696719e6fc126121646249dd",
+        "result": {
+          "status": "ACCEPTED",
+          "experimental_task_id": "2fcfe11f537e01b1dbb4aacac25c8d62e179cd99393012857fa95f0fa659d7c1",
+          "submission_digest": "7460b0016d3983c2eb900efeabda6ce2cb02292e5d85c4d0abe63b19c6e1766e",
+          "receipt_digest": "30abba481b74082010cd65e1928b1cb0f7e628e59f896224689041e0071952a5"
+        }
+      }
+    ],
+    "negative_controls": [
+      {
+        "control": "truncate-authority",
+        "status": "REJECTED",
+        "reason": "truncated/extended checkpoint log"
+      },
+      {
+        "control": "drop-worker",
+        "status": "REJECTED",
+        "reason": "referenced worker prefix missing/forked"
+      },
+      {
+        "control": "alter-object",
+        "status": "REJECTED",
+        "reason": "object hash mismatch"
+      },
+      {
+        "control": "projection",
+        "status": "REJECTED",
+        "reason": "replayed state differs from signed/materialized projection"
+      },
+      {
+        "control": "fork-worker",
+        "status": "REJECTED",
+        "reason": "worker journal fork"
+      },
+      {
+        "control": "wrong-anchor",
+        "status": "REJECTED",
+        "reason": "caller-retained checkpoint digest mismatch"
+      },
+      {
+        "control": "wrong-public-pin",
+        "status": "REJECTED",
+        "reason": "issuer public-key pin mismatch"
+      }
+    ],
+    "checkpoints": [
+      {
+        "label": "pending-ack",
+        "anchor_digest": "fc95d36c9d5f56e628b2377d081b62773e06469efaf48c8052bc220e5a7c3383",
+        "accepted": 2,
+        "consumed": 2
+      },
+      {
+        "label": "final",
+        "anchor_digest": "2d44c14da959cf8c0509deffc5be4f93a71d76ed29c2e7b038f8496ff5f19e94",
+        "accepted": 4,
+        "consumed": 5
+      }
+    ],
+    "final_replay": {
+      "status": "PASS",
+      "authority_events": 34,
+      "worker_events": 55,
+      "accepted": 4,
+      "consumed": 5,
+      "authority_counts": {
+        "REGISTER": 6,
+        "ISSUE": 6,
+        "CHECK": 6,
+        "CONSUME": 5,
+        "ACCEPT": 4,
+        "SUBMIT_DUPLICATE": 5,
+        "SUBMIT_CONFLICT": 1,
+        "SUBMIT_REJECTED": 1
+      },
+      "workers": [
+        {
+          "stream": "97c0d885783c566260a7870831d4af72b66a9e43b1bb227a55ef49c365747882",
+          "phase": "ACKED",
+          "accepted": true,
+          "acknowledged": true
+        },
+        {
+          "stream": "038c0e18a0462a562abc35b97a02ad90cec63fdea8d7564a58333c463a63f253",
+          "phase": "INTENT",
+          "accepted": false,
+          "acknowledged": false
+        },
+        {
+          "stream": "460aace6a1b357658fd4e4e10dcd3ce4a8ae6891fe77cdf5b81db5e2ea1c668c",
+          "phase": "OUTCOME",
+          "accepted": false,
+          "acknowledged": false
+        },
+        {
+          "stream": "d6bb30e6b573a1a27d2b0cce2a4d45c5fe4240ab0a1a1f3f718084a8135d01d3",
+          "phase": "ACKED",
+          "accepted": true,
+          "acknowledged": true
+        },
+        {
+          "stream": "b9e15f46545e151c6593bd74e94cdc1bdbdce0d921d84fbf0d751f5e63da06c8",
+          "phase": "ACKED",
+          "accepted": true,
+          "acknowledged": true
+        },
+        {
+          "stream": "a45b30a2309babe3c106bc5f5d74d1655a682983c95b5680e7155a09f14d1b2b",
+          "phase": "ACKED",
+          "accepted": true,
+          "acknowledged": true
+        }
+      ],
+      "projection": {
+        "tasks": [
+          "2fcfe11f537e01b1dbb4aacac25c8d62e179cd99393012857fa95f0fa659d7c1",
+          "67be8b7da258bb01672eaa4fc0021b3981cc29b5df997d5bda6853c2853a37cb",
+          "71a9d011cac8a3b4fa6bbc1957d4102dfd244b5da3c8e9d9853770400ab0a0fe",
+          "a79a41b0143f41950ef7d1a684d54e93572a6b5f54ff3f91e33a162ff11b1543",
+          "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+          "cddb2e961357cfdf4838b0fd89f24306d420396c8d9443738cf50b81bcc1895f"
+        ],
+        "slots": {
+          "06cfa020387cf3ccd8c26a96424b3a17e2d02ed57f87ac6af530c2fb0fd8d61c": {
+            "task": "cc185b696a68e28b3fa6982e4238cf3965c27105b87bd6136c8c6c2f8e53c325",
+            "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+            "epoch": 1,
+            "consumed": "fa154d507396621d5ac854a9043ff16463b0f878690808e3568bc274327ce301",
+            "accepted": "bcfbc4ba66cf432f59c273161c617f9ab4e685698d2c9267e09d0f2959b5ce0e"
+          },
+          "f3a78a955cb1432424e212a4aa94d082611626497d8ee9938561813e93e0806d": {
+            "task": "cddb2e961357cfdf4838b0fd89f24306d420396c8d9443738cf50b81bcc1895f",
+            "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+            "epoch": 1,
+            "consumed": "154b5db3074c0e266c31165b215ad5e768da5bb6b12e81be08660757783ed523",
+            "accepted": "c4676850e21f9c61c573b16e3a518da2c13e375e51d568a313ff30ec4161fbe1"
+          },
+          "a95e83616378f5d7c99b5283c0b1e75526f37e5553188a15dbeb9beb60d1ebd2": {
+            "task": "67be8b7da258bb01672eaa4fc0021b3981cc29b5df997d5bda6853c2853a37cb",
+            "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+            "epoch": 1,
+            "consumed": "97362898706d808c1a5a8b9e43b0cbcafc638fc7918a8e792fbf6ef9ba09a1de",
+            "accepted": "14365e1e10f4d346dbe9f95442360a637a50df0e0caeed272d5f24aa98ad9d3e"
+          },
+          "8ac0f24b24e5caf778eed276dc606bee268ba7b45dd84c3bd20d291a0941c521": {
+            "task": "a79a41b0143f41950ef7d1a684d54e93572a6b5f54ff3f91e33a162ff11b1543",
+            "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+            "epoch": 1,
+            "consumed": "",
+            "accepted": ""
+          },
+          "b201f32c43ae7c0beda426fe3b52d221738778ee92e83c93794e1728a20d1738": {
+            "task": "71a9d011cac8a3b4fa6bbc1957d4102dfd244b5da3c8e9d9853770400ab0a0fe",
+            "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+            "epoch": 1,
+            "consumed": "482ed1aebdfbd92c13bc63a4a88b6b51916bbed85be13be4413a2f32793aa845",
+            "accepted": ""
+          },
+          "e4dc7cad954949ddc9873f3f5bb5a64034b24529696719e6fc126121646249dd": {
+            "task": "2fcfe11f537e01b1dbb4aacac25c8d62e179cd99393012857fa95f0fa659d7c1",
+            "unit": "7261c224caf6987fa66dc0a6472d102fc5682d47a511773637338d51246647f3",
+            "epoch": 1,
+            "consumed": "bbcbe4c421d5dcfbe7bbdb3c073c4fc6ee61615b950fb110c220b0c5f1f7a321",
+            "accepted": "7460b0016d3983c2eb900efeabda6ce2cb02292e5d85c4d0abe63b19c6e1766e"
+          }
+        }
+      },
+      "guest_executions_during_replay": 0
+    },
+    "public_digest": "d1ad1fecf0672388127c2ab0161efb66b060a878965504c19709623737a01de8",
+    "scope": "experimental causal record/acceptance replay, not correctness/TRUSTED or formal EventRecord/Receipt",
+    "topology": "A trusted signed journal/acceptance; B authorized reference execution, immutable submissions and worker journal"
+  },
+  "source_sha256": {
+    "experiments/aclt-rir-stats-probe/README.md": "e952e9a123adfc2389f32e827cf188b2c5f7eee76247b62d6d5808cf368863c9",
+    "experiments/aclt-rir-stats-probe/build.py": "f0fc8566aa49f87403543e60bd95215c9771f32e78c2500b5219f6525c09c795",
+    "experiments/aclt-rir-stats-probe/cases.py": "ec3fc96635228b59ce2858208036002ccb45c0674d48d026ac869be44d681670",
+    "experiments/aclt-rir-stats-probe/compare.py": "699998f6631e9089ca9b119468e5d07499be9be80ca6491d849530d560ae19a3",
+    "experiments/aclt-rir-stats-probe/execute.py": "f265468ee7c7ddd41851148053633e04337b6efc2825654c8cef47544f3b23af",
+    "experiments/aclt-rir-stats-probe/oracle.cjs": "a02a564e084ae7a60f9a045de91f4b94285337e2b28f91829d5cbd4a8e240a82",
+    "experiments/aclt-rir-stats-probe/runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+    "experiments/aclt-rir-stats-probe/src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+    "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+    "experiments/aclt-rir-stats-probe/src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+    "experiments/aclt-rir-stats-probe/src/reference.cpp": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2",
+    "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "experiments/aclt-rir-stats-probe/tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77",
+    "experiments/aclt-rir-stats-probe/tests/test_stats.py": "651a913daa00300420d84125c3bf4d836564adc12b1e6d0e0eac59b772693487",
+    "experiments/aclt-rir-stats-probe/toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+    "experiments/aclt-rir-stats-probe/wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+    "experiments/aclt-task-authorization/README.md": "2f6c0220762318dea99b71a3304c38271d23f2d534c965e6d486266759d39ce1",
+    "experiments/aclt-task-authorization/auth_crypto.py": "0c910ae2d7cf9b6e5fdf8d89051665b0bde5c97d0c2e1f4b2ec39a151c573b0a",
+    "experiments/aclt-task-authorization/authorization.py": "c1cebfb130f8cd5050fa0c71b07c2a0b338b028002a6c79e0ee6165be3779ef8",
+    "experiments/aclt-task-authorization/common.py": "8312066c279fab03dabddea444ce3fd428493db5a13f257de4b1a382c10e4137",
+    "experiments/aclt-task-authorization/dualhost.py": "2db1dd969ec6c7032e7efdfc8122135db2b3c1fafce3180d4ae19ebe5e98fcf0",
+    "experiments/aclt-task-authorization/durability.py": "d9832380786ccaff14cab516f2189028d51034a28a98f35643d1cebd3a32720d",
+    "experiments/aclt-task-authorization/fault_driver.py": "5055c2445812240c557f3a258fc7d334a1d1f69ffed4be55f80da6b8fcda5ee6",
+    "experiments/aclt-task-authorization/fixtures.py": "088d60282e29cb5c147aa539057acf3b241ddd3f851375bafeafce36f70a0bf0",
+    "experiments/aclt-task-authorization/runner.py": "d85772f658dc7b34699ad084430e1217b4c5e275475c0e917bb0878b7b6cbec3",
+    "experiments/aclt-task-authorization/service.py": "91621aeec031e16a89aec54890de0aba54dd3382d94871808c01967a7d568cbe",
+    "experiments/aclt-task-authorization/tests/test_authorization.py": "737ef405e689fdb39d87bfcd5d2d4c4e79578d77e1927dfa4b1d8aa68ef97ed1",
+    "experiments/aclt-task-authorization/wire.py": "c8078562508c313720c3ef74486d7b88f4c59d21519cb67274d212ca94aa9f01",
+    "experiments/aclt-task-commitment/README.md": "e6a2247aea9a5c033b701df33697105f4c67cf3d94023d3b9282d4447af3a09f",
+    "experiments/aclt-task-commitment/cbor_codec.py": "7cb16275c2ec5e38c628997fa414cbff9ba5be3b94946caf6502bf9f28287633",
+    "experiments/aclt-task-commitment/cli.py": "fb3e5337a3cfbf530518f1ea40c65bab45b99190bb9022a1d617df1872ed6eb2",
+    "experiments/aclt-task-commitment/commitment.py": "cea63d78ce1dc0324ba15f89df9a846b12d2f2c5455362c17b72da89bc0cfa77",
+    "experiments/aclt-task-commitment/compare.py": "77ba7bad4125db69ae8b5617115cbdfc37a77974492d26754df25fcbc37b381e",
+    "experiments/aclt-task-commitment/execution-profile.json": "3735566e6e3e06f07209d32f6e2c39e86d4249ea7604b18ac38644bcc0ce2d5a",
+    "experiments/aclt-task-commitment/probe.py": "f99d81ab9456b3db9b8fa0d475172305dad9c80fddcb999a61623df6294430e4",
+    "experiments/aclt-task-commitment/rir_adapter.py": "e403b66123f5dece0b38a0d4c771b16be630dcad36d0730eec6e66526fcffbed",
+    "experiments/aclt-task-commitment/schema.json": "e31ec7964ecd32a953bf7684827de84520628724a624216f273644820247ae59",
+    "experiments/aclt-task-commitment/tests/golden.json": "8a0360bc1e7c790dc06384a92b4befd6d427489e5ff6594861e2f1e8dbc410ec",
+    "experiments/aclt-task-commitment/tests/test_commitment.py": "39278c15e85cb80d316bd16a3c4ac00ee3783d876840e81c96ea9d2d4469d06d",
+    "experiments/aclt-task-replay/README.md": "c5b96aa10ccd00942010c7793f5e9281eba4f88dc561aa42168b50e58ec49a3e",
+    "experiments/aclt-task-replay/codec.py": "b79a6599e3d4ee33a2a286c6659eb2f3ad631c3de735b7f7e5ccf5da97e9d8e4",
+    "experiments/aclt-task-replay/context.py": "bac9a4a325220f00ea0faa6587726fa8cdbeb3b937fc76653dbec36d9f26f599",
+    "experiments/aclt-task-replay/dualhost.py": "cf8de3ba4c7f98f8632169e86b08fd98cda8abf06c237443c1d3f366cf10048d",
+    "experiments/aclt-task-replay/fault_driver.py": "e136fed9beda42fe752a8c375359c496e4664cb0fe62ad2ecdfaff1bb6ff083b",
+    "experiments/aclt-task-replay/journal.py": "c89772b683333c213b81299e971dd17ea6a7f0486b0cb52781db07afbb287568",
+    "experiments/aclt-task-replay/ledger.py": "a6f246fe17c682b34930115d86b80abfedc493932443333a4bacdf0c2a089374",
+    "experiments/aclt-task-replay/network.py": "4449622c2bcd6454c5ea31a1d26bd756b9ae22fe63e3bcf4607da3ea4ed69049",
+    "experiments/aclt-task-replay/offline.py": "efa0d98fe6420999d2ae15ba82eb5144762b62d3a4809e8687e6825be906a991",
+    "experiments/aclt-task-replay/service.py": "c3b303aac4d7cb8fc540b26537d7355180ff2962003ea0e9f56f8557393d6ba6",
+    "experiments/aclt-task-replay/tests/test_replay.py": "4148f00e3cd5c54c5cc01a4f5d30bb5317b63d29f2680ef89dea76d5ca6f60fa",
+    "experiments/aclt-task-replay/worker.py": "f11545d7d3eaabb4039638faf8b3298ff78a9c588836abe26b18836105e586a2"
+  },
+  "current_evidence_sha256": {
+    "source-lock.json": "470dda9b6c3eeb3332530dbd5f9a6e7aae4e3fd55630cee51f181863e252797c",
+    "report.json": "52dbe797c324ed7ae4c75f370f3a56f56e7051fec21f01e04aaa89728c400764",
+    "remote-unit.log": "b15d94f1f452a061f037ef3dd4b91e1bafd05a34641e3ae8774c29c81b9044cb",
+    "remote-source-check.log": "08ef283abe20d4f1d1d2c9e1e6a0a724351a333dcd7b753fd70df403207b0d67",
+    "pending-ack-bundle.cbor": "c69c45978b7e46f73b029dacec83677250b9c08ba592d0d0a12b7058baa2fd08",
+    "pending-ack-anchor.cbor": "fc95d36c9d5f56e628b2377d081b62773e06469efaf48c8052bc220e5a7c3383",
+    "pending-ack-reduced.json": "41300147470cc7cf7c5994da75a240e28cc82536b0223cfd65000250d901e9bb",
+    "final-bundle.cbor": "d730b9a18403f3de285714c24cb60bc5a9ac1cfffc59133278222f60edc4253e",
+    "final-anchor.cbor": "2d44c14da959cf8c0509deffc5be4f93a71d76ed29c2e7b038f8496ff5f19e94",
+    "final-reduced.json": "09f53d64708331679af7d684869c5ada808c179938e688979f296fccbd625d37",
+    "negative-controls.json": "423128bb667a03b24629938061e0f97943b64b1994e18670a91e6b068410af08",
+    "A/issuer.pub": "d1ad1fecf0672388127c2ab0161efb66b060a878965504c19709623737a01de8"
+  }
+}
