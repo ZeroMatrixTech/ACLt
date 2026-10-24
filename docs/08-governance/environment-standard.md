@@ -193,3 +193,7 @@ RIR 切片 1 的固定工具链 lock、离线安装与显式参数构建命令�
 ## 2026-10-24 授权切片环境
 
 [实验授权切片](../testing/TASK-AUTHORIZATION-SLICE2-20261024.md)复用现有 Python/SQLite、OpenSSL RSA-2048/SHA-256 和既有 Wasm fixture，无新增安装或下载。默认 make check 新增 24 项授权回归，因而新增对已有系统 OpenSSL CLI 的前置要求；局部检查不联网。双机矩阵显式使用 A LAN 临时端口和 B 专用目录，保持严格 SSH 主机密钥检查；测试密钥/凭据只放 private 运行目录，不入源码包。受控进程 SIGKILL 不代表断电，单一账本自身不回滚仍为接受假设。
+
+## 第二项切片 3 环境补记（2026-10-24）
+
+[因果日志/重放切片](../testing/TASK-REPLAY-SLICE3-20261024.md)复用现有 Python/SQLite/fsync/OpenSSL，不安装新软件，不改旧 Profile/gas 或授权实验源码。新增 26 项局部回归纳入默认检查；真实 LAN 仍显式 opt-in，A 临时可信服务、B 独立物理 worker，CHECK/CONSUME/SUBMIT 经 TCP，SSH 只部署/控制/取证。key/HMAC 运行材料不入源码包。完整包重传无 guest 调用；离线检查需要独立留存的 checkpoint/key pin，不能发现更新或解决权威回滚。进程 SIGKILL/重启不代表断电。

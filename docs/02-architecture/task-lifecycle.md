@@ -215,3 +215,7 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 ### 2026-10-24 工程映射：实验授权（非正式 Lease/capability）
 
 [授权与启动切片](../testing/TASK-AUTHORIZATION-SLICE2-20261024.md)对 ExperimentalTaskCommitment 派生的 scope/tuple 进行调度与启动双检查，依赖单一可信实验账本的在线消费和本地持久意图。ExperimentalExecutionGrant 不是本文的 active Lease/ExecutionCapability，不新增协议 Principal；它不能证明任意宿主不能旁路，也不改变正式状态机与冻结义务。
+
+### 实验提交/ACK 与恢复补记（2026-10-24）
+
+[可重放链切片](../testing/TASK-REPLAY-SLICE3-20261024.md)在独立实验部署记录授权到提交接纳的完整因果链。ACCEPT 是 A 保存完整实验包，ACK 是 B 收到原回执，两者可以暂时分离。已封存完整包可重传而不重新消费/计算；未封存状态不自动恢复 guest。接纳不证明正确执行，不替代正式终态、EventRecord、验证判决和结算，也不改变本文章节的规范要求。

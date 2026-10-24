@@ -52,3 +52,7 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 ## 第二项切片 2：实验授权与持久启动意图
 
 [aclt-task-authorization](aclt-task-authorization/README.md)提供实验签名 grant、在线 CHECK/CONSUME、Dispatch/Python RIR 启动双检查和独占持久标记。默认检查新增 24 项无网络回归并要求已有 OpenSSL；`dualhost.py` 显式运行 A 可信 issuer/账本与 B worker 的真实 LAN/进程故障矩阵。它不是正式 Lease/ExecutionCapability，也未完成第三切片的完整事件重放。
+
+## 第二项切片 3：可重放事件链与不可变提交
+
+[aclt-task-replay](aclt-task-replay/README.md)串起任务注册、授权、启动、outcome、封存提交、接纳与 ACK；独立离线 reducer 用分离保存的 checkpoint/key 重建状态。新增 26 项局部回归纳入默认检查，真实 LAN 12 场景和 7 个篡改反例通过。接纳不判断计算正确性，不实现正式 EventRecord/Receipt 或结算；上一切片源码保持历史范围。

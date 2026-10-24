@@ -229,3 +229,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [2026-10-23 第二项工作切片 1](testing/TASK-COMMITMENT-SLICE1-20261023.md)：实验最小任务承诺、身份/执行绑定和双机证据；正式对象与授权仍单列。
 
 - [2026-10-24 第二项工作切片 2](testing/TASK-AUTHORIZATION-SLICE2-20261024.md)：实验授权、一次性在线消费和持久启动意图，含真实 LAN 双机证据；不替代正式对象/conformance。
+
+- [2026-10-24 第二项工作切片 3](testing/TASK-REPLAY-SLICE3-20261024.md)：完整实验提交/接纳、幂等重传与独立离线因果重放，含真实双机故障证据；正式对象和 Gate 状态不变。
