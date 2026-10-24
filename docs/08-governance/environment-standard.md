@@ -189,3 +189,7 @@ RIR 切片 1 的固定工具链 lock、离线安装与显式参数构建命令�
 ## 2026-10-23 最小任务承诺切片环境
 
 [任务承诺切片](../testing/TASK-COMMITMENT-SLICE1-20261023.md)仅使用现有 Python 标准库和第一项的已保存 Rust/Wasm fixture；没有新增依赖或编译器运行。双机新目录独立核对同一源码与 24 条/端记录，保留数据字节与源文件 pin。默认检查新增 19 项局部回归；不自动连接远端或将探针当成授权 worker。
+
+## 2026-10-24 授权切片环境
+
+[实验授权切片](../testing/TASK-AUTHORIZATION-SLICE2-20261024.md)复用现有 Python/SQLite、OpenSSL RSA-2048/SHA-256 和既有 Wasm fixture，无新增安装或下载。默认 make check 新增 24 项授权回归，因而新增对已有系统 OpenSSL CLI 的前置要求；局部检查不联网。双机矩阵显式使用 A LAN 临时端口和 B 专用目录，保持严格 SSH 主机密钥检查；测试密钥/凭据只放 private 运行目录，不入源码包。受控进程 SIGKILL 不代表断电，单一账本自身不回滚仍为接受假设。

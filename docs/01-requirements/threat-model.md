@@ -341,3 +341,7 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 ### 2026-10-23 最小任务承诺实验的附加边界
 
 [候选承诺探针](../testing/TASK-COMMITMENT-SLICE1-20261023.md)依赖可信部署的实现 pin，以及调用方独立保留的 expected experimental_task_id。哈希一致性不认证请求者或恶意宿主，也不提供登记抗回滚。探针明确无授权/Lease，不能作为已授权 worker 启动入口；签名授权、启动意图持久化与重放仍待后续切片验证。正式威胁模型与不变量不因该实验降低。
+
+### 2026-10-24 实验授权的信任边界
+
+[在线授权与启动切片](../testing/TASK-AUTHORIZATION-SLICE2-20261024.md)新增对单一不回滚/不分叉授权账本、A 时钟、受信 issuer/enrollment 与诚实 pinned worker/state 的实验依赖。签名与双检查不阻止任意恶意宿主绕过程序，不构成环境 attestation；task/unit 启动槽位不代表抽样资格或统计独立。测试仅覆盖 LAN/受控进程故障，无生产密钥生命周期、TLS/DoS 防护、权威抗回滚或真实断电保证。正式威胁模型、不变量与 assurance 要求保持不变。
