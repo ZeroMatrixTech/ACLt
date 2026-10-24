@@ -108,3 +108,7 @@
 ## 第三项切片 3：结算恢复入口
 
 `make check-settlement-recovery` 新增 16 项局部回归，默认合计 260 项，不联网。独立 [恢复 wrapper](../experiments/aclt-settlement-recovery/README.md)保留原 v2 转移/审计，`client.py recover` 只发 STATUS；fault_driver/服务 test-control 仅显式测试使用。真实双机矩阵采用全新目录和严格 SSH，验证实际丢回复/自有进程 SIGKILL 与原权利恢复；9 份 checkpoint 可由原 auditor 只读复核。命令/范围见 [报告](testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)。
+
+## 第三项工作统一收尾入口
+
+`make test-funding-work3` 在全新两端根中显式重跑预留、固定结算和恢复三组真实 LAN 矩阵；`scripts/funding-work3.py verify` 只复核保存源码/证据及 11 个 checkpoint，不连接 B、不执行 guest。新增 5 项工具回归，默认合计 265 项，三个实验源码保持原字节。参数、独立账本边界及恢复规则见 [维护入口](testing/FUNDING-WORK3-MAINTENANCE.md) 和 [总报告](testing/FUNDING-WORK3-CLOSEOUT-20261024.md)。
