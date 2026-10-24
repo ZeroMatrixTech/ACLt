@@ -272,3 +272,7 @@ v0.6 不代表生产就绪；它代表 v0.5 的核心开放问题已经被收敛
 ## 2026-10-24 第三项切片 2：结果绑定与固定测试结算
 
 [固定结算报告](../testing/FIXED-SETTLEMENT-SLICE2-20261024.md)：独立 v2 测试部署冻结比较规则，资金先于新入口 START，双端完整 outcome 派生唯一分配；OK 相等按固定费用支付退余款，预声明完整 no-pay 全退，缺失/未知保留预留。双机 12 场景/6 个篡改反例、两端各 26 项回归通过，默认 244 项。矩阵 5 份 outcome、2 份结算；paid=30/refunded=170/active reserved=100，资产总量保持 1000。旧入口/旧库不迁移，正式对象、OQ-10/判决/Gate 不变。下一片扩展实际丢回复/中断和账务恢复矩阵。
+
+## 2026-10-24 第三项切片 3：真实结算故障与恢复
+
+[恢复报告](../testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)：独立 wrapper 复用原 v2 转移，以真实 TCP reply loss、COMMIT 前后服务 SIGKILL、B 持久边界终止与首次 barrier 竞争验证原权利恢复。双机 14 场景/6 个篡改反例、两端各 16 回归通过，默认 260 项；9 份 checkpoint 另进程重放一致。矩阵 61 条事件、6 份唯一结算，paid=150/refunded=450/active reserved=100，总量保持 1000。recover 仅 STATUS，未知不自动退付/重算。正式对象、OQ-10/Gate 不变；下一步第三项三片统一收尾。

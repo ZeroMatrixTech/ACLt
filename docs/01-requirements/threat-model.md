@@ -357,3 +357,7 @@ Sybil 与相关性控制可能需要观察所有权、资金、网络、设备�
 ### 双端 outcome 固定结算实验补记（2026-10-24）
 
 [固定测试结算](../testing/FIXED-SETTLEMENT-SLICE2-20261024.md)依赖诚实 pinned A/B worker、独立 HMAC 角色 enrollment、A issuer/账本不回滚及受信持久状态。签名 funded-start/结算回执绑定冻结对象，无法证明恶意宿主执行或阻止其旁路；相同 Python 实现的双机一致性不证明统计/身份独立或产生 TRUSTED。不一致 no-pay 仅是实验付款政策，不是过错认定；真实支付、生产密钥/TLS/DoS、failover、断电和正式故障矩阵仍未覆盖。
+
+### 结算进程故障证据补记（2026-10-24）
+
+[恢复实验](../testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)在单一可信账本、诚实 pinned worker/持久存储和角色/issuer key 假设下覆盖真实测试连接 reply loss、COMMIT 前后受控 SIGKILL 及 worker fsync 中断。ready marker 是受信故障仪器，不是恶意宿主执行证明；进程重启/热日志恢复不证明整机断电、路由分区、failover 或权威回滚/分叉保护。查询未知不授权资金动作，正式威胁模型/OQ-10/Gate 不变。

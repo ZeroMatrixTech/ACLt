@@ -104,3 +104,7 @@
 ## 第三项切片 2：固定结算实验入口
 
 `make check-fixed-settlement` 新增 26 项局部回归，默认合计 244 项，不联网。独立 [v2 实验](../experiments/aclt-fixed-settlement/README.md)提供 `executor.py execute|submit`、`client.py settle|status` 和只读 `audit.py`；真实双机矩阵显式使用全新目录、严格 SSH 和实际 LAN。比较/费用在执行前冻结，完整报告重传不续算；旧执行/账本入口不迁移。恢复与信任边界见 [报告](testing/FIXED-SETTLEMENT-SLICE2-20261024.md)。
+
+## 第三项切片 3：结算恢复入口
+
+`make check-settlement-recovery` 新增 16 项局部回归，默认合计 260 项，不联网。独立 [恢复 wrapper](../experiments/aclt-settlement-recovery/README.md)保留原 v2 转移/审计，`client.py recover` 只发 STATUS；fault_driver/服务 test-control 仅显式测试使用。真实双机矩阵采用全新目录和严格 SSH，验证实际丢回复/自有进程 SIGKILL 与原权利恢复；9 份 checkpoint 可由原 auditor 只读复核。命令/范围见 [报告](testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)。
