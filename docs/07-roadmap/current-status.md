@@ -2,7 +2,7 @@
 
 > 文档性质：持续更新的项目快照（living document）  
 > 基线版本：v0.5  
-> 快照日期：2026-10-23
+> 快照日期：2026-10-24
 > 当前阶段：G0 — 语义与问题空间冻结  
 > 权威范围：记录“现在已经知道什么、还没有证明什么、下一步需要什么证据”；不替代协议规范、ADR 或测试结果。
 
@@ -252,3 +252,7 @@ v0.6 不代表生产就绪；它代表 v0.5 的核心开放问题已经被收敛
 ## 2026-10-23 第二项切片 1：最小任务承诺候选
 
 [任务承诺报告](../testing/TASK-COMMITMENT-SLICE1-20261023.md)：ExperimentalTaskCommitment 与专用实验身份绑定 RIR、输入、Profile 和显式执行上限；双机 48 条探针记录一致，19 项新增回归纳入默认检查。调用方保存的 expected ID 用于拒绝替换和错绑，执行入口仍是无授权的诊断探针。正式 ComputeReceipt/签名/Lease/ExecutionCapability/EventRecord 不因此实现，Gate 状态不变。下一切片为实验授权与启动前持久化。
+
+## 2026-10-24 第二项切片 2：实验授权与启动意图
+
+[授权切片报告](../testing/TASK-AUTHORIZATION-SLICE2-20261024.md)：A 单一可信实验账本、B 实验 Python RIR 入口，经真实 LAN 完成 16 个场景，签名 grant 在调度/启动处检查，fsynced intent 和唯一 CONSUME 在 guest 前完成；24 项新增回归，默认合计 165 项。任意恶意宿主、权威回滚、正式 Lease/capability 与完整事件重放仍未覆盖，Gate 状态不变。下一切片为完整提交/接纳与可重放因果日志。

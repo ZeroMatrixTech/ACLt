@@ -84,3 +84,7 @@
 ## 第二项工作切片 1：候选最小任务承诺
 
 [aclt-task-commitment](../experiments/aclt-task-commitment/README.md)提供显式候选 schema/CBOR、experimental_task_id 与绑定探针。`make check-task-commitment` 运行 19 项局部回归；`make test-task-commitment TASK_COMMITMENT_OUTPUT=/new/path` 保存每机证据，再用 `compare.py` 比较双机。CLI freeze 要求所有上限显式给定；execute-probe 不允许覆盖冻结上限且明确没有授权。见 [本轮报告](testing/TASK-COMMITMENT-SLICE1-20261023.md)。
+
+## 第二项切片 2：实验授权与启动边界
+
+[aclt-task-authorization](../experiments/aclt-task-authorization/README.md)接入签名 grant、调度/启动双检查、单一在线消费账本和持久启动意图。`make check-task-authorization` 及默认检查需要已有 OpenSSL，新增 24 项无网络回归。真实双机矩阵必须显式调用 `dualhost.py`，使用全新本地/远端目录与严格 SSH 主机密钥检查；它会启动并清理本轮测试服务/进程。范围与下一切片见 [报告](testing/TASK-AUTHORIZATION-SLICE2-20261024.md)。

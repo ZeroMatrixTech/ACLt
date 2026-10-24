@@ -1,0 +1,338 @@
+{
+  "status": "PASS",
+  "scenarios": 16,
+  "completed_guest_executions": 2,
+  "scenario_records": [
+    {
+      "scenario": "normal",
+      "status": "PASS",
+      "experimental_task_id": "195b7b883fb57002cfa0197b0d1f771be844b59e26a2ff7e63f5d92aa1de9141",
+      "grant_ids": [
+        "c7157905526e6349e8c3bba3a469578c5c910b9445bd1d9c86e66657bc209a92"
+      ],
+      "allowed_consumes": 1,
+      "result": {
+        "status": "TASK_OUTCOME",
+        "execution_mode": "experiment-authorized-entry",
+        "experimental_task_id": "195b7b883fb57002cfa0197b0d1f771be844b59e26a2ff7e63f5d92aa1de9141",
+        "grant_id": "c7157905526e6349e8c3bba3a469578c5c910b9445bd1d9c86e66657bc209a92",
+        "execution_tuple_digest": "c89bcb95f164e6fb4b6b37e660a651e31a83aa997863bc1bd05f158860d3cc68",
+        "result": {
+          "outcome": "OK",
+          "gas_used": 9126,
+          "outcome_digest": "60f82d5c7bc0ebe566ec4e660c7c02a8f836aca70485007a14927bd5b54d6fcf",
+          "output_hex": "0000000000000000000000000000000002000000000000000200000000000000ffffffffffffffff03000000000000000100000000000000020000000000000002000000000000000d0000000000000005000000000000000800000000000000"
+        },
+        "slot": "ff8b17c6c24cd06cd4cadd888160a10fc3222358564a530fb097c286ea8e78b0"
+      }
+    },
+    {
+      "scenario": "local-duplicate",
+      "status": "PASS",
+      "experimental_task_id": "195b7b883fb57002cfa0197b0d1f771be844b59e26a2ff7e63f5d92aa1de9141",
+      "grant_ids": [
+        "c7157905526e6349e8c3bba3a469578c5c910b9445bd1d9c86e66657bc209a92"
+      ],
+      "allowed_consumes": 1,
+      "result": {
+        "status": "REJECTED",
+        "reason": "local launch slot already used"
+      }
+    },
+    {
+      "scenario": "fresh-state-clone",
+      "status": "PASS",
+      "experimental_task_id": "195b7b883fb57002cfa0197b0d1f771be844b59e26a2ff7e63f5d92aa1de9141",
+      "grant_ids": [
+        "c7157905526e6349e8c3bba3a469578c5c910b9445bd1d9c86e66657bc209a92"
+      ],
+      "allowed_consumes": 1,
+      "result": {
+        "status": "REJECTED",
+        "reason": "authority denied CONSUME: ALREADY_CONSUMED"
+      }
+    },
+    {
+      "scenario": "authority-process-restart-replay",
+      "status": "PASS",
+      "experimental_task_id": "195b7b883fb57002cfa0197b0d1f771be844b59e26a2ff7e63f5d92aa1de9141",
+      "grant_ids": [
+        "c7157905526e6349e8c3bba3a469578c5c910b9445bd1d9c86e66657bc209a92"
+      ],
+      "allowed_consumes": 1,
+      "result": {
+        "status": "REJECTED",
+        "reason": "authority denied CONSUME: ALREADY_CONSUMED"
+      }
+    },
+    {
+      "scenario": "forged-signature",
+      "status": "PASS",
+      "experimental_task_id": "0ad12e2c1b5133288c9193865a0cf24ad51663710973485d4e7ea25cabb37897",
+      "grant_ids": [
+        "02eb0d1925c66e5e3a4f43e7520e928ecf5fe1aa748c7c754067a4f4e1fed7ad"
+      ],
+      "allowed_consumes": 0,
+      "result": {
+        "status": "REJECTED",
+        "reason": "authorization signature mismatch"
+      }
+    },
+    {
+      "scenario": "wrong-input",
+      "status": "PASS",
+      "experimental_task_id": "0ba3533ebd1578e9eda8bd040656669624d22e429d5441b9517b8753576a1687",
+      "grant_ids": [
+        "5d3a0a5efcd1f786e5b6a35bb512774b66dbb3318c6d497bc11cd1fdf07e5153"
+      ],
+      "allowed_consumes": 0,
+      "result": {
+        "status": "REJECTED",
+        "reason": "input object binding mismatch"
+      }
+    },
+    {
+      "scenario": "wrong-unit",
+      "status": "PASS",
+      "experimental_task_id": "02f4a7be486084caebabdaefe640f69501624ceed8fef6805927407549d179da",
+      "grant_ids": [
+        "1e3a1bfae7aaafbd2c73fe0654bfd267393a14bb321af992e47008267a70a75d"
+      ],
+      "allowed_consumes": 0,
+      "result": {
+        "status": "REJECTED",
+        "reason": "grant execution tuple/scope mismatch"
+      }
+    },
+    {
+      "scenario": "wrong-local-environment",
+      "status": "PASS",
+      "experimental_task_id": "4838146aaa8d3dc8143e8d3facf1110bf0d30482b422e22cb9a895e8cf8ee204",
+      "grant_ids": [
+        "8e51f43298d54324ec720e066e5f8c2605f76269b0aed25040263479f9f5c7d1"
+      ],
+      "allowed_consumes": 0,
+      "result": {
+        "status": "REJECTED",
+        "reason": "worker environment changed"
+      }
+    },
+    {
+      "scenario": "expired-grant",
+      "status": "PASS",
+      "experimental_task_id": "4c964827dd468f8014aaef7cf1367713834b0771715d0972a08a715369a63cc3",
+      "grant_ids": [
+        "135124a7dc9020d640096f3121f2e347e763d367c74cdc223a53d9eed1a07eb8"
+      ],
+      "allowed_consumes": 0,
+      "result": {
+        "status": "REJECTED",
+        "reason": "authority denied CHECK: NOT_ACTIVE_TIME"
+      }
+    },
+    {
+      "scenario": "stale-after-dispatch",
+      "status": "PASS",
+      "experimental_task_id": "35b96110f3c8dcffeb55a454422198f3b0c11f9ac5ed2dba01f8547043d84eb2",
+      "grant_ids": [
+        "b18555fd41883a7801235d81202735868bf0df6e041c5ae1b3aed8dc0de3031f",
+        "de9ad40aa3d17d02c642add7f5c12fedba4063c10a9a0e7e34341bee067cc514"
+      ],
+      "allowed_consumes": 0,
+      "result": {
+        "status": "REJECTED",
+        "reason": "authority denied CONSUME: STALE_OR_UNKNOWN_GRANT"
+      }
+    },
+    {
+      "scenario": "expires-after-dispatch",
+      "status": "PASS",
+      "experimental_task_id": "d8b0c40f17a13e7da932eeaad8d6a5e300f42744535e065181b740d937005644",
+      "grant_ids": [
+        "a3d1c52320f16f90e91219aaaf6a875cf6cf01174411eceec5cf7022c1fe26a4"
+      ],
+      "allowed_consumes": 0,
+      "result": {
+        "status": "REJECTED",
+        "reason": "authority denied CONSUME: NOT_ACTIVE_TIME"
+      }
+    },
+    {
+      "scenario": "parallel-launches",
+      "status": "PASS",
+      "experimental_task_id": "ad133da72595614d09a46fa4ef29d235607c0a1214c519ef2ac00bdc6622c12d",
+      "grant_ids": [
+        "33ab128ce49949f6656bdb044463285f5b188f989e9e26c328243c4700d3daa6"
+      ],
+      "allowed_consumes": 1,
+      "result": {
+        "process_exit_codes": [
+          0,
+          2
+        ]
+      }
+    },
+    {
+      "scenario": "consume-response-lost",
+      "status": "PASS",
+      "experimental_task_id": "d3675f89e7e25576cdcf890bab825fcbaa3c899f2e44f5f237b7d1e7859d2a1d",
+      "grant_ids": [
+        "4bf4f6557aa8e0dbd43aa46750dce758d32706ce9a9f9d1170e453d51a34ee0d"
+      ],
+      "allowed_consumes": 1,
+      "result": {
+        "status": "HOST_FAULT",
+        "reason": "HostFault: authorization connection closed"
+      }
+    },
+    {
+      "scenario": "kill-after-intent",
+      "status": "PASS",
+      "experimental_task_id": "a38b63a2a2c5f0d6886116ca6d696551465de4c4c6b76cbd745eeb9d1bd472f0",
+      "grant_ids": [
+        "bf59baaf1c62be4651b5b543319f10aa2f4a3d8a089dfd56d327ace32f3e668b"
+      ],
+      "allowed_consumes": 0,
+      "result": {
+        "status": "REJECTED",
+        "reason": "local launch slot already used"
+      }
+    },
+    {
+      "scenario": "kill-after-permit",
+      "status": "PASS",
+      "experimental_task_id": "38845969916b8676b8a0b78458fae857d52795040448666569ee8e4b805861ff",
+      "grant_ids": [
+        "4a7ba9d5c2f4ed2993678ab8dca7289b08de1e825feb20064d4524dc6bbbee75"
+      ],
+      "allowed_consumes": 1,
+      "result": {
+        "status": "REJECTED",
+        "reason": "local launch slot already used"
+      }
+    },
+    {
+      "scenario": "offline-before-launch",
+      "status": "PASS",
+      "experimental_task_id": "0f5ce2a9f99bcf62716f33050aeccb97e8af2ff1489b23ecce70e6e3f05220a2",
+      "grant_ids": [
+        "142d88af63fb860c9334773603013c46a089b7762f29c0941e2031ac6804567e"
+      ],
+      "allowed_consumes": 0,
+      "result": {
+        "status": "HOST_FAULT",
+        "reason": "HostFault: authorization service unavailable"
+      }
+    }
+  ],
+  "scope": "real LAN check/consume, trusted issuer A and experimental Python RIR startup B; not formal Lease/capability or hostile-host enforcement",
+  "topology": "A issuer/SQLite; B dispatch/startup/local files; two physical hosts under DUALHOST-SSH-1",
+  "authorization_id": "70cf881509a097e9d7380a58d97cf53a",
+  "environment_digest": "5844506c63932627f9a352a7af1644605780bd53af2dfdc4467ae362bd359b3a",
+  "date": "2026-10-24",
+  "baseline_commit": "9ce507c44e89f6d84a770ab38f929f2b8b38464a",
+  "baseline_worktree": "clean at precheck",
+  "completed_scope": "work 2 slice 2: experimental signed grant, dispatch/startup checks, durable intent and online consume",
+  "local_regression_methods": 24,
+  "remote_regression_methods": 24,
+  "default_make_check_total_methods": 165,
+  "evidence_audit": {
+    "status": "PASS",
+    "scope": "bounded saved-evidence signature/linkage audit; not full event replay or power-loss proof",
+    "intent_markers": 13,
+    "consume_permits": 3,
+    "invoke_markers": 2,
+    "completed_outcomes": 2,
+    "unique_consumed_slots": 4,
+    "ledger_operation_counts": {
+      "CHECK:ALLOW": 8,
+      "CHECK:DENY": 1,
+      "CONSUME:ALLOW": 4,
+      "CONSUME:DENY": 7,
+      "ISSUE": 14
+    },
+    "permit_checks": [
+      {
+        "file": "B/parallel-launches/clone0/d0115e8c2d03e8c1ab90889cdf6d5f8f232210a070c77ca7b0fb7d2290b7383e.permit.cbor",
+        "signed_consume_permit": true
+      },
+      {
+        "file": "B/normal/state/ff8b17c6c24cd06cd4cadd888160a10fc3222358564a530fb097c286ea8e78b0.permit.cbor",
+        "signed_consume_permit": true
+      },
+      {
+        "file": "B/kill-after-permit/state/68311be7f60133c62654e62a1fbc99e0def048559169f2b9619d991a323b7d16.permit.cbor",
+        "signed_consume_permit": true
+      }
+    ]
+  },
+  "source_hashes": {
+    "experiments/aclt-rir-stats-probe/README.md": "e952e9a123adfc2389f32e827cf188b2c5f7eee76247b62d6d5808cf368863c9",
+    "experiments/aclt-rir-stats-probe/build.py": "f0fc8566aa49f87403543e60bd95215c9771f32e78c2500b5219f6525c09c795",
+    "experiments/aclt-rir-stats-probe/cases.py": "ec3fc96635228b59ce2858208036002ccb45c0674d48d026ac869be44d681670",
+    "experiments/aclt-rir-stats-probe/compare.py": "699998f6631e9089ca9b119468e5d07499be9be80ca6491d849530d560ae19a3",
+    "experiments/aclt-rir-stats-probe/execute.py": "f265468ee7c7ddd41851148053633e04337b6efc2825654c8cef47544f3b23af",
+    "experiments/aclt-rir-stats-probe/oracle.cjs": "a02a564e084ae7a60f9a045de91f4b94285337e2b28f91829d5cbd4a8e240a82",
+    "experiments/aclt-rir-stats-probe/runtime.py": "5559aca7caf118f064a7c4720164f0297b32edfc2e97f151045d2e67955b9ea9",
+    "experiments/aclt-rir-stats-probe/src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+    "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+    "experiments/aclt-rir-stats-probe/src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+    "experiments/aclt-rir-stats-probe/src/reference.cpp": "a3d4d26b9353a9d9a7a32469352d6d4c2d1046867948a114b6a8b9d344c601c2",
+    "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "experiments/aclt-rir-stats-probe/tests/fixture.json": "24a779005ae30ade05f16d2670f98a51c20c7243b233ad161a4f574aa98b8e77",
+    "experiments/aclt-rir-stats-probe/tests/test_stats.py": "651a913daa00300420d84125c3bf4d836564adc12b1e6d0e0eac59b772693487",
+    "experiments/aclt-rir-stats-probe/toolchain-lock.json": "54f16dac5e6359cdef0444e03362339f801ba0749ddf841531b1de42753a126e",
+    "experiments/aclt-rir-stats-probe/wasm.py": "30d8cc6008baeab9fa3b2f18cf2fdbb3e15854a678c90fe996c451df37eef4b4",
+    "experiments/aclt-task-authorization/README.md": "2f6c0220762318dea99b71a3304c38271d23f2d534c965e6d486266759d39ce1",
+    "experiments/aclt-task-authorization/auth_crypto.py": "0c910ae2d7cf9b6e5fdf8d89051665b0bde5c97d0c2e1f4b2ec39a151c573b0a",
+    "experiments/aclt-task-authorization/authorization.py": "c1cebfb130f8cd5050fa0c71b07c2a0b338b028002a6c79e0ee6165be3779ef8",
+    "experiments/aclt-task-authorization/common.py": "8312066c279fab03dabddea444ce3fd428493db5a13f257de4b1a382c10e4137",
+    "experiments/aclt-task-authorization/dualhost.py": "2db1dd969ec6c7032e7efdfc8122135db2b3c1fafce3180d4ae19ebe5e98fcf0",
+    "experiments/aclt-task-authorization/durability.py": "d9832380786ccaff14cab516f2189028d51034a28a98f35643d1cebd3a32720d",
+    "experiments/aclt-task-authorization/fault_driver.py": "5055c2445812240c557f3a258fc7d334a1d1f69ffed4be55f80da6b8fcda5ee6",
+    "experiments/aclt-task-authorization/fixtures.py": "088d60282e29cb5c147aa539057acf3b241ddd3f851375bafeafce36f70a0bf0",
+    "experiments/aclt-task-authorization/runner.py": "d85772f658dc7b34699ad084430e1217b4c5e275475c0e917bb0878b7b6cbec3",
+    "experiments/aclt-task-authorization/service.py": "91621aeec031e16a89aec54890de0aba54dd3382d94871808c01967a7d568cbe",
+    "experiments/aclt-task-authorization/tests/test_authorization.py": "737ef405e689fdb39d87bfcd5d2d4c4e79578d77e1927dfa4b1d8aa68ef97ed1",
+    "experiments/aclt-task-authorization/wire.py": "c8078562508c313720c3ef74486d7b88f4c59d21519cb67274d212ca94aa9f01",
+    "experiments/aclt-task-commitment/README.md": "e6a2247aea9a5c033b701df33697105f4c67cf3d94023d3b9282d4447af3a09f",
+    "experiments/aclt-task-commitment/cbor_codec.py": "7cb16275c2ec5e38c628997fa414cbff9ba5be3b94946caf6502bf9f28287633",
+    "experiments/aclt-task-commitment/cli.py": "fb3e5337a3cfbf530518f1ea40c65bab45b99190bb9022a1d617df1872ed6eb2",
+    "experiments/aclt-task-commitment/commitment.py": "cea63d78ce1dc0324ba15f89df9a846b12d2f2c5455362c17b72da89bc0cfa77",
+    "experiments/aclt-task-commitment/compare.py": "77ba7bad4125db69ae8b5617115cbdfc37a77974492d26754df25fcbc37b381e",
+    "experiments/aclt-task-commitment/execution-profile.json": "3735566e6e3e06f07209d32f6e2c39e86d4249ea7604b18ac38644bcc0ce2d5a",
+    "experiments/aclt-task-commitment/probe.py": "f99d81ab9456b3db9b8fa0d475172305dad9c80fddcb999a61623df6294430e4",
+    "experiments/aclt-task-commitment/rir_adapter.py": "e403b66123f5dece0b38a0d4c771b16be630dcad36d0730eec6e66526fcffbed",
+    "experiments/aclt-task-commitment/schema.json": "e31ec7964ecd32a953bf7684827de84520628724a624216f273644820247ae59",
+    "experiments/aclt-task-commitment/tests/golden.json": "8a0360bc1e7c790dc06384a92b4befd6d427489e5ff6594861e2f1e8dbc410ec",
+    "experiments/aclt-task-commitment/tests/test_commitment.py": "39278c15e85cb80d316bd16a3c4ac00ee3783d876840e81c96ea9d2d4469d06d"
+  },
+  "formal_objects": {
+    "ComputeReceipt": "NOT_IMPLEMENTED",
+    "Lease": "NOT_IMPLEMENTED",
+    "ExecutionCapability": "NOT_IMPLEMENTED",
+    "EventRecord": "NOT_IMPLEMENTED"
+  },
+  "unchanged_sources": [
+    "all first-work experiments",
+    "aclt-task-commitment"
+  ],
+  "crypto_adapter": "existing system OpenSSL RSA-2048/SHA-256; HMAC-SHA256 provider enrollment",
+  "dependencies": "Python stdlib and existing OpenSSL; default check now requires OpenSSL, no new installation/download",
+  "limitations": [
+    "single trusted issuer and non-rollback/forked ledger assumption",
+    "honest pinned worker/config/filesystem and issuer clock assumed",
+    "LAN transport not encrypted and no production enrollment/key lifecycle",
+    "Python reference authorization entry only; no arbitrary-host/OS enforcement or native Rust authorization wrapper",
+    "per-task/unit launch entitlement is not sampling eligibility or independent statistical evidence",
+    "process SIGKILL/restart is not physical power-cut recovery",
+    "bounded saved-file signature/linkage audit is not complete event replay",
+    "no formal Receipt/Lease/capability/EventRecord, verdict, settlement or Gate closure"
+  ],
+  "gate_change": false,
+  "ADR_status": "PROPOSED",
+  "evidence_sha256": {
+    "evidence-audit.json": "cd3245fc37a0f131dbe471fc417f4de50b22a1063b67eabd901edc6e057b5b53",
+    "unit-final.log": "88e12b1a1469442c46166de1e61f61cb309dc16316d2f24d3d2cfea27dad81d9"
+  }
+}

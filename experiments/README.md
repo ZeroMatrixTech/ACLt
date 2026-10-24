@@ -48,3 +48,7 @@ ACLT_REPORT_DIR=/tmp/aclt-admission-report python3 -B check.py
 ## 第二项切片 1：任务承诺与身份绑定
 
 [aclt-task-commitment](aclt-task-commitment/README.md)实现 ExperimentalTaskCommitment、候选 canonical CBOR、域分离实验 ID、Profile/输入/工件绑定和显式诊断 CLI。19 项回归纳入默认检查，双机通过独立探针执行与证据比较核对。该对象不是 ComputeReceipt；尚无签名授权、一次执行保证或可重放事件链。
+
+## 第二项切片 2：实验授权与持久启动意图
+
+[aclt-task-authorization](aclt-task-authorization/README.md)提供实验签名 grant、在线 CHECK/CONSUME、Dispatch/Python RIR 启动双检查和独占持久标记。默认检查新增 24 项无网络回归并要求已有 OpenSSL；`dualhost.py` 显式运行 A 可信 issuer/账本与 B worker 的真实 LAN/进程故障矩阵。它不是正式 Lease/ExecutionCapability，也未完成第三切片的完整事件重放。

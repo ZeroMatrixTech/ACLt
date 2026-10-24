@@ -211,3 +211,7 @@ Committed + Settled + RefundReserved \le AuthorizedFundingCap
 ### 2026-10-23 工程映射说明（非规范对象）
 
 [最小承诺切片](../testing/TASK-COMMITMENT-SLICE1-20261023.md)用 ExperimentalTaskCommitment / experimental_task_id 探索执行前冻结与输入/工件/上限绑定。它不构成本文的 ComputeReceipt 登记，也未实现 active Lease、ExecutionCapability 或 EventRecord；无授权诊断执行不进入本协议状态机。正式生命周期与冻结字段要求保持不变。
+
+### 2026-10-24 工程映射：实验授权（非正式 Lease/capability）
+
+[授权与启动切片](../testing/TASK-AUTHORIZATION-SLICE2-20261024.md)对 ExperimentalTaskCommitment 派生的 scope/tuple 进行调度与启动双检查，依赖单一可信实验账本的在线消费和本地持久意图。ExperimentalExecutionGrant 不是本文的 active Lease/ExecutionCapability，不新增协议 Principal；它不能证明任意宿主不能旁路，也不改变正式状态机与冻结义务。
