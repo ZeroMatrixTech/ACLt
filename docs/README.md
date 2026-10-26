@@ -243,8 +243,9 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 
 - [第三项工作统一收尾](testing/FUNDING-WORK3-CLOSEOUT-20261024.md)：测试资金冻结/预留、双端固定分配、实际故障恢复三片组合验收；[维护与交接](testing/FUNDING-WORK3-MAINTENANCE.md)提供显式双机新跑和只读复核入口。
 
+第四项正式化工作从 [F0 路线与实施切片](07-roadmap/formal-work4-plan.md)开始；[ADR-0007](05-decisions/ADR-0007-formal-object-migration-foundation.md)为未接受候选，不替代现行规范。
 
-原定第四项是 [B/Q 反例与校准研究：第一片](06-research/bq-boundaries-slice1.md)。模型重跑入口与证据见 [本轮记录](testing/BQ-BOUNDARY-SLICE1-20261026.md)。
+原定第四项是 [B/Q 反例与校准研究：第一片](06-research/bq-boundaries-slice1.md)，正式对象迁移 F0 属于独立后续候选材料。模型重跑入口与证据见 [本轮记录](testing/BQ-BOUNDARY-SLICE1-20261026.md)。
 
 - [B/Q 第二片：任务级校准与敏感性](06-research/bq-calibration-slice2.md)：固定样本 Q 检验、独立真值/scope 契约和人工压力网格；[本轮记录](testing/BQ-CALIBRATION-SLICE2-20261026.md)。不等于实际部署 B/Q 校准。
 
