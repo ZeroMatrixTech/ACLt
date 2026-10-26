@@ -1,0 +1,81 @@
+{
+  "status": "PASS",
+  "source_files": 25,
+  "slices_recomputed": 3,
+  "continuity": {
+    "G": 10,
+    "B": 3,
+    "Q": 8,
+    "epsilon_F": "1/5",
+    "capacity_C5_vote_cap3": "43/126",
+    "actual_M7_six_draw_liveness": "53/60",
+    "zero_failure_samples_single_Q": 59,
+    "zero_failure_samples_three_Q": 80,
+    "review_cases": {
+      "requirements": 14,
+      "inventories": 12,
+      "precreate": 8,
+      "lifecycle": 19
+    },
+    "real_BQ_established": false,
+    "capability_changed": false,
+    "scope": "exact countermodels, synthetic conditional calibration and non-authoritative evidence review"
+  },
+  "verification_kind": "offline deterministic mathematical recomputation; no network, guest or runtime writes",
+  "date": "2026-10-26",
+  "source_sha256": {
+    "docs/06-research/verification-round-mathematical-model.md": "c625f5a71fe2a0490a57bc38cfe1f855cf2c894e62f09ed064a511eddd6b0316",
+    "docs/testing/FUNDING-WORK3-CLOSEOUT-20261024.md": "64ac5999ddd8702a72a28d35e09949e2d6a7c49ffc59b86411c0b89cafe065bb",
+    "docs/testing/RIR-WORK1-CLOSEOUT-20261023.md": "4faf52697b51a3edb03cb1bc0502388282e9fb5fe62dfe894da9f6e0b4cf86b3",
+    "docs/testing/TASK-WORK2-CLOSEOUT-20261024.md": "d889ab6f9d9e3b659020f4abd90d25b3e8e2f938d2cd1dfdae6aae10eea46232",
+    "docs/testing/bq-boundary-slice1-20261026.json": "b4fe3448f6dfd1a8ec5c6cca35f5e86522bf2ea3c4538e4c183a780175047576",
+    "docs/testing/bq-calibration-slice2-20261026.json": "ec04ea072613577526c62efcb226aa824a8b9055df58b7f20d6055d02ae48103",
+    "docs/testing/bq-readiness-slice3-20261026.json": "2c207073ca9066106fa95994b109f406216a483b700a32b5829c33308672a700",
+    "scripts/bq-work4.py": "fd2887c5cffe0baeb9d2ba639687a577048719997c1cf9dac0ccd136c40510d9",
+    "scripts/check-bq-boundaries.py": "74f95188f8aea0ecba89edafae9cd5a4380957690b60f969f1e217670ae616f6",
+    "scripts/check-bq-calibration.py": "a530780f7345500677a990a3d0575f65b2a03dcfcdf560ed7fb04cc698e0fe15",
+    "scripts/check-bq-readiness.py": "4ba5e03f3d1aae018ac3e794a25436673ffc9f11fdfbdf9f28f7a04f2c3314d0",
+    "tests/bq_boundaries/test_boundaries.py": "0ddca16621fb342f463984660b0cc57da3b26dd98e611109dbcabe816da248e0",
+    "tests/bq_calibration/fixtures/synthetic-v1.json": "c96fadd593cb4510be16262c33f8626930e708ef3a79939d4748eabbb2772e92",
+    "tests/bq_calibration/test_calibration.py": "0eca9dde83e2836e9a38f8b54d4a2a33119e24dc1a52f277501427f24342a046",
+    "tests/bq_readiness/fixtures/hypothetical-complete.json": "eff56c015b8826c8fa67b665c038daad29a32c5c121f2f5ed809645d3b38bcd8",
+    "tests/bq_readiness/fixtures/project-evidence-index.json": "941e5424e4c209ee02d4c4eb1ea7f7fc812d76042a767b1af81756acebacd24e",
+    "tests/bq_readiness/fixtures/project-gaps.json": "a2283757028f67cedb13d5f263e93ea5f19fe9b33b87176e9847bdce1b1ea71e",
+    "tests/bq_readiness/test_readiness.py": "0e9877d087e14a1c758919626f9f5f2fa96b788594b0e28e1c368bffa8938164",
+    "tests/verification_model/closed_form_oracle.py": "cdd63154a0bad204e185f86b94e5ba9caea97e711173896f4e36a101fd335d13",
+    "tests/verification_model/recursive_model.py": "4ecb67c73097fc339bf49a009e9e9238e0eb15809b80ef5e6cdc99ff31acb275",
+    "tests/workflow/test_bq_work4.py": "9e2a0191e410e5092a53f322343f54195b32435a46858c7fe5a1375f4942c563",
+    "tools/bq_boundaries/__init__.py": "50f019dd7171225a73899ebf5f49ac48de88e232f484e78fee1356f087b9cc00",
+    "tools/bq_boundaries/calibration.py": "4f44c81585909f7902e40d4188ff25407f99c83a4bc2f504929218e16710f203",
+    "tools/bq_boundaries/model.py": "942cb0c3dc5d4884c6a8f925c8475d5aae117bfa3b2588d88e43aa7046196201",
+    "tools/bq_boundaries/readiness.py": "be6a149139ce336928618410bf0ec8934300546bb3d810a0c2c63b510b975085"
+  },
+  "negative_controls": [
+    {
+      "control": "source-drift",
+      "status": "REJECTED",
+      "exit_code": 1,
+      "success_report_created": false
+    },
+    {
+      "control": "rehashed-report-forgery",
+      "status": "REJECTED",
+      "exit_code": 1,
+      "success_report_created": false
+    },
+    {
+      "control": "forged-summary",
+      "status": "REJECTED",
+      "exit_code": 1,
+      "success_report_created": false
+    },
+    {
+      "control": "symlink-source",
+      "status": "REJECTED",
+      "exit_code": 1,
+      "success_report_created": false
+    }
+  ],
+  "default_regression_methods": 313,
+  "commit_scope": "B/Q slices and closeout only; proposed migration material retained locally"
+}

@@ -242,3 +242,12 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [2026-10-24 第三项工作切片 3](testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)：真实结算丢回复、首次竞争、进程中断与查询原权利，包含 9 份独立 checkpoint 重放；不代表断电或真实支付保证。
 
 - [第三项工作统一收尾](testing/FUNDING-WORK3-CLOSEOUT-20261024.md)：测试资金冻结/预留、双端固定分配、实际故障恢复三片组合验收；[维护与交接](testing/FUNDING-WORK3-MAINTENANCE.md)提供显式双机新跑和只读复核入口。
+
+
+原定第四项是 [B/Q 反例与校准研究：第一片](06-research/bq-boundaries-slice1.md)。模型重跑入口与证据见 [本轮记录](testing/BQ-BOUNDARY-SLICE1-20261026.md)。
+
+- [B/Q 第二片：任务级校准与敏感性](06-research/bq-calibration-slice2.md)：固定样本 Q 检验、独立真值/scope 契约和人工压力网格；[本轮记录](testing/BQ-CALIBRATION-SLICE2-20261026.md)。不等于实际部署 B/Q 校准。
+
+- [B/Q 第三片：部署证据与失效边界](06-research/bq-readiness-slice3.md)：只读清单、创建前降级与分阶段撤销/到期投影；[本轮记录](testing/BQ-READINESS-SLICE3-20261026.md)。研究建议不会启用能力或更改 Receipt/终态。
+
+- [B/Q 第四项统一收尾](testing/BQ-WORK4-CLOSEOUT-20261026.md)：三片研究组合重跑、离线重算与限域结论；[维护入口](testing/BQ-WORK4-MAINTENANCE.md)。真实 B/Q 和部署资格仍未建立。

@@ -5,9 +5,9 @@ PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip
 .PHONY: help check test test-python test-singlehost test-multinode test-authority build-worker workflow status manifests check-manifests package
 
 help:
-	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make check-rir-build-probe Empty-run lowering adapter regressions' 'make test-rir-build-probe RIR_TOOLCHAIN=/prefix RIR_OUTPUT=/new/path' 'make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path' 'make test-rir-stats-probe RIR_TOOLCHAIN=/prefix RIR_STATS_OUTPUT=/new/path' 'make test-rir-work1 RIR_TOOLCHAIN=/prefix RIR_WORK1_OUTPUT=/new/host-run' 'make test-task-commitment TASK_COMMITMENT_OUTPUT=/new/host-run' 'make check-task-authorization Local authorization/startup regressions; OpenSSL required' 'make check-task-replay Local causal journal/replay regressions' 'make test-task-work2 TASK_WORK2_PEER=user@B TASK_WORK2_A_HOST=A_LAN_IP TASK_WORK2_REMOTE_ROOT=/new/B/path TASK_WORK2_OUTPUT=/new/A/path' 'make check-funding-reservation Local test-asset policy/reservation regressions' 'make check-fixed-settlement Local exact-evidence/fixed test-settlement regressions' 'make check-settlement-recovery Local read-first settlement recovery regressions' 'make test-funding-work3 FUNDING_WORK3_PEER=user@B FUNDING_WORK3_A_HOST=A_LAN_IP FUNDING_WORK3_REMOTE_ROOT=/new/B/path FUNDING_WORK3_OUTPUT=/new/A/path' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
+	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make check-rir-build-probe Empty-run lowering adapter regressions' 'make test-rir-build-probe RIR_TOOLCHAIN=/prefix RIR_OUTPUT=/new/path' 'make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path' 'make test-rir-stats-probe RIR_TOOLCHAIN=/prefix RIR_STATS_OUTPUT=/new/path' 'make test-rir-work1 RIR_TOOLCHAIN=/prefix RIR_WORK1_OUTPUT=/new/host-run' 'make test-task-commitment TASK_COMMITMENT_OUTPUT=/new/host-run' 'make check-task-authorization Local authorization/startup regressions; OpenSSL required' 'make check-task-replay Local causal journal/replay regressions' 'make test-task-work2 TASK_WORK2_PEER=user@B TASK_WORK2_A_HOST=A_LAN_IP TASK_WORK2_REMOTE_ROOT=/new/B/path TASK_WORK2_OUTPUT=/new/A/path' 'make check-funding-reservation Local test-asset policy/reservation regressions' 'make check-fixed-settlement Local exact-evidence/fixed test-settlement regressions' 'make check-settlement-recovery Local read-first settlement recovery regressions' 'make test-funding-work3 FUNDING_WORK3_PEER=user@B FUNDING_WORK3_A_HOST=A_LAN_IP FUNDING_WORK3_REMOTE_ROOT=/new/B/path FUNDING_WORK3_OUTPUT=/new/A/path' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make check-bq-boundaries Exact local B/Q countermodel regressions' 'make test-bq-boundaries BQ_REPORT=/new/report.json' 'make check-bq-calibration Exact local calibration/sensitivity regressions' 'make test-bq-calibration BQ_CALIBRATION_REPORT=/new/report.json' 'make check-bq-readiness Evidence review/lifecycle projection regressions' 'make test-bq-readiness BQ_READINESS_REPORT=/new/report.json' 'make test-bq-work4 BQ_WORK4_OUTPUT=/new/research-run' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
 
-check: test-python check-manifests check-profile-inventory check-rir-build-probe check-rir-io-probe check-rir-stats-probe check-task-commitment check-task-authorization check-task-replay check-funding-reservation check-fixed-settlement check-settlement-recovery
+check: test-python check-bq-boundaries check-bq-calibration check-bq-readiness check-manifests check-profile-inventory check-rir-build-probe check-rir-io-probe check-rir-stats-probe check-task-commitment check-task-authorization check-task-replay check-funding-reservation check-fixed-settlement check-settlement-recovery
 
 test: check test-singlehost test-multinode test-authority test-claim-codec
 
@@ -112,3 +112,28 @@ check-settlement-recovery:
 .PHONY: test-funding-work3
 test-funding-work3:
 	$(PYTHON) -B scripts/funding-work3.py run --peer "$(FUNDING_WORK3_PEER)" --a-host "$(FUNDING_WORK3_A_HOST)" --remote-root "$(FUNDING_WORK3_REMOTE_ROOT)" --output "$(FUNDING_WORK3_OUTPUT)"
+
+.PHONY: check-bq-boundaries test-bq-boundaries
+check-bq-boundaries:
+	$(PYTHON) -B -m unittest discover -s tests/bq_boundaries -v
+
+test-bq-boundaries:
+	$(PYTHON) -B scripts/check-bq-boundaries.py --report "$(BQ_REPORT)"
+
+.PHONY: check-bq-calibration test-bq-calibration
+check-bq-calibration:
+	$(PYTHON) -B -m unittest discover -s tests/bq_calibration -v
+
+test-bq-calibration:
+	$(PYTHON) -B scripts/check-bq-calibration.py --report "$(BQ_CALIBRATION_REPORT)"
+
+.PHONY: check-bq-readiness test-bq-readiness
+check-bq-readiness:
+	$(PYTHON) -B -m unittest discover -s tests/bq_readiness -v
+
+test-bq-readiness:
+	$(PYTHON) -B scripts/check-bq-readiness.py --report "$(BQ_READINESS_REPORT)"
+
+.PHONY: test-bq-work4
+test-bq-work4:
+	$(PYTHON) -B scripts/bq-work4.py run --output "$(BQ_WORK4_OUTPUT)"

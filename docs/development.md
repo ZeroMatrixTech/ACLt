@@ -112,3 +112,19 @@
 ## 第三项工作统一收尾入口
 
 `make test-funding-work3` 在全新两端根中显式重跑预留、固定结算和恢复三组真实 LAN 矩阵；`scripts/funding-work3.py verify` 只复核保存源码/证据及 11 个 checkpoint，不连接 B、不执行 guest。新增 5 项工具回归，默认合计 265 项，三个实验源码保持原字节。参数、独立账本边界及恢复规则见 [维护入口](testing/FUNDING-WORK3-MAINTENANCE.md) 和 [总报告](testing/FUNDING-WORK3-CLOSEOUT-20261024.md)。
+
+## B/Q 边界模型（2026-10-26）
+
+`make check-bq-boundaries` 运行 11 项本地确定性回归，已纳入 `make check`。`make test-bq-boundaries BQ_REPORT=/existing-parent/new-report.json` 重跑八个精确人工见证并保存源码 pin，现有报告拒绝覆盖。使用现有 Python 标准库，无下载、网络、guest 或数据库；不是部署 B/Q 校准。原数学内核保持不变，边界与后续研究见 [BQ-W4-S1](06-research/bq-boundaries-slice1.md)。
+
+## B/Q 固定样本校准研究（2026-10-26）
+
+`make check-bq-calibration` 新增 14 项确定性回归并纳入 `make check`；`make test-bq-calibration BQ_CALIBRATION_REPORT=/existing-parent/new-report.json` 运行合成输入的条件校准与敏感性并保存源码/input pin，不覆盖旧报告。标准库、离线，无新依赖、guest、SSH 或数据库。只接受显式 synthetic 研究数据，不估现实 B/Q，不支持边看边加样本；详见[研究边界](06-research/bq-calibration-slice2.md)。
+
+## B/Q 证据审阅研究（2026-10-26）
+
+`make check-bq-readiness` 纳入 18 项回归；`make test-bq-readiness BQ_READINESS_REPORT=/existing-parent/new-report.json` 重现研究清单和创建/生命周期投影。只读显式夹具与既有工件摘要，无网络、时钟读取或 capability 写入，不是正式 phase validator。新报告拒绝覆盖；边界见[第三片正文](06-research/bq-readiness-slice3.md)。
+
+## B/Q 三片统一入口（2026-10-26）
+
+`make test-bq-work4 BQ_WORK4_OUTPUT=/existing-parent/new-run` 重算三片并核对统一源码/原始报告/跨片边界；`python3 -B scripts/bq-work4.py verify --evidence /saved/run --report /new/report.json` 在临时目录重算核对，原证据只读。新增 5 项工具回归纳入默认 `make check`。全部离线，无新运行能力；范围与交接见[收尾报告](testing/BQ-WORK4-CLOSEOUT-20261026.md)。
