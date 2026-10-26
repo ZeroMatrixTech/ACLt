@@ -1,0 +1,297 @@
+{
+  "document_kind": "engineering-planning-traceability",
+  "date": "2026-10-26",
+  "baseline": "3a001ddba707ce50c0afef472d43043a244522b0",
+  "authority": "non-normative; proposed ADR, not accepted schema or conformance",
+  "adr": "docs/05-decisions/ADR-0007-formal-object-migration-foundation.md",
+  "plan": "docs/07-roadmap/formal-work4-plan.md",
+  "decisions": {
+    "D-1": {
+      "disposition": "PROPOSED",
+      "formal_acceptance": false
+    },
+    "D-2": {
+      "disposition": "PROPOSED",
+      "formal_acceptance": false
+    },
+    "D-3": {
+      "disposition": "PROPOSED",
+      "formal_acceptance": false
+    },
+    "D-4": {
+      "disposition": "PROPOSED",
+      "formal_acceptance": false
+    },
+    "D-5": {
+      "disposition": "PROPOSED",
+      "formal_acceptance": false
+    },
+    "D-6": {
+      "disposition": "PROPOSED",
+      "formal_acceptance": false
+    }
+  },
+  "structural_gaps": {
+    "X-1": [
+      "D-5",
+      "D-6"
+    ],
+    "X-2": [
+      "D-3"
+    ],
+    "X-3": [
+      "D-1"
+    ],
+    "X-4": [
+      "D-1",
+      "D-2"
+    ],
+    "X-5": [
+      "D-2"
+    ],
+    "X-6": [
+      "D-2",
+      "D-6"
+    ],
+    "X-7": [
+      "D-4"
+    ],
+    "X-8": [
+      "D-3"
+    ]
+  },
+  "migration_items": {
+    "MG-01": {
+      "stage": "parallel",
+      "decisions": [
+        "D-1"
+      ],
+      "acceptance_requirements": [
+        "W4-A02"
+      ],
+      "implementation_complete": false
+    },
+    "MG-02": {
+      "stage": "parallel",
+      "decisions": [
+        "D-1"
+      ],
+      "acceptance_requirements": [
+        "W4-A02",
+        "W4-A08"
+      ],
+      "implementation_complete": false
+    },
+    "MG-03": {
+      "stage": "slice1",
+      "decisions": [
+        "D-1"
+      ],
+      "acceptance_requirements": [
+        "W4-A03"
+      ],
+      "implementation_complete": false
+    },
+    "MG-04": {
+      "stage": "slice2",
+      "decisions": [
+        "D-1"
+      ],
+      "acceptance_requirements": [
+        "W4-A03"
+      ],
+      "implementation_complete": false
+    },
+    "MG-05": {
+      "stage": "slice1",
+      "decisions": [
+        "D-1"
+      ],
+      "acceptance_requirements": [
+        "W4-A02",
+        "W4-A03"
+      ],
+      "implementation_complete": false
+    },
+    "MG-06": {
+      "stage": "slice2",
+      "decisions": [
+        "D-1",
+        "D-4"
+      ],
+      "acceptance_requirements": [
+        "W4-A03",
+        "W4-A04",
+        "W4-A05"
+      ],
+      "implementation_complete": false
+    },
+    "MG-07": {
+      "stage": "slice1",
+      "decisions": [
+        "D-1",
+        "D-2"
+      ],
+      "acceptance_requirements": [
+        "W4-A03",
+        "W4-A08"
+      ],
+      "implementation_complete": false
+    },
+    "MG-08": {
+      "stage": "slice1",
+      "decisions": [
+        "D-4"
+      ],
+      "acceptance_requirements": [
+        "W4-A05"
+      ],
+      "implementation_complete": false
+    },
+    "MG-09": {
+      "stage": "slice2",
+      "decisions": [
+        "D-4",
+        "D-5",
+        "D-6"
+      ],
+      "acceptance_requirements": [
+        "W4-A05",
+        "W4-A06",
+        "W4-A07"
+      ],
+      "implementation_complete": false
+    },
+    "MG-10": {
+      "stage": "slice2",
+      "decisions": [
+        "D-6"
+      ],
+      "acceptance_requirements": [
+        "W4-A06",
+        "W4-A10"
+      ],
+      "implementation_complete": false
+    },
+    "MG-11": {
+      "stage": "slice3",
+      "decisions": [
+        "D-4"
+      ],
+      "acceptance_requirements": [
+        "W4-A05",
+        "W4-A07"
+      ],
+      "implementation_complete": false
+    },
+    "MG-12": {
+      "stage": "slice2",
+      "decisions": [
+        "D-3"
+      ],
+      "acceptance_requirements": [
+        "W4-A11",
+        "W4-A12"
+      ],
+      "implementation_complete": false
+    },
+    "MG-13": {
+      "stage": "slice1",
+      "decisions": [
+        "D-2",
+        "D-5"
+      ],
+      "acceptance_requirements": [
+        "W4-A03",
+        "W4-A04",
+        "W4-A09"
+      ],
+      "implementation_complete": false
+    },
+    "MG-14": {
+      "stage": "slice1",
+      "decisions": [
+        "D-2",
+        "D-6"
+      ],
+      "acceptance_requirements": [
+        "W4-A09",
+        "W4-A10"
+      ],
+      "implementation_complete": false
+    },
+    "MG-15": {
+      "stage": "slice2",
+      "decisions": [
+        "D-5"
+      ],
+      "acceptance_requirements": [
+        "W4-A06",
+        "W4-A11"
+      ],
+      "implementation_complete": false
+    },
+    "MG-16": {
+      "stage": "slice2",
+      "decisions": [
+        "D-5",
+        "D-6"
+      ],
+      "acceptance_requirements": [
+        "W4-A06"
+      ],
+      "implementation_complete": false
+    },
+    "MG-17": {
+      "stage": "slice3",
+      "decisions": [
+        "D-2"
+      ],
+      "acceptance_requirements": [
+        "W4-A08",
+        "W4-A10"
+      ],
+      "implementation_complete": false
+    },
+    "MG-18": {
+      "stage": "slice3",
+      "decisions": [
+        "D-2"
+      ],
+      "acceptance_requirements": [
+        "W4-A09",
+        "W4-A11"
+      ],
+      "implementation_complete": false
+    },
+    "MG-19": {
+      "stage": "slice3",
+      "decisions": [
+        "D-3",
+        "D-6"
+      ],
+      "acceptance_requirements": [
+        "W4-A10",
+        "W4-A11",
+        "W4-A12"
+      ],
+      "implementation_complete": false
+    }
+  },
+  "acceptance_requirements": {
+    "W4-A01": "PLANNED_NOT_RUN",
+    "W4-A02": "PLANNED_NOT_RUN",
+    "W4-A03": "PLANNED_NOT_RUN",
+    "W4-A04": "PLANNED_NOT_RUN",
+    "W4-A05": "PLANNED_NOT_RUN",
+    "W4-A06": "PLANNED_NOT_RUN",
+    "W4-A07": "PLANNED_NOT_RUN",
+    "W4-A08": "PLANNED_NOT_RUN",
+    "W4-A09": "PLANNED_NOT_RUN",
+    "W4-A10": "PLANNED_NOT_RUN",
+    "W4-A11": "PLANNED_NOT_RUN",
+    "W4-A12": "PLANNED_NOT_RUN"
+  },
+  "normative_status_changes": [],
+  "new_dualhost_runs": 0
+}
