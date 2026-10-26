@@ -5,7 +5,7 @@
 ## 已完成
 
 - [B/Q PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并；浏览器可见成功状态及合并提交。用户完成 fetch 后，本地 main/origin/main 与该 SHA 一致，从此基线建立正式迁移文档分支。
-- 原四份未提交草案只读取自 `store` stash `f0952ea913143a4c0e2c10ffc64bb8fcdc09489c`，stash 本身保留，未 pop/drop。旧 tracked 草案段落不覆盖新 main，以当前文字和必要更正同步。
+- 原四份未提交草案只读取自 `store` stash `f0952ea913143a4c0e2c10ffc64bb8fcdc09489c`，F0 提交时 stash 保留且未 pop/drop；随后按维护者要求完成[整合与清理](STORE-INTEGRATION-20261026.md)，原字节另存备份。旧 tracked 草案段落不覆盖新 main，以当前文字和必要更正同步。
 - 正式迁移统一用 FM；plan/traceability/F0 报告去掉 work4，验收编号改为 FM-A01～12。BQ-WORK4 保留原名和证据，已提交历史不重写。
 - 维护者明确接受 ADR-0007 的六项首轮路线；字段/tag/envelope/矩阵、代码与部署分别保留门槛。接受决定不以 make check 成功替代。
 - 修正 audit-only 不使用 EligibilitySnapshot、无 B/Q 参数/活性 claim，与 bounded 参数互斥；AssumptionStateSnapshot 不混用。终态沿用现行 DecisionMapping/ResolveBoundary，不另立墙钟优先规则。
