@@ -5,6 +5,8 @@
 > 日期：2026-10-24  
 > 权威边界：正式对象的语义以 [协议规范](../03-protocol/protocol-spec.md)、[任务生命周期](../02-architecture/task-lifecycle.md)、[不变量](../01-requirements/invariants.md)、[VerificationProfile 规范](../03-protocol/verification-profile-schema.md)、ADR-0005 与 ADR-0006 为准。本文只登记实验替身与正式对象之间的缺口、迁移后必须拒绝的情形，以及迁移完成的验收条件；不改变 SemanticStatus、V1 VersionDisposition、OQ 状态或 Gate。
 
+> 2026-10-26 实施更新：D-1～D-6 的首轮测试路线已由维护者接受，决定源为 [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md)；本清单保留原问题与对象差距，不把路线接受记作迁移完成。下一实施入口为 [FM-S1a](formal-migration-plan.md)。
+
 ## 1. 范围与读法
 
 范围是 Work 1–3 引入的实验对象：[RIR-WORK1](../testing/RIR-WORK1-CLOSEOUT-20261023.md)、[TASK-WORK2](../testing/TASK-WORK2-CLOSEOUT-20261024.md)、[FUNDING-WORK3](../testing/FUNDING-WORK3-CLOSEOUT-20261024.md)。更早的实验见 §7。
@@ -361,7 +363,7 @@
 - **现状**：比较两端完整的 outcome 字节，引用两份原始报告的哈希和冻结规则，得出 MATCH_OK、CLOSED_NO_PAY 或 PENDING；不产生 TRUSTED。
 - **缺口**：
   - 没有绑定 VerificationProfile；
-  - 若使用 `REEXEC_*`，还缺 EligibilitySnapshot；
+  - 若使用 `REEXEC_BOUNDED`，还缺 EligibilitySnapshot；`REEXEC_AUDIT_ONLY` 不冻结该快照、无安全/活性参数块，仍须按方法绑定 Profile 和显式求值；
   - 没有 VerificationDecision 和终态；
   - 两端运行同一份 Python 实现，属于共因（`EXC-BASE-COMMON-MODE`）。
 - **拒绝条件**：
@@ -403,7 +405,9 @@
   - 每个诊断都有对应的 §17 规则或终态，并有测试；
   - 期限到达的场景。
 
-## 6. 需要先决定的问题
+## 6. 路线问题（保留提出时清单）
+
+下表记录问题提出时的选项；当前六项路线已在 ADR-0007 接受，字段/签名 envelope/矩阵等仍待实现切片冻结。不得把本表原问句继续读作六项路线尚未决。
 
 | 编号 | 问题 | 影响 |
 |---|---|---|
@@ -431,3 +435,7 @@
 ## 8. 不逐项迁移的早期实验
 
 state3 单机实验（`ACLT-STATE-3` 记录）、多节点 admission 原型，以及外置权威账本 v2（`ACLT-LOCAL-CLAIM-1` 摘要与资格槽位）保留为历史证据。它们的接纳、资格与回执语义已由 Work 2/3 的对应替身覆盖，不在本清单中单独迁移。
+
+## 2026-10-26 实施顺序与幂等澄清
+
+政策/schema/可达终态矩阵必须先于 Receipt 冻结，随后才实现终态驱动记账；政策与 Receipt 摘要不得互相依赖。MG-18 的“第二次提交拒绝”指拒绝第二次业务分配：同内容幂等请求返回原结果，异内容才冲突。具体验收和阶段使用 [FM-A 编号及 FM-S1a/S1b/S2/S3](formal-migration-plan.md)；旧 F0/work4 名称仅保留于操作者 stash 中的历史草案。

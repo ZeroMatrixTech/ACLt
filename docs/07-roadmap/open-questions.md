@@ -455,3 +455,7 @@ OQ-01 发布条件 <─> OQ-13 Maintenance
 ## 2026-10-26 B/Q 限定研究组合收尾
 
 [BQ 三片总报告](../testing/BQ-WORK4-CLOSEOUT-20261026.md)统一重现反例、合成条件校准和证据/失效投影；未建立真实 B/Q、任务 iid、独立真值或实际来源，相关 OQ 保持 OPEN。研究已清楚地区分可观察量、外生假设和当前不可识别部分，不能因统一 PASS 启用 bounded 或关闭 Gate；也不因此阻塞 RIR/运行时工作。
+
+## 2026-10-26 正式迁移路线已决定，字段与实现继续开放
+
+维护者接受 [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 首轮测试路线；OQ-02/03/04/05/06/09/10/11 不因此关闭。FM-S1a 先冻结共享编码、最小 Principal/角色签名与精确 envelope；政策矩阵、非主网字段表达与 Receipt 在 FM-S1b 继续。audit-only 不依赖 EligibilitySnapshot/B/Q，不产生 TRUSTED；UNRESOLVED 费用仍须满足 INV-07 全部五项。ADR-0006 按原 §11/§13 补证据，继续 PROPOSED。实施顺序见 [FM 入口](formal-migration-plan.md)。

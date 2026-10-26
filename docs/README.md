@@ -35,6 +35,7 @@
 6. [`05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md`](05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md)
 7. [`05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md`](05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md)
 8. [`05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md`](05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md)（`PROPOSED` 草案）
+9. [`05-decisions/ADR-0007-formal-object-migration-foundation.md`](05-decisions/ADR-0007-formal-object-migration-foundation.md)（D-1～D-6 首轮迁移路线已接受；字段/实现未验收）
 9. [`06-research/verification-round-mathematical-model.md`](06-research/verification-round-mathematical-model.md)
 10. [`06-research/last-two-problem-trees.md`](06-research/last-two-problem-trees.md)
 11. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
@@ -251,3 +252,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [B/Q 第三片：部署证据与失效边界](06-research/bq-readiness-slice3.md)：只读清单、创建前降级与分阶段撤销/到期投影；[本轮记录](testing/BQ-READINESS-SLICE3-20261026.md)。研究建议不会启用能力或更改 Receipt/终态。
 
 - [B/Q 第四项统一收尾](testing/BQ-WORK4-CLOSEOUT-20261026.md)：三片研究组合重跑、离线重算与限域结论；[维护入口](testing/BQ-WORK4-MAINTENANCE.md)。真实 B/Q 和部署资格仍未建立。
+
+- [正式迁移实施入口：FM-S1a](07-roadmap/formal-migration-plan.md)：共享编码与最小角色签名是下一代码切片；[FM-F0 交接](testing/FORMAL-MIGRATION-F0-20261026.md)记录六项路线接受、命名及规范边界修正。FM 不计入 BQ-WORK4。
