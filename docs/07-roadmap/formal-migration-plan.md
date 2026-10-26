@@ -1,0 +1,53 @@
+# 正式对象迁移实施入口（FM）
+
+日期：2026-10-26；基线 `f5f415f7c65952adba01f7b0c9f21d554b14c264`（B/Q PR #58 已合并）。
+
+路线决定的唯一来源是 [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) §2：D-1～D-6 已接受；本页只列实施顺序和验收，不复制六项选择。对象差距见[迁移清单](formal-object-migration.md)，机器关系见[追踪表](formal-migration-traceability.json)。FM 不是 BQ-WORK4，也不是新的 ProtocolVersion。
+
+## 当前交接
+
+FM-F0 的流程/命名/路线决策已收口；字段、实现、双机和部署验收均未完成。下一项直接是 **FM-S1a：共享编码与最小角色签名**，不再补一轮总规划。既有 P0-1B 3/19/97 仍是当前登记，ADR-0006 保持 PROPOSED，所有 Gate/OQ 与 V1 处置不变。
+
+## 实施顺序
+
+| 切片 | 内容与退出证据 |
+|---|---|
+| FM-S1a | 复用现有 P0-1B Python/Rust codec 起点，补齐所需类型、wire/import 边界、规范性拒绝与资源上限；最小 Principal 公钥/角色绑定及测试签名 envelope。以代码、精确字节/签名正负向量和独立两语言对拍收尾 |
+| FM-S1b | 最小可达终态/费用矩阵、Funding/Settlement policy、LogicalObject/执行引用与 Receipt schema/摘要单向绑定。政策先冻结，再由 Receipt 引用，不形成哈希环 |
+| FM-S2 | 新部署中 Receipt→合法 Assignment→资金/暴露原子预留→Provider 接受 Lease→capability/Attempt→统一事件；替换两条旧启动权威，跑对应真实双机集成/故障矩阵 |
+| FM-S3 | 签名 ResultSubmission→audit-only 证据/显式求值→唯一准确终态→分项权利/退款→恢复。无 B/Q/EligibilitySnapshot 依赖，不以比较相同直接付款；不改判或重复分配 |
+| RIR 独立线 | MG-01/02 按 ADR-0006 §13 补独立外壳/validator/摘要与完整 conformance；不由 FM 的局部成功顺带关闭 |
+
+## FM-S1a 的具体开工条件与交付
+
+开工依据：六项路线已接受；已有 [Python codec](../../tools/verification_profile/codec.py)、[Rust codec/独立 SHA/NFC](../../tools/verification_profile/rust/README.md)、[106 条固定向量和差分入口](../testing/CLAIM-CODEC-20261023.md)。这些是有限候选实现，不能直接改名成通用正式对象实现。
+
+本片只做以下范围，Receipt/资金转移/Lease/真实密钥生命周期不提前进入：
+
+1. 在现有规范 owner 下核对 primitive、整数、容器、Rational/SemVer、ENUM、Schema View 和必要导入的封闭合约；明确哪些规则得到完整支持、哪些仍 partial，不按通过测试数量抬高覆盖率。
+2. 精确定义最小 Principal 公钥绑定和 Requester/Provider 签署责任。日志实现密钥独立引用，不新增协议 Principal。私钥不入库，未知 key/role/network/version 必须拒绝。
+3. 冻结测试签名 suite 的确切 padding/参数、hash、key/signature 编码、尺寸限制、签名输入、协议/对象/网络/角色上下文与摘要域。不能仅写 RSA/SHA256；RSA 路线接受不预先决定这些字节。
+4. Python/Rust 独立编解码和摘要实现逐字节一致，不调用 Python 替 Rust 预验证；明确签名适配共享的 OpenSSL 依赖不算第二份独立密码学实现。
+5. 正例包含合法重绑定/重新签署后的成功；负例覆盖非最短/重复/未知/溢出/非 NFC、未知 import、错 key/role/network/context、篡改 payload 和重放，不能靠全部拒绝通过。
+6. 交付新向量、规范/实现/规则编号映射与局部回归、现有完整检查；必要的双机编码/构建复核明确为该范围，不冒充端到端任务/账务验收。不安装无来源依赖，不迁移旧实验库。
+
+具体字段/tag/envelope 与注册授权在本片形成可审查修订；本交接没有预冻结它们。FM-S1a implementation_started=false，所有下表验收均仍计划中。
+
+## 迁移验收编号
+
+| ID | 迁移完成时要证明的性质 |
+|---|---|
+| FM-A01 | 正式入口拒绝旧实验 schema/ID，业务状态不变 |
+| FM-A02 | 两语言规范编码/未知字段/数值/资源拒绝及独立字节对拍 |
+| FM-A03 | 版本、政策、输入、资源或语义变化不沿用旧承诺/授权 |
+| FM-A04 | 政策→Receipt 与其他因果/摘要依赖无环 |
+| FM-A05 | 角色/密钥/网络/签名责任正确，issuer 不代签 Provider |
+| FM-A06 | 唯一 Lease、两类原子预留、并发/超额与重复启动拒绝 |
+| FM-A07 | 旧 epoch/冲突幂等键不覆盖当前事实或产生新权利 |
+| FM-A08 | 方法特定 Profile/证据/求值；audit-only 无 ACCEPT/TRUSTED，无 EligibilitySnapshot |
+| FM-A09 | INV-07 五项前提齐全，金额由政策派生，重复请求取原权利 |
+| FM-A10 | 有界 deadline/恢复/unknown，按冻结规则唯一终态，无自动 guest 重试 |
+| FM-A11 | 丢回复/COMMIT 边界/竞争下至多一次与守恒 |
+| FM-A12 | 来源未知/错锚点不驱动新安全终态，合法旧签名不等于新鲜性 |
+
+这些是整条迁移的要求，不意味着 FM-S1a 一片完成全部 FM-A。完整 RIR/RPR、身份控制独立、B/Q、真实支付、主网资格和 Gate 都不能由局部编码对拍替代。

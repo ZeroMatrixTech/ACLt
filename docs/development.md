@@ -128,3 +128,7 @@
 ## B/Q 三片统一入口（2026-10-26）
 
 `make test-bq-work4 BQ_WORK4_OUTPUT=/existing-parent/new-run` 重算三片并核对统一源码/原始报告/跨片边界；`python3 -B scripts/bq-work4.py verify --evidence /saved/run --report /new/report.json` 在临时目录重算核对，原证据只读。新增 5 项工具回归纳入默认 `make check`。全部离线，无新运行能力；范围与交接见[收尾报告](testing/BQ-WORK4-CLOSEOUT-20261026.md)。
+
+## 正式迁移 FM-S1a 开工入口（2026-10-26）
+
+[ADR-0007](05-decisions/ADR-0007-formal-object-migration-foundation.md) 已接受六项首轮路线，字段和实现分别验收；下一切片按 [FM-S1a](07-roadmap/formal-migration-plan.md) 开始共享编码与最小角色签名代码/向量，不另建总规划。先复用现有 P0-1B codec 并审查其候选 wire/import 限制，精确 suite/envelope 必须由向量固定；Python/Rust 独立、OpenSSL 依赖边界、拒绝行为与覆盖 owner 均需交付。当前无新代码/软件安装/双机运行，ADR-0006/Gate/现有对象 Schema 状态不变。
