@@ -1,0 +1,181 @@
+{
+  "schema_id": "aclt.research.bq-readiness@1",
+  "data_kind": "synthetic-review",
+  "context": {
+    "evaluation_tick": 100,
+    "target_scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+    "network_digest": "875c276358acda0f594d8913e056debd1042823ea54c4abce126d500edf40fad",
+    "assurance_network_digest": "875c276358acda0f594d8913e056debd1042823ea54c4abce126d500edf40fad",
+    "network_is_official": true,
+    "reuses_official_assurance": true
+  },
+  "parameters": {
+    "G": 10,
+    "B": 3,
+    "Q": 8,
+    "epsilon_F": "1/5",
+    "delta_Q": "1/20",
+    "delta_L": "1/20",
+    "alpha_calibration": "1/20",
+    "delta_min": "1/10",
+    "n_budget": 6,
+    "n_policy": 6,
+    "n_required_claimed": 6
+  },
+  "records": [
+    {
+      "requirement_id": "contract_schema_registry",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "2f8dbb6bda6f9ba55f3861b03d7bf7ece2d82ba59414877fdc3e41a735e66fe4",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "runtime_conformance",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "c87c6d54def2de262eeb60c0f94006f7c7047780cb683760a66d8dbaa93d7bf1",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "lease_scope_binding",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "e9047dadd08ed1320bbed545c3c825f37aa6cddd1ba07611e24e5d80a2af8652",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "log_and_status_sources",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "3717e61d613a18c9b31ce76b7d7f28280bb5056b16b351b318ca59850e365023",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "bounded_consumption_and_loss",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "429c9acc13eb3ede241d9834c61349f2f3f82760290fe20412282d2b1ee4d9d2",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "frozen_policy",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "ee4e8fcd37d7a1753608c6a744bbe8b80542f4980d3d5a67858581bc7839e13a",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "support_capability_bound",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "a7b89a0a5f9c2a0d42099d3872e4ed028adb29ab074f14520efca850bfea1c22",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "correctness_bridge",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "68e966e8b7337e453031ee761e823b567ad2377086af546240c60842a9649a6d",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "population_binding",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "6fcb94eca1bac69476cd7ef92f4962e8df42228ccc72d3c55b7c8a39242cd291",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "randomness_slot_accounting",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "f7718dbe5110a65f9a0635a03006c6ec96dd9452123ee5f19d1c172c24913644",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "q_truth_calibration",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "3954b36577c8937595dae910271067185854b48e4f6460d32db1f11448da2a59",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "calibration_confidence_accounting",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "57de72d6fe032e01f214507555d437128e3f9d2111fb1e6b5b86732e52e8bada",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "assurance_components_revocation",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "902112e50335e80298548944974956d5d68092d6fd3cabdd61a500cb7e29940b",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    },
+    {
+      "requirement_id": "exact_dp_budget",
+      "state": "STIPULATED_VALID",
+      "evidence_kind": "EXTERNAL_REVIEW_STIPULATED",
+      "evidence_digest": "56eb7601225c87ad4aadc8e4a70a594d0e80084cfbb4d109ebea5658be637f4c",
+      "scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+      "validity": [
+        0,
+        200
+      ]
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "schema_id": "aclt.research.bq-readiness@1",
+  "data_kind": "project-gap-inventory",
+  "context": {
+    "evaluation_tick": 100,
+    "target_scope_digest": "b941d2cdc7d25bd88bb1528ef1760a75065875a345b27ffe16ae4de9167f4987",
+    "network_digest": "875c276358acda0f594d8913e056debd1042823ea54c4abce126d500edf40fad",
+    "assurance_network_digest": "875c276358acda0f594d8913e056debd1042823ea54c4abce126d500edf40fad",
+    "network_is_official": false,
+    "reuses_official_assurance": false
+  },
+  "parameters": {
+    "G": 10,
+    "B": 3,
+    "Q": 8,
+    "epsilon_F": "1/5",
+    "delta_Q": "1/20",
+    "delta_L": "1/20",
+    "alpha_calibration": "1/20",
+    "delta_min": "1/10",
+    "n_budget": 6,
+    "n_policy": 6,
+    "n_required_claimed": 6
+  },
+  "records": [
+    {
+      "requirement_id": "contract_schema_registry",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "MISSING",
+      "evidence_digest": null,
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "runtime_conformance",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "EXPERIMENT_ONLY",
+      "evidence_digest": "4faf52697b51a3edb03cb1bc0502388282e9fb5fe62dfe894da9f6e0b4cf86b3",
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "lease_scope_binding",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "MISSING",
+      "evidence_digest": null,
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "log_and_status_sources",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "EXPERIMENT_ONLY",
+      "evidence_digest": "d889ab6f9d9e3b659020f4abd90d25b3e8e2f938d2cd1dfdae6aae10eea46232",
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "bounded_consumption_and_loss",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "EXPERIMENT_ONLY",
+      "evidence_digest": "64ac5999ddd8702a72a28d35e09949e2d6a7c49ffc59b86411c0b89cafe065bb",
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "frozen_policy",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "MISSING",
+      "evidence_digest": null,
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "support_capability_bound",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "MISSING",
+      "evidence_digest": null,
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "correctness_bridge",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "MISSING",
+      "evidence_digest": null,
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "population_binding",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "MISSING",
+      "evidence_digest": null,
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "randomness_slot_accounting",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "MISSING",
+      "evidence_digest": null,
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "q_truth_calibration",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "EXPERIMENT_ONLY",
+      "evidence_digest": "ec04ea072613577526c62efcb226aa824a8b9055df58b7f20d6055d02ae48103",
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "calibration_confidence_accounting",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "EXPERIMENT_ONLY",
+      "evidence_digest": "ec04ea072613577526c62efcb226aa824a8b9055df58b7f20d6055d02ae48103",
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "assurance_components_revocation",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "MISSING",
+      "evidence_digest": null,
+      "scope_digest": null,
+      "validity": null
+    },
+    {
+      "requirement_id": "exact_dp_budget",
+      "state": "NOT_ESTABLISHED",
+      "evidence_kind": "EXPERIMENT_ONLY",
+      "evidence_digest": "c625f5a71fe2a0490a57bc38cfe1f855cf2c894e62f09ed064a511eddd6b0316",
+      "scope_digest": null,
+      "validity": null
+    }
+  ]
+}

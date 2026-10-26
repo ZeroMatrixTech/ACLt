@@ -1,0 +1,805 @@
+{
+  "status": "PASS",
+  "kind": "research-evidence-review-not-capability-enablement",
+  "requirements": {
+    "contract_schema_registry": {
+      "primary_evidence_layer": "A",
+      "audit_core": true,
+      "owner": "protocol-spec \u00a73; Profile \u00a713"
+    },
+    "runtime_conformance": {
+      "primary_evidence_layer": "C",
+      "audit_core": true,
+      "owner": "ADR-0005 \u00a73; MAP-5"
+    },
+    "lease_scope_binding": {
+      "primary_evidence_layer": "C",
+      "audit_core": true,
+      "owner": "ADR-0005 \u00a72.7; SV-117"
+    },
+    "log_and_status_sources": {
+      "primary_evidence_layer": "C",
+      "audit_core": true,
+      "owner": "MAP-6; AS-3; EF-6/7"
+    },
+    "bounded_consumption_and_loss": {
+      "primary_evidence_layer": "D",
+      "audit_core": true,
+      "owner": "INV-09/10; ADR-0005 \u00a73"
+    },
+    "frozen_policy": {
+      "primary_evidence_layer": "A",
+      "audit_core": true,
+      "owner": "D-04; INV-01/12"
+    },
+    "support_capability_bound": {
+      "primary_evidence_layer": "C",
+      "audit_core": false,
+      "owner": "AR-2/3/5; SC-2"
+    },
+    "correctness_bridge": {
+      "primary_evidence_layer": "C",
+      "audit_core": false,
+      "owner": "AR-2; MAP-5"
+    },
+    "population_binding": {
+      "primary_evidence_layer": "A",
+      "audit_core": false,
+      "owner": "PB-1..9; SV-81/94"
+    },
+    "randomness_slot_accounting": {
+      "primary_evidence_layer": "C",
+      "audit_core": false,
+      "owner": "AR-2; result-validation \u00a76"
+    },
+    "q_truth_calibration": {
+      "primary_evidence_layer": "C",
+      "audit_core": false,
+      "owner": "LP-1/4/5"
+    },
+    "calibration_confidence_accounting": {
+      "primary_evidence_layer": "B",
+      "audit_core": false,
+      "owner": "BQ-W4-S2 finite-sample route only"
+    },
+    "assurance_components_revocation": {
+      "primary_evidence_layer": "D",
+      "audit_core": true,
+      "owner": "MAP-1/2/3/8; AR-1; AS-3"
+    },
+    "exact_dp_budget": {
+      "primary_evidence_layer": "B",
+      "audit_core": false,
+      "owner": "LP-2/3; SV-10/11"
+    }
+  },
+  "inventory_assessment": {
+    "research_ceiling": "NO_REEXEC_REVIEW_CANDIDATE",
+    "data_kind": "project-gap-inventory",
+    "causes": [
+      "NO_OFFICIAL_BOUNDED_ASSURANCE",
+      "assurance_components_revocation:BASIS_MISSING",
+      "assurance_components_revocation:NO_WINDOW",
+      "assurance_components_revocation:SCOPE_NOT_BOUND",
+      "assurance_components_revocation:STATE_NOT_ESTABLISHED",
+      "bounded_consumption_and_loss:BASIS_EXPERIMENT_ONLY",
+      "bounded_consumption_and_loss:NO_WINDOW",
+      "bounded_consumption_and_loss:SCOPE_NOT_BOUND",
+      "bounded_consumption_and_loss:STATE_NOT_ESTABLISHED",
+      "calibration_confidence_accounting:BASIS_EXPERIMENT_ONLY",
+      "calibration_confidence_accounting:NO_WINDOW",
+      "calibration_confidence_accounting:SCOPE_NOT_BOUND",
+      "calibration_confidence_accounting:STATE_NOT_ESTABLISHED",
+      "contract_schema_registry:BASIS_MISSING",
+      "contract_schema_registry:NO_WINDOW",
+      "contract_schema_registry:SCOPE_NOT_BOUND",
+      "contract_schema_registry:STATE_NOT_ESTABLISHED",
+      "correctness_bridge:BASIS_MISSING",
+      "correctness_bridge:NO_WINDOW",
+      "correctness_bridge:SCOPE_NOT_BOUND",
+      "correctness_bridge:STATE_NOT_ESTABLISHED",
+      "exact_dp_budget:BASIS_EXPERIMENT_ONLY",
+      "exact_dp_budget:NO_WINDOW",
+      "exact_dp_budget:SCOPE_NOT_BOUND",
+      "exact_dp_budget:STATE_NOT_ESTABLISHED",
+      "frozen_policy:BASIS_MISSING",
+      "frozen_policy:NO_WINDOW",
+      "frozen_policy:SCOPE_NOT_BOUND",
+      "frozen_policy:STATE_NOT_ESTABLISHED",
+      "lease_scope_binding:BASIS_MISSING",
+      "lease_scope_binding:NO_WINDOW",
+      "lease_scope_binding:SCOPE_NOT_BOUND",
+      "lease_scope_binding:STATE_NOT_ESTABLISHED",
+      "log_and_status_sources:BASIS_EXPERIMENT_ONLY",
+      "log_and_status_sources:NO_WINDOW",
+      "log_and_status_sources:SCOPE_NOT_BOUND",
+      "log_and_status_sources:STATE_NOT_ESTABLISHED",
+      "population_binding:BASIS_MISSING",
+      "population_binding:NO_WINDOW",
+      "population_binding:SCOPE_NOT_BOUND",
+      "population_binding:STATE_NOT_ESTABLISHED",
+      "q_truth_calibration:BASIS_EXPERIMENT_ONLY",
+      "q_truth_calibration:NO_WINDOW",
+      "q_truth_calibration:SCOPE_NOT_BOUND",
+      "q_truth_calibration:STATE_NOT_ESTABLISHED",
+      "randomness_slot_accounting:BASIS_MISSING",
+      "randomness_slot_accounting:NO_WINDOW",
+      "randomness_slot_accounting:SCOPE_NOT_BOUND",
+      "randomness_slot_accounting:STATE_NOT_ESTABLISHED",
+      "runtime_conformance:BASIS_EXPERIMENT_ONLY",
+      "runtime_conformance:NO_WINDOW",
+      "runtime_conformance:SCOPE_NOT_BOUND",
+      "runtime_conformance:STATE_NOT_ESTABLISHED",
+      "support_capability_bound:BASIS_MISSING",
+      "support_capability_bound:NO_WINDOW",
+      "support_capability_bound:SCOPE_NOT_BOUND",
+      "support_capability_bound:STATE_NOT_ESTABLISHED"
+    ],
+    "audit_core_causes": [
+      "assurance_components_revocation:BASIS_MISSING",
+      "assurance_components_revocation:NO_WINDOW",
+      "assurance_components_revocation:SCOPE_NOT_BOUND",
+      "assurance_components_revocation:STATE_NOT_ESTABLISHED",
+      "bounded_consumption_and_loss:BASIS_EXPERIMENT_ONLY",
+      "bounded_consumption_and_loss:NO_WINDOW",
+      "bounded_consumption_and_loss:SCOPE_NOT_BOUND",
+      "bounded_consumption_and_loss:STATE_NOT_ESTABLISHED",
+      "contract_schema_registry:BASIS_MISSING",
+      "contract_schema_registry:NO_WINDOW",
+      "contract_schema_registry:SCOPE_NOT_BOUND",
+      "contract_schema_registry:STATE_NOT_ESTABLISHED",
+      "frozen_policy:BASIS_MISSING",
+      "frozen_policy:NO_WINDOW",
+      "frozen_policy:SCOPE_NOT_BOUND",
+      "frozen_policy:STATE_NOT_ESTABLISHED",
+      "lease_scope_binding:BASIS_MISSING",
+      "lease_scope_binding:NO_WINDOW",
+      "lease_scope_binding:SCOPE_NOT_BOUND",
+      "lease_scope_binding:STATE_NOT_ESTABLISHED",
+      "log_and_status_sources:BASIS_EXPERIMENT_ONLY",
+      "log_and_status_sources:NO_WINDOW",
+      "log_and_status_sources:SCOPE_NOT_BOUND",
+      "log_and_status_sources:STATE_NOT_ESTABLISHED",
+      "runtime_conformance:BASIS_EXPERIMENT_ONLY",
+      "runtime_conformance:NO_WINDOW",
+      "runtime_conformance:SCOPE_NOT_BOUND",
+      "runtime_conformance:STATE_NOT_ESTABLISHED"
+    ],
+    "computed_n_required": 6,
+    "n_max": 6,
+    "automatic_deployment_eligibility": false,
+    "writes_runtime_state": false,
+    "formal_phase_validator_implemented": false,
+    "causes_are_not_formal_CauseSet": true
+  },
+  "stipulated_inventory_cases": [
+    {
+      "case": "all_stipulated_inputs",
+      "result": {
+        "research_ceiling": "BOUNDED_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [],
+        "audit_core_causes": [],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "B_not_established",
+      "result": {
+        "research_ceiling": "AUDIT_ONLY_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "support_capability_bound:STATE_NOT_ESTABLISHED"
+        ],
+        "audit_core_causes": [],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "synthetic_Q_not_deployment",
+      "result": {
+        "research_ceiling": "AUDIT_ONLY_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "q_truth_calibration:BASIS_SYNTHETIC_ONLY"
+        ],
+        "audit_core_causes": [],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "expired_B",
+      "result": {
+        "research_ceiling": "AUDIT_ONLY_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "support_capability_bound:OUTSIDE_WINDOW"
+        ],
+        "audit_core_causes": [],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "wrong_Q_scope",
+      "result": {
+        "research_ceiling": "AUDIT_ONLY_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "q_truth_calibration:SCOPE_NOT_BOUND"
+        ],
+        "audit_core_causes": [],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "revocation_source_unavailable",
+      "result": {
+        "research_ceiling": "NO_REEXEC_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "assurance_components_revocation:STATE_SOURCE_UNAVAILABLE"
+        ],
+        "audit_core_causes": [
+          "assurance_components_revocation:STATE_SOURCE_UNAVAILABLE"
+        ],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "log_source_unavailable",
+      "result": {
+        "research_ceiling": "NO_REEXEC_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "log_and_status_sources:STATE_SOURCE_UNAVAILABLE"
+        ],
+        "audit_core_causes": [
+          "log_and_status_sources:STATE_SOURCE_UNAVAILABLE"
+        ],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "budget_too_small",
+      "result": {
+        "research_ceiling": "AUDIT_ONLY_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "DP_BUDGET_TOO_SMALL"
+        ],
+        "audit_core_causes": [],
+        "computed_n_required": 6,
+        "n_max": 5,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "no_positive_gap",
+      "result": {
+        "research_ceiling": "AUDIT_ONLY_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "NUMERIC_PROFILE_NOT_ADMISSIBLE"
+        ],
+        "audit_core_causes": [],
+        "computed_n_required": null,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "wrong_claimed_DP",
+      "result": {
+        "research_ceiling": "AUDIT_ONLY_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "DP_REQUIREMENT_NOT_BOUND"
+        ],
+        "audit_core_causes": [],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "private_reuses_mainnet",
+      "result": {
+        "research_ceiling": "NO_REEXEC_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "NO_OFFICIAL_BOUNDED_ASSURANCE",
+          "OFFICIAL_ASSURANCE_REUSED_OUTSIDE_BOUNDARY"
+        ],
+        "audit_core_causes": [
+          "OFFICIAL_ASSURANCE_REUSED_OUTSIDE_BOUNDARY"
+        ],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    },
+    {
+      "case": "simultaneous_B_and_Q_failure",
+      "result": {
+        "research_ceiling": "AUDIT_ONLY_REVIEW_CANDIDATE",
+        "data_kind": "synthetic-review",
+        "causes": [
+          "q_truth_calibration:SCOPE_NOT_BOUND",
+          "support_capability_bound:STATE_REVOKED"
+        ],
+        "audit_core_causes": [],
+        "computed_n_required": 6,
+        "n_max": 6,
+        "automatic_deployment_eligibility": false,
+        "writes_runtime_state": false,
+        "formal_phase_validator_implemented": false,
+        "causes_are_not_formal_CauseSet": true
+      }
+    }
+  ],
+  "precreate_selection_cases": [
+    {
+      "case": "authorized_precreate",
+      "result": {
+        "projection": "AUDIT_SLOT_REVIEW_CANDIDATE",
+        "causes": [],
+        "changes_existing_receipt": false,
+        "authorizes_runtime": false,
+        "boundary": "only bounded-to-audit edge; not full D-06 ordered slot selection"
+      }
+    },
+    {
+      "case": "no_authorization",
+      "result": {
+        "projection": "NO_AUTOMATIC_FALLBACK",
+        "causes": [
+          "REQUESTER_DID_NOT_AUTHORIZE"
+        ],
+        "changes_existing_receipt": false,
+        "authorizes_runtime": false,
+        "boundary": "only bounded-to-audit edge; not full D-06 ordered slot selection"
+      }
+    },
+    {
+      "case": "attested_edge",
+      "result": {
+        "projection": "NO_AUTOMATIC_FALLBACK",
+        "causes": [
+          "EDGE_NOT_AUTO_DECIDABLE"
+        ],
+        "changes_existing_receipt": false,
+        "authorizes_runtime": false,
+        "boundary": "only bounded-to-audit edge; not full D-06 ordered slot selection"
+      }
+    },
+    {
+      "case": "digest_mismatch",
+      "result": {
+        "projection": "NO_AUTOMATIC_FALLBACK",
+        "causes": [
+          "EDGE_DIGEST_MISMATCH"
+        ],
+        "changes_existing_receipt": false,
+        "authorizes_runtime": false,
+        "boundary": "only bounded-to-audit edge; not full D-06 ordered slot selection"
+      }
+    },
+    {
+      "case": "unrelated_failure",
+      "result": {
+        "projection": "NO_AUTOMATIC_FALLBACK",
+        "causes": [
+          "FAILURES_NOT_COVERED"
+        ],
+        "changes_existing_receipt": false,
+        "authorizes_runtime": false,
+        "boundary": "only bounded-to-audit edge; not full D-06 ordered slot selection"
+      }
+    },
+    {
+      "case": "target_disabled",
+      "result": {
+        "projection": "NO_AUTOMATIC_FALLBACK",
+        "causes": [
+          "TARGET_NOT_APPLICABLE_OR_GATED"
+        ],
+        "changes_existing_receipt": false,
+        "authorizes_runtime": false,
+        "boundary": "only bounded-to-audit edge; not full D-06 ordered slot selection"
+      }
+    },
+    {
+      "case": "receipt_already_frozen",
+      "result": {
+        "projection": "NO_AUTOMATIC_FALLBACK",
+        "causes": [
+          "EXISTING_RECEIPT_PROFILE_IMMUTABLE"
+        ],
+        "changes_existing_receipt": false,
+        "authorizes_runtime": false,
+        "boundary": "only bounded-to-audit edge; not full D-06 ordered slot selection"
+      }
+    },
+    {
+      "case": "already_running",
+      "result": {
+        "projection": "NO_AUTOMATIC_FALLBACK",
+        "causes": [
+          "EXISTING_RECEIPT_PROFILE_IMMUTABLE"
+        ],
+        "changes_existing_receipt": false,
+        "authorizes_runtime": false,
+        "boundary": "only bounded-to-audit edge; not full D-06 ordered slot selection"
+      }
+    }
+  ],
+  "lifecycle_projections": [
+    {
+      "stage": "PRE_FREEZE",
+      "event": "POPULATION_BINDING_FAILURE",
+      "action": "REJECT_CURRENT_PHASE_B_OPERATION",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "FROZEN_PRE_DRAW",
+      "event": "POPULATION_BINDING_FAILURE",
+      "action": "INVALIDATE_SNAPSHOT_BLOCK_FIRST_DRAW_AND_REFREEZE",
+      "terminal_hint_not_commit": "UNRESOLVED",
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "RUNNING",
+      "event": "POPULATION_BINDING_FAILURE",
+      "action": "VERIFICATION_INVALIDATING",
+      "terminal_hint_not_commit": "UNRESOLVED",
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "TERMINAL",
+      "event": "POPULATION_BINDING_FAILURE",
+      "action": "APPEND_QUALIFICATION_REVIEW_ONLY",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": "TRUSTED",
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "PRE_FREEZE",
+      "event": "SAFETY_REVOKED",
+      "action": "BLOCK_ADMISSION_BEFORE_VERIFICATION",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "FROZEN_PRE_DRAW",
+      "event": "SAFETY_REVOKED",
+      "action": "BLOCK_ADMISSION_BEFORE_VERIFICATION",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "RUNNING",
+      "event": "SAFETY_REVOKED",
+      "action": "VERIFICATION_INVALIDATING",
+      "terminal_hint_not_commit": "UNRESOLVED",
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "TERMINAL",
+      "event": "SAFETY_REVOKED",
+      "action": "APPEND_QUALIFICATION_ONLY",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": "TRUSTED",
+      "qualification_hint": "DEPENDENCY_REVOKED",
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "PRE_FREEZE",
+      "event": "SOURCE_UNAVAILABLE",
+      "action": "NO_VERDICT_FAIL_CLOSED",
+      "terminal_hint_not_commit": "UNRESOLVED_IF_PHASE_D_CAN_COMMIT",
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "FROZEN_PRE_DRAW",
+      "event": "SOURCE_UNAVAILABLE",
+      "action": "NO_VERDICT_FAIL_CLOSED",
+      "terminal_hint_not_commit": "UNRESOLVED_IF_PHASE_D_CAN_COMMIT",
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "RUNNING",
+      "event": "SOURCE_UNAVAILABLE",
+      "action": "NO_VERDICT_FAIL_CLOSED",
+      "terminal_hint_not_commit": "UNRESOLVED_IF_PHASE_D_CAN_COMMIT",
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "TERMINAL",
+      "event": "SOURCE_UNAVAILABLE",
+      "action": "PRESERVE_TERMINAL_AND_RECORD_SOURCE_FAILURE",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": "TRUSTED",
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "PRE_FREEZE",
+      "event": "VALIDITY_WINDOW_ENDED",
+      "action": "BLOCK_ADMISSION_BEFORE_VERIFICATION",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "FROZEN_PRE_DRAW",
+      "event": "VALIDITY_WINDOW_ENDED",
+      "action": "BLOCK_ADMISSION_BEFORE_VERIFICATION",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "RUNNING",
+      "event": "VALIDITY_WINDOW_ENDED",
+      "action": "VERIFICATION_INVALIDATING",
+      "terminal_hint_not_commit": "UNRESOLVED",
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "TERMINAL",
+      "event": "VALIDITY_WINDOW_ENDED",
+      "action": "PRESERVE_TERMINAL_NO_RETROACTIVE_EXPIRY",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": "TRUSTED",
+      "qualification_hint": null,
+      "liveness_claim_requires_review": false,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "PRE_FREEZE",
+      "event": "CALIBRATION_REVOKED",
+      "action": "PROCEED",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": true,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "RUNNING",
+      "event": "CALIBRATION_REVOKED",
+      "action": "PROCEED",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": null,
+      "qualification_hint": null,
+      "liveness_claim_requires_review": true,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    },
+    {
+      "stage": "TERMINAL",
+      "event": "CALIBRATION_REVOKED",
+      "action": "QUALIFY_WEAKENED",
+      "terminal_hint_not_commit": null,
+      "terminal_preserved": "TRUSTED",
+      "qualification_hint": "WEAKENED",
+      "liveness_claim_requires_review": true,
+      "profile_switch_authorized": false,
+      "parameter_change_authorized": false,
+      "guest_retry_authorized": false,
+      "new_TRUSTED_authorized": false,
+      "writes_runtime_state": false,
+      "boundary": "limited rule projection, not P0-5 or finalized event/qualification implementation"
+    }
+  ],
+  "case_counts": {
+    "requirements": 14,
+    "inventories": 12,
+    "precreate": 8,
+    "lifecycle": 19
+  },
+  "automatic_deployment_eligibility": false,
+  "changes_runtime_capability": false,
+  "limits": [
+    "all positive inputs are stipulated synthetic review facts, not evidence authentication",
+    "Q sample confidence accounting is the slice-2 research route, not a new protocol field",
+    "no full Phase R/I/F/B/D, source verifier, finalized ledger or P0-5 implementation",
+    "existing Receipts never change Profile; terminal hints do not commit or rewrite terminal states"
+  ],
+  "project_experimental_artifacts_sha256": {
+    "docs/testing/RIR-WORK1-CLOSEOUT-20261023.md": "4faf52697b51a3edb03cb1bc0502388282e9fb5fe62dfe894da9f6e0b4cf86b3",
+    "docs/testing/TASK-WORK2-CLOSEOUT-20261024.md": "d889ab6f9d9e3b659020f4abd90d25b3e8e2f938d2cd1dfdae6aae10eea46232",
+    "docs/testing/bq-calibration-slice2-20261026.json": "ec04ea072613577526c62efcb226aa824a8b9055df58b7f20d6055d02ae48103",
+    "docs/06-research/verification-round-mathematical-model.md": "c625f5a71fe2a0490a57bc38cfe1f855cf2c894e62f09ed064a511eddd6b0316",
+    "docs/testing/FUNDING-WORK3-CLOSEOUT-20261024.md": "64ac5999ddd8702a72a28d35e09949e2d6a7c49ffc59b86411c0b89cafe065bb"
+  },
+  "inventory_sha256": "a2283757028f67cedb13d5f263e93ea5f19fe9b33b87176e9847bdce1b1ea71e",
+  "source_sha256": {
+    "scripts/check-bq-readiness.py": "4ba5e03f3d1aae018ac3e794a25436673ffc9f11fdfbdf9f28f7a04f2c3314d0",
+    "tools/bq_boundaries/readiness.py": "be6a149139ce336928618410bf0ec8934300546bb3d810a0c2c63b510b975085",
+    "tools/bq_boundaries/calibration.py": "4f44c81585909f7902e40d4188ff25407f99c83a4bc2f504929218e16710f203",
+    "tools/bq_boundaries/model.py": "942cb0c3dc5d4884c6a8f925c8475d5aae117bfa3b2588d88e43aa7046196201",
+    "tools/bq_boundaries/__init__.py": "50f019dd7171225a73899ebf5f49ac48de88e232f484e78fee1356f087b9cc00",
+    "tests/verification_model/recursive_model.py": "4ecb67c73097fc339bf49a009e9e9238e0eb15809b80ef5e6cdc99ff31acb275",
+    "tests/verification_model/closed_form_oracle.py": "cdd63154a0bad204e185f86b94e5ba9caea97e711173896f4e36a101fd335d13",
+    "tests/bq_readiness/test_readiness.py": "0e9877d087e14a1c758919626f9f5f2fa96b788594b0e28e1c368bffa8938164",
+    "tests/bq_readiness/fixtures/hypothetical-complete.json": "eff56c015b8826c8fa67b665c038daad29a32c5c121f2f5ed809645d3b38bcd8",
+    "tests/bq_readiness/fixtures/project-gaps.json": "a2283757028f67cedb13d5f263e93ea5f19fe9b33b87176e9847bdce1b1ea71e",
+    "tests/bq_readiness/fixtures/project-evidence-index.json": "941e5424e4c209ee02d4c4eb1ea7f7fc812d76042a767b1af81756acebacd24e"
+  }
+}

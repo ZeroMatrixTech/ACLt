@@ -1,0 +1,287 @@
+{
+  "status": "PASS",
+  "kind": "exact-toy-countermodels-not-deployment-calibration",
+  "algorithm_id": "finite-population-boundary-lr-v1",
+  "parameters": {
+    "G": 10,
+    "B": 3,
+    "Q": 8,
+    "epsilon_F": "1/5"
+  },
+  "cases": [
+    {
+      "id": "BQ1-CAPACITY",
+      "failed_premise": "actual votes <= B is not capacity C <= B",
+      "rates": [
+        {
+          "actual_C": 3,
+          "vote_cap": 3,
+          "false_acceptance": "1/12",
+          "exceeds_epsilon": false,
+          "placements": 120
+        },
+        {
+          "actual_C": 4,
+          "vote_cap": 3,
+          "false_acceptance": "4/21",
+          "exceeds_epsilon": false,
+          "placements": 210
+        },
+        {
+          "actual_C": 5,
+          "vote_cap": 3,
+          "false_acceptance": "43/126",
+          "exceeds_epsilon": true,
+          "placements": 252
+        },
+        {
+          "actual_C": 6,
+          "vote_cap": 3,
+          "false_acceptance": "11/21",
+          "exceeds_epsilon": true,
+          "placements": 210
+        },
+        {
+          "actual_C": 8,
+          "vote_cap": 3,
+          "false_acceptance": "8/9",
+          "exceeds_epsilon": true,
+          "placements": 45
+        },
+        {
+          "actual_C": 10,
+          "vote_cap": 3,
+          "false_acceptance": "1",
+          "exceeds_epsilon": true,
+          "placements": 1
+        }
+      ]
+    },
+    {
+      "id": "BQ1-SYBIL",
+      "failed_premise": "observed IDs/transcript do not identify unused capability or control",
+      "worlds": [
+        {
+          "name": "fixed-three",
+          "public": {
+            "claimed_units": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "draw_order": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "observations": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              1,
+              1
+            ],
+            "declared_B": 3
+          },
+          "capable_units": [
+            7,
+            8,
+            9
+          ],
+          "actual_C": 3
+        },
+        {
+          "name": "all-capable-selective-abstention",
+          "public": {
+            "claimed_units": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "draw_order": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9
+            ],
+            "observations": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              1,
+              1
+            ],
+            "declared_B": 3
+          },
+          "capable_units": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "actual_C": 10
+        }
+      ]
+    },
+    {
+      "id": "BQ1-COMMON-MODE",
+      "failed_premise": "all named units may share a wrong-support trigger",
+      "assumed_G": 10,
+      "assumed_B": 3,
+      "actual_C": 10,
+      "false_acceptance_with_three_vote_cap": "1",
+      "conservative_single_cluster": {
+        "G": 1,
+        "B_needed": 1,
+        "B_less_than_G": false
+      }
+    },
+    {
+      "id": "BQ1-RESPONSE-FILTER",
+      "failed_premise": "response-conditioned order is not the frozen uniform draw",
+      "actual_C": 3,
+      "uniform_fixed_slots_rate": "1/12",
+      "discard_nonsupport_rate": "1"
+    },
+    {
+      "id": "BQ1-ORDER",
+      "failed_premise": "support-first order depends on capability",
+      "actual_C": 3,
+      "support_first_rate": "1"
+    },
+    {
+      "id": "BQ1-Q-MEAN",
+      "failed_premise": "mean is not task-level lower-tail coverage",
+      "distribution": [
+        {
+          "support": 0,
+          "mass": "1/5"
+        },
+        {
+          "support": 10,
+          "mass": "4/5"
+        }
+      ],
+      "mean_support": "8",
+      "Q": 8,
+      "actual_coverage": "4/5",
+      "claimed_delta_Q": "1/20",
+      "target_coverage": "19/20"
+    },
+    {
+      "id": "BQ1-Q-SHIFT",
+      "failed_premise": "finite observed history alone does not restrict unseen task distribution",
+      "worlds": [
+        {
+          "name": "same-scope-support",
+          "public_history": {
+            "truth_labeled_training_tasks": [
+              "fixture-1",
+              "fixture-2",
+              "fixture-3"
+            ],
+            "correct_support_counts": [
+              10,
+              10,
+              10
+            ],
+            "G": 10
+          },
+          "target_correct_support": 8
+        },
+        {
+          "name": "unobserved-trigger-or-outage",
+          "public_history": {
+            "truth_labeled_training_tasks": [
+              "fixture-1",
+              "fixture-2",
+              "fixture-3"
+            ],
+            "correct_support_counts": [
+              10,
+              10,
+              10
+            ],
+            "G": 10
+          },
+          "target_correct_support": 0
+        }
+      ]
+    },
+    {
+      "id": "BQ1-Q-BUDGET",
+      "failed_premise": "actual correct-support count below frozen Q",
+      "declared_Q": 8,
+      "actual_support": 7,
+      "delta_L": "1/20",
+      "required_draws_under_Q": 6,
+      "nominal_probability_at_budget": "1",
+      "actual_probability_at_budget": "53/60",
+      "target_probability": "19/20"
+    }
+  ],
+  "case_count": 8,
+  "controls": {
+    "valid_uniform_null_rate": "1/12",
+    "worst_fixed_set_adaptive_abstention_rate": "1/12",
+    "recursive_vs_closed_form_capacity_rows": 6,
+    "recursive_enumeration_vs_DP_curves": 11
+  },
+  "limits": [
+    "small finite binary single-candidate toy model, not production probability",
+    "models stipulate latent truth/capability; no live identity inference or empirical B/Q estimate",
+    "ACCEPT denotes kernel output under supplied parameters; no TRUSTED authorization",
+    "B/Q are not established, no Gate/OQ/assurance change, no dualhost run"
+  ],
+  "source_sha256": {
+    "scripts/check-bq-boundaries.py": "74f95188f8aea0ecba89edafae9cd5a4380957690b60f969f1e217670ae616f6",
+    "tools/bq_boundaries/__init__.py": "50f019dd7171225a73899ebf5f49ac48de88e232f484e78fee1356f087b9cc00",
+    "tools/bq_boundaries/model.py": "942cb0c3dc5d4884c6a8f925c8475d5aae117bfa3b2588d88e43aa7046196201",
+    "tests/bq_boundaries/test_boundaries.py": "0ddca16621fb342f463984660b0cc57da3b26dd98e611109dbcabe816da248e0",
+    "tests/verification_model/recursive_model.py": "4ecb67c73097fc339bf49a009e9e9238e0eb15809b80ef5e6cdc99ff31acb275",
+    "tests/verification_model/closed_form_oracle.py": "cdd63154a0bad204e185f86b94e5ba9caea97e711173896f4e36a101fd335d13"
+  }
+}

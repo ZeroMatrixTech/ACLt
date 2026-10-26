@@ -1,0 +1,8 @@
+{
+  "runtime_conformance": "docs/testing/RIR-WORK1-CLOSEOUT-20261023.md",
+  "log_and_status_sources": "docs/testing/TASK-WORK2-CLOSEOUT-20261024.md",
+  "q_truth_calibration": "docs/testing/bq-calibration-slice2-20261026.json",
+  "calibration_confidence_accounting": "docs/testing/bq-calibration-slice2-20261026.json",
+  "exact_dp_budget": "docs/06-research/verification-round-mathematical-model.md",
+  "bounded_consumption_and_loss": "docs/testing/FUNDING-WORK3-CLOSEOUT-20261024.md"
+}

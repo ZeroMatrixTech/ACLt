@@ -1,0 +1,527 @@
+{
+  "status": "PASS",
+  "kind": "synthetic-fixed-horizon-calibration-and-sensitivity-research",
+  "dataset_analysis": {
+    "n_units_assumed_iid": 80,
+    "candidate_tests": [
+      {
+        "Q": 4,
+        "failures": 0,
+        "boundary_tail": "1996586251464506635890620712520167111140046472389308873127642730263440424876828325289993051785145582401/120892581961462917470617600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "alpha_per_candidate": "1/60",
+        "conditional_pass": true
+      },
+      {
+        "Q": 6,
+        "failures": 0,
+        "boundary_tail": "1996586251464506635890620712520167111140046472389308873127642730263440424876828325289993051785145582401/120892581961462917470617600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "alpha_per_candidate": "1/60",
+        "conditional_pass": true
+      },
+      {
+        "Q": 8,
+        "failures": 0,
+        "boundary_tail": "1996586251464506635890620712520167111140046472389308873127642730263440424876828325289993051785145582401/120892581961462917470617600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "alpha_per_candidate": "1/60",
+        "conditional_pass": true
+      }
+    ],
+    "selected_Q_if_assumptions_hold": 8,
+    "alpha_calibration": "1/20",
+    "delta_Q": "1/20",
+    "automatic_deployment_eligibility": false,
+    "data_kind": "synthetic",
+    "scope_matched": true,
+    "scope_and_iid_are_assertions_not_verified_sources": true,
+    "calibration_unit": "task",
+    "B_estimated": false,
+    "empirical_calibration_established": false
+  },
+  "dataset_contract": {
+    "schema_id": "aclt.research.bq-calibration@1",
+    "data_kind": "synthetic",
+    "population": 10,
+    "scope": {
+      "task_family": "stats-int-v1/synthetic-calibration-only",
+      "profile_digest": "335daab3795117f4e9bfc833f7625c77cabf443f115ec276103570b0ee1c985c",
+      "resource_digest": "05d8754d3ad8ed75b969f3c6ca7c03c7aa9bb8bf95c2a3d52dfef927fe4fdcd3",
+      "population_digest": "34fe7710e99c2ac801539e841695985d8f87fb89dfc434253f1158c8574de931",
+      "truth_policy_digest": "97018e41aba9a92a3636963ea3e872d657c9483f3846545bd08757129cd6df8e",
+      "deadline_policy_digest": "ce0a28ebd2c1bcff051736c2db0f2071b707f419d98a842dc6a2a5be364f95ce",
+      "sampling_policy_digest": "f1d5ef78b9b09912a7ae67e31914ef3caadb6f3027b1abaca2977a12b563f4b3"
+    },
+    "target_scope": {
+      "task_family": "stats-int-v1/synthetic-calibration-only",
+      "profile_digest": "335daab3795117f4e9bfc833f7625c77cabf443f115ec276103570b0ee1c985c",
+      "resource_digest": "05d8754d3ad8ed75b969f3c6ca7c03c7aa9bb8bf95c2a3d52dfef927fe4fdcd3",
+      "population_digest": "34fe7710e99c2ac801539e841695985d8f87fb89dfc434253f1158c8574de931",
+      "truth_policy_digest": "97018e41aba9a92a3636963ea3e872d657c9483f3846545bd08757129cd6df8e",
+      "deadline_policy_digest": "ce0a28ebd2c1bcff051736c2db0f2071b707f419d98a842dc6a2a5be364f95ce",
+      "sampling_policy_digest": "f1d5ef78b9b09912a7ae67e31914ef3caadb6f3027b1abaca2977a12b563f4b3"
+    },
+    "truth": {
+      "mode": "synthetic-independent-oracle",
+      "provenance_digest": "b703736668a17f6e88756b26295ae0ccbbf6101491ad609f1d21413668684a64"
+    },
+    "plan": {
+      "unit": "task",
+      "iid_asserted": true,
+      "selection": "predeclared-fixed-horizon",
+      "fixed_n": 80,
+      "candidate_Q": [
+        4,
+        6,
+        8
+      ],
+      "alpha": "1/20",
+      "delta_Q": "1/20"
+    }
+  },
+  "conditional_examples": {
+    "single_Q_58_clean": {
+      "n_units_assumed_iid": 58,
+      "candidate_tests": [
+        {
+          "Q": 8,
+          "failures": 0,
+          "boundary_tail": "147132581620420448213882032847979675383852886669516818427458744956737812041/2882303761517117440000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/20",
+          "conditional_pass": false
+        }
+      ],
+      "selected_Q_if_assumptions_hold": null,
+      "alpha_calibration": "1/20",
+      "delta_Q": "1/20",
+      "automatic_deployment_eligibility": false
+    },
+    "single_Q_59_clean": {
+      "n_units_assumed_iid": 59,
+      "candidate_tests": [
+        {
+          "Q": 8,
+          "failures": 0,
+          "boundary_tail": "2795519050787988516063758624111613832293204846720819550121716154178018428779/57646075230342348800000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/20",
+          "conditional_pass": true
+        }
+      ],
+      "selected_Q_if_assumptions_hold": 8,
+      "alpha_calibration": "1/20",
+      "delta_Q": "1/20",
+      "automatic_deployment_eligibility": false
+    },
+    "three_Q_60_clean": {
+      "n_units_assumed_iid": 60,
+      "candidate_tests": [
+        {
+          "Q": 4,
+          "failures": 0,
+          "boundary_tail": "53114861964971781805211413858120662813570892087695571452312606929382350146801/1152921504606846976000000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/60",
+          "conditional_pass": false
+        },
+        {
+          "Q": 6,
+          "failures": 0,
+          "boundary_tail": "53114861964971781805211413858120662813570892087695571452312606929382350146801/1152921504606846976000000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/60",
+          "conditional_pass": false
+        },
+        {
+          "Q": 8,
+          "failures": 0,
+          "boundary_tail": "53114861964971781805211413858120662813570892087695571452312606929382350146801/1152921504606846976000000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/60",
+          "conditional_pass": false
+        }
+      ],
+      "selected_Q_if_assumptions_hold": null,
+      "alpha_calibration": "1/20",
+      "delta_Q": "1/20",
+      "automatic_deployment_eligibility": false
+    },
+    "three_Q_80_clean": {
+      "n_units_assumed_iid": 80,
+      "candidate_tests": [
+        {
+          "Q": 4,
+          "failures": 0,
+          "boundary_tail": "1996586251464506635890620712520167111140046472389308873127642730263440424876828325289993051785145582401/120892581961462917470617600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/60",
+          "conditional_pass": true
+        },
+        {
+          "Q": 6,
+          "failures": 0,
+          "boundary_tail": "1996586251464506635890620712520167111140046472389308873127642730263440424876828325289993051785145582401/120892581961462917470617600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/60",
+          "conditional_pass": true
+        },
+        {
+          "Q": 8,
+          "failures": 0,
+          "boundary_tail": "1996586251464506635890620712520167111140046472389308873127642730263440424876828325289993051785145582401/120892581961462917470617600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/60",
+          "conditional_pass": true
+        }
+      ],
+      "selected_Q_if_assumptions_hold": 8,
+      "alpha_calibration": "1/20",
+      "delta_Q": "1/20",
+      "automatic_deployment_eligibility": false
+    },
+    "three_Q_80_four_outages": {
+      "n_units_assumed_iid": 80,
+      "candidate_tests": [
+        {
+          "Q": 4,
+          "failures": 4,
+          "boundary_tail": "76026899291585765030831331303819339905546309156318832172059376195368607489642462034621378059044159622501/120892581961462917470617600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/60",
+          "conditional_pass": false
+        },
+        {
+          "Q": 6,
+          "failures": 4,
+          "boundary_tail": "76026899291585765030831331303819339905546309156318832172059376195368607489642462034621378059044159622501/120892581961462917470617600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/60",
+          "conditional_pass": false
+        },
+        {
+          "Q": 8,
+          "failures": 4,
+          "boundary_tail": "76026899291585765030831331303819339905546309156318832172059376195368607489642462034621378059044159622501/120892581961462917470617600000000000000000000000000000000000000000000000000000000000000000000000000000000",
+          "alpha_per_candidate": "1/60",
+          "conditional_pass": false
+        }
+      ],
+      "selected_Q_if_assumptions_hold": null,
+      "alpha_calibration": "1/20",
+      "delta_Q": "1/20",
+      "automatic_deployment_eligibility": false
+    },
+    "six_independent_block_minima": {
+      "n_units_assumed_iid": 6,
+      "candidate_tests": [
+        {
+          "Q": 8,
+          "failures": 0,
+          "boundary_tail": "47045881/64000000",
+          "alpha_per_candidate": "1/20",
+          "conditional_pass": false
+        }
+      ],
+      "selected_Q_if_assumptions_hold": null,
+      "alpha_calibration": "1/20",
+      "delta_Q": "1/20",
+      "automatic_deployment_eligibility": false,
+      "unit": "iid-block-minimum-comparison-only-not-task-certificate"
+    }
+  },
+  "zero_failure_minimum_samples": {
+    "single_Q": 59,
+    "three_Q": 80
+  },
+  "sensitivity": {
+    "base_parameters": {
+      "G": 10,
+      "B": 3,
+      "Q": 8,
+      "epsilon_F": "1/5",
+      "delta_L": "1/20",
+      "alpha_calibration": "1/20",
+      "delta_Q": "1/20",
+      "frozen_budget": 6
+    },
+    "fixed_old_profile_capability_miss": [
+      {
+        "extra_capable_units_assumed": 0,
+        "actual_C": 3,
+        "frozen_old_false_acceptance": "1/12"
+      },
+      {
+        "extra_capable_units_assumed": 1,
+        "actual_C": 4,
+        "frozen_old_false_acceptance": "4/21"
+      },
+      {
+        "extra_capable_units_assumed": 2,
+        "actual_C": 5,
+        "frozen_old_false_acceptance": "43/126"
+      },
+      {
+        "extra_capable_units_assumed": 3,
+        "actual_C": 6,
+        "frozen_old_false_acceptance": "11/21"
+      },
+      {
+        "extra_capable_units_assumed": 5,
+        "actual_C": 8,
+        "frozen_old_false_acceptance": "8/9"
+      }
+    ],
+    "fixed_old_profile_support_loss": [
+      {
+        "lost_correct_support_units_assumed": 0,
+        "actual_M": 8,
+        "frozen_six_draw_liveness": "1"
+      },
+      {
+        "lost_correct_support_units_assumed": 1,
+        "actual_M": 7,
+        "frozen_six_draw_liveness": "53/60"
+      },
+      {
+        "lost_correct_support_units_assumed": 2,
+        "actual_M": 6,
+        "frozen_six_draw_liveness": "2/3"
+      },
+      {
+        "lost_correct_support_units_assumed": 3,
+        "actual_M": 5,
+        "frozen_six_draw_liveness": "53/126"
+      }
+    ],
+    "common_task_outage": [
+      {
+        "task_outage_mass_assumed": "0",
+        "support_when_up": 8,
+        "support_when_down": 0,
+        "six_draw_liveness": "1",
+        "coverage_M_ge_8": "1"
+      },
+      {
+        "task_outage_mass_assumed": "1/20",
+        "support_when_up": 8,
+        "support_when_down": 0,
+        "six_draw_liveness": "19/20",
+        "coverage_M_ge_8": "19/20"
+      },
+      {
+        "task_outage_mass_assumed": "1/5",
+        "support_when_up": 8,
+        "support_when_down": 0,
+        "six_draw_liveness": "4/5",
+        "coverage_M_ge_8": "4/5"
+      }
+    ],
+    "externally_bounded_distribution_shift": [
+      {
+        "external_TV_budget_assumed": "0",
+        "target_tail_bound": "1/20",
+        "joint_release_and_liveness_failure_bound": "3/20"
+      },
+      {
+        "external_TV_budget_assumed": "1/50",
+        "target_tail_bound": "7/100",
+        "joint_release_and_liveness_failure_bound": "17/100"
+      },
+      {
+        "external_TV_budget_assumed": "1/10",
+        "target_tail_bound": "3/20",
+        "joint_release_and_liveness_failure_bound": "1/4"
+      }
+    ],
+    "prospective_new_profiles_not_retroactive_repair": [
+      {
+        "extra_capability_assumed": 0,
+        "support_loss_assumed": 0,
+        "proposed_B": 3,
+        "proposed_Q": 8,
+        "positive_gap": true,
+        "prospective_required_draws": 6,
+        "fits_six_draw_budget": true
+      },
+      {
+        "extra_capability_assumed": 0,
+        "support_loss_assumed": 1,
+        "proposed_B": 3,
+        "proposed_Q": 7,
+        "positive_gap": true,
+        "prospective_required_draws": 7,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 0,
+        "support_loss_assumed": 2,
+        "proposed_B": 3,
+        "proposed_Q": 6,
+        "positive_gap": true,
+        "prospective_required_draws": 8,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 0,
+        "support_loss_assumed": 3,
+        "proposed_B": 3,
+        "proposed_Q": 5,
+        "positive_gap": true,
+        "prospective_required_draws": 9,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 1,
+        "support_loss_assumed": 0,
+        "proposed_B": 4,
+        "proposed_Q": 8,
+        "positive_gap": true,
+        "prospective_required_draws": 7,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 1,
+        "support_loss_assumed": 1,
+        "proposed_B": 4,
+        "proposed_Q": 7,
+        "positive_gap": true,
+        "prospective_required_draws": 8,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 1,
+        "support_loss_assumed": 2,
+        "proposed_B": 4,
+        "proposed_Q": 6,
+        "positive_gap": true,
+        "prospective_required_draws": 9,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 1,
+        "support_loss_assumed": 3,
+        "proposed_B": 4,
+        "proposed_Q": 5,
+        "positive_gap": true,
+        "prospective_required_draws": 10,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 2,
+        "support_loss_assumed": 0,
+        "proposed_B": 5,
+        "proposed_Q": 8,
+        "positive_gap": true,
+        "prospective_required_draws": 7,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 2,
+        "support_loss_assumed": 1,
+        "proposed_B": 5,
+        "proposed_Q": 7,
+        "positive_gap": true,
+        "prospective_required_draws": 9,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 2,
+        "support_loss_assumed": 2,
+        "proposed_B": 5,
+        "proposed_Q": 6,
+        "positive_gap": true,
+        "prospective_required_draws": 10,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 2,
+        "support_loss_assumed": 3,
+        "proposed_B": 5,
+        "proposed_Q": 5,
+        "positive_gap": false,
+        "prospective_required_draws": null,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 3,
+        "support_loss_assumed": 0,
+        "proposed_B": 6,
+        "proposed_Q": 8,
+        "positive_gap": true,
+        "prospective_required_draws": 9,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 3,
+        "support_loss_assumed": 1,
+        "proposed_B": 6,
+        "proposed_Q": 7,
+        "positive_gap": true,
+        "prospective_required_draws": 10,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 3,
+        "support_loss_assumed": 2,
+        "proposed_B": 6,
+        "proposed_Q": 6,
+        "positive_gap": false,
+        "prospective_required_draws": null,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 3,
+        "support_loss_assumed": 3,
+        "proposed_B": 6,
+        "proposed_Q": 5,
+        "positive_gap": false,
+        "prospective_required_draws": null,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 4,
+        "support_loss_assumed": 0,
+        "proposed_B": 7,
+        "proposed_Q": 8,
+        "positive_gap": true,
+        "prospective_required_draws": 10,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 4,
+        "support_loss_assumed": 1,
+        "proposed_B": 7,
+        "proposed_Q": 7,
+        "positive_gap": false,
+        "prospective_required_draws": null,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 4,
+        "support_loss_assumed": 2,
+        "proposed_B": 7,
+        "proposed_Q": 6,
+        "positive_gap": false,
+        "prospective_required_draws": null,
+        "fits_six_draw_budget": false
+      },
+      {
+        "extra_capability_assumed": 4,
+        "support_loss_assumed": 3,
+        "proposed_B": 7,
+        "proposed_Q": 5,
+        "positive_gap": false,
+        "prospective_required_draws": null,
+        "fits_six_draw_budget": false
+      }
+    ],
+    "interpretation": "u/loss/rho/TV are stipulated sensitivity inputs, not inferred from votes or calibrated by this tool"
+  },
+  "limits": [
+    "IID task indicators and target match are external premises, metadata cannot establish them",
+    "fixed sample size and finite candidate family; not anytime-valid repeated calibration",
+    "alpha is calibration confidence error, distinct from delta_Q and delta_L",
+    "joint released-task failure bound is not a posterior or conditional-on-passing guarantee",
+    "synthetic oracle is stipulated truth; no actual deployment B/Q or bounded authorization"
+  ],
+  "dataset_sha256": "c96fadd593cb4510be16262c33f8626930e708ef3a79939d4748eabbb2772e92",
+  "source_sha256": {
+    "scripts/check-bq-calibration.py": "a530780f7345500677a990a3d0575f65b2a03dcfcdf560ed7fb04cc698e0fe15",
+    "tools/bq_boundaries/calibration.py": "4f44c81585909f7902e40d4188ff25407f99c83a4bc2f504929218e16710f203",
+    "tools/bq_boundaries/model.py": "942cb0c3dc5d4884c6a8f925c8475d5aae117bfa3b2588d88e43aa7046196201",
+    "tools/bq_boundaries/__init__.py": "50f019dd7171225a73899ebf5f49ac48de88e232f484e78fee1356f087b9cc00",
+    "tests/verification_model/recursive_model.py": "4ecb67c73097fc339bf49a009e9e9238e0eb15809b80ef5e6cdc99ff31acb275",
+    "tests/verification_model/closed_form_oracle.py": "cdd63154a0bad204e185f86b94e5ba9caea97e711173896f4e36a101fd335d13",
+    "tests/bq_calibration/test_calibration.py": "0eca9dde83e2836e9a38f8b54d4a2a33119e24dc1a52f277501427f24342a046",
+    "tests/bq_calibration/fixtures/synthetic-v1.json": "c96fadd593cb4510be16262c33f8626930e708ef3a79939d4748eabbb2772e92"
+  }
+}
