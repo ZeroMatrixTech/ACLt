@@ -131,3 +131,7 @@ ADR-0006 继续 PROPOSED，其 §11 文档同步和 §13 接受证据不被本 A
 ## 7. 来源与命名连续性
 
 初稿由助手于 2026-10-26 准备，曾错误使用 WORK4-F0 名称；原定第四项始终是已合并的 BQ-WORK4 研究。维护者本轮接受仅针对本 ADR 的六项路线。旧草案的原字节已在操作者备份中留存，store 的整合与清理见[收尾记录](../testing/STORE-INTEGRATION-20261026.md)，不改写已提交的 B/Q 研究或历史测试结果。迁移入口统一使用 FM，详见[实施入口](../07-roadmap/formal-migration-plan.md)。
+
+## 2026-10-28 FM-S1a 实现证据
+
+D-1/D-4 的首轮局部实现已形成[候选测试合约](../../schemas/formal-migration/README.md)与[报告](../testing/FM-S1A-20261028.md)：沿用独立编码/摘要核心，固定 RSA-2048/e65537、PKCS#1 v1.5/SHA-256、DER SPKI 和完整上下文输入。仅最小固定角色/pin 与测试 payload；无新 Principal 或官方 schema/import 注册。此处不扩大六项路线的接受范围，D-2/D-3/D-5/D-6、ADR-0006 与部署门槛不变。

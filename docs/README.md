@@ -254,3 +254,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [B/Q 第四项统一收尾](testing/BQ-WORK4-CLOSEOUT-20261026.md)：三片研究组合重跑、离线重算与限域结论；[维护入口](testing/BQ-WORK4-MAINTENANCE.md)。真实 B/Q 和部署资格仍未建立。
 
 - [正式迁移实施入口：FM-S1a](07-roadmap/formal-migration-plan.md)：共享编码与最小角色签名是下一代码切片；[FM-F0 交接](testing/FORMAL-MIGRATION-F0-20261026.md)记录六项路线接受、命名及规范边界修正。FM 不计入 BQ-WORK4。
+
+- [FM-S1a 实现与双机复核](testing/FM-S1A-20261028.md)：共享编码、最小测试角色签名、89 固定向量与两端独立构建；[候选字节合约](../schemas/formal-migration/README.md)。下一片 FM-S1b。

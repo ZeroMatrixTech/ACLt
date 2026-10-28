@@ -11,3 +11,5 @@ The Python and Rust implementations independently parse CBOR, check typed object
 Data provenance: [Unicode Character Database](https://www.unicode.org/ucd/), as supplied by CPython 3.14.4 `unicodedata` version 16.0.0. Generated data retains the [Unicode license](https://www.unicode.org/license.txt), copied into UNICODE-LICENSE.txt on 2026-10-23. The normalization and hash implementations in this directory were written for this slice and use Apache-2.0; no external implementation source is copied.
 
 See schemas/verification-profile/claim-codec-slice.json and docs/testing/CLAIM-CODEC-20261023.md at the repository root for the candidate wire contract and deliberate limits.
+
+FM-S1a adds `fm-value`, `fm-role`, `fm-principal`, `fm-signing`, `fm-envelope` and `fm-verify` (also `view-fm-*`). These reuse this independent core, not Python. Only fm-verify consumes caller-supplied trusted pin/context and checks RSA via OpenSSL. See [the candidate contract](../../../schemas/formal-migration/README.md); no mode is an official Principal registry or admission API.

@@ -459,3 +459,7 @@ OQ-01 发布条件 <─> OQ-13 Maintenance
 ## 2026-10-26 正式迁移路线已决定，字段与实现继续开放
 
 维护者接受 [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 首轮测试路线；OQ-02/03/04/05/06/09/10/11 不因此关闭。FM-S1a 先冻结共享编码、最小 Principal/角色签名与精确 envelope；政策矩阵、非主网字段表达与 Receipt 在 FM-S1b 继续。audit-only 不依赖 EligibilitySnapshot/B/Q，不产生 TRUSTED；UNRESOLVED 费用仍须满足 INV-07 全部五项。ADR-0006 按原 §11/§13 补证据，继续 PROPOSED。实施顺序见 [FM 入口](formal-migration-plan.md)。
+
+## 2026-10-28 FM-S1a 局部实现
+
+[FM-S1a](../testing/FM-S1A-20261028.md)给出共享编码、角色签名的候选测试字段/suite 与双语言、双机证据。外部带外 pin、有限固定身份仍是部署假设；无官方身份注册、完整撤销/轮换、持久 nonce 消费或协议准入。OQ-02/03/05/10 等继续 OPEN，不因局部向量或密码学验证通过而关闭。政策/终态矩阵与 Receipt 在 FM-S1b 推进。

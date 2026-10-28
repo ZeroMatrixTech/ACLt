@@ -1,0 +1,1 @@
+ACLt FM-S1a test value v1: closed map {operation:REQUEST|ACCEPT|RESULT,count:uint,offset:int,ratio:Rational,version:SemVer,enabled:bool,label:NFC text,members:Set<text>}.

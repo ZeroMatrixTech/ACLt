@@ -1,6 +1,6 @@
 {
   "document_kind": "engineering-planning-traceability",
-  "date": "2026-10-26",
+  "date": "2026-10-28",
   "baseline": "f5f415f7c65952adba01f7b0c9f21d554b14c264",
   "authority": "engineering traceability; ADR-0007 route accepted by human, fields and implementation not accepted",
   "adr": "docs/05-decisions/ADR-0007-formal-object-migration-foundation.md",
@@ -11,7 +11,8 @@
       "authority": "human decision 2026-10-26; ADR-0007 §2",
       "schema_frozen": false,
       "implementation_complete": false,
-      "runtime_admitted": false
+      "runtime_admitted": false,
+      "fm_s1a_test_contract": "fixed and locally implemented; official schema/registry still pending"
     },
     "D-2": {
       "route_accepted": true,
@@ -32,7 +33,8 @@
       "authority": "human decision 2026-10-26; ADR-0007 §2",
       "schema_frozen": false,
       "implementation_complete": false,
-      "runtime_admitted": false
+      "runtime_admitted": false,
+      "fm_s1a_test_contract": "fixed and locally implemented; official schema/registry still pending"
     },
     "D-5": {
       "route_accepted": true,
@@ -319,14 +321,29 @@
       "authority": "human acceptance 2026-10-26"
     }
   ],
-  "new_dualhost_runs": 0,
+  "new_dualhost_runs": 1,
   "protocol_object_schema_status_changes": [],
   "version_disposition_changes": [],
   "gate_changes": [],
   "next_slice": {
-    "id": "FM-S1a",
+    "id": "FM-S1b",
     "entry_ready": true,
     "implementation_started": false,
-    "deliverable": "shared codec and minimum role-signature code/vectors; not another planning layer"
+    "deliverable": "frozen candidate policy/terminal matrix, LogicalObject references and Receipt hash DAG before integration"
+  },
+  "slice_results": {
+    "FM-S1a": {
+      "implementation_started": true,
+      "limited_slice_complete": true,
+      "contract": "schemas/formal-migration/foundation.json",
+      "report": "docs/testing/FM-S1A-20261028.md",
+      "default_unit_methods_added": 10,
+      "fixed_vectors": 89,
+      "crosschecks_per_host": 179,
+      "dualhost_runs": 1,
+      "official_principal_schema_complete": false,
+      "production_admission": false,
+      "full_FM_acceptance_closed": false
+    }
   }
 }
