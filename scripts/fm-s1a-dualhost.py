@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tarfile
 ROOT=Path(__file__).resolve().parents[1]
-FILES=['tools/formal_migration/__init__.py','tools/formal_migration/foundation.py','tools/verification_profile/__init__.py','tools/verification_profile/codec.py','tools/verification_profile/rust/main.rs','tools/verification_profile/rust/fm.rs','tools/verification_profile/rust/sha256.rs','tools/verification_profile/rust/nfc.rs','tools/verification_profile/rust/unicode_data.rs','tools/verification_profile/rust/UNICODE-LICENSE.txt','scripts/check-fm-s1a.py','tests/formal_migration/vectors.json','schemas/formal-migration/foundation.json','schemas/formal-migration/value.schema.txt']
+FILES=['tools/formal_migration/__init__.py','tools/formal_migration/foundation.py','tools/verification_profile/__init__.py','tools/verification_profile/codec.py','tools/verification_profile/rust/main.rs','tools/verification_profile/rust/fm.rs','tools/verification_profile/rust/fm_policy.rs','tools/verification_profile/rust/sha256.rs','tools/verification_profile/rust/nfc.rs','tools/verification_profile/rust/unicode_data.rs','tools/verification_profile/rust/UNICODE-LICENSE.txt','scripts/check-fm-s1a.py','tests/formal_migration/vectors.json','schemas/formal-migration/foundation.json','schemas/formal-migration/value.schema.txt']
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--peer',required=True);p.add_argument('--remote-root',required=True);p.add_argument('--output',required=True,type=Path);a=p.parse_args()

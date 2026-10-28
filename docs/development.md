@@ -136,3 +136,7 @@
 ## FM-S1a 编码与签名维护
 
 `make check-fm-s1a` 为默认回归的一部分；`make test-fm-s1a FM_S1A_REPORT=/new/report.json` 构建独立 Rust，核对固定字节/Schema View/摘要/签名及新密钥签署。完整本地入口 `make test` 包含该对拍。跨机运行按[候选合约](../schemas/formal-migration/README.md)中的显式 SSH 驱动，输出目录和远端目录必须新建；IP/用户名只保存在操作者产物。工具只输出测试身份有效性，不授权 Receipt/Lease/账务，不关闭 P0-1B 或 G2。
+
+## FM-S1b 政策与 Receipt 维护
+
+`make check-fm-s1b` 纳入默认检查，`make test-fm-s1b FM_S1B_REPORT=/new/report.json` 构建独立 Rust 并对拍全部费用格、旧引用/重绑定及签名。跨机驱动为 `scripts/fm-s1b-dualhost.py`，沿用严格 SSH/new-directory 规则；详见[候选合约](../schemas/formal-migration/policy.md)。报价只返回预算内候选金额，不触碰数据库或授予执行/结算权利。

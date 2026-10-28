@@ -11,8 +11,8 @@
 | 工作 | 当前事实 | 下一动作 |
 |---|---|---|
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
-| 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名/编码合约已固定；官方字段与费用矩阵仍待冻结 |
-| 下一实现入口 | **FM-S1b** 政策/Receipt 基础合约；[FM-S1a 限定实现报告](../testing/FM-S1A-20261028.md)，官方对象/部署尚未验收 | 冻结政策/终态矩阵与 Receipt 单向绑定 |
+| 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
+| 下一实现入口 | **FM-S2** 单一执行权威与原子资金/暴露预留；[FM-S1b 限定报告](../testing/FM-S1B-20261028.md) | 先审查候选字段/组件/非主网门槛，再做授权/账务/事件集成 |
 | 验收边界 | P0-1B 仍 3/19/97，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
 下面的事实表与带日期记录保留原证据范围；最新路线以此入口及其 ADR 为准，不从历史“PROPOSED”记录推断当前六项决定仍未决。
@@ -319,3 +319,7 @@ v0.6 不代表生产就绪；它代表 v0.5 的核心开放问题已经被收敛
 ## 2026-10-28 FM-S1a：共享编码与最小角色签名
 
 [本轮报告](../testing/FM-S1A-20261028.md)记录 Python/Rust 独立规范字节、Schema View、摘要、最小测试身份及 RSA 精确签名输入；89 固定向量（16 正例、73 负例），两物理主机各 179 项对拍与临时新密钥签署通过。增加 10 项默认回归；这是候选测试合约的局部实现，官方 PrincipalRecord/PrincipalRef、完整 ENUM slot/import、密钥生命周期、持久重放消费及后续对象仍未完成。P0-1B 3/19/97、ADR-0006 PROPOSED、各 Gate 与主网资格不变；下一片 FM-S1b。
+
+## 2026-10-28 FM-S1b：政策、费用矩阵与 Receipt 候选合约
+
+[本轮报告](../testing/FM-S1B-20261028.md)记录政策先于 Receipt 的无环绑定、111 费用格、Logical 输入/执行引用和 Requester 签名。两语言/两主机各 196 项对拍，增加 12 项默认回归；完整本地回归含 S1a/原 Claim 编码与 sanitizer。报价无副作用，不是终态或结算权利；组件字节只做来源/摘要绑定。官方对象/注册、非主网接口、RIR/runtime conformance、真实授权/资金/暴露/事件仍待后续实现；P0-1B 3/19/97、ADR-0006 PROPOSED、OQ/Gate/主网资格不变。下一片 FM-S2。

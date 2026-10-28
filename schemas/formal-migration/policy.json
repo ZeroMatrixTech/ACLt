@@ -1,0 +1,695 @@
+{
+  "id": "fm-s1b-policy-receipt-candidate-1",
+  "status": "CANDIDATE_TEST_ONLY",
+  "official_registration": false,
+  "protocol_admission": false,
+  "encoding_profile_id": "acl.enc.p0-1@1",
+  "types": {
+    "fm2-logical": {
+      "schema_version": "uint",
+      "encoding_profile_id": "text",
+      "protocol_version": "semver",
+      "network_id": "digest",
+      "deployment_id": "digest",
+      "object_type": "text",
+      "object_version": "semver",
+      "publisher_ref": "digest",
+      "created_at": "int",
+      "available_until": "int",
+      "parents": [
+        {
+          "kind": "ref-kind",
+          "version": "semver",
+          "digest": "digest"
+        }
+      ],
+      "content": "bytes"
+    },
+    "fm2-funding": {
+      "schema_version": "uint",
+      "encoding_profile_id": "text",
+      "protocol_version": "semver",
+      "network_id": "digest",
+      "deployment_id": "digest",
+      "scope": {
+        "requester_ref": "digest",
+        "nonce": "digest",
+        "created_at": "int",
+        "expires_at": "int"
+      },
+      "source": "text",
+      "asset": "text",
+      "execution_limit": "uint",
+      "verification_limit": "uint",
+      "storage_limit": "uint",
+      "refund_reserve": "uint",
+      "total_limit": "uint"
+    },
+    "fm2-settlement": {
+      "schema_version": "uint",
+      "encoding_profile_id": "text",
+      "protocol_version": "semver",
+      "network_id": "digest",
+      "deployment_id": "digest",
+      "scope": {
+        "requester_ref": "digest",
+        "nonce": "digest",
+        "created_at": "int",
+        "expires_at": "int"
+      },
+      "method": "text",
+      "rows": [
+        {
+          "terminal": "terminal",
+          "executor": "fulfillment",
+          "auditor": "fulfillment",
+          "storage": "fulfillment",
+          "execution_fee": "uint",
+          "verification_fee": "uint",
+          "storage_fee": "uint",
+          "refund_action": "text"
+        }
+      ]
+    },
+    "fm2-component": {
+      "kind": "component-kind",
+      "version": "semver",
+      "content": "bytes"
+    },
+    "fm2-receipt": {
+      "schema_version": "uint",
+      "encoding_profile_id": "text",
+      "protocol_version": "semver",
+      "network_id": "digest",
+      "deployment_id": "digest",
+      "scope": {
+        "requester_ref": "digest",
+        "nonce": "digest",
+        "created_at": "int",
+        "expires_at": "int"
+      },
+      "task_family": "text",
+      "entry": "text",
+      "output_type": "text",
+      "success": "text",
+      "merge": "text",
+      "failure": "text",
+      "method": "text",
+      "input_refs": [
+        {
+          "kind": "ref-kind",
+          "version": "semver",
+          "digest": "digest"
+        }
+      ],
+      "funding_ref": {
+        "kind": "ref-kind",
+        "version": "semver",
+        "digest": "digest"
+      },
+      "settlement_ref": {
+        "kind": "ref-kind",
+        "version": "semver",
+        "digest": "digest"
+      },
+      "component_refs": [
+        {
+          "kind": "ref-kind",
+          "version": "semver",
+          "digest": "digest"
+        }
+      ],
+      "execution": {
+        "fuel": "uint",
+        "memory_bytes": "uint",
+        "input_bytes_limit": "uint",
+        "output_bytes_limit": "uint",
+        "max_assignments": "uint",
+        "max_attempts": "uint",
+        "message_retries": "uint",
+        "recovery_queries": "uint",
+        "deadline": "int",
+        "capabilities": "text-set",
+        "architecture": "text",
+        "network": "text",
+        "sandbox": "text"
+      }
+    },
+    "fm2-bundle": {
+      "receipt": {
+        "schema_version": "uint",
+        "encoding_profile_id": "text",
+        "protocol_version": "semver",
+        "network_id": "digest",
+        "deployment_id": "digest",
+        "scope": {
+          "requester_ref": "digest",
+          "nonce": "digest",
+          "created_at": "int",
+          "expires_at": "int"
+        },
+        "task_family": "text",
+        "entry": "text",
+        "output_type": "text",
+        "success": "text",
+        "merge": "text",
+        "failure": "text",
+        "method": "text",
+        "input_refs": [
+          {
+            "kind": "ref-kind",
+            "version": "semver",
+            "digest": "digest"
+          }
+        ],
+        "funding_ref": {
+          "kind": "ref-kind",
+          "version": "semver",
+          "digest": "digest"
+        },
+        "settlement_ref": {
+          "kind": "ref-kind",
+          "version": "semver",
+          "digest": "digest"
+        },
+        "component_refs": [
+          {
+            "kind": "ref-kind",
+            "version": "semver",
+            "digest": "digest"
+          }
+        ],
+        "execution": {
+          "fuel": "uint",
+          "memory_bytes": "uint",
+          "input_bytes_limit": "uint",
+          "output_bytes_limit": "uint",
+          "max_assignments": "uint",
+          "max_attempts": "uint",
+          "message_retries": "uint",
+          "recovery_queries": "uint",
+          "deadline": "int",
+          "capabilities": "text-set",
+          "architecture": "text",
+          "network": "text",
+          "sandbox": "text"
+        }
+      },
+      "funding": {
+        "schema_version": "uint",
+        "encoding_profile_id": "text",
+        "protocol_version": "semver",
+        "network_id": "digest",
+        "deployment_id": "digest",
+        "scope": {
+          "requester_ref": "digest",
+          "nonce": "digest",
+          "created_at": "int",
+          "expires_at": "int"
+        },
+        "source": "text",
+        "asset": "text",
+        "execution_limit": "uint",
+        "verification_limit": "uint",
+        "storage_limit": "uint",
+        "refund_reserve": "uint",
+        "total_limit": "uint"
+      },
+      "settlement": {
+        "schema_version": "uint",
+        "encoding_profile_id": "text",
+        "protocol_version": "semver",
+        "network_id": "digest",
+        "deployment_id": "digest",
+        "scope": {
+          "requester_ref": "digest",
+          "nonce": "digest",
+          "created_at": "int",
+          "expires_at": "int"
+        },
+        "method": "text",
+        "rows": [
+          {
+            "terminal": "terminal",
+            "executor": "fulfillment",
+            "auditor": "fulfillment",
+            "storage": "fulfillment",
+            "execution_fee": "uint",
+            "verification_fee": "uint",
+            "storage_fee": "uint",
+            "refund_action": "text"
+          }
+        ]
+      },
+      "inputs": [
+        {
+          "schema_version": "uint",
+          "encoding_profile_id": "text",
+          "protocol_version": "semver",
+          "network_id": "digest",
+          "deployment_id": "digest",
+          "object_type": "text",
+          "object_version": "semver",
+          "publisher_ref": "digest",
+          "created_at": "int",
+          "available_until": "int",
+          "parents": [
+            {
+              "kind": "ref-kind",
+              "version": "semver",
+              "digest": "digest"
+            }
+          ],
+          "content": "bytes"
+        }
+      ],
+      "components": [
+        {
+          "kind": "component-kind",
+          "version": "semver",
+          "content": "bytes"
+        }
+      ]
+    },
+    "fm2-quote": {
+      "bundle": {
+        "receipt": {
+          "schema_version": "uint",
+          "encoding_profile_id": "text",
+          "protocol_version": "semver",
+          "network_id": "digest",
+          "deployment_id": "digest",
+          "scope": {
+            "requester_ref": "digest",
+            "nonce": "digest",
+            "created_at": "int",
+            "expires_at": "int"
+          },
+          "task_family": "text",
+          "entry": "text",
+          "output_type": "text",
+          "success": "text",
+          "merge": "text",
+          "failure": "text",
+          "method": "text",
+          "input_refs": [
+            {
+              "kind": "ref-kind",
+              "version": "semver",
+              "digest": "digest"
+            }
+          ],
+          "funding_ref": {
+            "kind": "ref-kind",
+            "version": "semver",
+            "digest": "digest"
+          },
+          "settlement_ref": {
+            "kind": "ref-kind",
+            "version": "semver",
+            "digest": "digest"
+          },
+          "component_refs": [
+            {
+              "kind": "ref-kind",
+              "version": "semver",
+              "digest": "digest"
+            }
+          ],
+          "execution": {
+            "fuel": "uint",
+            "memory_bytes": "uint",
+            "input_bytes_limit": "uint",
+            "output_bytes_limit": "uint",
+            "max_assignments": "uint",
+            "max_attempts": "uint",
+            "message_retries": "uint",
+            "recovery_queries": "uint",
+            "deadline": "int",
+            "capabilities": "text-set",
+            "architecture": "text",
+            "network": "text",
+            "sandbox": "text"
+          }
+        },
+        "funding": {
+          "schema_version": "uint",
+          "encoding_profile_id": "text",
+          "protocol_version": "semver",
+          "network_id": "digest",
+          "deployment_id": "digest",
+          "scope": {
+            "requester_ref": "digest",
+            "nonce": "digest",
+            "created_at": "int",
+            "expires_at": "int"
+          },
+          "source": "text",
+          "asset": "text",
+          "execution_limit": "uint",
+          "verification_limit": "uint",
+          "storage_limit": "uint",
+          "refund_reserve": "uint",
+          "total_limit": "uint"
+        },
+        "settlement": {
+          "schema_version": "uint",
+          "encoding_profile_id": "text",
+          "protocol_version": "semver",
+          "network_id": "digest",
+          "deployment_id": "digest",
+          "scope": {
+            "requester_ref": "digest",
+            "nonce": "digest",
+            "created_at": "int",
+            "expires_at": "int"
+          },
+          "method": "text",
+          "rows": [
+            {
+              "terminal": "terminal",
+              "executor": "fulfillment",
+              "auditor": "fulfillment",
+              "storage": "fulfillment",
+              "execution_fee": "uint",
+              "verification_fee": "uint",
+              "storage_fee": "uint",
+              "refund_action": "text"
+            }
+          ]
+        },
+        "inputs": [
+          {
+            "schema_version": "uint",
+            "encoding_profile_id": "text",
+            "protocol_version": "semver",
+            "network_id": "digest",
+            "deployment_id": "digest",
+            "object_type": "text",
+            "object_version": "semver",
+            "publisher_ref": "digest",
+            "created_at": "int",
+            "available_until": "int",
+            "parents": [
+              {
+                "kind": "ref-kind",
+                "version": "semver",
+                "digest": "digest"
+              }
+            ],
+            "content": "bytes"
+          }
+        ],
+        "components": [
+          {
+            "kind": "component-kind",
+            "version": "semver",
+            "content": "bytes"
+          }
+        ]
+      },
+      "terminal": "terminal",
+      "executor": "fulfillment",
+      "auditor": "fulfillment",
+      "storage": "fulfillment"
+    },
+    "fm2-verify": {
+      "bundle": {
+        "receipt": {
+          "schema_version": "uint",
+          "encoding_profile_id": "text",
+          "protocol_version": "semver",
+          "network_id": "digest",
+          "deployment_id": "digest",
+          "scope": {
+            "requester_ref": "digest",
+            "nonce": "digest",
+            "created_at": "int",
+            "expires_at": "int"
+          },
+          "task_family": "text",
+          "entry": "text",
+          "output_type": "text",
+          "success": "text",
+          "merge": "text",
+          "failure": "text",
+          "method": "text",
+          "input_refs": [
+            {
+              "kind": "ref-kind",
+              "version": "semver",
+              "digest": "digest"
+            }
+          ],
+          "funding_ref": {
+            "kind": "ref-kind",
+            "version": "semver",
+            "digest": "digest"
+          },
+          "settlement_ref": {
+            "kind": "ref-kind",
+            "version": "semver",
+            "digest": "digest"
+          },
+          "component_refs": [
+            {
+              "kind": "ref-kind",
+              "version": "semver",
+              "digest": "digest"
+            }
+          ],
+          "execution": {
+            "fuel": "uint",
+            "memory_bytes": "uint",
+            "input_bytes_limit": "uint",
+            "output_bytes_limit": "uint",
+            "max_assignments": "uint",
+            "max_attempts": "uint",
+            "message_retries": "uint",
+            "recovery_queries": "uint",
+            "deadline": "int",
+            "capabilities": "text-set",
+            "architecture": "text",
+            "network": "text",
+            "sandbox": "text"
+          }
+        },
+        "funding": {
+          "schema_version": "uint",
+          "encoding_profile_id": "text",
+          "protocol_version": "semver",
+          "network_id": "digest",
+          "deployment_id": "digest",
+          "scope": {
+            "requester_ref": "digest",
+            "nonce": "digest",
+            "created_at": "int",
+            "expires_at": "int"
+          },
+          "source": "text",
+          "asset": "text",
+          "execution_limit": "uint",
+          "verification_limit": "uint",
+          "storage_limit": "uint",
+          "refund_reserve": "uint",
+          "total_limit": "uint"
+        },
+        "settlement": {
+          "schema_version": "uint",
+          "encoding_profile_id": "text",
+          "protocol_version": "semver",
+          "network_id": "digest",
+          "deployment_id": "digest",
+          "scope": {
+            "requester_ref": "digest",
+            "nonce": "digest",
+            "created_at": "int",
+            "expires_at": "int"
+          },
+          "method": "text",
+          "rows": [
+            {
+              "terminal": "terminal",
+              "executor": "fulfillment",
+              "auditor": "fulfillment",
+              "storage": "fulfillment",
+              "execution_fee": "uint",
+              "verification_fee": "uint",
+              "storage_fee": "uint",
+              "refund_action": "text"
+            }
+          ]
+        },
+        "inputs": [
+          {
+            "schema_version": "uint",
+            "encoding_profile_id": "text",
+            "protocol_version": "semver",
+            "network_id": "digest",
+            "deployment_id": "digest",
+            "object_type": "text",
+            "object_version": "semver",
+            "publisher_ref": "digest",
+            "created_at": "int",
+            "available_until": "int",
+            "parents": [
+              {
+                "kind": "ref-kind",
+                "version": "semver",
+                "digest": "digest"
+              }
+            ],
+            "content": "bytes"
+          }
+        ],
+        "components": [
+          {
+            "kind": "component-kind",
+            "version": "semver",
+            "content": "bytes"
+          }
+        ]
+      },
+      "record": {
+        "schema_version": "uint",
+        "encoding_profile_id": "text",
+        "protocol_version": "semver",
+        "network_id": "digest",
+        "deployment_id": "digest",
+        "principal_id": "digest",
+        "key_id": "digest",
+        "public_key_der": "bytes",
+        "role": "role",
+        "suite": "text",
+        "valid_from": "int",
+        "valid_until": "int",
+        "status": "status"
+      },
+      "signature": "bytes",
+      "expected_receipt": "digest",
+      "expected_requester": "digest",
+      "now": "int"
+    }
+  },
+  "enums": {
+    "ref-kind": [
+      "LOGICAL",
+      "FUNDING",
+      "SETTLEMENT",
+      "RECEIPT",
+      "RIR",
+      "RUNTIME",
+      "PROVENANCE",
+      "EQUIVALENCE",
+      "EXPOSURE",
+      "AVAILABILITY",
+      "DEPLOYMENT_TEST",
+      "AUDIT_CONTRACT"
+    ],
+    "component-kind": [
+      "RIR",
+      "RUNTIME",
+      "PROVENANCE",
+      "EQUIVALENCE",
+      "EXPOSURE",
+      "AVAILABILITY",
+      "DEPLOYMENT_TEST",
+      "AUDIT_CONTRACT"
+    ],
+    "terminal": [
+      "UNRESOLVED",
+      "EXPIRED",
+      "FAILED",
+      "FUNDING_EXHAUSTED",
+      "REJECTED_AT_CREATE",
+      "FAILED_PLANNING",
+      "UNSUPPORTED"
+    ],
+    "fulfillment": [
+      "COMPLETE",
+      "MISSING",
+      "HOST_FAULT"
+    ]
+  },
+  "domain_tags": {
+    "LOGICAL": "ACLt/FM/S1b/LOGICAL/1",
+    "FUNDING": "ACLt/FM/S1b/FUNDING/1",
+    "SETTLEMENT": "ACLt/FM/S1b/SETTLEMENT/1",
+    "RECEIPT": "ACLt/FM/S1b/RECEIPT/1",
+    "RIR": "ACLt/FM/S1b/RIR/1",
+    "RUNTIME": "ACLt/FM/S1b/RUNTIME/1",
+    "PROVENANCE": "ACLt/FM/S1b/PROVENANCE/1",
+    "EQUIVALENCE": "ACLt/FM/S1b/EQUIVALENCE/1",
+    "EXPOSURE": "ACLt/FM/S1b/EXPOSURE/1",
+    "AVAILABILITY": "ACLt/FM/S1b/AVAILABILITY/1",
+    "DEPLOYMENT_TEST": "ACLt/FM/S1b/DEPLOYMENT_TEST/1",
+    "AUDIT_CONTRACT": "ACLt/FM/S1b/AUDIT_CONTRACT/1"
+  },
+  "signature_tag": "ACLt/FM/S1b/ReceiptSignature/1",
+  "suite": "fm.rsa2048-pkcs1v15-sha256@1",
+  "reference_version": [
+    1,
+    0,
+    0
+  ],
+  "scope": "requester principal record digest, 32-byte nonce and explicit creation/expiry; policies never contain ReceiptID",
+  "dag": {
+    "root": "RECEIPT",
+    "leaves": [
+      "FUNDING",
+      "SETTLEMENT",
+      "LOGICAL",
+      "RIR",
+      "RUNTIME",
+      "PROVENANCE",
+      "EQUIVALENCE",
+      "EXPOSURE",
+      "AVAILABILITY",
+      "DEPLOYMENT_TEST",
+      "AUDIT_CONTRACT"
+    ],
+    "rule": "all leaf schemas closed; no Receipt ref or arbitrary parent edges; inputs initially parentless"
+  },
+  "matrix": {
+    "process_terminals": [
+      "UNRESOLVED",
+      "EXPIRED",
+      "FAILED",
+      "FUNDING_EXHAUSTED"
+    ],
+    "prestart_terminals": [
+      "REJECTED_AT_CREATE",
+      "FAILED_PLANNING",
+      "UNSUPPORTED"
+    ],
+    "fulfillment": [
+      "COMPLETE",
+      "MISSING",
+      "HOST_FAULT"
+    ],
+    "cells": 111,
+    "sort": "canonical CBOR [terminal,executor,auditor,storage] byte order",
+    "noncomplete_fee": 0,
+    "refund": "total_limit minus execution/verification/storage fees; refund_reserve is unspent and returned",
+    "prestart": "only all-MISSING allowed; zero fees, not evidence of funds ever being reserved",
+    "claim": "fee quote only; no terminal inference, accepted fulfillment evidence, entitlement or settlement"
+  },
+  "limits": {
+    "max_array_items": 111,
+    "max_logical_bytes": 4096,
+    "max_i32_items": 256,
+    "max_component_bytes": 16384,
+    "max_cbor_bytes": 1048576,
+    "max_depth": 48,
+    "max_decoded_items": 10000
+  },
+  "unsupported": [
+    "official ComputeReceipt/ReceiptID, LogicalObject and policy registration",
+    "component semantic conformance; bytes are pinned and must be separately validated before admission",
+    "normative MainnetAssuranceProfile non-mainnet interface resolution",
+    "formal VerificationProfile/DecisionMapping and terminal resolver",
+    "authorized funds, uniqueness, role assignment and fulfillment proof",
+    "durable signing replay/lease/entitlement consumption",
+    "production assets, mixed sources, retries and protocol Gate closure"
+  ]
+}
