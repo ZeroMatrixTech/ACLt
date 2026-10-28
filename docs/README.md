@@ -256,3 +256,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [正式迁移实施入口：FM-S1a](07-roadmap/formal-migration-plan.md)：共享编码与最小角色签名是下一代码切片；[FM-F0 交接](testing/FORMAL-MIGRATION-F0-20261026.md)记录六项路线接受、命名及规范边界修正。FM 不计入 BQ-WORK4。
 
 - [FM-S1a 实现与双机复核](testing/FM-S1A-20261028.md)：共享编码、最小测试角色签名、89 固定向量与两端独立构建；[候选字节合约](../schemas/formal-migration/README.md)。下一片 FM-S1b。
+
+- [FM-S1b 政策/Receipt 实现](testing/FM-S1B-20261028.md)：111 费用格、单向摘要 DAG、输入/执行引用与 Requester 签名；[候选合约](../schemas/formal-migration/policy.md)。费用为假设求值，非资金结算。

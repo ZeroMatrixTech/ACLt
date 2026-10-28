@@ -103,15 +103,7 @@ def verify(v):
         c.need(env[k]==expected[k], 'message context')
     c.need(record['valid_from'] <= env['issued_at'] <= now < env['expires_at'] <= record['valid_until'], 'expired/not-yet-valid')
     raw=signing_input({k:env[k] for k in UNSIGNED})
-    with tempfile.TemporaryDirectory(prefix='aclt-fm-verify-') as tmp:
-        p=Path(tmp)
-        for name,data in [('key.der',record['public_key_der']),('input.bin',raw),('sig.bin',env['signature'])]:
-            (p/name).write_bytes(data)
-        try:
-            result=subprocess.run(['openssl','dgst','-sha256','-keyform','DER','-verify',str(p/'key.der'),'-sigopt','rsa_padding_mode:pkcs1','-signature',str(p/'sig.bin'),str(p/'input.bin')],capture_output=True,timeout=10)
-        except (OSError,subprocess.TimeoutExpired) as exc:
-            raise c.CodecError('crypto adapter unavailable') from exc
-        c.need(result.returncode==0, 'signature verification')
+    crypto_verify(record['public_key_der'],raw,env['signature'])
     return {'valid':True, 'record_digest_hex':digest.hex(), 'signing_digest_hex':hashlib.sha256(raw).hexdigest()}
 
 def inspect(kind, raw):
@@ -150,3 +142,16 @@ def from_view_json(kind, source):
         return raw
     except (ValueError,RecursionError,UnicodeError) as exc:
         raise c.CodecError('invalid FM Schema View') from exc
+
+
+def crypto_verify(der,raw,signature):
+    """Shared OpenSSL adapter; callers must perform typed trust/context checks."""
+    with tempfile.TemporaryDirectory(prefix='aclt-fm-verify-') as tmp:
+        p=Path(tmp)
+        for name,data in [('key.der',der),('input.bin',raw),('sig.bin',signature)]:
+            (p/name).write_bytes(data)
+        try:
+            result=subprocess.run(['openssl','dgst','-sha256','-keyform','DER','-verify',str(p/'key.der'),'-sigopt','rsa_padding_mode:pkcs1','-signature',str(p/'sig.bin'),str(p/'input.bin')],capture_output=True,timeout=10)
+        except (OSError,subprocess.TimeoutExpired) as exc:
+            raise c.CodecError('crypto adapter unavailable') from exc
+        c.need(result.returncode==0, 'signature verification')

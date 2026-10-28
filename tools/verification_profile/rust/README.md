@@ -13,3 +13,5 @@ Data provenance: [Unicode Character Database](https://www.unicode.org/ucd/), as 
 See schemas/verification-profile/claim-codec-slice.json and docs/testing/CLAIM-CODEC-20261023.md at the repository root for the candidate wire contract and deliberate limits.
 
 FM-S1a adds `fm-value`, `fm-role`, `fm-principal`, `fm-signing`, `fm-envelope` and `fm-verify` (also `view-fm-*`). These reuse this independent core, not Python. Only fm-verify consumes caller-supplied trusted pin/context and checks RSA via OpenSSL. See [the candidate contract](../../../schemas/formal-migration/README.md); no mode is an official Principal registry or admission API.
+
+FM-S1b adds `fm2-logical`, `fm2-funding`, `fm2-settlement`, `fm2-component`, `fm2-receipt`, `fm2-bundle`, `fm2-quote`, `fm2-verify` and corresponding typed `view-` modes. `fm2-quote` is hypothetical only, `fm2-verify` checks caller pins and a Receipt signature. See [candidate policy contract](../../../schemas/formal-migration/policy.md).

@@ -321,15 +321,16 @@
       "authority": "human acceptance 2026-10-26"
     }
   ],
-  "new_dualhost_runs": 1,
+  "new_dualhost_runs": 2,
   "protocol_object_schema_status_changes": [],
   "version_disposition_changes": [],
   "gate_changes": [],
   "next_slice": {
-    "id": "FM-S1b",
+    "id": "FM-S2",
     "entry_ready": true,
     "implementation_started": false,
-    "deliverable": "frozen candidate policy/terminal matrix, LogicalObject references and Receipt hash DAG before integration"
+    "runtime_admission": false,
+    "requires": "review candidate schemas/non-mainnet contract and component conformance before official admission; implement one Lease/epoch authority and atomic funding/exposure/event integration"
   },
   "slice_results": {
     "FM-S1a": {
@@ -342,6 +343,20 @@
       "crosschecks_per_host": 179,
       "dualhost_runs": 1,
       "official_principal_schema_complete": false,
+      "production_admission": false,
+      "full_FM_acceptance_closed": false
+    },
+    "FM-S1b": {
+      "implementation_started": true,
+      "limited_slice_complete": true,
+      "contract": "schemas/formal-migration/policy.json",
+      "report": "docs/testing/FM-S1B-20261028.md",
+      "default_unit_methods_added": 12,
+      "fixed_vectors": 28,
+      "crosschecks_per_host": 196,
+      "matrix_cells": 111,
+      "dualhost_runs": 1,
+      "official_object_registration": false,
       "production_admission": false,
       "full_FM_acceptance_closed": false
     }

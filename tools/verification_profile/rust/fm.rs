@@ -24,7 +24,7 @@ fn schema(kind:&str)->Option<Vec<(&'static str,&'static str)>>{
  "fm-verify"=>vec![("record","fm-principal"),("envelope","fm-envelope"),("expected","fm-expected"),("now","int")],
  _=>return None})
 }
-fn proj(kind:&str,v:&V,reverse:bool)->R<V>{
+pub(super) fn proj(kind:&str,v:&V,reverse:bool)->R<V>{
  if let Some(fs)=schema(kind){fields(v,&fs.iter().map(|x|x.0).collect::<Vec<_>>())?;let mut out=Vec::new();for(k,t) in fs{out.push((k,proj(t,get(v,k)?,reverse)?));}return Ok(map(out));}
  let values:&[&str]=match kind{"fm-role"|"role"=>&["REQUESTER","PROVIDER"],"operation"=>&["REQUEST","ACCEPT","RESULT"],"status"=>&["ACTIVE"],_=>&[]};
  if !values.is_empty(){need(values.contains(&txt(v)?),"unknown ENUM")?;return Ok(v.clone());}
@@ -42,7 +42,7 @@ fn principal(v:&V)->R<()>{
  need(bytes(get(v,"principal_id")?)?==domain(ITAG,der),"principal identity")?;
  let start=integer(get(v,"valid_from")?)?;need(start>=0&&start<integer(get(v,"valid_until")?)?,"validity interval")
 }
-fn principal_hash(v:&V)->R<Vec<u8>>{principal(v)?;Ok(domain(PTAG,&encode(v)?))}
+pub(super) fn principal_hash(v:&V)->R<Vec<u8>>{principal(v)?;Ok(domain(PTAG,&encode(v)?))}
 fn unsigned(v:&V)->R<()>{
  proj("fm-signing",v,false)?;common(v)?;
  need(txt(get(v,"suite")?)?==SUITE&&txt(get(v,"object_type")?)?=="FM_TEST_VALUE","suite/object type")?;
@@ -58,7 +58,7 @@ fn envelope(v:&V)->R<()>{proj("fm-envelope",v,false)?;unsigned(&content(v)?)?;ne
 // Temporary names are process-local implementation detail, never protocol time.
 struct Temp(std::path::PathBuf);
 impl Drop for Temp{fn drop(&mut self){let _=fs::remove_dir_all(&self.0);}}
-fn crypto(der:&[u8],raw:&[u8],signature:&[u8])->R<()>{
+pub(super) fn crypto(der:&[u8],raw:&[u8],signature:&[u8])->R<()>{
  static SERIAL:AtomicU64=AtomicU64::new(0);
  let mut temp=None;
  for _ in 0..100{

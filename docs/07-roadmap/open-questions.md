@@ -463,3 +463,7 @@ OQ-01 发布条件 <─> OQ-13 Maintenance
 ## 2026-10-28 FM-S1a 局部实现
 
 [FM-S1a](../testing/FM-S1A-20261028.md)给出共享编码、角色签名的候选测试字段/suite 与双语言、双机证据。外部带外 pin、有限固定身份仍是部署假设；无官方身份注册、完整撤销/轮换、持久 nonce 消费或协议准入。OQ-02/03/05/10 等继续 OPEN，不因局部向量或密码学验证通过而关闭。政策/终态矩阵与 Receipt 在 FM-S1b 推进。
+
+## 2026-10-28 FM-S1b 局部证据
+
+[候选政策与 Receipt](../testing/FM-S1B-20261028.md)补齐有限测试资产/终态费用格和单向摘要绑定的代码、向量与局部签名。它不解决官方 LogicalObject/ComputeReceipt/政策 schema 注册、全 VerificationProfile、非主网 assurance 表达、真实来源/偿付/资金预留或 exactly-once 结算；OQ-02/03/05/10 等继续 OPEN。后续 FM-S2/S3 仍须证明无旁路、履约来源、唯一终态和 INV-07 五项前提。

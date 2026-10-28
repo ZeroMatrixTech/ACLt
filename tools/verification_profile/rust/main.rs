@@ -3,6 +3,7 @@
 mod sha256;
 mod nfc;
 mod fm;
+mod fm_policy;
 use std::io::{self,BufRead};
 type R<T> = Result<T,String>;
 const MAX:usize=1<<20;
@@ -136,6 +137,7 @@ fn parse_json(input:&str)->R<V>{need(input.len()<=MAX*4,"JSON size")?;let mut j=
 fn run(line:&str)->R<V>{
  let (mode,input)=line.split_once('\t').ok_or("mode TAB input")?;
  if mode=="sha256"{return Ok(s(&hex(&sha256::hash(&unhex(input)?))));}
+ if mode.strip_prefix("view-").unwrap_or(mode).starts_with("fm2-"){return fm_policy::run(mode,input);}
  if mode.strip_prefix("view-").unwrap_or(mode).starts_with("fm-"){return fm::run(mode,input);}
  let public_kind=mode.strip_prefix("view-").unwrap_or(mode);
  need(["uint","int","bool","text","bytes","digest","semver","rational","version-range","text-set","template","claim","chain"].contains(&public_kind),"unknown kind")?;

@@ -135,3 +135,7 @@ ADR-0006 继续 PROPOSED，其 §11 文档同步和 §13 接受证据不被本 A
 ## 2026-10-28 FM-S1a 实现证据
 
 D-1/D-4 的首轮局部实现已形成[候选测试合约](../../schemas/formal-migration/README.md)与[报告](../testing/FM-S1A-20261028.md)：沿用独立编码/摘要核心，固定 RSA-2048/e65537、PKCS#1 v1.5/SHA-256、DER SPKI 和完整上下文输入。仅最小固定角色/pin 与测试 payload；无新 Principal 或官方 schema/import 注册。此处不扩大六项路线的接受范围，D-2/D-3/D-5/D-6、ADR-0006 与部署门槛不变。
+
+## 2026-10-28 FM-S1b 实现证据
+
+[本轮报告](../testing/FM-S1B-20261028.md)固定 D-1/D-2/D-4/D-6 所需的局部候选政策/Receipt 字段、111 格费用规则与签名输入。政策无 Receipt 回指，Receipt 单向引用政策/输入/执行组件；金额由冻结费用行派生。正式政策/Receipt、非主网 assurance 接口和组件语义仍须审查；并未把无副作用报价当作有效终态、资金来源或 EntitlementKey，也不扩展原六项路线的接受/部署范围。

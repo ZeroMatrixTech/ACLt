@@ -101,3 +101,5 @@ vector transfer and remote builds; it does not exercise a task network protocol.
 
 These mappings identify the normative rule owner used by the local slice. They do
 not add rules to the global implemented registry or change its 3/19/97 counts.
+
+FM-S1b 的政策/Receipt 候选扩展见 [policy.md](policy.md)；S1a 原固定向量和 suite 不变。该扩展仍无官方身份/对象注册或协议准入授权。
