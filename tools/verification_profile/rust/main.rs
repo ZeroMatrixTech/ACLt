@@ -5,23 +5,23 @@ mod nfc;
 mod fm;
 mod fm_policy;
 use std::io::{self,BufRead};
-type R<T> = Result<T,String>;
+pub(crate) type R<T> = Result<T,String>;
 const MAX:usize=1<<20;
 const ENC:&str="acl.enc.p0-1@1";
 const IMPORT_ID:&str="acl.schema.claim-test-bytes@1";
 const IMPORT_SOURCE:&[u8]=b"ACLt local test import v1: payload is canonical CBOR bstr; object_digest is SHA256 of canonical_bytes.";
 #[derive(Clone,Debug,PartialEq)]
-enum V { N(i128), B(bool), S(String), X(Vec<u8>), A(Vec<V>), M(Vec<(V,V)>) }
-fn need(ok:bool,msg:&str)->R<()> {if ok {Ok(())}else{Err(msg.into())}}
-fn s(v:&str)->V {V::S(v.into())}
-fn map(items:Vec<(&str,V)>)->V {V::M(items.into_iter().map(|(k,v)|(s(k),v)).collect())}
-fn txt(v:&V)->R<&str>{if let V::S(x)=v {need(nfc::is_nfc(x),"NFC")?;Ok(x)}else{Err("text".into())}}
-fn arr(v:&V)->R<&[V]>{if let V::A(a)=v {Ok(a)}else{Err("array".into())}}
-fn bytes(v:&V)->R<&[u8]>{if let V::X(x)=v {Ok(x)}else{Err("bstr".into())}}
-fn integer(v:&V)->R<i128>{if let V::N(n)=v {Ok(*n)}else{Err("integer".into())}}
-fn get<'a>(v:&'a V,key:&str)->R<&'a V>{get_key(v,&s(key))}
+pub(crate) enum V { N(i128), B(bool), S(String), X(Vec<u8>), A(Vec<V>), M(Vec<(V,V)>) }
+pub(crate) fn need(ok:bool,msg:&str)->R<()> {if ok {Ok(())}else{Err(msg.into())}}
+pub(crate) fn s(v:&str)->V {V::S(v.into())}
+pub(crate) fn map(items:Vec<(&str,V)>)->V {V::M(items.into_iter().map(|(k,v)|(s(k),v)).collect())}
+pub(crate) fn txt(v:&V)->R<&str>{if let V::S(x)=v {need(nfc::is_nfc(x),"NFC")?;Ok(x)}else{Err("text".into())}}
+pub(crate) fn arr(v:&V)->R<&[V]>{if let V::A(a)=v {Ok(a)}else{Err("array".into())}}
+pub(crate) fn bytes(v:&V)->R<&[u8]>{if let V::X(x)=v {Ok(x)}else{Err("bstr".into())}}
+pub(crate) fn integer(v:&V)->R<i128>{if let V::N(n)=v {Ok(*n)}else{Err("integer".into())}}
+pub(crate) fn get<'a>(v:&'a V,key:&str)->R<&'a V>{get_key(v,&s(key))}
 fn get_key<'a>(v:&'a V,key:&V)->R<&'a V>{if let V::M(m)=v {m.iter().find(|(k,_)|k==key).map(|(_,v)|v).ok_or("missing key".into())}else{Err("map".into())}}
-fn fields(v:&V,keys:&[&str])->R<()> {if let V::M(m)=v {need(m.len()==keys.len(),"field count")?;for k in keys {get(v,k)?;}Ok(())}else{Err("fields".into())}}
+pub(crate) fn fields(v:&V,keys:&[&str])->R<()> {if let V::M(m)=v {need(m.len()==keys.len(),"field count")?;for k in keys {get(v,k)?;}Ok(())}else{Err("fields".into())}}
 fn uint(v:&V)->R<()> {need((0..=u64::MAX as i128).contains(&integer(v)?),"uint64")}
 fn dig(v:&V)->R<()> {need(bytes(v)?.len()==32,"digest length")}
 fn semver(v:&V)->R<()> {let a=arr(v)?;need(a.len()==3,"SemVer")?;for x in a {uint(x)?;}Ok(())}
@@ -29,7 +29,7 @@ fn tid(v:&V)->R<()> {let id=txt(v)?.strip_prefix("acl.ct.").ok_or("template id")
 fn argument(out:&mut Vec<u8>,major:u8,n:u64){
     if n<24 {out.push(major*32+n as u8);}else{let width=if n<256{1}else if n<65536{2}else if n<1<<32{4}else{8};out.push(major*32+match width{1=>24,2=>25,4=>26,_=>27});out.extend_from_slice(&n.to_be_bytes()[8-width..]);}
 }
-fn encode(v:&V)->R<Vec<u8>> {fn go(v:&V,d:usize)->R<Vec<u8>>{
+pub(crate) fn encode(v:&V)->R<Vec<u8>> {fn go(v:&V,d:usize)->R<Vec<u8>>{
     need(d<=48,"depth")?;let mut out=Vec::new();match v {
         V::N(n)=>{need(*n>=i64::MIN as i128&&*n<=u64::MAX as i128,"integer range")?;if *n>=0{argument(&mut out,0,*n as u64)}else{argument(&mut out,1,(-1-*n)as u64)}},
         V::B(b)=>out.push(if *b{245}else{244}),
@@ -54,12 +54,12 @@ impl<'a> Reader<'a>{
     }
  }
 }
-fn decode(raw:&[u8])->R<V>{need(raw.len()<=MAX,"size")?;let mut r=Reader{raw,pos:0,items:0};let v=r.read(0)?;need(r.pos==raw.len(),"trailing")?;Ok(v)}
-fn hex(raw:&[u8])->String{raw.iter().map(|b|format!("{b:02x}")).collect()}
+pub(crate) fn decode(raw:&[u8])->R<V>{need(raw.len()<=MAX,"size")?;let mut r=Reader{raw,pos:0,items:0};let v=r.read(0)?;need(r.pos==raw.len(),"trailing")?;Ok(v)}
+pub(crate) fn hex(raw:&[u8])->String{raw.iter().map(|b|format!("{b:02x}")).collect()}
 fn unhex(t:&str)->R<Vec<u8>>{need(t.len()%2==0&&t.bytes().all(|b|b.is_ascii_digit()||(b'a'..=b'f').contains(&b)),"hex")?;(0..t.len()).step_by(2).map(|i|u8::from_str_radix(&t[i..i+2],16).map_err(|_|"hex".into())).collect()}
 fn ordered(v:&V,key:&str)->R<()> {let mut last=None;for row in arr(v)? {let cur=encode(get(row,key)?)?;if let Some(prior)=last {need(prior<cur,"pair order")?;}last=Some(cur);}Ok(())}
 fn reference(v:&V)->R<()> {fields(v,&["id","version","digest"])?;tid(get(v,"id")?)?;semver(get(v,"version")?)?;dig(get(v,"digest")?)}
-fn domain(tag:&str,raw:&[u8])->Vec<u8>{let mut x=vec![tag.len()as u8];x.extend(tag.as_bytes());x.extend(raw);sha256::hash(&x)}
+pub(crate) fn domain(tag:&str,raw:&[u8])->Vec<u8>{let mut x=vec![tag.len()as u8];x.extend(tag.as_bytes());x.extend(raw);sha256::hash(&x)}
 fn content(v:&V)->R<V>{let h=get(v,"header")?;Ok(map(vec![("schema_version",get(h,"schema_version")?.clone()),("encoding_profile_id",get(h,"encoding_profile_id")?.clone()),("normative_text",get(v,"normative_text")?.clone()),("slot_decls",get(v,"slot_decls")?.clone())]))}
 fn template_hash(v:&V)->R<Vec<u8>>{Ok(domain("ACLt/P0-1/ClaimTemplate/1",&encode(&content(v)?)?))}
 fn template(v:&V)->R<()> {

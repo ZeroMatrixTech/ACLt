@@ -140,3 +140,7 @@
 ## FM-S1b 政策与 Receipt 维护
 
 `make check-fm-s1b` 纳入默认检查，`make test-fm-s1b FM_S1B_REPORT=/new/report.json` 构建独立 Rust 并对拍全部费用格、旧引用/重绑定及签名。跨机驱动为 `scripts/fm-s1b-dualhost.py`，沿用严格 SSH/new-directory 规则；详见[候选合约](../schemas/formal-migration/policy.md)。报价只返回预算内候选金额，不触碰数据库或授予执行/结算权利。
+
+## RIR 独立核心维护
+
+`make check` 包含新增 12 个受限核心回归方法；`make test-rir-independent RIR_INDEPENDENT_REPORT=/new/report.json` 构建无 Python 预验证的 Rust 入口并核对原始结果字节/摘要。完整 `make test` 包含该入口。跨机命令见[独立核心说明](../experiments/aclt-rir-stats-probe/INDEPENDENT-CORE.md)，严格 SSH 和全新目录要求不变。原 executor/build/runtime/wasm/cases 及历史证据不覆盖；本入口不是正式 RPR 准入。

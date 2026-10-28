@@ -1,0 +1,42 @@
+{
+  "scope": "RIR_STATS_INDEPENDENT_CORE_1",
+  "status": "CANDIDATE_TEST_ONLY",
+  "full_ADR_0006_conformance": false,
+  "production_admission": false,
+  "artifact_digest_tag": "ACLt/RIR-0/Artifact/1",
+  "outcome_digest_tag": "ACLt/RIR-0/ExecutionOutcome/1",
+  "entry": "--artifact ARTIFACT INPUT GAS OUTPUT_BYTES CALL_DEPTH LOCAL_STEP_LIMIT MEMORY_PAGES EXPECTED_RIR_DIGEST [test-memory-fault]",
+  "implementation": "independent Rust raw CBOR/Wasm read, canonical rewrite, subset/type/binding checks, execution, result encoding and SHA; no Python subprocess",
+  "support": {
+    "artifact_bytes_max": 1048576,
+    "types_max": 64,
+    "defined_functions_max": 32,
+    "params_max": 16,
+    "locals_max": 4096,
+    "operand_height_max": 4096,
+    "control_depth_max": 128,
+    "global_count_max": 1024,
+    "function_bytes_max": 524288,
+    "input_arity": 1,
+    "memory_pages": 2,
+    "gas_min": 8192,
+    "gas_max": 50000000,
+    "output_bytes_max": 4800000,
+    "call_depth_min": 1,
+    "call_depth_max": 64,
+    "input_bytes_max": 2000000
+  },
+  "faults": {
+    "mismatched_expected_artifact": "RPR_REVALIDATION_MISMATCH",
+    "missing_input": "HOST_IO_OR_RESOURCE_FAILURE",
+    "local_step_limit": "HOST_RESOURCE_OR_INTERNAL_FAILURE",
+    "injected_memory_fault": "HOST_RESOURCE_EXHAUSTED"
+  },
+  "remaining": [
+    "general Wasm module grammar/canonicalization for table/element/data sections",
+    "complete seven-stage rejection priority for out-of-core grammar and resource guards",
+    "all ADR-0006 allowed instructions, typed blocks, memory.grow and call_indirect conformance",
+    "full RIR static limit space and host/process-wide resource failure containment",
+    "formal ReceiptID/version/resource identity tests and ADR \u00a711 synchronization/acceptance"
+  ]
+}

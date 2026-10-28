@@ -384,3 +384,5 @@ RPR 不得把 C 类改写为 B 类：宿主内存不足不得报告为 `memory.g
 本草案在 ADR-0002 的范围内细化 RIR，不改变以下内容：RIR 是规范执行表示，Rust Profile 是参考前端，不允许静默原生回退，V1 不支持 unsafe Rust、完整宿主 effects、原生执行、GPU 和非确定性任务。它在此基础上进一步收窄：RIR-0 不含浮点。它不新增 Principal 或权威实体；Wasm 规范、引擎及其维护组织都不进入 ACLt 的真理权重。G0 未通过退出。
 
 工程证据补记（2026-10-23）：[第一项三切片收尾](../testing/RIR-WORK1-CLOSEOUT-20261023.md)完成统一双机复现与证据连续性核对。该工程状态不接受本 ADR，§13 的完整独立编解码、验证与 conformance 要求仍适用。
+
+工程补记（2026-10-28）：[独立 stats-core](../testing/RIR-INDEPENDENT-CORE-20261028.md)已新增 Rust raw-artifact 外壳、受限 canonical/type/binding 检查及独立结果 CBOR/摘要，旧执行入口原字节保留。该局部入口不调用 Python 预验证或后处理；支持范围小于本草案，不完成 §13 全证据或完整七阶段拒绝优先级。本 ADR 继续 PROPOSED，§11 同步与正式 ReceiptID 条件不变。
