@@ -83,3 +83,5 @@ The C++ `src/reference.cpp` is an exact snapshot of
 `../aclt-minimal-verifier-state3/cpp/worker.cpp`, retained for reproducible builds.
 The next slice must bind frozen input/limits/outcome to a Receipt and verification
 record. No Gate, P0-1B, production TRUSTED, B/Q assumption or settlement is closed.
+
+新增的 [independent stats-core](INDEPENDENT-CORE.md) 使用独立 raw-artifact 入口；原 executor.rs 与历史构建证据保持原字节，不混用两种支持范围。

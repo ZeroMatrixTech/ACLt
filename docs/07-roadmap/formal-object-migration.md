@@ -96,7 +96,7 @@
 - **缺口**：
   - ADR-0006 仍为 `PROPOSED`；
   - validator 只覆盖受限子集，ADR-0006 §4.4 的七个阶段与拒绝代码未全部实现；
-  - 外壳读取与摘要只有 Python 实现。
+  - 受限 stats-core 已有独立 Rust 外壳/摘要入口，见[本轮报告](../testing/RIR-INDEPENDENT-CORE-20261028.md)；全 RIR 外壳/模块/七阶段 conformance 尚未完成。
 - **拒绝条件**：
   - 按 ADR-0006 §4.4 的阶段顺序返回 `RIR_REJECT_ENCODING`、`RIR_REJECT_UNSUPPORTED`、`RIR_REJECT_INVALID` 或 `RIR_REJECT_LIMITS`；
   - `body` 不等于其规范重编码；
@@ -108,12 +108,12 @@
 ### MG-02 解释器与执行结果 → RPR 与 RIRExecutionOutcome
 
 - **现状**：
-  - Python 参考解释器，加一个独立的 Rust Wasm 解码/执行器，但后者的入口依赖 Python 预验证；
+  - 历史 Python 参考解释器及 Rust Wasm 解码/执行入口依赖 Python 预验证；新增的独立 stats-core 不依赖该预验证，详见本轮报告；
   - 496 条执行记录，其中 Python/Rust 差分 276 条；结果 CBOR 与摘要共享 Python 后处理。
 - **缺口**：
-  - Rust 端没有独立的外壳读取、validator、结果编码与摘要；
+  - 新受限入口已有独立外壳/validator/结果编码/摘要；通用 RIR/RPR 的全指令/拒绝顺序/资源边界仍缺；
   - A/B/C 三类结果没有全量覆盖，尤其缺少“C 类不得改写为 B 类”的测试；
-  - 没有 ADR-0006 §5.1 要求的 RPR 支持上限声明。
+  - 新核心已声明有限支持上限；正式 RPR 版本/注册与完整上限范围仍待验收。
 - **拒绝条件**：
   - 执行前复验失败时报告 `RPR_REVALIDATION_MISMATCH`，不产生 Task 结果；
   - Receipt 的执行上限超出 RPR 声明的范围时，不接受该 Lease；
@@ -443,3 +443,7 @@ state3 单机实验（`ACLT-STATE-3` 记录）、多节点 admission 原型，�
 ## 2026-10-28 FM-S1b 局部进展
 
 [FM-S1b](../testing/FM-S1B-20261028.md)给 MG-03/04/05/06/07/13/14 提供候选字段/引用与内容绑定证据，未完成这些 MG 的官方 schema、内容/运行验证和集成验收。报价不替代 MG-17/18/19 的唯一终态/合法权利/恢复；新对象不从旧实验改名或迁库取得资格。
+
+## 2026-10-28 RIR 独立入口核心进展
+
+[独立 stats-core](../testing/RIR-INDEPENDENT-CORE-20261028.md)直接处理原始工件、做受限规范/类型检查并独立编码/摘要结果；历史入口及其源码 pin 保留。MG-01/02 只增加局部实现证据，不关闭全 RIR/七阶段/RPR conformance 或正式 Receipt/ADR 接受条件。

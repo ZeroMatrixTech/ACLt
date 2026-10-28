@@ -321,7 +321,7 @@
       "authority": "human acceptance 2026-10-26"
     }
   ],
-  "new_dualhost_runs": 2,
+  "new_dualhost_runs": 3,
   "protocol_object_schema_status_changes": [],
   "version_disposition_changes": [],
   "gate_changes": [],
@@ -359,6 +359,18 @@
       "official_object_registration": false,
       "production_admission": false,
       "full_FM_acceptance_closed": false
+    }
+  },
+  "parallel_tracks": {
+    "RIR-INDEPENDENCE": {
+      "core_slice_complete": true,
+      "full_conformance_complete": false,
+      "report": "docs/testing/RIR-INDEPENDENT-CORE-20261028.md",
+      "MG-01_complete": false,
+      "MG-02_complete": false,
+      "ADR-0006": "PROPOSED",
+      "formal_execution_admission": false,
+      "next": "full RIR grammar/priority/instruction conformance and formal Receipt identity evidence"
     }
   }
 }

@@ -61,3 +61,7 @@ FM-S3 应以新对象重跑原授权提交/重放 12 场景、结算 12 场景�
 ## 2026-10-28 FM-S1b 交接
 
 [候选政策/Receipt 合约](../../schemas/formal-migration/policy.md)与代码固定了 111 费用格、单向内容 DAG、Logical 输入与执行组件引用、Requester 签名及正负向量。scope/预算/资源/未知字段/旧引用拒绝，合法重绑定改 Receipt 摘要。费用求值是无副作用的假设计算，不生成终态、权利或资金。FM-S1b limited_slice_complete=true；MG 与 FM-A 整条验收保持未完成。FM-S2 需要审查后落实官方 schema/非主网接口、单一 Lease/epoch、两类原子预留与统一事件，不可仅凭本片 PASS 启用正式准入。
+
+## 2026-10-28 RIR 独立线优先交接
+
+按维护者安排先推进 RIR 独立性。[核心切片报告](../testing/RIR-INDEPENDENT-CORE-20261028.md)已补受限 Rust raw-artifact 入口、独立类型检查和结果编码/摘要。它解除该有限入口的 Python 预验证/后处理依赖，不代表 MG-01/02 全部完成。下一步补完整 validator/指令与边界 conformance、正式 Receipt 身份测试和 ADR-0006 审阅；FM-S2 可开发授权/预留/事件结构，正式执行准入仍等待上述证据和原有字段/部署门槛。

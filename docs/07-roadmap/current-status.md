@@ -12,7 +12,7 @@
 |---|---|---|
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
-| 下一实现入口 | **FM-S2** 单一执行权威与原子资金/暴露预留；[FM-S1b 限定报告](../testing/FM-S1B-20261028.md) | 先审查候选字段/组件/非主网门槛，再做授权/账务/事件集成 |
+| 当前优先工作 | **RIR 独立线**：[受限核心报告](../testing/RIR-INDEPENDENT-CORE-20261028.md)；FM-S2 授权/预留/事件可开发 | 补全 RIR conformance/ADR 审阅；正式执行准入保持关闭 |
 | 验收边界 | P0-1B 仍 3/19/97，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
 下面的事实表与带日期记录保留原证据范围；最新路线以此入口及其 ADR 为准，不从历史“PROPOSED”记录推断当前六项决定仍未决。
@@ -323,3 +323,7 @@ v0.6 不代表生产就绪；它代表 v0.5 的核心开放问题已经被收敛
 ## 2026-10-28 FM-S1b：政策、费用矩阵与 Receipt 候选合约
 
 [本轮报告](../testing/FM-S1B-20261028.md)记录政策先于 Receipt 的无环绑定、111 费用格、Logical 输入/执行引用和 Requester 签名。两语言/两主机各 196 项对拍，增加 12 项默认回归；完整本地回归含 S1a/原 Claim 编码与 sanitizer。报价无副作用，不是终态或结算权利；组件字节只做来源/摘要绑定。官方对象/注册、非主网接口、RIR/runtime conformance、真实授权/资金/暴露/事件仍待后续实现；P0-1B 3/19/97、ADR-0006 PROPOSED、OQ/Gate/主网资格不变。下一片 FM-S2。
+
+## 2026-10-28 RIR 独立 stats-core
+
+[本轮报告](../testing/RIR-INDEPENDENT-CORE-20261028.md)记录新 Rust 原始外壳入口、受限 Wasm canonical/type 检查、RPR 支持声明与独立结果 CBOR/SHA。38 固定向量、两端各 161 项复核，包括无 Python/源码运行、四类拒绝码、重验证分歧、宿主故障、超 1 MiB 输出。旧 executor/编译探针取证源码保持原字节。完整七阶段/指令集/资源故障、正式 ReceiptID 与 ADR-0006 接受仍未完成；MG-01/02、P0-1B/G2 和生产准入不关闭。下一步优先补全量 conformance，FM-S2 的结构开发不因此等于正式执行已准入。

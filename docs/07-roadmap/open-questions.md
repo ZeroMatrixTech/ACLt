@@ -467,3 +467,7 @@ OQ-01 发布条件 <─> OQ-13 Maintenance
 ## 2026-10-28 FM-S1b 局部证据
 
 [候选政策与 Receipt](../testing/FM-S1B-20261028.md)补齐有限测试资产/终态费用格和单向摘要绑定的代码、向量与局部签名。它不解决官方 LogicalObject/ComputeReceipt/政策 schema 注册、全 VerificationProfile、非主网 assurance 表达、真实来源/偿付/资金预留或 exactly-once 结算；OQ-02/03/05/10 等继续 OPEN。后续 FM-S2/S3 仍须证明无旁路、履约来源、唯一终态和 INV-07 五项前提。
+
+## 2026-10-28 RIR 独立核心证据
+
+[独立 raw-artifact 入口](../testing/RIR-INDEPENDENT-CORE-20261028.md)增加 OQ-02/04/05 的局部代码/双机证据，消除受限 stats 路径的 Python 预验证和结果后处理依赖。全 RIR/RPR、完整拒绝顺序、官方对象/Receipt/Lease 与部署仍待验收，相关 OQ/Gate 不变；原有 FM-S2 准入条件未被绕过。
