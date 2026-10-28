@@ -132,3 +132,7 @@
 ## 正式迁移 FM-S1a 开工入口（2026-10-26）
 
 [ADR-0007](05-decisions/ADR-0007-formal-object-migration-foundation.md) 已接受六项首轮路线，字段和实现分别验收；下一切片按 [FM-S1a](07-roadmap/formal-migration-plan.md) 开始共享编码与最小角色签名代码/向量，不另建总规划。先复用现有 P0-1B codec 并审查其候选 wire/import 限制，精确 suite/envelope 必须由向量固定；Python/Rust 独立、OpenSSL 依赖边界、拒绝行为与覆盖 owner 均需交付。当前无新代码/软件安装/双机运行，ADR-0006/Gate/现有对象 Schema 状态不变。
+
+## FM-S1a 编码与签名维护
+
+`make check-fm-s1a` 为默认回归的一部分；`make test-fm-s1a FM_S1A_REPORT=/new/report.json` 构建独立 Rust，核对固定字节/Schema View/摘要/签名及新密钥签署。完整本地入口 `make test` 包含该对拍。跨机运行按[候选合约](../schemas/formal-migration/README.md)中的显式 SSH 驱动，输出目录和远端目录必须新建；IP/用户名只保存在操作者产物。工具只输出测试身份有效性，不授权 Receipt/Lease/账务，不关闭 P0-1B 或 G2。

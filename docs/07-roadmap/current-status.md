@@ -2,17 +2,17 @@
 
 > 文档性质：持续更新的项目快照（living document）  
 > 基线版本：v0.5  
-> 快照日期：2026-10-26
+> 快照日期：2026-10-28
 > 当前阶段：G0 — 语义与问题空间冻结  
 > 权威范围：记录“现在已经知道什么、还没有证明什么、下一步需要什么证据”；不替代协议规范、ADR 或测试结果。
 
-## 当前实施入口（2026-10-26）
+## 当前实施入口（2026-10-28）
 
 | 工作 | 当前事实 | 下一动作 |
 |---|---|---|
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
-| 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 字段、签名 envelope 与费用矩阵仍待冻结 |
-| 下一代码切片 | [FM-S1a](formal-migration-plan.md)：共享编码与最小角色签名；未实现 | 代码、独立 Python/Rust 字节/摘要与签名正负向量 |
+| 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名/编码合约已固定；官方字段与费用矩阵仍待冻结 |
+| 下一实现入口 | **FM-S1b** 政策/Receipt 基础合约；[FM-S1a 限定实现报告](../testing/FM-S1A-20261028.md)，官方对象/部署尚未验收 | 冻结政策/终态矩阵与 Receipt 单向绑定 |
 | 验收边界 | P0-1B 仍 3/19/97，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
 下面的事实表与带日期记录保留原证据范围；最新路线以此入口及其 ADR 为准，不从历史“PROPOSED”记录推断当前六项决定仍未决。
@@ -315,3 +315,7 @@ v0.6 不代表生产就绪；它代表 v0.5 的核心开放问题已经被收敛
 ## 2026-10-26 FM-F0 路线收口
 
 在 B/Q 合并后的 main 上完成 FM 命名整理、维护者接受 D-1～D-6、audit-only/EligibilitySnapshot 与结算前提修正。旧迁移草案 stash 原样保留；[FM-F0 交接记录](../testing/FORMAL-MIGRATION-F0-20261026.md)区分路线、字段、实现和部署四层。下一次直接实施 FM-S1a；不新增研究阶段，不改变旧实验或规范已有终态优先序。
+
+## 2026-10-28 FM-S1a：共享编码与最小角色签名
+
+[本轮报告](../testing/FM-S1A-20261028.md)记录 Python/Rust 独立规范字节、Schema View、摘要、最小测试身份及 RSA 精确签名输入；89 固定向量（16 正例、73 负例），两物理主机各 179 项对拍与临时新密钥签署通过。增加 10 项默认回归；这是候选测试合约的局部实现，官方 PrincipalRecord/PrincipalRef、完整 ENUM slot/import、密钥生命周期、持久重放消费及后续对象仍未完成。P0-1B 3/19/97、ADR-0006 PROPOSED、各 Gate 与主网资格不变；下一片 FM-S1b。

@@ -1,0 +1,221 @@
+{
+  "id": "fm-s1a-foundation-candidate-1",
+  "status": "CANDIDATE_TEST_ONLY",
+  "protocol_admission": false,
+  "normative_owners": [
+    "docs/03-protocol/verification-profile-schema.md §3.2.1/§17",
+    "docs/05-decisions/ADR-0007-formal-object-migration-foundation.md D-1/D-4"
+  ],
+  "encoding_profile_id": "acl.enc.p0-1@1",
+  "unicode_version": "16.0.0",
+  "types": {
+    "fm-value": {
+      "operation": "operation",
+      "count": "uint",
+      "offset": "int",
+      "ratio": "rational",
+      "version": "semver",
+      "enabled": "bool",
+      "label": "text",
+      "members": "text-set"
+    },
+    "fm-principal": {
+      "schema_version": "uint",
+      "encoding_profile_id": "text",
+      "protocol_version": "semver",
+      "network_id": "digest",
+      "deployment_id": "digest",
+      "principal_id": "digest",
+      "key_id": "digest",
+      "public_key_der": "bytes",
+      "role": "role",
+      "suite": "text",
+      "valid_from": "int",
+      "valid_until": "int",
+      "status": "status"
+    },
+    "fm-signing": {
+      "schema_version": "uint",
+      "encoding_profile_id": "text",
+      "protocol_version": "semver",
+      "network_id": "digest",
+      "deployment_id": "digest",
+      "suite": "text",
+      "principal_ref": "digest",
+      "role": "role",
+      "object_type": "text",
+      "context": "digest",
+      "nonce": "digest",
+      "issued_at": "int",
+      "expires_at": "int",
+      "payload_ref": {
+        "id": "text",
+        "version": "semver",
+        "digest": "digest"
+      },
+      "payload": "bytes"
+    },
+    "fm-envelope": {
+      "schema_version": "uint",
+      "encoding_profile_id": "text",
+      "protocol_version": "semver",
+      "network_id": "digest",
+      "deployment_id": "digest",
+      "suite": "text",
+      "principal_ref": "digest",
+      "role": "role",
+      "object_type": "text",
+      "context": "digest",
+      "nonce": "digest",
+      "issued_at": "int",
+      "expires_at": "int",
+      "payload_ref": {
+        "id": "text",
+        "version": "semver",
+        "digest": "digest"
+      },
+      "payload": "bytes",
+      "signature": "bytes"
+    },
+    "fm-verify": {
+      "record": {
+        "schema_version": "uint",
+        "encoding_profile_id": "text",
+        "protocol_version": "semver",
+        "network_id": "digest",
+        "deployment_id": "digest",
+        "principal_id": "digest",
+        "key_id": "digest",
+        "public_key_der": "bytes",
+        "role": "role",
+        "suite": "text",
+        "valid_from": "int",
+        "valid_until": "int",
+        "status": "status"
+      },
+      "envelope": {
+        "schema_version": "uint",
+        "encoding_profile_id": "text",
+        "protocol_version": "semver",
+        "network_id": "digest",
+        "deployment_id": "digest",
+        "suite": "text",
+        "principal_ref": "digest",
+        "role": "role",
+        "object_type": "text",
+        "context": "digest",
+        "nonce": "digest",
+        "issued_at": "int",
+        "expires_at": "int",
+        "payload_ref": {
+          "id": "text",
+          "version": "semver",
+          "digest": "digest"
+        },
+        "payload": "bytes",
+        "signature": "bytes"
+      },
+      "expected": {
+        "protocol_version": "semver",
+        "network_id": "digest",
+        "deployment_id": "digest",
+        "role": "role",
+        "object_type": "text",
+        "context": "digest",
+        "nonce": "digest",
+        "record_digest": "digest"
+      },
+      "now": "int"
+    },
+    "fm-role": "role"
+  },
+  "enums": {
+    "role": [
+      "REQUESTER",
+      "PROVIDER"
+    ],
+    "operation": [
+      "REQUEST",
+      "ACCEPT",
+      "RESULT"
+    ],
+    "status": [
+      "ACTIVE"
+    ]
+  },
+  "wire_keys": "UTF-8 field names, identity mapping; closed maps, exact field set, no null or inferred types",
+  "suite": {
+    "id": "fm.rsa2048-pkcs1v15-sha256@1",
+    "key_bits": 2048,
+    "public_exponent": 65537,
+    "key_encoding": "DER SubjectPublicKeyInfo, rsaEncryption OID with explicit NULL parameters, exact 294 bytes; canonical positive modulus, exponent 65537",
+    "padding": "RSASSA-PKCS1-v1_5",
+    "hash": "SHA-256",
+    "signature_encoding": "I2OSP signature 256 bytes, no wrapper",
+    "signing_input": "one byte ASCII tag length || tag || canonical CBOR of complete unsigned envelope",
+    "hashing": "OpenSSL dgst SHA-256 exactly once over signing_input; not over a prehashed digest",
+    "adapter_timeout_seconds": 10,
+    "production_default": false
+  },
+  "domain_tags": {
+    "principal": "ACLt/FM/S1a/Principal/1",
+    "key_identity": "ACLt/FM/S1a/KeyIdentity/1",
+    "signature_input": "ACLt/FM/S1a/SignatureInput/1"
+  },
+  "identity": {
+    "principal_id": "domain_hash(key_identity, public_key_der)",
+    "key_id": "SHA256(public_key_der)",
+    "principal_ref": "domain_hash(principal, canonical complete principal record)",
+    "trusted_pin": "caller-supplied expected.record_digest; never take pin from untrusted envelope",
+    "protocol_version": [
+      0,
+      5,
+      0
+    ],
+    "network_and_deployment": "opaque 32-byte test anchors, not official NetworkID import",
+    "status": "ACTIVE only; replacement/revocation is explicit external pin change, no online lifecycle"
+  },
+  "context": {
+    "object_type": "FM_TEST_VALUE",
+    "role_responsibility": {
+      "REQUESTER": [
+        "REQUEST"
+      ],
+      "PROVIDER": [
+        "ACCEPT",
+        "RESULT"
+      ]
+    },
+    "context": "caller-frozen 32-byte object/scope commitment",
+    "nonce": "caller-frozen 32-byte challenge, exact match required",
+    "time": "explicit signed int64 UTC milliseconds; record.valid_from <= issued_at <= caller.now < expires_at <= record.valid_until; intervals nonnegative and nonempty",
+    "replay": "verification is pure and idempotent; durable nonce consumption and execution/settlement rights are FM-S2/S3, not this API"
+  },
+  "limits": {
+    "max_cbor_bytes": 1048576,
+    "max_depth": 48,
+    "max_decoded_items": 10000,
+    "max_payload_bytes": 4096,
+    "max_schema_view_bytes": 4194304
+  },
+  "unsupported": [
+    "official PrincipalRecord/PrincipalRef and imported registry authority",
+    "full ClaimTemplate ENUM slot binding/rendering",
+    "complete Profile/Decision and other official imports",
+    "key rotation/revocation history and production crypto",
+    "Receipt/Lease/execution/settlement admission",
+    "durable replay consumption",
+    "Mainnet assurance and protocol Gates"
+  ],
+  "import": {
+    "id": "acl.fm.schema.value@1",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "digest": "fd12ca6ecae63098333bab9378f618ca9133bc4a13f9879782f18eac304377c8",
+    "file": "schemas/formal-migration/value.schema.txt",
+    "production_eligible": false
+  }
+}

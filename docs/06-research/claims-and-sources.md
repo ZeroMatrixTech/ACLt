@@ -232,3 +232,7 @@ NIST Dataplot, *EXACT BINOMIAL*，2026-10-26 复核[官方说明](https://itl.ni
 ## 2026-10-26 B/Q 准入研究的权威边界
 
 [BQ-W4-S3](bq-readiness-slice3.md)把 CLM-004/111 的部署前提及 CLM-112/114/115 的来源/维护边界对应到 14 项研究清单、12/8/19 个审阅/创建/生命周期场景；不改变既有 Claim SemanticStatus。证据状态与 research causes 不冒充正式 CauseSet，完整人工正例不代表部署来源已验证。终态后的自然到期与证据版本撤销、来源不可达与已知无效、LIVENESS 与 SAFETY_CRITICAL 均分开处理。依据均为现行已接受 Profile/ADR 和本地模型，不新增外部安全主张，也不关闭 B/Q 或主网资格。
+
+## 2026-10-28 工程证据：FM-S1a
+
+[本轮报告](../testing/FM-S1A-20261028.md)只支持固定测试合约下两种语言的字节/摘要/上下文检查与两台主机独立构建一致，RSA 适配共享 OpenSSL。它不支持真实身份控制独立、B/Q、持久重放消费、完整对象合规或生产密码学/主网资格；相关研究论断及状态不变。

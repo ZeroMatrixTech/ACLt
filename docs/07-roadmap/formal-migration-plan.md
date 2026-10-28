@@ -6,7 +6,7 @@
 
 ## 当前交接
 
-FM-F0 的流程/命名/路线决策已收口；字段、实现、双机和部署验收均未完成。下一项直接是 **FM-S1a：共享编码与最小角色签名**，不再补一轮总规划。既有 P0-1B 3/19/97 仍是当前登记，ADR-0006 保持 PROPOSED，所有 Gate/OQ 与 V1 处置不变。
+FM-F0 的流程/命名/路线决策已收口；**FM-S1a 的限定实现与双机编码/构建复核已完成**，见[2026-10-28 报告](../testing/FM-S1A-20261028.md)。候选测试合约已固定字节和向量，官方对象字段/注册、端到端集成与部署验收仍未完成。下一项是 **FM-S1b：政策与 Receipt 基础合约**。既有 P0-1B 3/19/97 仍是当前登记，ADR-0006 保持 PROPOSED，所有 Gate/OQ 与 V1 处置不变。
 
 ## 实施顺序
 
@@ -31,7 +31,7 @@ FM-F0 的流程/命名/路线决策已收口；字段、实现、双机和部署
 5. 正例包含合法重绑定/重新签署后的成功；负例覆盖非最短/重复/未知/溢出/非 NFC、未知 import、错 key/role/network/context、篡改 payload 和重放，不能靠全部拒绝通过。
 6. 交付新向量、规范/实现/规则编号映射与局部回归、现有完整检查；必要的双机编码/构建复核明确为该范围，不冒充端到端任务/账务验收。不安装无来源依赖，不迁移旧实验库。
 
-具体字段/tag/envelope 与注册授权在本片形成可审查修订；本交接没有预冻结它们。FM-S1a implementation_started=false，所有下表验收均仍计划中。
+FM-S1a 已形成可审查的[测试合约与精确 suite](../../schemas/formal-migration/README.md)，字节/tag/envelope 仅在该候选测试命名域中固定，不等于官方注册授权。FM-S1a implementation_started=true，limited_slice_complete=true；官方 PrincipalRecord、完整 ENUM slot/import 与下表整条迁移验收仍未完成。
 
 ## 各片交付与回归要求
 
