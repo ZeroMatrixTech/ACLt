@@ -144,3 +144,7 @@
 ## RIR 独立核心维护
 
 `make check` 包含新增 12 个受限核心回归方法；`make test-rir-independent RIR_INDEPENDENT_REPORT=/new/report.json` 构建无 Python 预验证的 Rust 入口并核对原始结果字节/摘要。完整 `make test` 包含该入口。跨机命令见[独立核心说明](../experiments/aclt-rir-stats-probe/INDEPENDENT-CORE.md)，严格 SSH 和全新目录要求不变。原 executor/build/runtime/wasm/cases 及历史证据不覆盖；本入口不是正式 RPR 准入。
+
+## FM/RIR 保留证据检查
+
+`make check-migration-evidence` 检查三份摘要和 audit 依赖映射，不执行旧源码或声称新的双机运行。精确 Git blob 校验及临时目录重放使用[证据说明](testing/MIGRATION-EVIDENCE-20261028.md)中的显式 `--repository`/`--replay` 命令。校验源码 revision 与当前源码重跑是不同操作；不要为让历史摘要通过而刷新其源码 SHA。

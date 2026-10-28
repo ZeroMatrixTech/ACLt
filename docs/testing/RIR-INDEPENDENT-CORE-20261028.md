@@ -27,3 +27,5 @@ FM-S2 授权/原子预留/事件结构可以针对候选接口开发；正式执
 完整本地 `make test` 退出为零：默认回归 347 个方法（原 335 + 本轮 12）；原 Claim 29,766 项、FM-S1a 179 项、FM-S1b 196 项、本核心 161 项对拍及旧 state3/20 次 sanitizer/多节点/权威本地检查通过。清单/差异/交付包另行核对，实际日志保留于同一证据根。没有重写历史通过记录或把旧证据当新运行。
 
 按 CONTRIBUTING 同步矩阵核对 protocol-spec、task-lifecycle、invariants、threat-model、术语、架构与 v1-profile：本轮提供候选实现，未改变 RIR/RPR 权威语义、结果等价、Principal 集合或 VersionDisposition；对应 INV-01/02/09/16 与 TH-02/27/29/33—35 的完整证明仍不由局部证据替代。ADR 补记、MG 清单、计划/追踪、当前状态、OQ、论断证据及开发/索引已同步。
+
+原始双机记录的[机器摘要](RIR-INDEPENDENT-CORE-20261028.summary.json)及[校验/本地重放范围](MIGRATION-EVIDENCE-20261028.md)已补入库；该恢复不产生新的双机验收结论。

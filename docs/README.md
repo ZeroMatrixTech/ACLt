@@ -260,3 +260,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [FM-S1b 政策/Receipt 实现](testing/FM-S1B-20261028.md)：111 费用格、单向摘要 DAG、输入/执行引用与 Requester 签名；[候选合约](../schemas/formal-migration/policy.md)。费用为假设求值，非资金结算。
 
 - [RIR 独立 stats-core](testing/RIR-INDEPENDENT-CORE-20261028.md)：原始外壳直接进入 Rust、受限验证和独立结果编码/摘要；[入口与剩余边界](../experiments/aclt-rir-stats-probe/INDEPENDENT-CORE.md)。全 ADR conformance 尚未完成。
+
+- [FM-S2 前置收口](testing/FM-S2-READINESS-20261028.md)：[保留双机机器摘要](testing/MIGRATION-EVIDENCE-20261028.md)、[ADR-0006 分层评审](05-decisions/ADR-0006-layered-review-20261028.md)及 [FM-S3 audit 依赖](07-roadmap/fm-s3-audit-dependencies.md)。

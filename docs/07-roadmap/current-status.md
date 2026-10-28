@@ -12,10 +12,10 @@
 |---|---|---|
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
-| 当前优先工作 | **RIR 独立线**：[受限核心报告](../testing/RIR-INDEPENDENT-CORE-20261028.md)；FM-S2 授权/预留/事件可开发 | 补全 RIR conformance/ADR 审阅；正式执行准入保持关闭 |
+| 当前主线 | **FM-S2 限定测试集成**：唯一 Lease、原子资金/暴露预留、统一事件 | [收口材料](../testing/FM-S2-READINESS-20261028.md)已备齐；RIR 优先补该路径实际触及的拒绝/执行缺口，正式准入仍关闭 |
 | 验收边界 | P0-1B 仍 3/19/97，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
-下面的事实表与带日期记录保留原证据范围；最新路线以此入口及其 ADR 为准，不从历史“PROPOSED”记录推断当前六项决定仍未决。
+当前依据：[ADR-0006 分层评审](../05-decisions/ADR-0006-layered-review-20261028.md)、[三份机器摘要与校验](../testing/MIGRATION-EVIDENCE-20261028.md)、[FM-S3 audit 依赖](fm-s3-audit-dependencies.md)。以下带日期记录为历史，不覆盖本表优先级。
 
 ## 1. 二维状态
 
