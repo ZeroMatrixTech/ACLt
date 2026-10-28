@@ -1,0 +1,1495 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "scope": "FM-S3 limited REEXEC_AUDIT_ONLY dependency plan, not implemented Profile/conformance",
+  "normative_source": "docs/03-protocol/verification-profile-schema.md",
+  "inventory": "schemas/verification-profile/inventory.json",
+  "coverage": "schemas/verification-profile/coverage.json",
+  "source_sha256": {
+    "docs/03-protocol/verification-profile-schema.md": "864890b61048060de724f49b1397985115794a95035a1e37ac7371c22670b512",
+    "schemas/verification-profile/inventory.json": "154980baf521f14cfbb9669efc6f81f577ebd069ab814ce33963054d49d9a4a2",
+    "schemas/verification-profile/coverage.json": "a35638448b4577ecdaa492f7e29a80208e8b7c9f6c01469dec2279a16540de8e"
+  },
+  "scope_contract": {
+    "method": "REEXEC_AUDIT_ONLY",
+    "profile_selection": "one fixed Profile; no selection/degradation/weakening registration",
+    "claim_template_allowed": false,
+    "verified_claim_spec": "BOTTOM_REQUIRES_WIRE_REVIEW",
+    "eligibility_snapshot_allowed": false,
+    "bounded_safety_or_liveness_parameters": false,
+    "assumption_evaluation": "explicit COMPLETE(snapshot) or INVALIDATING(failure); AssumptionStateSnapshot is not EligibilitySnapshot",
+    "audit_events": [
+      "POSITIVE",
+      "NEGATIVE",
+      "TIMEOUT",
+      "RESOURCE_EXHAUSTED",
+      "MALFORMED_SUBMISSION",
+      "ENCODING_INVALID",
+      "VERIFIER_CRASH",
+      "VERIFIER_NONDETERMINISM_DETECTED",
+      "OBJECT_UNAVAILABLE",
+      "EPOCH_STALE",
+      "ASSUMPTION_REVOKED",
+      "EQUIVALENCE_UNDECIDED",
+      "EQUIVALENCE_RESOURCE_EXCEEDED"
+    ],
+    "conditions_in_priority_order": [
+      "VERIFICATION_INVALIDATING",
+      "EXECUTION_FAILED",
+      "BUDGET_EXHAUSTED",
+      "DEADLINE_REACHED",
+      "EVIDENCE_EXHAUSTED"
+    ],
+    "terminals": [
+      "UNRESOLVED",
+      "FAILED",
+      "FUNDING_EXHAUSTED",
+      "EXPIRED"
+    ],
+    "default_terminal": "UNRESOLVED",
+    "full_phase_contexts_required": true
+  },
+  "work_packages": {
+    "A0": {
+      "name": "编码/身份/registry/event 通用基础",
+      "depends_on": [],
+      "deliverable": "明确 audit Profile/运行对象的 wire shape、底值和闭合 import；复用 codec，逐对象内容摘要/Schema View/registry/event 字节正负向量",
+      "owner": "后续 FM-S3 实施；A2/A3/B0 由 FM-S2 先提供数据源，G0 由维护者审查",
+      "planned_targets": [
+        "tools/verification_profile/codec.py",
+        "tools/verification_profile/rust/main.rs",
+        "schemas/verification-profile/"
+      ]
+    },
+    "A1": {
+      "name": "audit-only Phase R Profile",
+      "depends_on": [
+        "A0"
+      ],
+      "deliverable": "ReexecAuditParams + AuditFailureMapping 精确事件集 + 固定条件序列；无模板/claim/BQ/sampling/ACCEPT；Profile 摘要与注册测试",
+      "owner": "后续 FM-S3 实施；A2/A3/B0 由 FM-S2 先提供数据源，G0 由维护者审查",
+      "planned_targets": [
+        "tools/verification_profile/audit_profile.py (planned)",
+        "tests/verification_profile/audit/ (planned)"
+      ]
+    },
+    "A2": {
+      "name": "固定 Profile 的 I/F 创建与绑定",
+      "depends_on": [
+        "A0",
+        "A1",
+        "FM-S2"
+      ],
+      "deliverable": "显式 context/registry/transcript/intent；固定 slot，ReplayPhaseI 与最终绑定；不能用单个 selection 简化掉 I/F",
+      "owner": "后续 FM-S3 实施；A2/A3/B0 由 FM-S2 先提供数据源，G0 由维护者审查",
+      "planned_targets": [
+        "tools/verification_profile/audit_creation.py (planned)",
+        "FM-S2 Receipt/Intent/transcript integration (planned)"
+      ]
+    },
+    "A3": {
+      "name": "Phase B Lease 与实际 scope",
+      "depends_on": [
+        "A0",
+        "A1",
+        "A2",
+        "FM-S2"
+      ],
+      "deliverable": "Lease 单一权威、六维 ActualBoundScope、完整 binding/transition 与事件；明确 audit 无 EligibilitySnapshot 的合法路径",
+      "owner": "后续 FM-S3 实施；A2/A3/B0 由 FM-S2 先提供数据源，G0 由维护者审查",
+      "planned_targets": [
+        "tools/verification_profile/audit_binding.py (planned)",
+        "FM-S2 Lease/scope/event integration (planned)"
+      ]
+    },
+    "A4": {
+      "name": "Phase D 方法求值/假设/终态",
+      "depends_on": [
+        "A0",
+        "A1",
+        "A2",
+        "A3",
+        "FM-S2"
+      ],
+      "deliverable": "Audit outcomes→冻结条件投影、AssumptionEvaluation、ResolveBoundary、ExecutionObservation、输入摘要与重放；五条件/四终态，禁止 ACCEPT/TRUSTED",
+      "owner": "后续 FM-S3 实施；A2/A3/B0 由 FM-S2 先提供数据源，G0 由维护者审查",
+      "planned_targets": [
+        "tools/verification_profile/audit_decision.py (planned)",
+        "tests/verification_profile/audit/decision-vectors (planned)"
+      ]
+    },
+    "B0": {
+      "name": "Type B 接口/来源忠实性",
+      "depends_on": [
+        "FM-S2",
+        "A4"
+      ],
+      "deliverable": "固定时点输入、无资金/信誉/维护报告进入真理条件、成本不参与合法性、日志无旁路及无只给terminal的接口；保留集成审计/故障证据",
+      "owner": "后续 FM-S3 实施；A2/A3/B0 由 FM-S2 先提供数据源，G0 由维护者审查",
+      "planned_targets": [
+        "FM-S2/3 integration and fault drivers (planned)",
+        "interface/dataflow review record (planned)"
+      ]
+    },
+    "G0": {
+      "name": "官方准入/非主网接口审查",
+      "depends_on": [
+        "A0",
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "B0"
+      ],
+      "deliverable": "不得伪造 MAP/registry/finality；明确 outside_network_disposition 与正式对象门槛；候选限定测试不表示正式准入",
+      "owner": "后续 FM-S3 实施；A2/A3/B0 由 FM-S2 先提供数据源，G0 由维护者审查",
+      "planned_targets": [
+        "docs/03-protocol/verification-profile-schema.md (review before semantic edits)",
+        "official/test deployment boundary review (planned)"
+      ]
+    }
+  },
+  "blockers": [
+    {
+      "id": "AUDIT-WIRE-BOTTOM",
+      "owner": "A0",
+      "source": "verification-profile-schema.md §3.2.1/§7.4/§17",
+      "issue": "verified_claim_spec=⊥ 与全局禁 null 的具体 canonical wire/Schema View 表达需要权威澄清；不能沿用 bootstrap JSON null 冒充正式 CBOR。",
+      "status": "OPEN",
+      "exit": "明确唯一 wire shape、Profile ContentMap与正负字节向量后审查。"
+    },
+    {
+      "id": "AUDIT-PHASE-B-PATH",
+      "owner": "A3",
+      "source": "verification-profile-schema.md §10.2/§13.0.4/§13.1B",
+      "issue": "audit 不冻结 EligibilitySnapshot；六种 PhaseB payload 与 round_stage 在 audit 执行/终态路径中的适用关系需明确，尤其 post-freeze 分支必带快照。",
+      "status": "OPEN",
+      "exit": "说明合法的无快照 Lease/round/Decision 路径；不伪造快照、不删除必填 transition。"
+    },
+    {
+      "id": "NONMAINNET-ASSURANCE",
+      "owner": "G0",
+      "source": "verification-profile-schema.md §9.2 RI-6/§13.0; ADR-0007 D-3",
+      "issue": "official Profile/ReceiptIntent outside_network_disposition=DISABLED；候选测试 network/deployment 风险声明不是 MainnetAssuranceProfile。",
+      "status": "OPEN",
+      "exit": "明确并审查非主网测试接口/正式接口边界；当前正式准入保持关闭。"
+    },
+    {
+      "id": "AUTHORITATIVE-OBSERVATIONS",
+      "owner": "B0",
+      "source": "verification-profile-schema.md §11.1/§11.3; SV-100/111/112/121",
+      "issue": "FM-S1b 费用事实是调用方假设标签，不能直接变成已接纳履约、资金边界、唯一终态或权利。",
+      "status": "OPEN",
+      "exit": "FM-S2 原子事件/Lease/资金/暴露与可信来源，再接 FM-S3 重放判决与结算。"
+    }
+  ],
+  "rules": [
+    {
+      "id": "SV-01",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-02",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-03",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-04",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-05",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-06",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-07",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-08",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-09",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-10",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-11",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-12R",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-12I",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-13",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-14",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-15",
+      "kind": "—",
+      "disposition": "OBSOLETE_OR_NORMATIVELY_DEFERRED",
+      "owner_work_package": null,
+      "guard_rule_ids": [],
+      "rationale": "SV-15 已作废；SV-40 为 P0-5，不是本次自行延期。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-16",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "Direct-only 参数由 method discriminant/参数互斥拒绝；不建立 Direct 路线。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-17",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-18",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-19",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-20",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-21",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [
+        "SV-01",
+        "SV-66"
+      ],
+      "rationale": "限定入口直接固定单一 Profile，不注册 selection/weakening/degradation 对象；出现这些功能即拒绝，I/F 的 transcript/context 仍保留。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-22",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [
+        "SV-01",
+        "SV-66"
+      ],
+      "rationale": "限定入口直接固定单一 Profile，不注册 selection/weakening/degradation 对象；出现这些功能即拒绝，I/F 的 transcript/context 仍保留。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-23",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [
+        "SV-01",
+        "SV-66"
+      ],
+      "rationale": "限定入口直接固定单一 Profile，不注册 selection/weakening/degradation 对象；出现这些功能即拒绝，I/F 的 transcript/context 仍保留。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-24",
+      "kind": "B",
+      "disposition": "TYPE_B_INTEGRATION_REQUIRED",
+      "owner_work_package": "B0",
+      "guard_rule_ids": [],
+      "rationale": "实现行为和来源忠实性不能由 schema/文件向量证明。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-25",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-26",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-27",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "G0",
+      "guard_rule_ids": [],
+      "rationale": "官方 MAP/部署/日志约束仍有效；非主网表达未解决时阻止正式准入，不计为已通过。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-28",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-29R",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-29I",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-30",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-31",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-32",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-33",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-34",
+      "kind": "B",
+      "disposition": "TYPE_B_INTEGRATION_REQUIRED",
+      "owner_work_package": "B0",
+      "guard_rule_ids": [],
+      "rationale": "实现行为和来源忠实性不能由 schema/文件向量证明。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-35",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-36",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-37",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-38",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-39",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-40",
+      "kind": "—",
+      "disposition": "OBSOLETE_OR_NORMATIVELY_DEFERRED",
+      "owner_work_package": null,
+      "guard_rule_ids": [],
+      "rationale": "SV-15 已作废；SV-40 为 P0-5，不是本次自行延期。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-41",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [
+        "SV-01",
+        "SV-66"
+      ],
+      "rationale": "限定入口直接固定单一 Profile，不注册 selection/weakening/degradation 对象；出现这些功能即拒绝，I/F 的 transcript/context 仍保留。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-42",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-43",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [
+        "SV-01",
+        "SV-66"
+      ],
+      "rationale": "限定入口直接固定单一 Profile，不注册 selection/weakening/degradation 对象；出现这些功能即拒绝，I/F 的 transcript/context 仍保留。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-44",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-45",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-46",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-47",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-48",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-49",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-50",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-51",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-52",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-53a",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [
+        "SV-01",
+        "SV-66"
+      ],
+      "rationale": "限定入口直接固定单一 Profile，不注册 selection/weakening/degradation 对象；出现这些功能即拒绝，I/F 的 transcript/context 仍保留。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-53b",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [
+        "SV-01",
+        "SV-66"
+      ],
+      "rationale": "限定入口直接固定单一 Profile，不注册 selection/weakening/degradation 对象；出现这些功能即拒绝，I/F 的 transcript/context 仍保留。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-54a",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A4",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-54b",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A4",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-55",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-56",
+      "kind": "B",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "B0",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "无 bounded 抽样路径；必须测试不存在重抽/消耗采样的入口，不改变全局 Type B 义务。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-57",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-58",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-59",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-60",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-61",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-62",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-63",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-64",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-65",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-66",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-67",
+      "kind": "B",
+      "disposition": "TYPE_B_INTEGRATION_REQUIRED",
+      "owner_work_package": "B0",
+      "guard_rule_ids": [],
+      "rationale": "实现行为和来源忠实性不能由 schema/文件向量证明。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-68",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A3",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-69",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-70",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-71",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A4",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-72",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-73",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-74",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-75a",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-75b",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-76",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-77",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A3",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-78",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-05",
+        "SV-17",
+        "SV-30",
+        "SV-31"
+      ],
+      "rationale": "audit-only 不引用任何 ClaimTemplate/ClaimBinding/接受声明；此限定入口拒绝模板/claim 对象与 TRUSTED，不能据此关闭通用规则。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-79",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-80",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-81",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-82",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-84",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-85",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-86a",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-86b",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-86c",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-87",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [
+        "SV-01",
+        "SV-66"
+      ],
+      "rationale": "限定入口直接固定单一 Profile，不注册 selection/weakening/degradation 对象；出现这些功能即拒绝，I/F 的 transcript/context 仍保留。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-88",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [
+        "SV-01",
+        "SV-66"
+      ],
+      "rationale": "限定入口直接固定单一 Profile，不注册 selection/weakening/degradation 对象；出现这些功能即拒绝，I/F 的 transcript/context 仍保留。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-89",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-90",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-91",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-92",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A3",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-93",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A3",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-94",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A3",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-95",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-96",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-97",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-98",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-99",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-100",
+      "kind": "B",
+      "disposition": "TYPE_B_INTEGRATION_REQUIRED",
+      "owner_work_package": "B0",
+      "guard_rule_ids": [],
+      "rationale": "实现行为和来源忠实性不能由 schema/文件向量证明。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-101",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-102",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-103",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-104",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-105",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A3",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-106",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-107",
+      "kind": "A",
+      "disposition": "GUARDED_OUT",
+      "owner_work_package": "A1",
+      "guard_rule_ids": [
+        "SV-03",
+        "SV-04",
+        "SV-31"
+      ],
+      "rationale": "当前入口只接受 audit-only，不允许 bounded 参数、总体、抽样及快照；该规则全局状态不变。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-108",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-109",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-110",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A2",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-111",
+      "kind": "B",
+      "disposition": "TYPE_B_INTEGRATION_REQUIRED",
+      "owner_work_package": "B0",
+      "guard_rule_ids": [],
+      "rationale": "实现行为和来源忠实性不能由 schema/文件向量证明。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-112",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A4",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-113",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "G0",
+      "guard_rule_ids": [],
+      "rationale": "官方 MAP/部署/日志约束仍有效；非主网表达未解决时阻止正式准入，不计为已通过。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-114",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A4",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-115",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A4",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-116",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A4",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-117",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "G0",
+      "guard_rule_ids": [],
+      "rationale": "官方 MAP/部署/日志约束仍有效；非主网表达未解决时阻止正式准入，不计为已通过。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-118",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-119",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "G0",
+      "guard_rule_ids": [],
+      "rationale": "官方 MAP/部署/日志约束仍有效；非主网表达未解决时阻止正式准入，不计为已通过。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-120",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A0",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "SV-121",
+      "kind": "A",
+      "disposition": "REQUIRED_FOR_LIMITED_AUDIT_PATH",
+      "owner_work_package": "A4",
+      "guard_rule_ids": [],
+      "rationale": "方法公共约束不能因 audit-only 省略。",
+      "acceptance": "PLANNED_NOT_RUN"
+    },
+    {
+      "id": "D-08-c",
+      "kind": "B",
+      "requirement": "不存在只返回 terminal_state 的简化视图端点",
+      "disposition": "TYPE_B_INTEGRATION_REQUIRED",
+      "owner_work_package": "B0",
+      "guard_rule_ids": [],
+      "rationale": "规范 §2 的固定 Type B；不计入119 Type A关闭数。",
+      "acceptance": "PLANNED_NOT_RUN"
+    }
+  ],
+  "global_coverage_unchanged": {
+    "implemented": 3,
+    "partial": 19,
+    "not_implemented": 97
+  },
+  "type_a_count": 119,
+  "global_gate_changes": false,
+  "new_rule_implementations": 0,
+  "inventory_join": "Join rules by id to inventory.json for normative requirement, phase/layer, implementation/test pointers and global status; do not duplicate that authority here."
+}

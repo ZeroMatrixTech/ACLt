@@ -471,3 +471,7 @@ OQ-01 发布条件 <─> OQ-13 Maintenance
 ## 2026-10-28 RIR 独立核心证据
 
 [独立 raw-artifact 入口](../testing/RIR-INDEPENDENT-CORE-20261028.md)增加 OQ-02/04/05 的局部代码/双机证据，消除受限 stats 路径的 Python 预验证和结果后处理依赖。全 RIR/RPR、完整拒绝顺序、官方对象/Receipt/Lease 与部署仍待验收，相关 OQ/Gate 不变；原有 FM-S2 准入条件未被绕过。
+
+## 2026-10-28 FM-S2 前置收口
+
+[ADR-0006 分层评审](../05-decisions/ADR-0006-layered-review-20261028.md)没有新增规则接受；[audit 依赖](fm-s3-audit-dependencies.md)明确 ⊥ wire、audit Phase B、非主网 assurance 与权威观察来源四个待审接口，不能靠删字段或伪造 Snapshot/MAP 绕过。FM-S2 先做限定测试集成，正式准入、P0-1B 与现有 OQ/Gate 保持原状态。

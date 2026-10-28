@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "id": "FM-S1a",
+  "recorded_on": "2026-10-28",
+  "evidence_action": "summarize_retained_dualhost_run_no_new_dualhost_execution",
+  "source_revision": "5780db358a8e8fffcc6c95a1c7a9f5e78783aabc",
+  "source_files_sha256": {
+    "tools/formal_migration/__init__.py": "6c6ec57de9f82ef42d82760f144a4571cb16b3cd6de33aaa7aa9fd65e8ab1fa1",
+    "tools/formal_migration/foundation.py": "aaf249f2ba340e75f3257ce082a3418b03701c4320f40ec8c718faad17f37b8e",
+    "tools/verification_profile/__init__.py": "e4c5f6c7769ea8841f123417674ff69bac96554c6ea5241bf87a89b5dd1cac9c",
+    "tools/verification_profile/codec.py": "6e645a5997b543d2211c50e6a85c3f0fb29c746a32da91238f2afe81b26a62ac",
+    "tools/verification_profile/rust/main.rs": "c1fcfce64dd0e022794022e3aaba13a9ee740327872ddc87b052a8a53da21b91",
+    "tools/verification_profile/rust/fm.rs": "31a6c9d23491b62e44fb57b487b063b58765bd470dc2ebdf506a3a97bb7896d2",
+    "tools/verification_profile/rust/sha256.rs": "33e5e0eadf528c3dfe619cfce573b848e7d3fefc2094b32b515206737a7e69f5",
+    "tools/verification_profile/rust/nfc.rs": "fc58d928223065045ed037672359d4f7b9cabb1aa084c27b7c13846dd0e37fb7",
+    "tools/verification_profile/rust/unicode_data.rs": "2bd394e40860b93af02da790c0eddbc1d6730ee943f60010e6d10726a9059bb3",
+    "tools/verification_profile/rust/UNICODE-LICENSE.txt": "bfb121a2aaa8fa3d77f3429ae2aaed879cc53cacad6fbe42a2513043b80fcb9a",
+    "scripts/check-fm-s1a.py": "7fa20659b2f38c9aa3291da52b20894bc98be2dda5542d9e3c5c47536e03e799",
+    "tests/formal_migration/vectors.json": "5e19ecd77a8f4160782160333a157438823bafc9ed11d822a92b1b030cd19502",
+    "schemas/formal-migration/foundation.json": "ac0d9d1c329da5b75d4964a1c28271c851ffb418aeeed4c59796a109ec3f3a56",
+    "schemas/formal-migration/value.schema.txt": "fd12ca6ecae63098333bab9378f618ca9133bc4a13f9879782f18eac304377c8"
+  },
+  "source_manifest_sha256": "37216185155c17f7e52ac6f0f84cc83b54874511e700aabc6f500c78671c0f96",
+  "driver": "scripts/check-fm-s1a.py",
+  "vector_file": "tests/formal_migration/vectors.json",
+  "vector_file_sha256": "5e19ecd77a8f4160782160333a157438823bafc9ed11d822a92b1b030cd19502",
+  "hosts": [
+    {
+      "label": "A",
+      "exit_code": 0,
+      "report": {
+        "cases": 179,
+        "frozen_vectors": 89,
+        "frozen_positive": 16,
+        "frozen_negative": 73,
+        "rust_error_rejections": 77,
+        "fresh_signing": true,
+        "status": "PASS",
+        "scope": "FM-S1a local codec and signature contract, not protocol admission",
+        "python": "Python 3.14.4",
+        "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11) (built from a source tarball)",
+        "openssl": "OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)",
+        "source_sha256": {
+          "tools/formal_migration/foundation.py": "aaf249f2ba340e75f3257ce082a3418b03701c4320f40ec8c718faad17f37b8e",
+          "tools/verification_profile/codec.py": "6e645a5997b543d2211c50e6a85c3f0fb29c746a32da91238f2afe81b26a62ac",
+          "tools/verification_profile/rust/main.rs": "c1fcfce64dd0e022794022e3aaba13a9ee740327872ddc87b052a8a53da21b91",
+          "tools/verification_profile/rust/fm.rs": "31a6c9d23491b62e44fb57b487b063b58765bd470dc2ebdf506a3a97bb7896d2",
+          "tools/verification_profile/rust/sha256.rs": "33e5e0eadf528c3dfe619cfce573b848e7d3fefc2094b32b515206737a7e69f5",
+          "tools/verification_profile/rust/nfc.rs": "fc58d928223065045ed037672359d4f7b9cabb1aa084c27b7c13846dd0e37fb7",
+          "tools/verification_profile/rust/unicode_data.rs": "2bd394e40860b93af02da790c0eddbc1d6730ee943f60010e6d10726a9059bb3",
+          "scripts/check-fm-s1a.py": "7fa20659b2f38c9aa3291da52b20894bc98be2dda5542d9e3c5c47536e03e799",
+          "tests/formal_migration/vectors.json": "5e19ecd77a8f4160782160333a157438823bafc9ed11d822a92b1b030cd19502"
+        }
+      },
+      "report_projection_sha256": "1d8f6465cfdf31eb0118be3e524eae750c4efb0333737b5a1e94eb821569139d",
+      "retained_raw_report_sha256": "39e362f2b1dbbb3febb154af93bd98e2242a0caab4968602859851c0f5f990e7"
+    },
+    {
+      "label": "B",
+      "exit_code": 0,
+      "report": {
+        "cases": 179,
+        "frozen_vectors": 89,
+        "frozen_positive": 16,
+        "frozen_negative": 73,
+        "rust_error_rejections": 77,
+        "fresh_signing": true,
+        "status": "PASS",
+        "scope": "FM-S1a local codec and signature contract, not protocol admission",
+        "python": "Python 3.14.4",
+        "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11) (built from a source tarball)",
+        "openssl": "OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)",
+        "source_sha256": {
+          "tools/formal_migration/foundation.py": "aaf249f2ba340e75f3257ce082a3418b03701c4320f40ec8c718faad17f37b8e",
+          "tools/verification_profile/codec.py": "6e645a5997b543d2211c50e6a85c3f0fb29c746a32da91238f2afe81b26a62ac",
+          "tools/verification_profile/rust/main.rs": "c1fcfce64dd0e022794022e3aaba13a9ee740327872ddc87b052a8a53da21b91",
+          "tools/verification_profile/rust/fm.rs": "31a6c9d23491b62e44fb57b487b063b58765bd470dc2ebdf506a3a97bb7896d2",
+          "tools/verification_profile/rust/sha256.rs": "33e5e0eadf528c3dfe619cfce573b848e7d3fefc2094b32b515206737a7e69f5",
+          "tools/verification_profile/rust/nfc.rs": "fc58d928223065045ed037672359d4f7b9cabb1aa084c27b7c13846dd0e37fb7",
+          "tools/verification_profile/rust/unicode_data.rs": "2bd394e40860b93af02da790c0eddbc1d6730ee943f60010e6d10726a9059bb3",
+          "scripts/check-fm-s1a.py": "7fa20659b2f38c9aa3291da52b20894bc98be2dda5542d9e3c5c47536e03e799",
+          "tests/formal_migration/vectors.json": "5e19ecd77a8f4160782160333a157438823bafc9ed11d822a92b1b030cd19502"
+        }
+      },
+      "report_projection_sha256": "1d8f6465cfdf31eb0118be3e524eae750c4efb0333737b5a1e94eb821569139d",
+      "retained_raw_report_sha256": "39e362f2b1dbbb3febb154af93bd98e2242a0caab4968602859851c0f5f990e7"
+    }
+  ],
+  "shared_checks": {
+    "cases": 179,
+    "frozen_vectors": 89,
+    "frozen_positive": 16,
+    "frozen_negative": 73,
+    "rust_error_rejections": 77,
+    "fresh_signing": true,
+    "status": "PASS"
+  },
+  "shared_checks_sha256": "8dc8d0d4a64f63a9b6ab1bb51c75b257536fb8fb78acaa943369f12bc5e506c5",
+  "cross_host_result_stream_sha256": null,
+  "result_stream_note": "Original FM reports did not record an entire result-stream hash. Shared-check checksum covers declared report facts only; fresh signatures are not a deterministic shared stream.",
+  "hash_definition": "SHA256 over UTF-8 JSON with sort_keys=True,separators=(comma,colon),ensure_ascii=True,allow_nan=False; summary digest excludes summary_sha256",
+  "provenance_limit": "Operator-retained reports, not authenticated third-party attestation. Source/hash/replay consistency does not prove two physical hosts, input fidelity or statistical independence.",
+  "full_conformance": false,
+  "gate_changes": false,
+  "summary_sha256": "7fcc74093a6df2a2018e8f8c5a21dc57005d918a24cb375f4025180c8746edfa"
+}
