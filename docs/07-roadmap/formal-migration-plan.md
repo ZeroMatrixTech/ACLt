@@ -6,9 +6,9 @@
 
 ## 当前交接
 
-2026-10-28 收口后以 **FM-S2 固定 stats 工件的限定测试集成**为唯一主线，RIR 只优先补该路径涉及的验收缺口；完整其他指令保留独立门槛。依据见[收口记录](../testing/FM-S2-READINESS-20261028.md)，FM-S3 的规则入口见[audit 依赖](fm-s3-audit-dependencies.md)。下文 dated RIR 优先安排保留为历史，不表示正式执行已准入。
+2026-10-31 [FM-S2 限定测试集成](../testing/FM-S2-20261031.md)完成，接通单权威 Lease/epoch、资金与五维暴露原子预留、持久 intent/唯一 Attempt、统一事件/签名 checkpoint 与公开重放；17 个真实双机场景通过。限定候选命名域内运行，官方 schema/非主网 assurance/完整 RPR 尚未准入。到期 FENCE 释放暴露但保持测试资金，不能提前模拟 FM-S3 的终态/退款。
 
-FM-F0 的流程/命名/路线决策已收口；**FM-S1a 的限定实现与双机编码/构建复核已完成**，见[2026-10-28 报告](../testing/FM-S1A-20261028.md)。候选测试合约已固定字节和向量，官方对象字段/注册、端到端集成与部署验收仍未完成。**FM-S1b 的限定候选实现与向量已完成**，见[本轮报告](../testing/FM-S1B-20261028.md)。下一项为 FM-S2 单一执行权威与原子预留/事件集成；正式入口仍须先审查字段/引用、部署与运行合规门槛。既有 P0-1B 3/19/97 仍是当前登记，ADR-0006 保持 PROPOSED，所有 Gate/OQ 与 V1 处置不变。
+下一主线 **FM-S3 限定 audit-only 结果/显式求值/判决/权利与恢复**，依赖按 [audit 清单](fm-s3-audit-dependencies.md)处理。四个接口审查记录仍 OPEN；固定 raw-artifact Rust 只优先补实际路径缺口，完整 conformance 保留独立门槛。此前 FM-S1a/S1b 与[前置收口](../testing/FM-S2-READINESS-20261028.md)保留原报告。P0-1B 3/19/97、ADR-0006 PROPOSED、OQ/Gate/主网资格不升级。
 
 ## 实施顺序
 

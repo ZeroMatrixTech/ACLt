@@ -1,0 +1,405 @@
+{
+  "status": "PASS",
+  "schema": "FM-S2-limited-matrix@1",
+  "scope": "candidate fixed-stats single-authority LAN integration",
+  "physical_hosts": "DUALHOST-SSH-1 accepted assumption, no independence proof",
+  "A_hostname": "inpax-aki",
+  "B_hostname": "aki2",
+  "runtime_sha256": "3942c7bb33b667c13832ffe793e6f3632cd0fc434993b13de80087c8ef6d158e",
+  "source_sha256": {
+    "experiments/aclt-rir-stats-probe/src/core.rs": "25633297f3aa83f12bc900e36a50499588b42f0c744957c877f0f652da0838b2",
+    "experiments/aclt-rir-stats-probe/src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+    "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+    "experiments/aclt-rir-stats-probe/src/independent_executor.rs": "e21a8e7ccc6ed8fc29b4cfa8c9e1bbd86d4d9d9461b6891bf86a36f0779cc1d6",
+    "experiments/aclt-rir-stats-probe/src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+    "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+    "experiments/aclt-rir-stats-probe/tests/independent-vectors.json": "cfee6251e60109246287ea527ef989ba56d8b7a797ab68cdb63f6e1275e9c5f4",
+    "scripts/fm-s2-client.py": "01a8f97c406653aa4f064bf4f3132b08700b2cce9df98391a9f5a9c2c9b522d1",
+    "scripts/fm-s2-dualhost.py": "ee504a7c50b950d14f552c38a75871e4df6ddf8840e86308eb9c0d195314b8ad",
+    "scripts/fm-s2-service.py": "dd3a1b6239d86e3ea74a342646727bad57e06ded4899cfd77c29d775e76e785a",
+    "tests/formal_migration/policy-vectors.json": "11f9e59d8f143b0e1cfe9ace3c3ab4c8525364a4686b3479066dab149272f14f",
+    "tools/formal_migration/__init__.py": "6c6ec57de9f82ef42d82760f144a4571cb16b3cd6de33aaa7aa9fd65e8ab1fa1",
+    "tools/formal_migration/foundation.py": "65490190022ceca73141a04c8d14b642f240b09ad91220e2e2a53faeca2f35c4",
+    "tools/formal_migration/policy.py": "960ba7673220d9f7798fd1e53007171f7f0166f4789ccfaa89264eb7cb168fc9",
+    "tools/formal_migration/s2.py": "b2083db02b7aaef1c5ef82151b1b635570125b1f597c147cbfe5e0f9ff53c359",
+    "tools/formal_migration/s2_evidence.py": "09cc82ac06cef52b76c37f30e385bc7b8197962e81e46ae69c234ff2169036b3",
+    "tools/formal_migration/s2_fixture.py": "72dc6b88670351bc85cb512a4b6679eac5462207d3ddb39783acd6a48490d21c",
+    "tools/formal_migration/s2_transport.py": "88434a505b0bb9511305fcf7c391503e6658cfe6051e90ccc1350752804ab452",
+    "tools/formal_migration/s2_worker.py": "65a1a0fc15454188f97dd24d9dbeef9f0e860bed053876db5f01431ecdd14da4",
+    "tools/verification_profile/__init__.py": "e4c5f6c7769ea8841f123417674ff69bac96554c6ea5241bf87a89b5dd1cac9c",
+    "tools/verification_profile/codec.py": "6e645a5997b543d2211c50e6a85c3f0fb29c746a32da91238f2afe81b26a62ac",
+    "tools/verification_profile/rust/fm.rs": "52c965336ae43ec746780ae9e10f69e47330795c0263f13811a58b12db3ffaeb",
+    "tools/verification_profile/rust/fm_policy.rs": "9be54d4a57754975e033cdf503ee788bcc7a56516418d5c4fb2dc36d6713d23e",
+    "tools/verification_profile/rust/main.rs": "6b2405a356a5a4e2e3e3630c6fc4ab332eb2b1370b4dc6a7c9f3eeea7931c517",
+    "tools/verification_profile/rust/nfc.rs": "fc58d928223065045ed037672359d4f7b9cabb1aa084c27b7c13846dd0e37fb7",
+    "tools/verification_profile/rust/sha256.rs": "33e5e0eadf528c3dfe619cfce573b848e7d3fefc2094b32b515206737a7e69f5",
+    "tools/verification_profile/rust/unicode_data.rs": "2bd394e40860b93af02da790c0eddbc1d6730ee943f60010e6d10726a9059bb3"
+  },
+  "scenarios": [
+    {
+      "scenario": "normal",
+      "status": "PASS",
+      "notes": [
+        "A/B exact raw-core outcome bytes/hash equal; no decision/payment"
+      ],
+      "genesis": "09c439b99f9d1f1b24199221a4510635e0e5e02e883e7e02fd3fafd7561d6801",
+      "events": 7,
+      "head": "20fba05ed8b786563e26f82c29935b401e70677ddbb539c51307c260fc0c780f",
+      "state_digest": "975d3d3cea3777a9b15008f0bdce2823342b64151f27a790cbba6eb4065aaa53",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "9d28e0cccb48b84f800e9f732ec7b500e4cbdd38d2d4db4123ce9c0eeb00ab85",
+      "public_config_sha256": "4b3ef90bf5880b6c44d57717615de288696df6492c449a02b84e6885d85e9f7b",
+      "replayed_events": 7,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "duplicate-activation",
+      "status": "PASS",
+      "notes": [],
+      "genesis": "600e681f8b95e59fb7fd449ccef2457116356982fb239407ec9ba2a238b06c48",
+      "events": 2,
+      "head": "c37179d0df7f0a845435336f26cb8209a18cca5d13c13ea15c03d3c8dcd08154",
+      "state_digest": "10694f048d2a0f28d773f4f440d73df60edd4e6e12f575810060073aa426b519",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "d28816fac0de0dc5fb3464b021556b4e3af3f24c2a25035955cd70837fc3ff49",
+      "public_config_sha256": "9af27e8aae60054c01a6ed383be4841930f343ec7a2cb48d2dfa0464be430f89",
+      "replayed_events": 2,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "old-epoch",
+      "status": "PASS",
+      "notes": [
+        "rejection projection unchanged"
+      ],
+      "genesis": "11c4f0f3680426494c93990c2b0a66ed838249abc1f7430dd24e38ac56b1331b",
+      "events": 2,
+      "head": "ffd584ac36b25ff933e87265b2375734cbe626f366e413afb82f5939c56c86a2",
+      "state_digest": "bd47e6d6fb7a72dbc69a72eaeef0c8f5087fa6cf52acd0d27041979730f3fb1f",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "46e1a717e244f00eb6a8e9f5a5da7e8064fb059b0a909e435726420cea049ec4",
+      "public_config_sha256": "9ff6687261528bd40ffaef3491ff11cffcb18c53b64be6289b2aa1aef1421b69",
+      "replayed_events": 2,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "wrong-capability",
+      "status": "PASS",
+      "notes": [
+        "rejection projection unchanged"
+      ],
+      "genesis": "52e2e365bc1d44f651d5dc9e0b874bdf999c0324e289603fb65aeb6372317254",
+      "events": 2,
+      "head": "37bd6808e58345c00e844a121e5c9e7552b0a0d92c055e02626054d81ffe497f",
+      "state_digest": "c611bbab21ccecfb8db9114788339aadf09bf43018ba603e2bcf62bebf41c597",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "760936797f2c387c92fe76e15c97b15bbf92aa47eac8bd09a557103389491a7e",
+      "public_config_sha256": "b8401c6037277a393af54a28fbd162e9d438093aa8a5408abf4f51bd961f2f4e",
+      "replayed_events": 2,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "bad-signature",
+      "status": "PASS",
+      "notes": [
+        "rejection projection unchanged"
+      ],
+      "genesis": "0c87db903559dbc5699ae25201e7de65812d2e3c4814f0145db1b2fa05e080ca",
+      "events": 2,
+      "head": "851adfef4334f3cba2cfd531d2f1d00ab69f13afab3adc60334123dcdd76c5a1",
+      "state_digest": "2d54b58a7e81501ffcd66cc15ebc65cfb6835ea5d0e36cdc1fa84e19f5673201",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "49a8694303a95fc200e52d38c9518710831dec4f4bd61a6cdd319758a3073382",
+      "public_config_sha256": "cd871ac2f70aab111862d32fdf0e63a526bd4a91f71f4a6ae3fc2871487b0570",
+      "replayed_events": 2,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "legacy-start",
+      "status": "PASS",
+      "notes": [
+        "rejection projection unchanged",
+        "rejection projection unchanged",
+        "rejection projection unchanged",
+        "rejection projection unchanged"
+      ],
+      "genesis": "8fc4627725c65a9f28c8b4d0ccff5cda5f330a157fc80a67964e8f1ad2b76e7b",
+      "events": 2,
+      "head": "d04a4450abe82fe02824d7afd006bec59903c6612656c93b0f82b880ec099845",
+      "state_digest": "79adcf456f7a4d492361e7f07474ed85e79913bc054368dd8e528c44243d886d",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "324a89cb2d55e97be304d73c2c0105880a8743cb4e7ab08eb1740b84d5ca0915",
+      "public_config_sha256": "cc6fb2cf6dff8f5bb7acc944aa150b4189e215d58b46f2b32e3600251439baf9",
+      "replayed_events": 2,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "concurrent-consume",
+      "status": "PASS",
+      "notes": [
+        "two signed concurrent consumes: one winner"
+      ],
+      "genesis": "5445945fbe2af77fcf0aa959481024a63378ac28d2e60580e9d08fd07e77634d",
+      "events": 3,
+      "head": "f5240dc60fbaff903ccd43c0065ae119e4fa6ca50668c0ce8de8a39319edfd02",
+      "state_digest": "c85f7ff6a2d0718ec4c55bc45e311b0550ff275b246c1814bae51e60f6b953d1",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "13d43276e6b75a48ee68612daecb2e4c7708fc1ea3fc78a20460126c36f203b2",
+      "public_config_sha256": "a70ac7518a7c2b1c826fe1c57ab5c7eaaff8f876333f8333eee953c8b1cfe5b3",
+      "replayed_events": 3,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "exposure-reject",
+      "status": "PASS",
+      "notes": [
+        "rejection projection unchanged"
+      ],
+      "genesis": "53b47bb5d613106de1b05eb180cdd1455297a5d25e0ad0dd6775fb337fb8ea46",
+      "events": 7,
+      "head": "02078fbdd5ccf7c879c34d4702c9414c4bdb11e75850c5dead0607eddf8468b6",
+      "state_digest": "10fd1715920bbb858900d101e99f08bdaa381b4eee9e45739741b0701a776b11",
+      "free": 34,
+      "held": 34,
+      "formal_admission": false,
+      "snapshot_sha256": "dc4e37d459cb7193c72f59b60b3fe0f53449dfa33c0eebda9fb08ef61d45bb0f",
+      "public_config_sha256": "84bea5c08d81b1bec9c33a90c3d8d9405730cb1cd573583f3bcf978957f09bc9",
+      "replayed_events": 7,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "drop-activation-reply",
+      "status": "PASS",
+      "notes": [
+        "real TCP reply dropped after COMMIT"
+      ],
+      "genesis": "38114b0ceab17b1c1750847108fe4fa30127d890fd132b1b00e402e717f40d63",
+      "events": 5,
+      "head": "a277a51b62bb9552a71e0a80a7bc6bc7fbaefb79d72f8576508e4cb7d2556d63",
+      "state_digest": "34a2b39a0109159ebab6a469749c172ab32a8f5cc19539ec7abc9849dc16f31f",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "e264570d10da020c85842f779f87f01a6d2c086f53471abdcb3f223e5fb2d61e",
+      "public_config_sha256": "72f09d9c5c9cc3b434732abf5d1c027756152dc0df6a4b9f2d84256ea2fb07b1",
+      "replayed_events": 5,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "drop-consume-reply",
+      "status": "PASS",
+      "notes": [
+        "CONSUME committed but real reply lost; no guest and no restart retry"
+      ],
+      "genesis": "ce131ac5cc3fe710079fe45076f538794598ec8e6632c8c299ffb885f315f3ec",
+      "events": 4,
+      "head": "917a7bb1a83e1c5cf73bb1ed944730c4eb75a1e5e2c114fff6c561f783965bc7",
+      "state_digest": "04e2538bc8a9f8f8539ad3f3174941aa42309aafbd6042efc680fbcd0f55ac5f",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "c44cd9f3de7f81c0de94ba805177b9c5d5db512ead4159d36f039f9cb467e887",
+      "public_config_sha256": "ba5054de8f9c3a9766c0d4bd949199f46cf1015ad9c1737b47b0a54f6f9db380",
+      "replayed_events": 4,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "before-commit",
+      "status": "PASS",
+      "notes": [
+        "real service process COMMIT boundary recovered"
+      ],
+      "genesis": "768e7b277721068ed7fa20d111ce8ebf8f37dffd454b2928a50d2cff9664aa8a",
+      "events": 4,
+      "head": "9e217bf4edc78e640bf919b54b7a6843acf0aa95fc63427ca0b05159c580019b",
+      "state_digest": "64cb923bb2c662e5c81bf6e15b64f420815526afd36143586d255b20fffde74b",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "69b3b622e265cf77b80892687b815aaf829b501293d101a3aa48a2f2a3a97321",
+      "public_config_sha256": "2cf5f0d5c45ffbb48875b723062d3a7d76a3bf004214a75af70ed004a4a1faad",
+      "replayed_events": 4,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "after-commit",
+      "status": "PASS",
+      "notes": [
+        "real service process COMMIT boundary recovered"
+      ],
+      "genesis": "e01968bbea459835dd557563b93cf4d91f990c3e921188300ad10ce60e88c13d",
+      "events": 4,
+      "head": "9d6f13b603213b6282f079f40d221ea836c94424f7f446ec9b1f9f58eed73d70",
+      "state_digest": "11da9f3bc270caa862b8b19c8d0a555dbe92302d9071923f3418eeb81310092a",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "6bee6c40801264762d800cc271cf903a42ff9ae46d3c7a7af9b1c22079faa64b",
+      "public_config_sha256": "8eb37f2982add73ec992d686cbeedcf52f24b39dc3a32328f4864c5329c27d5b",
+      "replayed_events": 4,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "worker-after-intent",
+      "status": "PASS",
+      "notes": [
+        "real worker process exit at AFTER_INTENT; restart never invokes guest"
+      ],
+      "genesis": "41c5fcfd027f7b423db2a67f820947acf6dee820cb6de2a7cc3961b98d294a3b",
+      "events": 3,
+      "head": "907c90d864db6d231db879b83a274f67d8f85e6d3c3e9af72da05fe6d2fb1ad6",
+      "state_digest": "ea6d3e330e670f9dda14ccd2864e5e5fd516f43d3e8a3914f73aa82f428a9376",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "84e77fc602184c1c8ff9572d1dfe6e078c900573476a618ed06dcce590d0958c",
+      "public_config_sha256": "2bb0989a2973a7f2f2efbac670469550a444aec062095918963f48a724e700ab",
+      "replayed_events": 3,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "worker-after-consume",
+      "status": "PASS",
+      "notes": [
+        "real worker process exit at AFTER_CONSUME; restart never invokes guest"
+      ],
+      "genesis": "5e1fa143c3d3187924128f753aaebe9861a7ff1fea334d88169de98ba7d012b0",
+      "events": 4,
+      "head": "d819b1f36381fcfd29c2fc1ec656f5295c98acb63e02ef4f13fa7a17c1d3a339",
+      "state_digest": "e9abc421e9029b302afac106d915e2d3c33b7555e79472861d362e300208dd90",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "e14c7c0e7d4e63aefcb271d3457f35741f5e7caec1cf571b8cac96a8278de374",
+      "public_config_sha256": "c0f76fe6bc86d53a83a4f612e61f355063d5a498f55b0d84a71e6cab023b4305",
+      "replayed_events": 4,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "worker-after-guest",
+      "status": "PASS",
+      "notes": [
+        "real worker process exit at AFTER_GUEST; restart never invokes guest"
+      ],
+      "genesis": "35ed5e7fa750b5d210c32b6b887c59077edcd5c27a428e15c738a6896ae40f07",
+      "events": 4,
+      "head": "24674b185aca9747c5cf60d72fb804fd0d4699c511498e3dc36b8bfa75601a10",
+      "state_digest": "d4f9fb9d654bd598a4d3fe62a425d44bb8ea7a01a49195d920b5838543f72864",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "8656daa6482e9aac47ad403fd60a02c30890ac3a03afffff0e84149e33323fad",
+      "public_config_sha256": "920f5bb85fc97f123707818a10ac25fe74a8c28d9d82972186c27270ea570371",
+      "replayed_events": 4,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "authority-down",
+      "status": "PASS",
+      "notes": [
+        "authority unavailable: no offline execution"
+      ],
+      "genesis": "1ce1df154990414e95c3380b5745c9d7fecf8cb950567e4750d7680f5b6f169c",
+      "events": 2,
+      "head": "33e1e9a3bbb4f6eecdadf5382815dfdd5845f74d0017a7bfe39959a9fd40cdfa",
+      "state_digest": "2ffd5dab8b1e02b8b397281e5341e997dadd4617d5eddd7fcf591acd0492459e",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "aed1662edfc4a391685c20c7ac019738a0e6b7bee805980ff975d8cb646c1580",
+      "public_config_sha256": "953597b3f1217272b7b1b6875a30747e121aa64c404900a3ed21293cbb885f07",
+      "replayed_events": 2,
+      "B_anchor_checked": true
+    },
+    {
+      "scenario": "deadline-fence",
+      "status": "PASS",
+      "notes": [
+        "deadline fences start/exposure; funds pending FM-S3"
+      ],
+      "genesis": "f3d9338f5afdd1a5b3b8b29d7182a4a28a13913c43398a7ee1b55e1799adf85f",
+      "events": 3,
+      "head": "8d7530fc2e939a5bf9be009ee669f16531e4c15e56101a634c60e55ac90880a5",
+      "state_digest": "aa3dc5f894ccd3df53f424e20a581899e1caa36766647b3b77b979855585aacb",
+      "free": 51,
+      "held": 17,
+      "formal_admission": false,
+      "snapshot_sha256": "2c11824da2c9479b105530ffbbdb93c702478c88ff39a8372ee6dd11c3c5eca0",
+      "public_config_sha256": "a3a2cd347101b8949e2cba6a2e268f16609f73796f9a8c2fa5c363acda0426e7",
+      "replayed_events": 3,
+      "B_anchor_checked": true
+    }
+  ],
+  "scenario_count": 17,
+  "formal_admission": false,
+  "new_gate_claim": false,
+  "settlement": false,
+  "baseline": "c596e60",
+  "date": "2026-10-31",
+  "new_default_unit_methods": 17,
+  "fixed_vectors": 14,
+  "offline_replayed_events": 60,
+  "outcome": {
+    "status": "TASK_OUTCOME",
+    "rir_digest": "7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879",
+    "outcome_digest": "1eadcef1a27c6c0b1896a897fb75b664205ee2a28dd12178d2dae5129eef0ba9",
+    "canonical_outcome_sha256": "561792b3a135233abed8f0b6d8a8817ec4d8eeb37a819b20bb1e3021bf5412f9"
+  },
+  "signed_snapshots_are_not_independent_audits": true,
+  "full_work2_work3_regression_matrix_closed": false,
+  "new_dualhost_runs_this_work": 3,
+  "scenario_counts_by_run": [
+    16,
+    16,
+    17
+  ],
+  "offline_checker_source_sha256": {
+    "tools/formal_migration/s2_evidence.py": "09cc82ac06cef52b76c37f30e385bc7b8197962e81e46ae69c234ff2169036b3",
+    "scripts/check-fm-s2-evidence.py": "70fbfe4e18943f1de711e606958ac81d3483abe979188d72f1b6412cae5b6289"
+  },
+  "environment_observed_after_matrix": {
+    "A": {
+      "hostname": "inpax-aki",
+      "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43",
+      "python": "3.14.4",
+      "unicode": "16.0.0",
+      "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11) (built from a source tarball)",
+      "openssl": "OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)",
+      "make": "GNU Make 4.4.1"
+    },
+    "B": {
+      "hostname": "aki2",
+      "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+      "python": "3.14.4",
+      "unicode": "16.0.0",
+      "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11) (built from a source tarball)",
+      "openssl": "OpenSSL 3.5.5 27 Jan 2026 (Library: OpenSSL 3.5.5 27 Jan 2026)",
+      "make": "GNU Make 4.4.1"
+    }
+  },
+  "validation": {
+    "full_make_test": "PASS",
+    "default_methods": 376,
+    "new_default_methods": 17,
+    "claim_crosschecks": 29766,
+    "FM_S1a_crosschecks": 179,
+    "FM_S1b_crosschecks": 196,
+    "RIR_core_crosschecks": 161,
+    "sanitizer_runs": 20,
+    "metadata_generation_race_retained": true
+  }
+}

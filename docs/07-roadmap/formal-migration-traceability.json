@@ -1,6 +1,6 @@
 {
   "document_kind": "engineering-planning-traceability",
-  "date": "2026-10-28",
+  "date": "2026-10-31",
   "baseline": "f5f415f7c65952adba01f7b0c9f21d554b14c264",
   "authority": "engineering traceability; ADR-0007 route accepted by human, fields and implementation not accepted",
   "adr": "docs/05-decisions/ADR-0007-formal-object-migration-foundation.md",
@@ -120,7 +120,8 @@
       "acceptance_requirements": [
         "FM-A03"
       ],
-      "implementation_complete": false
+      "implementation_complete": false,
+      "limited_test_evidence": "docs/testing/FM-S2-20261031.md; candidate test scope only, formal item remains incomplete"
     },
     "MG-05": {
       "stage": "FM-S1b",
@@ -181,7 +182,8 @@
         "FM-A06",
         "FM-A07"
       ],
-      "implementation_complete": false
+      "implementation_complete": false,
+      "limited_test_evidence": "docs/testing/FM-S2-20261031.md; candidate test scope only, formal item remains incomplete"
     },
     "MG-10": {
       "stage": "FM-S2",
@@ -192,7 +194,8 @@
         "FM-A06",
         "FM-A10"
       ],
-      "implementation_complete": false
+      "implementation_complete": false,
+      "limited_test_evidence": "docs/testing/FM-S2-20261031.md; candidate test scope only, formal item remains incomplete"
     },
     "MG-11": {
       "stage": "FM-S3",
@@ -214,7 +217,8 @@
         "FM-A11",
         "FM-A12"
       ],
-      "implementation_complete": false
+      "implementation_complete": false,
+      "limited_test_evidence": "docs/testing/FM-S2-20261031.md; candidate test scope only, formal item remains incomplete"
     },
     "MG-13": {
       "stage": "FM-S1b",
@@ -250,7 +254,8 @@
         "FM-A06",
         "FM-A11"
       ],
-      "implementation_complete": false
+      "implementation_complete": false,
+      "limited_test_evidence": "docs/testing/FM-S2-20261031.md; candidate test scope only, formal item remains incomplete"
     },
     "MG-16": {
       "stage": "FM-S2",
@@ -261,7 +266,8 @@
       "acceptance_requirements": [
         "FM-A06"
       ],
-      "implementation_complete": false
+      "implementation_complete": false,
+      "limited_test_evidence": "docs/testing/FM-S2-20261031.md; candidate test scope only, formal item remains incomplete"
     },
     "MG-17": {
       "stage": "FM-S3",
@@ -321,16 +327,16 @@
       "authority": "human acceptance 2026-10-26"
     }
   ],
-  "new_dualhost_runs": 3,
+  "new_dualhost_runs": 6,
   "protocol_object_schema_status_changes": [],
   "version_disposition_changes": [],
   "gate_changes": [],
   "next_slice": {
-    "id": "FM-S2",
+    "id": "FM-S3",
     "entry_ready": true,
     "implementation_started": false,
     "runtime_admission": false,
-    "requires": "review candidate schemas/non-mainnet contract and component conformance before official admission; implement one Lease/epoch authority and atomic funding/exposure/event integration"
+    "requires": "review four open interfaces; implement signed results, audit-only evaluation/decision, policy-derived rights and bounded recovery; do not treat S2 FENCE or local outcomes as terminal/fulfillment"
   },
   "slice_results": {
     "FM-S1a": {
@@ -359,6 +365,24 @@
       "official_object_registration": false,
       "production_admission": false,
       "full_FM_acceptance_closed": false
+    },
+    "FM-S2": {
+      "implementation_started": true,
+      "limited_slice_complete": true,
+      "contract": "schemas/formal-migration/execution.md",
+      "report": "docs/testing/FM-S2-20261031.md",
+      "machine_summary": "docs/testing/FM-S2-20261031.summary.json",
+      "default_unit_methods_added": 17,
+      "fixed_vectors": 14,
+      "dualhost_runs": 3,
+      "scenarios_per_run": [
+        16,
+        16,
+        17
+      ],
+      "formal_admission": false,
+      "full_FM_acceptance_closed": false,
+      "expiry_refunds_implemented": false
     }
   },
   "parallel_tracks": {
@@ -373,7 +397,7 @@
       "next": "prioritize gaps exercised by FM-S2 fixed-task integration; keep full RIR conformance/formal Receipt evidence as separate unclosed gates"
     }
   },
-  "primary_work": "FM-S2 limited stats-int-v1 integration; official admission disabled",
+  "primary_work": "FM-S3 limited audit-only results/decision/accounting integration; official admission disabled",
   "readiness_closeout": {
     "report": "docs/testing/FM-S2-READINESS-20261028.md",
     "machine_evidence": "docs/testing/MIGRATION-EVIDENCE-20261028.md",
