@@ -148,3 +148,7 @@
 ## FM/RIR 保留证据检查
 
 `make check-migration-evidence` 检查三份摘要和 audit 依赖映射，不执行旧源码或声称新的双机运行。精确 Git blob 校验及临时目录重放使用[证据说明](testing/MIGRATION-EVIDENCE-20261028.md)中的显式 `--repository`/`--replay` 命令。校验源码 revision 与当前源码重跑是不同操作；不要为让历史摘要通过而刷新其源码 SHA。
+
+## FM-S2 限定集成
+
+`make check-fm-s2` 运行离线状态机、签名、竞争、固定向量与快照回归，不连接远端。显式 `make test-fm-s2 FM_S2_PEER=user@B FM_S2_A_HOST=A_LAN_IP FM_S2_REMOTE_ROOT=/new/B/path FM_S2_OUTPUT=/new/A/path` 创建全新双物理机测试部署。复核公共快照使用 `scripts/check-fm-s2-evidence.py`，必须提供带外保存的 genesis；详见[本轮报告](testing/FM-S2-20261031.md)与[候选合约](../schemas/formal-migration/execution.md)。所有正式准入/结算保持关闭。

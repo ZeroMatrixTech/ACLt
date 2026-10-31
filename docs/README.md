@@ -262,3 +262,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [RIR 独立 stats-core](testing/RIR-INDEPENDENT-CORE-20261028.md)：原始外壳直接进入 Rust、受限验证和独立结果编码/摘要；[入口与剩余边界](../experiments/aclt-rir-stats-probe/INDEPENDENT-CORE.md)。全 ADR conformance 尚未完成。
 
 - [FM-S2 前置收口](testing/FM-S2-READINESS-20261028.md)：[保留双机机器摘要](testing/MIGRATION-EVIDENCE-20261028.md)、[ADR-0006 分层评审](05-decisions/ADR-0006-layered-review-20261028.md)及 [FM-S3 audit 依赖](07-roadmap/fm-s3-audit-dependencies.md)。
+
+- [FM-S2 限定测试集成](testing/FM-S2-20261031.md)：单权威原子资金/暴露、唯一 Attempt、17 双机场景与公共日志重放；[机器摘要](testing/FM-S2-20261031.summary.json)。非正式准入，资金保持预留待 FM-S3。
