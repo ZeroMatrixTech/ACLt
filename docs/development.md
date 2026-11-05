@@ -164,3 +164,7 @@ ZIP 使用固定 1980 时间、顺序、Unix 普通文件 0644 与 ZIP_STORED，
 CI 配置只在 PR、main push 和手动触发时跑完整本地检查和打包重现，不含双机/VM。checkout 固定到 action revision、只读权限且不保留凭据；Ubuntu 镜像与 apt 来源版本仍非完整内容锁。入库不等于 GitHub 已执行，首次远端 CI 验收需在人工推送后观察。
 
 预检固定已测 Python 3.14/Unicode 16.0.0、Rust/Cargo 1.93.1、G++ 15 与 OpenSSL 3.5；版本范围外明确拒绝，需单独重新验收。没有引入 rustup 或下载隐式依赖。state3 部署二进制与测试故障开关分离，旧恢复脚本未接回门禁。
+
+## FM-S3a 签名结果局部切片
+
+`make check-fm-s3-results` 运行固定候选审计合约、Receipt 重绑定、双角色签名结果与 S2 快照纯重放的本地回归；默认 `make check` 包含此入口。详见[报告](testing/FM-S3A-RESULTS-20261105.md)与[合约](../schemas/formal-migration/audit-results.md)。使用合成 outcome 字节，不产生新执行或双机证据；权威接纳、显式假设求值、终态和权利账务尚未接通。

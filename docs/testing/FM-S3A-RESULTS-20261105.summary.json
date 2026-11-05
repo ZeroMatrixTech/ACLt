@@ -1,0 +1,28 @@
+{
+  "id": "FM-S3A-RESULTS-20261105",
+  "scope": "local signed result/profile binding and pure audit replay only",
+  "new_default_unittest_methods": 18,
+  "new_dualhost_runs": 0,
+  "synthetic_outcome_bytes": true,
+  "actual_guest_execution": false,
+  "official_profile_registration": false,
+  "result_authority_admission": false,
+  "assumption_evaluation": false,
+  "decision_commit": false,
+  "entitlements": false,
+  "gate_changes": false,
+  "global_P0_1B": "3/19/97",
+  "ADR_0006": "PROPOSED",
+  "local_make_test": "PASS",
+  "source_sha256": {
+    "tools/formal_migration/s3_results.py": "2e6c6c48a9ef6678ff40085d76269ef9b13d913aeefc6601274f9d41efbc7cbb",
+    "tests/formal_migration/test_s3_results.py": "1f13be48e5d15c75475bda3486aa150e35d3f273277450c2260580210fb6a8a1",
+    "tests/formal_migration/audit-result-vectors.json": "1aa66b5d1826db11af056a789d2ebd4fd373e17a3466236d08acd6fc170f5e2a"
+  },
+  "base_revision": "d648512893fc039e3c4c8c133d25c79941e42e11",
+  "source_state": "baseline plus local slice; exact source bytes pinned below",
+  "fixed_profile_vectors": 1,
+  "default_unittest_methods": 416,
+  "make_test_log_sha256": "f0cc937716c03aace210fb845dd690a28c7329b53ea606417fc13aa6c07e9eba",
+  "historical_source_pins_verified": 95
+}
