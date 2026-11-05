@@ -401,7 +401,7 @@
   "readiness_closeout": {
     "report": "docs/testing/FM-S2-READINESS-20261028.md",
     "machine_evidence": "docs/testing/MIGRATION-EVIDENCE-20261028.md",
-    "ADR-0006_review": "docs/05-decisions/ADR-0006-layered-review-20261028.md",
+    "ADR-0006_review": "docs/05-decisions/reviews/REVIEW-20261028-layered.md",
     "FM-S3_dependencies": "docs/07-roadmap/fm-s3-audit-dependencies.json",
     "new_dualhost_runs": 0,
     "new_rule_implementations": 0,

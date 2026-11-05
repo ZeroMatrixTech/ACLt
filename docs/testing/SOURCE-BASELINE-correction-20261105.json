@@ -1,0 +1,17 @@
+{
+  "schema": "aclt.evidence.source-baseline-correction@1",
+  "date": "2026-11-05",
+  "original_record": "docs/testing/SOURCE-BASELINE.json",
+  "original_record_sha256": "da1037116ca68f786d6844fc73944dc564fabac3b3553ff52a0cb815f4e5a409",
+  "original_final_repository_head": "7ee5dafc2edbff8991e9bb8b86c93c690a47c82b",
+  "original_final_repository_branch": "update-verificaion2",
+  "original_head_status": "UNRESOLVED_IN_RETAINED_HISTORY",
+  "verified_pinned_files_revision": "802cd74389d8b338b7fd5b03c985eab769b7c19b",
+  "main_group_revision": "ab9f2334c1a6b3e1047420cf24c5d8be2898a9d7",
+  "group_counts": {
+    "main_source_hashes": 5,
+    "files": 38
+  },
+  "scope": "All 43 recorded file hashes match the mapped revision. This is not proof that its entire tree equals the unavailable original commit; original fields are retained.",
+  "gate_changes": false
+}

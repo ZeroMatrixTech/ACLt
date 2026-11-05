@@ -3,23 +3,23 @@
 > 文档状态：Living engineering policy（本次建立的工程协作约定）  
 > 当前语义基线：v0.5；ConformanceTarget：V1  
 > 环境规范版本：ENV-1  
-> 最后更新：2026-10-20
-> 适用范围：当前 Linux 单机 state3 实验、模型、验证配置与自动进度流程
+> 最后更新：2026-11-05
+> 适用范围：Linux 本地回归、候选 FM 集成与双物理机 SSH 验证
 
 ## 1. 范围与权威边界
 
 本规范统一开发、测试和交接的环境记录，不定义协议执行语义，不改变 SemanticStatus、V1 VersionDisposition、ADR 或 Gate。协议与贡献要求沿用 [文档中心](../README.md)、[贡献指南](../../CONTRIBUTING.md)和[审计程序](audit-procedure.md)。
 
-当前是单机局部实现。Rust 负责调度和验证，C++ 子进程负责计算，Python 负责模型、验证配置、测试与流程记录。当前入口没有第三方 Cargo 或 Python 库依赖，不需要数据库、Docker、Node.js、MATLAB、GPU、链节点、付款账户或常驻网络服务。Git 拉取与软件安装可能需要联网；运行和 Cargo 构建可以离线。
+当前主线是 FM-S3 前的候选 FM-S2 双机集成；state3 保留为本地历史阶段的当前回归入口。Python 标准库 SQLite、系统 OpenSSL、Rust/C++ 及 SSH 用于相应测试，无新增第三方 Python/Cargo 包。默认本地检查不要求 Docker/VM、GPU、链节点或真实付款；显式双机集成按 DUALHOST-SSH-1 运行。软件安装可能联网，本地构建与检查可离线。
 
 本文件是环境协作约定的唯一入口；其他说明链接本文件。新增依赖时必须同步本文件、依赖锁定文件、安装步骤与测试证据。
 
 ## 2. 目录与代码基线
 
-本机当前布局：
+可选目录布局（父目录由协作者自行选择）：
 
 ```text
-/home/tenneidp/Documents/ZeroMatrixTech/
+<WORKSPACE>/
 ├── .github/                 # 组织展示仓库，独立 Git 历史
 └── ACLt/                    # 项目仓库；所有命令以此为根目录
     ├── docs/                # 规范、研究、治理与历史证据
@@ -29,19 +29,19 @@
     └── experiments/aclt-minimal-verifier-state3/
 ```
 
-其他成员可自行选择父目录，必须从 ACLt 仓库根执行本文命令。不得依赖维护者用户名或绝对路径。远端为 `https://github.com/ZeroMatrixTech/ACLt.git`。本次盘点分支为 `main`，完整提交为 `7d7f947c06c5bc398c16f05b816d98bcdce05cd3`，初始工作区干净。交接必须同时写提交 SHA 与工作区是否有未提交变更，不能只写“main 最新版”。
+其他成员可自行选择父目录，必须从 ACLt 仓库根执行本文命令。不得依赖维护者用户名或绝对路径。远端为 `https://github.com/ZeroMatrixTech/ACLt.git`。2026-10-07 历史盘点分支为 `main`，完整提交为 `7d7f947c06c5bc398c16f05b816d98bcdce05cd3`，初始工作区干净。交接必须同时写提交 SHA 与工作区是否有未提交变更，不能只写“main 最新版”。
 
 `experiments/aclt-minimal-verifier/` 与 `state2/` 为历史实现，当前统一入口指向 state3。旧任务记录不能迁入新版。运行目录记录计算程序绝对路径；仓库移动或重新编译后，旧任务恢复不保证可用。当前布局变更不追改历史报告中记录的原路径。
 
 ## 3. 工具链版本约定
 
-下表的协作基线用于统一排障与复现；“本机观测”是 2026-10-07 的命令结果，不是全套测试通过证明。更换版本须记录完整版本并重新验收，不以“版本更高”自动视为兼容。
+下表为协作版本基线，不是对任意新机器的自动验收。2026-10-31 的 A/B 实测已记录 Python 3.14.4/Unicode 16.0.0、Rust/Cargo 1.93.1；见 [FM-S2 报告](../testing/FM-S2-20261031.md)。早期观测均仅属于其日期。更换版本须记录完整版本并重新验收，不以“版本更高”自动视为兼容。
 
 | 项目 | ENV-1 协作基线 | 已知要求与证据 |
 |---|---|---|
 | 操作系统 | Ubuntu 26.04.1 LTS，x86_64 Linux | state3 既有报告使用此环境；本机相同。其他 Linux 需另行验收 |
 | Git | 2.53.x，优先 2.53.0 | 本机 2.53.0；这是协作选定版本，不是程序最低要求。其他维护中的版本可经 Git 操作与测试验收后使用 |
-| Rust / Cargo | 优先 Ubuntu 官方 Rust 1.93.1 及配套 Cargo | state3 历史测试使用 Rust 1.93.1；Rust 至少 1.89；Cargo 精确版本须补录，不能推定与 rustc 一样 |
+| Rust / Cargo | 优先 Ubuntu 官方 Rust 1.93.1 及配套 Cargo | state3 历史测试使用 Rust 1.93.1；Rust 至少 1.89；Cargo 1.93.1 已单独实测；不得仅由 rustc 版本推定 |
 | C++ 编译器 | G++ 15.2.0，C++17 | 本机和历史报告均为 15.2.0；脚本使用 `-std=c++17 -O2 -Wall -Wextra -Werror` |
 | Python | CPython 3.14.4 | 本机 3.14.4；标准库即可。此为协作基线，未证明最低兼容版本 |
 | Shell | Bash 5.3.9 | 本机观测；脚本使用 Bash，不得改用 `sh` 调用 |
@@ -50,7 +50,7 @@
 
 Rust 下限依据源码使用的标准库文件锁 API，官方 [`File` 文档](https://doc.rust-lang.org/std/fs/struct.File.html)标注该 API 从 1.89.0 稳定；项目 crate 使用 Rust edition 2021，Cargo.lock 格式为 4。edition、工具链版本、crate 版本、ProtocolVersion 和 ConformanceTarget 是不同字段。
 
-**本机缺项：** 当前命令环境找不到 `rustc`、`cargo`、`cargo-1.93`，state3 的本地 `.toolchain/` 也不存在。因此当前机器尚未满足完整运行要求，历史成功记录不能替代本次验收。Rust 安装与全套重跑另行执行；本文编制未安装或升级软件。
+**已更正的历史缺项：** 2026-10-07 编制时找不到 Rust/Cargo；2026-10-23 已补齐，并有后续双机实测。本段不再表示当前机器缺工具。每次运行仍须按 §4 预检；版本门禁与完整测试不能互相替代。
 
 ## 4. 安装、版本记录与验收
 
@@ -148,9 +148,9 @@ git diff --stat
 
 环境升级遵循“记录旧环境 → 单独验证新环境 → 全量重跑 → 保留失败与差分 → 同步规范与证据 → 审查”的顺序。不得在任务恢复中途更换工具链或二进制；回退使用已验证工具链和新的任务目录，旧证据保留原版本标签。若新增 crate 或 Python 包，必须登记来源、版本、许可证和离线构建影响，并按 CONTRIBUTING 的第三方依赖边界审查。
 
-仍待建立：Rust/Cargo 本机安装与精确包记录、跨平台验收、资源最低要求、固定工具链/镜像、自动 CI 与远端分支保护。本规范不把这些计划描述为已实现功能，也不宣称 P0-1B 关闭、G0/G2 退出或生产就绪。
+Rust/Cargo 安装及精确版本已有后续记录。仍待建立：跨平台验收、资源最低要求、完整工具链内容/镜像锁和远端分支保护。CI 配置的入库不等于已经在 GitHub 执行验收。本规范不把这些计划描述为已实现功能，也不宣称 P0-1B 关闭、G0/G2 退出或生产就绪。
 
-## 9. 2026-10-20 外置权威账本实验环境补充
+## 8. 2026-10-20 外置权威账本实验环境补充
 
 新增 `experiments/aclt-authority-admission/` 为独立实验 v2。Python/Cargo 无新增下载依赖；签名适配使用系统 OpenSSL CLI（本轮观测 OpenSSL 3.5.5，RSA-2048/SHA-256），测试需要本地回环网络权限。`make test-authority` 构建现有 C++ worker 并运行临时网络检查，纳入 `make test` 与流程证据。测试密钥仅在临时/证据目录生成，不放进源码更新包。
 
@@ -217,3 +217,7 @@ RIR 切片 1 的固定工具链 lock、离线安装与显式参数构建命令�
 ## 2026-10-24 第三项工作组合收尾
 
 新增 `scripts/funding-work3.py` 与显式 `make test-funding-work3`，复用已有 SSH、Python/SQLite/OpenSSL 和保存 Wasm fixture，无新依赖/安装/编译。三套独立 genesis/账本经真实双机新目录重跑，不合并余额/权利；仅恢复矩阵受控中断本轮创建进程，管理 SSH 与系统服务不改。只读 `verify` 要求独立保存三份 key/11 份 checkpoint pin，默认局部检查不联网。环境和交接见 [总报告](../testing/FUNDING-WORK3-CLOSEOUT-20261024.md) 与 [维护入口](../testing/FUNDING-WORK3-MAINTENANCE.md)。
+
+## 9. 2026-11-05 当前门禁与构建范围
+
+运行 `scripts/check-environment.py` 验证 Python/Unicode，`--full` 另验证 Rust/Cargo/G++/OpenSSL 的已测版本范围；它不是整套工具链内容锁。部署 state3 不含故障注入环境钩子，测试需单独开启 `test-faults` / `ACLT_ENABLE_TEST_FAULTS`。CI 与完整源码交付边界见[开发指南](../development.md#2026-11-05-有界修复后的门禁与交付)。历史观测不能替代本次版本记录/测试，官方协议及双机准入边界不变。

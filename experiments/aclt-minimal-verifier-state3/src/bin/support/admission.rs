@@ -47,6 +47,9 @@ fn claim_id(values: &[i64]) -> Result<String,String> {
     hash(format!("ACLT-LOCAL-CLAIM-1\nstats-int-v1\n{}",snapshot(values)).as_bytes())
 }
 // A separate filesystem can carry test signals, without syncing the data directory.
+#[cfg(not(feature="test-faults"))]
+fn pause(_root: &Path, _name: &str) -> Result<(),String> { Ok(()) }
+#[cfg(feature="test-faults")]
 fn pause(root: &Path, name: &str) -> Result<(),String> {
     if env::var("ACLT_TEST_PAUSE").ok().as_deref()!=Some(name) {return Ok(());}
     let signals=env::var("ACLT_TEST_SIGNAL_DIR").map(PathBuf::from).unwrap_or_else(|_|root.to_path_buf());

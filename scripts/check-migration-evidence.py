@@ -16,6 +16,7 @@ import tarfile
 import tempfile
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from tools import migration_evidence as e
+from tools.git_sources import git
 
 def run(repository=None,replay=False,output=None):
     if replay and repository is None:raise ValueError('--replay requires --repository')
@@ -30,7 +31,7 @@ def run(repository=None,replay=False,output=None):
         if replay:
             with tempfile.TemporaryDirectory(prefix='aclt-retained-replay-') as name:
                 tmp=Path(name);snapshot=tmp/'source';snapshot.mkdir()
-                data=subprocess.check_output(['git','archive','--format=tar',summary['source_revision']],cwd=repository,stderr=subprocess.PIPE)
+                data=git(repository,'archive','--format=tar',summary['source_revision']).stdout
                 with tarfile.open(fileobj=io.BytesIO(data)) as tf:tf.extractall(snapshot,filter='data')
                 e.verify_source(summary,lambda rev,n:(snapshot/n).read_bytes())
                 report=tmp/'replay.json';r=subprocess.run([sys.executable,'-B',str(snapshot/summary['driver']),'--report',str(report)],cwd=snapshot,capture_output=True,text=True,timeout=180)

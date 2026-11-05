@@ -4,6 +4,10 @@
 No downloaded packages. Golden bytes are checked independently of their JSON views.
 Writes a report only if --report is explicitly supplied.
 """
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import argparse
 import copy
 import hashlib

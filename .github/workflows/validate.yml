@@ -1,0 +1,37 @@
+name: Validate source and local implementations
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  local-validation:
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    timeout-minutes: 20
+    steps:
+      - name: Install Ubuntu build prerequisites
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates git g++ rustc cargo python3 bash coreutils make openssl
+      - name: Checkout complete retained history
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check tested environment scope
+        run: python3 -B scripts/check-environment.py --full
+      - name: Verify retained source pins against Git
+        run: python3 -B scripts/check-repository-evidence.py --repository .
+      - name: Run all local implementations and sanitizers
+        run: make test
+      - name: Check deterministic source delivery
+        run: |
+          python3 -B scripts/package-singlehost.py dist/first.zip
+          python3 -B scripts/package-singlehost.py dist/second.zip
+          cmp dist/first.zip dist/second.zip

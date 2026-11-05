@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """Check inventory traceability, not semantic conformance or test execution."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import ast
 import collections
 import json

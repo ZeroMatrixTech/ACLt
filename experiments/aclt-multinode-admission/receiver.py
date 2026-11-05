@@ -1,5 +1,13 @@
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import http.server,json,os,pathlib,socketserver,threading,time
 from ledger import Store
+import sys
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[2]/"tools"))
+import test_control
+
 from protocol import canonical,digest,claim,rows,sign,check
 
 class Receiver:
@@ -39,43 +47,49 @@ class Receiver:
   return sign({'nonce':obj['nonce'],'reply':result},credential['secret'])
 
 class TCP(socketserver.ThreadingTCPServer):allow_reuse_address=True;daemon_threads=True
-def serve(receiver,port=9000,adminport=9001):
+def servers(receiver,port=9000,bind='127.0.0.1',adminport=0,admin_bind='127.0.0.1',control_token=None):
  class Handler(socketserver.StreamRequestHandler):
   def handle(self):
    self.connection.settimeout(10)
    try:
     raw=self.rfile.readline(1048577)
     if len(raw)>1048576 or not raw.endswith(b'\n'):return
-    message=json.loads(raw);response=receiver.handle(message)
+    message=json.loads(raw);reply=receiver.handle(message)
     if receiver.drop_next and message.get('op')=='submit':receiver.drop_next=False;return
-    self.wfile.write(canonical(response)+b'\n')
-   except Exception as ex:
-    self.wfile.write(canonical({'error':type(ex).__name__+': '+str(ex)})+b'\n')
- class Admin(http.server.BaseHTTPRequestHandler):
+    self.wfile.write(canonical(reply)+b'\n')
+   except Exception as ex:self.wfile.write(canonical({'error':type(ex).__name__})+b'\n')
+ class Admin(test_control.BoundedHandler):
   def log_message(self,*a):pass
   def do_POST(self):
    try:
-    obj=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+    obj=test_control.request(self)
     if obj['action']=='pause':receiver.pause_stage=obj['stage'];result={'armed':True}
     elif obj['action']=='drop-reply':receiver.drop_next=True;result={'armed':True}
     elif obj['action']=='status':result={task:receiver.store.audit(claim(c['values'])) for task,c in receiver.config['tasks'].items()}
     else:raise ValueError('unknown control action')
-    data=canonical(result);self.send_response(200)
-   except Exception as ex:data=canonical({'error':repr(ex)});self.send_response(500)
-   self.end_headers();self.wfile.write(data)
- tcp=TCP(('0.0.0.0',port),Handler);threading.Thread(target=tcp.serve_forever,daemon=True).start()
- print('RECEIVER_READY',flush=True);http.server.ThreadingHTTPServer(('0.0.0.0',adminport),Admin).serve_forever()
+    test_control.response(self,result)
+   except Exception as ex:test_control.response(self,{'error':type(ex).__name__},403 if isinstance(ex,PermissionError) else 400)
+ if control_token is not None:test_control.validate_token(control_token)
+ tcp=TCP((bind,port),Handler)
+ try:
+  admin=None if control_token is None else http.server.ThreadingHTTPServer((admin_bind,adminport),Admin)
+  if admin is not None:admin.control_token=control_token;admin.daemon_threads=True
+  return tcp,admin
+ except BaseException:tcp.server_close();raise
+
+def serve(receiver,port=9000,bind='127.0.0.1',adminport=0,admin_bind='127.0.0.1',control_token=None):
+ tcp,admin=servers(receiver,port,bind,adminport,admin_bind,control_token)
+ try:
+  if admin is not None:threading.Thread(target=admin.serve_forever,daemon=True).start()
+  print('RECEIVER_READY',flush=True);tcp.serve_forever()
+ finally:
+  tcp.server_close()
+  if admin is not None:admin.shutdown();admin.server_close()
 
 if __name__=='__main__':
- import sys
- path=pathlib.Path('/data/manifest.json');manifest=json.loads(path.read_text());db='/data/ledger.sqlite'
- # Initialization is an explicit test administrator action on the first boot only.
- # /data/initialized is NEVER recreated by service startup.
- if '--initialize' in sys.argv:
-  Receiver(manifest,db,True)
-  with open('/data/initialized','x') as f:f.write('1\n');f.flush();os.fsync(f.fileno())
-  fd=os.open('/data',os.O_RDONLY);os.fsync(fd);os.close(fd)
-  print('INITIALIZED',flush=True)
- else:
-  if pathlib.Path('/data/initialized').read_text()!='1\n':raise ValueError('operator initialization required')
-  serve(Receiver(manifest,db))
+ import argparse
+ p=argparse.ArgumentParser();p.add_argument('--initialize',action='store_true');p.add_argument('--manifest',type=pathlib.Path,default=pathlib.Path('/data/manifest.json'));p.add_argument('--database',default='/data/ledger.sqlite');p.add_argument('--bind',default='127.0.0.1');p.add_argument('--port',type=int,default=9000);p.add_argument('--test-admin-token-file',type=pathlib.Path);p.add_argument('--test-admin-bind',default='127.0.0.1');p.add_argument('--test-admin-port',type=int,default=9001);a=p.parse_args()
+ token=test_control.token_file(a.test_admin_token_file) if a.test_admin_token_file else None
+ manifest=json.loads(a.manifest.read_text())
+ if a.initialize:Receiver(manifest,a.database,True)
+ else:serve(Receiver(manifest,a.database),a.port,a.bind,a.test_admin_port,a.test_admin_bind,token)

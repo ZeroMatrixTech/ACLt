@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Explicitly test-only VM control plane. Never an internet-facing API."""
 import http.server
+import sys
 import json
 from pathlib import Path
 import secrets
@@ -8,7 +9,10 @@ import time
 from protocol import canonical, claim, digest, envelope, exchange, sign_request
 from worker import Worker, durable_new
 
-CONFIG = json.loads(Path('/data/config.json').read_text())
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"tools"))
+import test_control
+CONFIG = None
+DATA = Path("/data")
 
 
 def node(obj):
@@ -20,27 +24,24 @@ def node(obj):
         durable_new(Path('/evidence')/('wire-'+secrets.token_hex(16)+'.json'),
                     canonical({'request': message, 'response': reply}))
         return reply
-    return Worker('/data/results', config, '/data/authority.pub', '/experiment/worker-bin',
+    return Worker(DATA/'results', config, '/data/authority.pub', '/experiment/worker-bin',
                   transmit)
 
 
-class Handler(http.server.BaseHTTPRequestHandler):
+class Handler(test_control.BoundedHandler):
     def log_message(self, *unused):
         pass
 
     def do_POST(self):
         try:
-            n = int(self.headers['Content-Length'])
-            if not 0 < n <= 1048576:
-                raise ValueError('control frame')
-            obj = json.loads(self.rfile.read(n))
+            obj = test_control.request(self)
             action = obj['action']
             if obj.get('delay'):
                 print('DELAY_READY ' + action, flush=True)
                 time.sleep(min(obj['delay'], 2))
             if action == 'info':
                 result = {'boot': Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
-                          'files': {p.name: digest(p.read_bytes()) for p in Path('/data/results').glob('*') if p.is_file()}}
+                          'files': {p.name: digest(p.read_bytes()) for p in (DATA/'results').glob('*') if p.is_file()}}
             else:
                 w = node(obj)
                 task = obj['task']
@@ -53,24 +54,28 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 elif action == 'reserve':
                     result = w.send(envelope(w.config, 'reserve', w.boot, task=task))
                 elif action == 'inject':
-                    packet = Path('/data/results')/(claim(w.config['tasks'][task]['values'])+'.submit.json')
+                    packet = (DATA/'results')/(claim(w.config['tasks'][task]['values'])+'.submit.json')
                     message = json.loads(packet.read_text())
                     message.pop('mac')
                     message.update(obj.get('changes', {}))
                     result = w.send(sign_request(message, w.config['secret']))
                 else:
                     raise ValueError('unknown test action')
-            data = canonical(result)
-            self.send_response(200)
+            test_control.response(self,result)
         except Exception as exc:
-            data = canonical({'error': type(exc).__name__, 'detail': str(exc)})
-            self.send_response(400)
-        self.end_headers()
-        self.wfile.write(data)
+            test_control.response(self,{'error':type(exc).__name__},403 if isinstance(exc,PermissionError) else 400)
 
 
-if __name__ == '__main__':
-    Path('/data/results').mkdir(exist_ok=True)
-    service = http.server.ThreadingHTTPServer(('0.0.0.0', 9001), Handler)
-    print('NODE_READY', flush=True)
-    service.serve_forever()
+def control_server(directory,config,token,bind='127.0.0.1',port=9001):
+    global CONFIG,DATA
+    test_control.validate_token(token)
+    DATA=Path(directory);CONFIG=config
+    service=http.server.ThreadingHTTPServer((bind,port),Handler);service.control_token=token;service.daemon_threads=True;return service
+
+if __name__=='__main__':
+    import argparse
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--data',type=Path,default=Path('/data'));p.add_argument('--test-control-token-file',type=Path,required=True);p.add_argument('--bind',default='127.0.0.1');p.add_argument('--port',type=int,default=9001);a=p.parse_args()
+    token=test_control.token_file(a.test_control_token_file)
+    (a.data/'results').mkdir(exist_ok=True)
+    with control_server(a.data,json.loads((a.data/'config.json').read_text()),token,a.bind,a.port) as service:
+        print('NODE_READY',flush=True);service.serve_forever()

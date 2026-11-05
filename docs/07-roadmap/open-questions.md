@@ -37,6 +37,8 @@
 
 2026-10-31 局部进展：[FM-S2](../testing/FM-S2-20261031.md)提供单权威/原子预留/统一日志的候选双机证据；OQ-02/03/04/05/06/09/10/11 均未关闭。OS sandbox、四项 audit 接口及 FM-S3 判决/权利/退款仍未完成。
 
+2026-11-05 有界审计修复补强了来源映射、测试入口、交付与验证门禁，见[本轮记录](../testing/AUDIT-FIXES-20261105.md)。这些是工程修复，所有原 OQ、Gate、P0-1B 覆盖与 FM-S3 的语义门槛保持原状态。
+
 ## 2. 总览
 
 | ID | 问题组 | 优先级 | 状态 | 主要阻断 |
@@ -476,4 +478,4 @@ OQ-01 发布条件 <─> OQ-13 Maintenance
 
 ## 2026-10-28 FM-S2 前置收口
 
-[ADR-0006 分层评审](../05-decisions/ADR-0006-layered-review-20261028.md)没有新增规则接受；[audit 依赖](fm-s3-audit-dependencies.md)明确 ⊥ wire、audit Phase B、非主网 assurance 与权威观察来源四个待审接口，不能靠删字段或伪造 Snapshot/MAP 绕过。FM-S2 先做限定测试集成，正式准入、P0-1B 与现有 OQ/Gate 保持原状态。
+[ADR-0006 分层评审](../05-decisions/reviews/REVIEW-20261028-layered.md)没有新增规则接受；[audit 依赖](fm-s3-audit-dependencies.md)明确 ⊥ wire、audit Phase B、非主网 assurance 与权威观察来源四个待审接口，不能靠删字段或伪造 Snapshot/MAP 绕过。FM-S2 先做限定测试集成，正式准入、P0-1B 与现有 OQ/Gate 保持原状态。

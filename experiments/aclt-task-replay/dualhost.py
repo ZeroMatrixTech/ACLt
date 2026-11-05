@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Opt-in real LAN causal submission/replay matrix, with independent checkpoint reduction."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import argparse,importlib.util,json,os,secrets,shlex,subprocess,sys,tarfile,time
 from context import *
 from ledger import Ledger

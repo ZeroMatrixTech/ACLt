@@ -15,7 +15,8 @@ else
 fi
 # Isolate feature fingerprints: never overwrite binaries owned by Cargo's cache.
 "$CARGO" build --offline --locked --bins --no-default-features --target-dir build/cargo-deployment
-"$CARGO" build --offline --locked --bins --features admission-test-registry --target-dir build/cargo-test-registry
+"$CARGO" build --offline --locked --bins --features admission-test-registry,test-faults --target-dir build/cargo-test-registry
+g++ -std=c++17 -O2 -Wall -Wextra -Werror -DACLT_ENABLE_TEST_FAULTS cpp/worker.cpp -o build/worker-test
 mkdir -p target/debug
 for binary in coordinator aclt-minimal-verifier cause-reducer; do
   cp "build/cargo-deployment/debug/$binary" "target/debug/$binary"
@@ -28,10 +29,12 @@ python3 scripts/check.py
 python3 scripts/check-strict.py
 printf 'PASS: strict local admission checks\n'
 ACLT_COORDINATOR="$PWD/target/debug/coordinator-test-registry" \
-ACLT_WORKER="$PWD/build/worker" \
+ACLT_WORKER="$PWD/build/worker-test" \
 ACLT_STRICT_ADVERSARIAL_REPORT="$PWD/build/strict-adversarial-tests.json" \
 python3 scripts/check-strict-adversarial.py
 printf 'PASS: strict adversarial checks\n'
 g++ -std=c++17 -O2 -Wall -Wextra -Werror cpp/cause_reducer.cpp -o build/cause-reducer-cpp
 g++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer cpp/worker.cpp -o build/worker-sanitized
 python3 scripts/check-differential.py
+
+python3 scripts/check-deployment-boundary.py

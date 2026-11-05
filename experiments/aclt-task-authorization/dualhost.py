@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Opt-in real LAN matrix: trusted issuer on A, checked dispatch/RIR startup on B."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import argparse
 import hashlib
 import json

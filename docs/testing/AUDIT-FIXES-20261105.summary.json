@@ -1,0 +1,380 @@
+{
+  "schema": "aclt.audit-bounded-fixes@1",
+  "date": "2026-11-05",
+  "baseline": "9cf939838c6d8c59c3568d3b23dd8614b6aefb72",
+  "control_dualhost": {
+    "status": "PASS",
+    "endpoints": [
+      {
+        "endpoint": "multinode-admin",
+        "checks": 11,
+        "cases": [
+          "missing-auth-inject",
+          "wrong-token",
+          "negative-length",
+          "oversize-length",
+          "missing-length",
+          "duplicate-length",
+          "duplicate-json",
+          "nan-json",
+          "deep-json",
+          "authorized-read",
+          "header-timeout"
+        ],
+        "status": "PASS"
+      },
+      {
+        "endpoint": "multinode-worker-control",
+        "checks": 11,
+        "cases": [
+          "missing-auth-inject",
+          "wrong-token",
+          "negative-length",
+          "oversize-length",
+          "missing-length",
+          "duplicate-length",
+          "duplicate-json",
+          "nan-json",
+          "deep-json",
+          "authorized-read",
+          "header-timeout"
+        ],
+        "status": "PASS"
+      },
+      {
+        "endpoint": "authority-worker-control",
+        "checks": 11,
+        "cases": [
+          "missing-auth-inject",
+          "wrong-token",
+          "negative-length",
+          "oversize-length",
+          "missing-length",
+          "duplicate-length",
+          "duplicate-json",
+          "nan-json",
+          "deep-json",
+          "authorized-read",
+          "header-timeout"
+        ],
+        "status": "PASS"
+      }
+    ],
+    "scope": "physical two-host HTTP controls under DUALHOST-SSH-1",
+    "source_sha256": {
+      "tools/test_control.py": "4470a089b0814b5f1038fd5ce1be31d3478042a9accd8d4ed871ff109259aeb4",
+      "scripts/test-control-peer.py": "fd2a9fb50e8d44fbf951cb35a8cac7d6895ed8f95b5e276726ed967af36e0c8d",
+      "scripts/check-test-controls.py": "956e422c775808bc7d341d4707423cc7d71c70ceae23522e148431f0131ac21f",
+      "experiments/aclt-multinode-admission/receiver.py": "a7277ad218e2d79492f2c3b4ddbbbe3300e8e005a0d1218cd9f25d0540bffded",
+      "experiments/aclt-multinode-admission/node.py": "0c5f4ca8cfaa98b1d3f9b93f4e8e4ed48b74ff455f66b7ceaadb95a2dd64641b",
+      "experiments/aclt-authority-admission/vm_node.py": "864890664723a1fdd09e7c3fe8e9b07926a24b25a6f1c2cac4c6cce380490109"
+    },
+    "default_admin_disabled": true,
+    "business_state_unchanged": true,
+    "guest_invocations": 0,
+    "new_gate_claim": false
+  },
+  "fm_s2_dualhost": {
+    "status": "PASS",
+    "schema": "FM-S2-limited-matrix@1",
+    "scope": "candidate fixed-stats single-authority LAN integration",
+    "physical_hosts": "DUALHOST-SSH-1 accepted assumption, no independence proof",
+    "runtime_sha256": "3942c7bb33b667c13832ffe793e6f3632cd0fc434993b13de80087c8ef6d158e",
+    "source_sha256": {
+      "experiments/aclt-rir-stats-probe/src/core.rs": "25633297f3aa83f12bc900e36a50499588b42f0c744957c877f0f652da0838b2",
+      "experiments/aclt-rir-stats-probe/src/entry.rs": "82953a803dd6f80900ec40f1ec006fd903417774ea4fc80b591ac34d249ef2df",
+      "experiments/aclt-rir-stats-probe/src/executor.rs": "9919102d7b6f099d763cd7685690d21452899bf6dde51b8d3746f76610323fbd",
+      "experiments/aclt-rir-stats-probe/src/independent_executor.rs": "e21a8e7ccc6ed8fc29b4cfa8c9e1bbd86d4d9d9461b6891bf86a36f0779cc1d6",
+      "experiments/aclt-rir-stats-probe/src/program.rs": "567748aa35829fc85d594299e510dbd827e5ccad7d385bc99430058eb76fa617",
+      "experiments/aclt-rir-stats-probe/src/sdk.rs": "f9234303bb67b4844cef9d5cfdbcdc2a74d3aaa5e98238eddcf95fae3ccf4d5b",
+      "experiments/aclt-rir-stats-probe/tests/independent-vectors.json": "cfee6251e60109246287ea527ef989ba56d8b7a797ab68cdb63f6e1275e9c5f4",
+      "scripts/fm-s2-client.py": "01a8f97c406653aa4f064bf4f3132b08700b2cce9df98391a9f5a9c2c9b522d1",
+      "scripts/fm-s2-dualhost.py": "8ea2b74a37c9d79147ec7fac6af6a5b957aa4732bbb1c982106b8f9cd782aa3d",
+      "scripts/fm-s2-service.py": "dd3a1b6239d86e3ea74a342646727bad57e06ded4899cfd77c29d775e76e785a",
+      "tests/formal_migration/policy-vectors.json": "11f9e59d8f143b0e1cfe9ace3c3ab4c8525364a4686b3479066dab149272f14f",
+      "tools/formal_migration/__init__.py": "6c6ec57de9f82ef42d82760f144a4571cb16b3cd6de33aaa7aa9fd65e8ab1fa1",
+      "tools/formal_migration/foundation.py": "65490190022ceca73141a04c8d14b642f240b09ad91220e2e2a53faeca2f35c4",
+      "tools/formal_migration/policy.py": "960ba7673220d9f7798fd1e53007171f7f0166f4789ccfaa89264eb7cb168fc9",
+      "tools/formal_migration/s2.py": "b2083db02b7aaef1c5ef82151b1b635570125b1f597c147cbfe5e0f9ff53c359",
+      "tools/formal_migration/s2_evidence.py": "09cc82ac06cef52b76c37f30e385bc7b8197962e81e46ae69c234ff2169036b3",
+      "tools/formal_migration/s2_fixture.py": "72dc6b88670351bc85cb512a4b6679eac5462207d3ddb39783acd6a48490d21c",
+      "tools/formal_migration/s2_transport.py": "88434a505b0bb9511305fcf7c391503e6658cfe6051e90ccc1350752804ab452",
+      "tools/formal_migration/s2_worker.py": "65a1a0fc15454188f97dd24d9dbeef9f0e860bed053876db5f01431ecdd14da4",
+      "tools/verification_profile/__init__.py": "e4c5f6c7769ea8841f123417674ff69bac96554c6ea5241bf87a89b5dd1cac9c",
+      "tools/verification_profile/codec.py": "6e645a5997b543d2211c50e6a85c3f0fb29c746a32da91238f2afe81b26a62ac",
+      "tools/verification_profile/rust/fm.rs": "52c965336ae43ec746780ae9e10f69e47330795c0263f13811a58b12db3ffaeb",
+      "tools/verification_profile/rust/fm_policy.rs": "9be54d4a57754975e033cdf503ee788bcc7a56516418d5c4fb2dc36d6713d23e",
+      "tools/verification_profile/rust/main.rs": "6b2405a356a5a4e2e3e3630c6fc4ab332eb2b1370b4dc6a7c9f3eeea7931c517",
+      "tools/verification_profile/rust/nfc.rs": "fc58d928223065045ed037672359d4f7b9cabb1aa084c27b7c13846dd0e37fb7",
+      "tools/verification_profile/rust/sha256.rs": "33e5e0eadf528c3dfe619cfce573b848e7d3fefc2094b32b515206737a7e69f5",
+      "tools/verification_profile/rust/unicode_data.rs": "2bd394e40860b93af02da790c0eddbc1d6730ee943f60010e6d10726a9059bb3"
+    },
+    "scenarios": [
+      {
+        "scenario": "normal",
+        "status": "PASS",
+        "notes": [
+          "A/B exact raw-core outcome bytes/hash equal; no decision/payment"
+        ],
+        "genesis": "b3006c1b9088690a244c757cb3bf288a07e3b713e9f7b233e8c0995425695b37",
+        "events": 7,
+        "head": "98fa3e6bd7531e2e476c4a34b548598b33f47bbe522110f4f3c85694ad79420c",
+        "state_digest": "850afe1689c89baab613f58a57c0d8d4ed7d897f546093336b053781f3d91a2d",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "duplicate-activation",
+        "status": "PASS",
+        "notes": [],
+        "genesis": "f85eae27b93b50bff03bdec64d873e51f705781614d6bf26f69cc0b0ff0e86c4",
+        "events": 2,
+        "head": "104b1a37dea8d37e97bd1e042bfcff3f9cc0e42cab8f928f218956b21f479934",
+        "state_digest": "9cf9fba12343d400fb9b327bc2bf880db2be7352f5d7670795ad08c9271feca0",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "old-epoch",
+        "status": "PASS",
+        "notes": [
+          "rejection projection unchanged"
+        ],
+        "genesis": "a519ff698f64e20db59a14bf250957597711a074e980ed5394cf065fce644385",
+        "events": 2,
+        "head": "7c88db333c26ba46f3a75a9582be56454a875baf49ba1ee24373bfe17f926bc5",
+        "state_digest": "32523cbeeb40189cc48c9e2a46a5b8ab3f9fecbcdbe3163275a8aed993c2ec59",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "wrong-capability",
+        "status": "PASS",
+        "notes": [
+          "rejection projection unchanged"
+        ],
+        "genesis": "e50e3e62291cb5e22c278effd81c38c00bbc767c70e153d7c9d2888e2feafd89",
+        "events": 2,
+        "head": "ad2bd4162c8ce6b3ed0ad0f781a20237b3cf24d0335eabc41731a58c272c9102",
+        "state_digest": "7d3f928571a430a4ac9ff670ffa98787af9e24ccce8f156dbe1e4722ee239387",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "bad-signature",
+        "status": "PASS",
+        "notes": [
+          "rejection projection unchanged"
+        ],
+        "genesis": "5ab87147f546aead053410d1c5af7a5df69c4097c9a6936779b7d3ac54845d45",
+        "events": 2,
+        "head": "41ac19f9e6afcca9be74e83ef4023489d8866b33c5d89c307d1f32bf6a302f02",
+        "state_digest": "8267cb8679f4a1256267bac564c39e52f47abc73fe2deb401c0c413ce708de99",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "legacy-start",
+        "status": "PASS",
+        "notes": [
+          "rejection projection unchanged",
+          "rejection projection unchanged",
+          "rejection projection unchanged",
+          "rejection projection unchanged"
+        ],
+        "genesis": "efafde46040dde06bac897cf3fdd003284e3d05481d1f0ed1b87a7c74b0cb420",
+        "events": 2,
+        "head": "e80fdb7ee628bd987d3a81acb7cbb567abc069ebe38810b924370221442b93eb",
+        "state_digest": "c8ec0b544de577de947dc6fdb7a9cd2a09168198ca46ec68649a7c390717ec6e",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "concurrent-consume",
+        "status": "PASS",
+        "notes": [
+          "two signed concurrent consumes: one winner"
+        ],
+        "genesis": "5cc003451bd56fb47678823863bb867333f249abc24ba4491fdb6e53a72db118",
+        "events": 3,
+        "head": "c751f93ef3116b8da4d7913a406f08dd45572ab0361c2298c04e6e415d089533",
+        "state_digest": "3e68e3b52f55a8e88779c16dfd22f1b3f9bf1a092182690d3cac1ebcbbc9c628",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "exposure-reject",
+        "status": "PASS",
+        "notes": [
+          "rejection projection unchanged"
+        ],
+        "genesis": "312e43881f637df8d2f57d33093a6d67c800be678bbd618593eb53c1dcd7dd03",
+        "events": 7,
+        "head": "70b9b3cf4fd03b366768143018a5d7c6b5d4692f8520c4940e18de43821d0e80",
+        "state_digest": "e40587684ec447c173918667f0601f6931f4ba31882f091bcea7dc974183a667",
+        "free": 34,
+        "held": 34,
+        "formal_admission": false
+      },
+      {
+        "scenario": "drop-activation-reply",
+        "status": "PASS",
+        "notes": [
+          "real TCP reply dropped after COMMIT"
+        ],
+        "genesis": "676b6082d9c896de63e87b2dc68702bfa74e0f11ba7f31db077be1b938228fe2",
+        "events": 5,
+        "head": "b8006eb5702ad126a08c619fe0424b0abd51117d8225e7d8056d32b840aebcc2",
+        "state_digest": "170a5a4ab250be449f00ea8c9ab68c5a223cd288407c2e058381f2d689a0157d",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "drop-consume-reply",
+        "status": "PASS",
+        "notes": [
+          "CONSUME committed but real reply lost; no guest and no restart retry"
+        ],
+        "genesis": "01618a00a0851706572622a01b84a8b70d75efc8db465d18caf48d5440be8887",
+        "events": 4,
+        "head": "a0e5d01ef5d97233c17e91393c9a42bc52711f9eef7014f5a5a62090ac6e468e",
+        "state_digest": "288c634d90752b7d8be4825655fa705412f47c62d89af586032177126b59b604",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "before-commit",
+        "status": "PASS",
+        "notes": [
+          "real service process COMMIT boundary recovered"
+        ],
+        "genesis": "ddffd061ccea570420f714a3420122431ffbbd11d39616dc0181c560a776061b",
+        "events": 4,
+        "head": "19f454b4c5c579c85066a1f2813ea17257680d61b9aafae55bedaa0112d70bd8",
+        "state_digest": "7a921352f54c0d6d2eca8330276151a179941d57740d4893e0d1826f032900fb",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "after-commit",
+        "status": "PASS",
+        "notes": [
+          "real service process COMMIT boundary recovered"
+        ],
+        "genesis": "1263514b8f595ebbe37184f0996b3148018bb9eaa8b48e0a6718b0238b14084a",
+        "events": 4,
+        "head": "ab6216a98ab1b54ac3bb55cf0b7f87217e30c474ff88d7c674171bbcfadc4c6f",
+        "state_digest": "4e3b590d67a7c43e641338fa0963e727f2422e38d8e0c05a4c85deac74eaef0d",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "worker-after-intent",
+        "status": "PASS",
+        "notes": [
+          "real worker process exit at AFTER_INTENT; restart never invokes guest"
+        ],
+        "genesis": "296c0ac874828a84171583ce986dcc2b2814c41760ec03f7d7e4e7b138f52523",
+        "events": 3,
+        "head": "48e4657b2117d9fb6905c5cfe6090543aa4c14e50555013ec2a4f933fc37bc4a",
+        "state_digest": "1277354682e9720a03e225586a2dac1297e9cf4a197f1f9bab76796261de9314",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "worker-after-consume",
+        "status": "PASS",
+        "notes": [
+          "real worker process exit at AFTER_CONSUME; restart never invokes guest"
+        ],
+        "genesis": "1319ad1fc0dbba2eba63a9767da4f871bf200d262ae53280d9760ed7138bf9d3",
+        "events": 4,
+        "head": "a4188a5f65027f2bdb96e3b8a95a7fdc9bd27dfc00cafcd72bcf486f1d549a88",
+        "state_digest": "cf7152078c7cdd3367fbaa3bd1d832bd1d2f5fd9d15f46f9bdb97937ed495198",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "worker-after-guest",
+        "status": "PASS",
+        "notes": [
+          "real worker process exit at AFTER_GUEST; restart never invokes guest"
+        ],
+        "genesis": "d0ae103e53c04f05c9c0201f062b14319a1124a7dde4feb120478596f6a4289f",
+        "events": 4,
+        "head": "dd2d3977066666ce79d8e3130227da6db8b4409dced0c6585d796e196d2c305c",
+        "state_digest": "6c7b9a997f25f45688fa91400cd5f0cbd132ce21587e049360792eb6769976ba",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "authority-down",
+        "status": "PASS",
+        "notes": [
+          "authority unavailable: no offline execution"
+        ],
+        "genesis": "f0fa35bcb71aee3a0f6406a3326b81b49aff6deed4d6e30a9cea343bcb994262",
+        "events": 2,
+        "head": "a9a12f60a30d0b8a36e5720e6222138ee7dc321015a7493af720e83720b677a4",
+        "state_digest": "2e9ac4dedf985f4cb75bf1b12beeb41f1393f940b875fdc931b1a8833badf464",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      },
+      {
+        "scenario": "deadline-fence",
+        "status": "PASS",
+        "notes": [
+          "deadline fences start/exposure; funds pending FM-S3"
+        ],
+        "genesis": "2c3a921da405d2ba1263d5e6bdbfaef5a8fc5a79af4b5e2f8de5aab063706d66",
+        "events": 3,
+        "head": "92c9fd779706058da152dd936c91d9a6af2347b2ea378d9d1f8a4b93e0006ba5",
+        "state_digest": "b89f662e0ae17b1ef1d8bea43fb4c409322069b94ee0f819e90ca83842bf7362",
+        "free": 51,
+        "held": 17,
+        "formal_admission": false
+      }
+    ],
+    "scenario_count": 17,
+    "formal_admission": false,
+    "new_gate_claim": false,
+    "settlement": false
+  },
+  "source_baseline_mapped_revision": "802cd74389d8b338b7fd5b03c985eab769b7c19b",
+  "source_baseline_pin_count": 43,
+  "retained_summary_pin_count": 52,
+  "full_local_test_status": "PASS",
+  "github_CI": "NOT_RUN",
+  "official_admission": false,
+  "new_protocol_acceptance": false,
+  "gate_changes": false,
+  "default_unittest_methods": 391,
+  "assert_guarded_non_archived_modules": 31,
+  "validation": {
+    "Claim_crosschecks": 29766,
+    "FM_S1a_crosschecks": 179,
+    "FM_S1b_crosschecks": 196,
+    "RIR_core_crosschecks": 161,
+    "sanitizer_runs": 20,
+    "deployment_fault_boundary": "PASS",
+    "local_HTTP_cases": 33,
+    "physical_LAN_HTTP_cases": 33,
+    "FM_S2_physical_scenarios": 17
+  },
+  "evidence_scope": "43 baseline pins and 52 retained summary pins checked explicitly against Git; not all historical evidence pins"
+}

@@ -4,6 +4,10 @@
 Uses the existing Python grammar/type validator and interpreter. Rust does not
 import or invoke this file. The complete ADR-0006 grammar/priority suite is open.
 """
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import hashlib
 from tools.verification_profile import codec as c
 from wasm import Module,Reject,cbor

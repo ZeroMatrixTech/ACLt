@@ -4,7 +4,7 @@ import hashlib
 import json
 from pathlib import PurePosixPath
 import re
-import subprocess
+from tools.git_sources import read_blob
 
 SPECS={
  'FM-S1a':dict(stem='FM-S1A-20261028',revision='5780db358a8e8fffcc6c95a1c7a9f5e78783aabc',driver='scripts/check-fm-s1a.py',vectors='tests/formal_migration/vectors.json',cases=179,vector_count=89,vector_count_key='frozen_vectors'),
@@ -77,7 +77,7 @@ def verify_source(summary,read_blob):
     return len(summary['source_files_sha256'])
 
 def git_reader(repository):
-    def read(revision,path):return subprocess.check_output(['git','show',revision+':'+path],cwd=repository,stderr=subprocess.PIPE)
+    def read(revision,path):return read_blob(repository,revision,path)
     return read
 
 def compare_replay(summary,report):

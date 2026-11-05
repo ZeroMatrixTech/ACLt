@@ -20,35 +20,37 @@
 
 ## 2. 当前论断登记
 
-| Claim ID | 论断 | SemanticStatus | ClaimQualifier | 证据 | 严格边界 |
-|---|---|---|---|---|---|
-| CLM-001 | 公共/志愿计算可以工程化分发任务、重试并验证结果 | `DECIDED` | `DERIVED` | S01、S02 | 不证明 ACLt 的 Sybil、统计或资金安全 |
-| CLM-002 | 低成本身份会削弱把冗余身份视为独立实体的推理 | `DECIDED` | `DERIVED` | S03 | 不直接给出 ACLt 的相关集群算法或损失界 |
-| CLM-003 | 对有限总体不放回序贯抽样构造 time-uniform confidence sequences 在数学上可行 | `DECIDED` | `SOURCE_ESTABLISHED` | S04、S05 | 不自动覆盖恶意、相关、异质验证证据 |
-| CLM-004 | 在错误支持能力集合于 draw 前固定、与随机排列独立且大小不超过 \(B\) 时，ACLt 的有限总体混合 e-process 保持 \(\varepsilon_F\) Type-I 界 | `DECIDED` | `DERIVED / CONDITIONAL` | S04、S05、ADR-0004、精确对拍资产 | 不证明任何 permissionless 部署能建立 \(B\)；不覆盖验证器或语义错误 |
-| CLM-005 | 完全异步、允许故障的共识不能获得无条件终止保证 | `DECIDED` | `DERIVED_BOUNDARY` | S06 | 只在论文模型内成立；ACLt 必须声明自身活性模型 |
-| CLM-006 | Byzantine 阈值依赖明确的消息、认证和故障模型 | `DECIDED` | `DERIVED_BOUNDARY` | S07 | 不支持把任何固定阈值直接移植为 ACLt 的 51% |
-| CLM-007 | 任意程序的非平凡语义性质不存在通用可判定方法 | `DECIDED` | `DERIVED_BOUNDARY` | S08 | 不排除特定任务族的验证器或证明系统 |
-| CLM-008 | 内容摘要和 descriptor 可作为可互操作内容引用先例 | `DECIDED` | `ENGINEERING_PRECEDENT` | S09 | OCI 不定义 ACLt Receipt、状态机或结算语义 |
-| CLM-009 | 带不确定度的能力/表现估计有现有模型先例 | `CANDIDATE` | `SUPPORT` | S10、S11 | 不支持 Rank 真理权，也不能直接移植参数 |
-| CLM-010 | 风险评估应记录威胁、影响、控制和剩余风险并持续更新 | `DECIDED` | `PROCESS_SUPPORT` | S12、S13 | NIST 不证明 ACLt 协议安全 |
-| CLM-101 | 两 Principal + permissionless functions 可缩小固定特权面 | `DECIDED` | `DERIVED` | ADR-0001、Threat model | 属 ACLt 设计结论，非外部定理 |
-| CLM-102 | 零抵押与硬暴露上限可以同时存在 | `DECIDED` | `DESIGN_VALID` | INV-09/10 | 是否达到目标完成率和损失界仍需仿真 |
-| CLM-103 | PerformanceEvidence→CapabilityEstimate→ExposureDecision 优于单 Rank | `CANDIDATE` | `HYPOTHESIS` | S10、S11 + 架构分析 | 需要校准、公平、漂移和攻击实验 |
-| CLM-104 | 显式 UNRESOLVED 可以避免无限验证和伪造确定性 | `DECIDED` | `DERIVED` | INV-04/09/12 | 用户效用、退款和成本仍需验证 |
-| CLM-105 | v0.5 已证明 ACLt Protocol 整体鲁棒 | `REJECTED` | — | 无 | 当前证据不足 |
-| CLM-106 | ACLt Protocol 的组合是公开系统中完全原创且无先例 | `OPEN` | `PROHIBITED_OVERCLAIM` | 组件均有先例 | 只能在系统化检索和权利清查后作有限原创性表述 |
-| CLM-107 | 以 RIR 作为规范执行表示、Rust Profile 作为参考前端，可以在架构上隔离源语言与协议语义 | `DECIDED` | `DERIVED` | ADR-0002、INV-01/16 | 不证明 lowering、RPR、资源计量、确定性或结果正确；需要 ACLt 自身 conformance 证据 |
-| CLM-108 | Abstract Machine、不可变 Logical Object、Compile 三阶段和 RPR 边界可以减少隐藏执行语义 | `DECIDED` | `DERIVED` | ADR-0001/0002/0003、INV-01/16 | 只闭合架构边界；不证明 Schema、compiler、RPR 或状态机正确 |
-| CLM-109 | Bayesian policy 可以在不进入正确性权重的前提下提高 ACLt 验证采样或成本效率 | `CANDIDATE` | `HYPOTHESIS`，Priority `P1` | 尚无 ACLt 特定效率证据 | posterior 不再是正确性闸门；需要 prior sensitivity、成本和尾延迟实验 |
-| CLM-110 | 只限制实际支持票数、却允许支持能力集合在看到 draw 后选择，不能保持有限总体 e-process 的 Type-I 保证 | `DECIDED` | `DERIVED / COUNTEREXAMPLE` | 有理数全枚举和最坏自适应 DP | 反例针对当前算法/参数；\(C=B+1\) 不一定立即超过给定 \(\varepsilon_F\) |
-| CLM-111 | 给定正确候选支持下界 \(Q\)，精确有限总体 DP 可以计算最小活性预算并保留平台段 | `DECIDED` | `DERIVED / CONDITIONAL` | DP 与全排列 oracle 对拍 | 端到端活性还需 \(Q\) 的覆盖率 \(1-\delta_Q\)，合成失败界为 \(\delta_Q+\delta_L\) |
-| CLM-112 | 保存完整规范化 `CauseSet`，再由版本化 reducer 派生单值 `EffectiveVerdict`，可以同时保留诊断信息与跨实现兼容终态 | `DECIDED` | `DESIGN_VALID` | ADR-0005、INV-13、反例树 | 不证明 reducer 的具体优先序最优；必须以向量验证交换律、幂等性和排序无关性 |
-| CLM-113 | active Lease 作为唯一执行范围权威，并派生由 Dispatch 与 RPR 分别校验的 `ExecutionCapability`，比维护第三份可写 Scope 更容易保持一致 | `DECIDED` | `DESIGN_VALID` | ADR-0005、INV-16、任务生命周期 | 不证明 Lease 来源天然忠实；需要派生、拒绝、竞态和对拍测试 |
-| CLM-114 | Schema 只能证明输入结构与确定算法，不能单独证明日志、时钟、Registry 或运维系统如实产生了输入 | `DECIDED` | `ENGINEERING_BOUNDARY` | ADR-0005、威胁模型 | 工程实现仍须提供追加性、终局性、访问审计、故障注入和恢复证据 |
-| CLM-115 | 版本化且只能收紧能力的官方主网保障 Profile，可以在不授予基金会个案真理权的前提下承接有限部署风险 | `CANDIDATE` | `ENGINEERING_HYPOTHESIS` | ADR-0005、行政成本分析 | 只适用于明示网络和范围；净价值、误暂停率、发布密钥与组织捕获仍需试点数据 |
-| CLM-116 | Wasm 官方规范（含其确定性 profile）仍允许非最短 LEB128、`memory.grow` 非确定失败、NaN payload 非确定和实现自定的栈限制，不能原样作为 RIR | `DECIDED` | `SOURCE_ESTABLISHED` | S14、S15 | 只陈述 Wasm 规范行为；不说明 ACLt 规则足以消除全部分歧 |
-| CLM-117 | 以 `wasm32v1-none` 产出、再由 ACLt 子集规则、规范编码与计量收窄的 Wasm 1.0 整数子集，可以作为 RIR-0 主体并支撑 Rust Profile lowering | `CANDIDATE` | `ENGINEERING_HYPOTHESIS` | S16、ADR-0006 草案 | 不证明 rustc 产物稳定落在子集内、成本表合理或 RPR 正确；需要 ADR-0006 §13 的双实现对拍与向量 |
+2026-11-05 标签整理：ClaimQualifier 仅使用术语表的三种值；EvidenceKind 是本表说明性分类，条件与 Priority 分列。保持各 Claim ID、命题、SemanticStatus 与严格边界，不新增规范枚举或接受决定。
+
+| Claim ID | 论断 | SemanticStatus | ClaimQualifier | EvidenceKind（说明性分类） | 条件限定 | Priority | 证据 | 严格边界 |
+|---|---|---|---|---|---|---|---|---|
+| CLM-001 | 公共/志愿计算可以工程化分发任务、重试并验证结果 | `DECIDED` | `DERIVED` | DERIVATION | — | — | S01、S02 | 不证明 ACLt 的 Sybil、统计或资金安全 |
+| CLM-002 | 低成本身份会削弱把冗余身份视为独立实体的推理 | `DECIDED` | `DERIVED` | DERIVATION | — | — | S03 | 不直接给出 ACLt 的相关集群算法或损失界 |
+| CLM-003 | 对有限总体不放回序贯抽样构造 time-uniform confidence sequences 在数学上可行 | `DECIDED` | `DERIVED` | SOURCE_ESTABLISHED | — | — | S04、S05 | 不自动覆盖恶意、相关、异质验证证据 |
+| CLM-004 | 在错误支持能力集合于 draw 前固定、与随机排列独立且大小不超过 \(B\) 时，ACLt 的有限总体混合 e-process 保持 \(\varepsilon_F\) Type-I 界 | `DECIDED` | `DERIVED` | DERIVATION | 受严格边界所列前提限定 | — | S04、S05、ADR-0004、精确对拍资产 | 不证明任何 permissionless 部署能建立 \(B\)；不覆盖验证器或语义错误 |
+| CLM-005 | 完全异步、允许故障的共识不能获得无条件终止保证 | `DECIDED` | `DERIVED` | DERIVED_BOUNDARY | — | — | S06 | 只在论文模型内成立；ACLt 必须声明自身活性模型 |
+| CLM-006 | Byzantine 阈值依赖明确的消息、认证和故障模型 | `DECIDED` | `DERIVED` | DERIVED_BOUNDARY | — | — | S07 | 不支持把任何固定阈值直接移植为 ACLt 的 51% |
+| CLM-007 | 任意程序的非平凡语义性质不存在通用可判定方法 | `DECIDED` | `DERIVED` | DERIVED_BOUNDARY | — | — | S08 | 不排除特定任务族的验证器或证明系统 |
+| CLM-008 | 内容摘要和 descriptor 可作为可互操作内容引用先例 | `DECIDED` | `DERIVED` | ENGINEERING_PRECEDENT | — | — | S09 | OCI 不定义 ACLt Receipt、状态机或结算语义 |
+| CLM-009 | 带不确定度的能力/表现估计有现有模型先例 | `CANDIDATE` | `HYPOTHESIS` | MODEL_SUPPORT | — | — | S10、S11 | 不支持 Rank 真理权，也不能直接移植参数 |
+| CLM-010 | 风险评估应记录威胁、影响、控制和剩余风险并持续更新 | `DECIDED` | `DERIVED` | PROCESS_SUPPORT | — | — | S12、S13 | NIST 不证明 ACLt 协议安全 |
+| CLM-101 | 两 Principal + permissionless functions 可缩小固定特权面 | `DECIDED` | `DERIVED` | DERIVATION | — | — | ADR-0001、Threat model | 属 ACLt 设计结论，非外部定理 |
+| CLM-102 | 零抵押与硬暴露上限可以同时存在 | `DECIDED` | `DERIVED` | DESIGN_ARGUMENT | — | — | INV-09/10 | 是否达到目标完成率和损失界仍需仿真 |
+| CLM-103 | PerformanceEvidence→CapabilityEstimate→ExposureDecision 优于单 Rank | `CANDIDATE` | `HYPOTHESIS` | HYPOTHESIS | — | — | S10、S11 + 架构分析 | 需要校准、公平、漂移和攻击实验 |
+| CLM-104 | 显式 UNRESOLVED 可以避免无限验证和伪造确定性 | `DECIDED` | `DERIVED` | DERIVATION | — | — | INV-04/09/12 | 用户效用、退款和成本仍需验证 |
+| CLM-105 | v0.5 已证明 ACLt Protocol 整体鲁棒 | `REJECTED` | — | NONE | — | — | 无 | 当前证据不足 |
+| CLM-106 | ACLt Protocol 的组合是公开系统中完全原创且无先例 | `OPEN` | — | PROHIBITED_OVERCLAIM | — | — | 组件均有先例 | 只能在系统化检索和权利清查后作有限原创性表述 |
+| CLM-107 | 以 RIR 作为规范执行表示、Rust Profile 作为参考前端，可以在架构上隔离源语言与协议语义 | `DECIDED` | `DERIVED` | DERIVATION | — | — | ADR-0002、INV-01/16 | 不证明 lowering、RPR、资源计量、确定性或结果正确；需要 ACLt 自身 conformance 证据 |
+| CLM-108 | Abstract Machine、不可变 Logical Object、Compile 三阶段和 RPR 边界可以减少隐藏执行语义 | `DECIDED` | `DERIVED` | DERIVATION | — | — | ADR-0001/0002/0003、INV-01/16 | 只闭合架构边界；不证明 Schema、compiler、RPR 或状态机正确 |
+| CLM-109 | Bayesian policy 可以在不进入正确性权重的前提下提高 ACLt 验证采样或成本效率 | `CANDIDATE` | `HYPOTHESIS` | HYPOTHESIS | — | `P1` | 尚无 ACLt 特定效率证据 | posterior 不再是正确性闸门；需要 prior sensitivity、成本和尾延迟实验 |
+| CLM-110 | 只限制实际支持票数、却允许支持能力集合在看到 draw 后选择，不能保持有限总体 e-process 的 Type-I 保证 | `DECIDED` | `DERIVED` | COUNTEREXAMPLE | — | — | 有理数全枚举和最坏自适应 DP | 反例针对当前算法/参数；\(C=B+1\) 不一定立即超过给定 \(\varepsilon_F\) |
+| CLM-111 | 给定正确候选支持下界 \(Q\)，精确有限总体 DP 可以计算最小活性预算并保留平台段 | `DECIDED` | `DERIVED` | DERIVATION | 受严格边界所列前提限定 | — | DP 与全排列 oracle 对拍 | 端到端活性还需 \(Q\) 的覆盖率 \(1-\delta_Q\)，合成失败界为 \(\delta_Q+\delta_L\) |
+| CLM-112 | 保存完整规范化 `CauseSet`，再由版本化 reducer 派生单值 `EffectiveVerdict`，可以同时保留诊断信息与跨实现兼容终态 | `DECIDED` | `DERIVED` | DESIGN_ARGUMENT | — | — | ADR-0005、INV-13、反例树 | 不证明 reducer 的具体优先序最优；必须以向量验证交换律、幂等性和排序无关性 |
+| CLM-113 | active Lease 作为唯一执行范围权威，并派生由 Dispatch 与 RPR 分别校验的 `ExecutionCapability`，比维护第三份可写 Scope 更容易保持一致 | `DECIDED` | `DERIVED` | DESIGN_ARGUMENT | — | — | ADR-0005、INV-16、任务生命周期 | 不证明 Lease 来源天然忠实；需要派生、拒绝、竞态和对拍测试 |
+| CLM-114 | Schema 只能证明输入结构与确定算法，不能单独证明日志、时钟、Registry 或运维系统如实产生了输入 | `DECIDED` | `DERIVED` | ENGINEERING_BOUNDARY | — | — | ADR-0005、威胁模型 | 工程实现仍须提供追加性、终局性、访问审计、故障注入和恢复证据 |
+| CLM-115 | 版本化且只能收紧能力的官方主网保障 Profile，可以在不授予基金会个案真理权的前提下承接有限部署风险 | `CANDIDATE` | `HYPOTHESIS` | ENGINEERING_HYPOTHESIS | — | — | ADR-0005、行政成本分析 | 只适用于明示网络和范围；净价值、误暂停率、发布密钥与组织捕获仍需试点数据 |
+| CLM-116 | Wasm 官方规范（含其确定性 profile）仍允许非最短 LEB128、`memory.grow` 非确定失败、NaN payload 非确定和实现自定的栈限制，不能原样作为 RIR | `DECIDED` | `DERIVED` | SOURCE_ESTABLISHED | — | — | S14、S15 | 只陈述 Wasm 规范行为；不说明 ACLt 规则足以消除全部分歧 |
+| CLM-117 | 以 `wasm32v1-none` 产出、再由 ACLt 子集规则、规范编码与计量收窄的 Wasm 1.0 整数子集，可以作为 RIR-0 主体并支撑 Rust Profile lowering | `CANDIDATE` | `HYPOTHESIS` | ENGINEERING_HYPOTHESIS | — | — | S16、ADR-0006 草案 | 不证明 rustc 产物稳定落在子集内、成本表合理或 RPR 正确；需要 ADR-0006 §13 的双实现对拍与向量 |
 
 ## 3. 来源登记与边界
 

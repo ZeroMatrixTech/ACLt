@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import pathlib, random, subprocess, tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 WORKER = ROOT / 'build/worker'

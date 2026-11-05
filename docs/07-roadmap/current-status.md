@@ -2,20 +2,21 @@
 
 > 文档性质：持续更新的项目快照（living document）  
 > 基线版本：v0.5  
-> 快照日期：2026-10-31
+> 快照日期：2026-11-05
 > 当前阶段：G0 — 语义与问题空间冻结  
 > 权威范围：记录“现在已经知道什么、还没有证明什么、下一步需要什么证据”；不替代协议规范、ADR 或测试结果。
 
-## 当前实施入口（2026-10-31）
+## 当前实施入口（2026-11-05）
 
 | 工作 | 当前事实 | 下一动作 |
 |---|---|---|
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
 | 当前主线 | [FM-S2 限定集成](../testing/FM-S2-20261031.md)已完成：单一 Lease/epoch、原子资金/五维暴露、统一日志；17 双机场景与公开离线快照 | 接 FM-S3 audit-only 结果/判决/账务；FENCE 后资金仍保持预留，完整正式准入关闭 |
+| 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | CI 配置待人工推送后验收；回到 FM-S3，正式准入仍关闭 |
 | 验收边界 | P0-1B 仍 3/19/97，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
-当前依据：[ADR-0006 分层评审](../05-decisions/ADR-0006-layered-review-20261028.md)、[三份机器摘要与校验](../testing/MIGRATION-EVIDENCE-20261028.md)、[FM-S3 audit 依赖](fm-s3-audit-dependencies.md)。以下带日期记录为历史，不覆盖本表优先级。
+当前依据：[ADR-0006 分层评审](../05-decisions/reviews/REVIEW-20261028-layered.md)、[三份机器摘要与校验](../testing/MIGRATION-EVIDENCE-20261028.md)、[FM-S3 audit 依赖](fm-s3-audit-dependencies.md)。以下带日期记录为历史，不覆盖本表优先级。
 
 ## 1. 二维状态
 
@@ -327,3 +328,7 @@ v0.6 不代表生产就绪；它代表 v0.5 的核心开放问题已经被收敛
 ## 2026-10-28 RIR 独立 stats-core
 
 [本轮报告](../testing/RIR-INDEPENDENT-CORE-20261028.md)记录新 Rust 原始外壳入口、受限 Wasm canonical/type 检查、RPR 支持声明与独立结果 CBOR/SHA。38 固定向量、两端各 161 项复核，包括无 Python/源码运行、四类拒绝码、重验证分歧、宿主故障、超 1 MiB 输出。旧 executor/编译探针取证源码保持原字节。完整七阶段/指令集/资源故障、正式 ReceiptID 与 ADR-0006 接受仍未完成；MG-01/02、P0-1B/G2 和生产准入不关闭。下一步优先补全量 conformance，FM-S2 的结构开发不因此等于正式执行已准入。
+
+## 2026-10-31 FM-S2 限定集成（补齐历史索引）
+
+[原报告](../testing/FM-S2-20261031.md)记录 17 场景与 60 事件的原双机证据；这是原轮次的索引补记，不是本次新增执行。2026-11-05 的回归与修复单列[本轮记录](../testing/AUDIT-FIXES-20261105.md)。

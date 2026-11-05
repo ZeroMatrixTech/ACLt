@@ -21,6 +21,7 @@ long long number(const std::string& s) {
 int main(int argc, char** argv) {
     try {
         if (argc != 3 && argc != 7 && argc != 8) throw std::runtime_error("usage: worker INPUT CHUNK_SIZE");
+#ifdef ACLT_ENABLE_TEST_FAULTS
         if (const char* gate = std::getenv("ACLT_TEST_WORKER_GATE")) {
             auto until = std::chrono::steady_clock::now() + std::chrono::seconds(15);
             while (access(gate, F_OK) != 0) {
@@ -28,6 +29,7 @@ int main(int argc, char** argv) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
             }
         }
+#endif
         auto chunk = number(argv[2]);
         if (chunk < 1 || chunk > 100000) throw std::runtime_error("chunk out of range");
         const bool single = argc >= 7;

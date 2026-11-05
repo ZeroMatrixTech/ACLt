@@ -1,3 +1,7 @@
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import concurrent.futures,hashlib,importlib,json,os,pathlib,sqlite3,sys,tempfile
 B=pathlib.Path(__file__).resolve().parent;sys.path.insert(0,str(B))
 from ledger import Store
