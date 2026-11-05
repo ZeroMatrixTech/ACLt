@@ -36,4 +36,4 @@ AuditFailureMapping 必须精确覆盖规范方法矩阵的 13 个事件；五�
 
 这些是待审查事项，本轮不私自改规范。不能为简化 audit 而删掉 SV-66/91/92/93/94/105/112/117/119 等共同约束。
 
-FM-S2 是当前主线，先交付限定双机集成和权威事实源；之后 A1/A4 接入成为 FM-S3 的最小 audit-only 闭环。完整其他方法、selection 与后续 qualification 不随本清单自动完成，也不影响未来其他任务族采用 DIRECT_VERIFIED 的决定。
+FM-S2 限定双机集成已交付权威事实源；[FM-S3a](../testing/FM-S3A-RESULTS-20261105.md)先实现候选 Profile 内容绑定和签名结果的纯重放，尚未实现正式 A0/A1 注册或 A4 判决。下一步接权威结果接纳与显式求值，构成 FM-S3 的最小 audit-only 闭环。完整其他方法、selection 与后续 qualification 不随本清单自动完成，也不影响未来其他任务族采用 DIRECT_VERIFIED 的决定。

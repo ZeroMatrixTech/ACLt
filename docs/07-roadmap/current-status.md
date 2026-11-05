@@ -12,8 +12,8 @@
 |---|---|---|
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
-| 当前主线 | [FM-S2 限定集成](../testing/FM-S2-20261031.md)已完成：单一 Lease/epoch、原子资金/五维暴露、统一日志；17 双机场景与公开离线快照 | 接 FM-S3 audit-only 结果/判决/账务；FENCE 后资金仍保持预留，完整正式准入关闭 |
-| 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | CI 配置待人工推送后验收；回到 FM-S3，正式准入仍关闭 |
+| 当前主线 | [FM-S2 限定集成](../testing/FM-S2-20261031.md)已完成：单一 Lease/epoch、原子资金/五维暴露、统一日志；17 双机场景与公开离线快照 | [FM-S3a 结果切片](../testing/FM-S3A-RESULTS-20261105.md)：候选合约绑定、双方签名结果与 S2 快照纯重放；下一步接权威接纳时点、显式求值/唯一终态，再接账务。FENCE 后资金仍预留，正式准入关闭 |
+| 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | PR #65 已合并；线上 CI 验收以 Actions 运行记录为准，正式准入仍关闭 |
 | 验收边界 | P0-1B 仍 3/19/97，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
 当前依据：[ADR-0006 分层评审](../05-decisions/reviews/REVIEW-20261028-layered.md)、[三份机器摘要与校验](../testing/MIGRATION-EVIDENCE-20261028.md)、[FM-S3 audit 依赖](fm-s3-audit-dependencies.md)。以下带日期记录为历史，不覆盖本表优先级。

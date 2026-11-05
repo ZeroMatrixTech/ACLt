@@ -1,6 +1,6 @@
 {
   "document_kind": "engineering-planning-traceability",
-  "date": "2026-10-31",
+  "date": "2026-11-05",
   "baseline": "f5f415f7c65952adba01f7b0c9f21d554b14c264",
   "authority": "engineering traceability; ADR-0007 route accepted by human, fields and implementation not accepted",
   "adr": "docs/05-decisions/ADR-0007-formal-object-migration-foundation.md",
@@ -334,9 +334,10 @@
   "next_slice": {
     "id": "FM-S3",
     "entry_ready": true,
-    "implementation_started": false,
+    "implementation_started": true,
     "runtime_admission": false,
-    "requires": "review four open interfaces; implement signed results, audit-only evaluation/decision, policy-derived rights and bounded recovery; do not treat S2 FENCE or local outcomes as terminal/fulfillment"
+    "requires": "review four open interfaces; implement signed results, audit-only evaluation/decision, policy-derived rights and bounded recovery; do not treat S2 FENCE or local outcomes as terminal/fulfillment",
+    "local_results_slice": "FM-S3a-results; no result authority admission, Decision or entitlement"
   },
   "slice_results": {
     "FM-S1a": {
@@ -383,6 +384,21 @@
       "formal_admission": false,
       "full_FM_acceptance_closed": false,
       "expiry_refunds_implemented": false
+    },
+    "FM-S3a-results": {
+      "implementation_started": true,
+      "limited_local_slice_complete": true,
+      "contract": "schemas/formal-migration/audit-results.md",
+      "report": "docs/testing/FM-S3A-RESULTS-20261105.md",
+      "machine_summary": "docs/testing/FM-S3A-RESULTS-20261105.summary.json",
+      "default_unit_methods_added": 18,
+      "dualhost_runs": 0,
+      "result_authority_admission": false,
+      "assumption_evaluation": false,
+      "decision_commit": false,
+      "settlement": false,
+      "formal_admission": false,
+      "full_FM_acceptance_closed": false
     }
   },
   "parallel_tracks": {
