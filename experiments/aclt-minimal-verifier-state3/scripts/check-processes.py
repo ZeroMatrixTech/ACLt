@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """End-to-end tests: real Rust coordinator and real C++ child processes."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import json, os, pathlib, subprocess, tempfile
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 COORD = ROOT/'target/debug/coordinator'

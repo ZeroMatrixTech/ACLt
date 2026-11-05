@@ -5,7 +5,7 @@
 ## 已交付
 
 1. [三轮机器摘要与校验说明](MIGRATION-EVIDENCE-20261028.md)：补齐 FM-S1a、FM-S1b、RIR 核心的源码 revision/SHA、A/B 报告投影、工具环境、计数与实际存在的结果哈希。精确对照 #60/#61/#62 的 14/19/19 个源码输入，并从三个原始 revision 在本地临时目录重放；179/196/161 项计数与保留报告一致。RIR 完整 case records 的 SHA 重新核对为 `5a0e6d478892167a0ee80fdaaf1f68041f9d5edbb8c0ab700615778320c42034`。FM 原报告没有整轮结果 hash，不补造。
-2. [ADR-0006 分层评审](../05-decisions/ADR-0006-layered-review-20261028.md)：区分路线已接受、具体规则仍候选、局部实现与正式准入；逐项核对 §13 并列出六个规则包。尤其工件 pin 分歧不等于同一工件的 validator 语义分歧。未擅自将 §3–9 接受，也未改写原 §11/§13 条件。
+2. [ADR-0006 分层评审](../05-decisions/reviews/REVIEW-20261028-layered.md)：区分路线已接受、具体规则仍候选、局部实现与正式准入；逐项核对 §13 并列出六个规则包。尤其工件 pin 分歧不等于同一工件的 validator 语义分歧。未擅自将 §3–9 接受，也未改写原 §11/§13 条件。
 3. [FM-S3 audit 依赖](../07-roadmap/fm-s3-audit-dependencies.md)：机器清单核对全部 119 Type A、6 Type B、原作废/延期项和额外 D-08-c。84 个 Type A 仍是公共/方法依赖，35 个由显式限定功能守卫拒绝；并非实现 84 个新规则或关闭 35 个通用规则。类型 B 忠实性保持集成审计义务。包、主责、前置与计划文件列明，验收均 PLANNED_NOT_RUN。
 
 新增四个待审接口记录：⊥ 的 canonical wire、audit 无 EligibilitySnapshot 的 Phase B 路径、非主网 assurance、权威履约/预算/期限来源。它们阻止正式接口被静默简化，不阻止明确标注的候选限定测试。

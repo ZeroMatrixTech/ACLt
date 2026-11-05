@@ -43,6 +43,18 @@ class DeliveryTests(unittest.TestCase):
                          'scripts/repository_files.py']:
                 self.assertEqual(bundle.read(name), (self.root / name).read_bytes())
 
+    def test_archive_bytes_ignore_wall_clock_and_file_mtimes(self):
+        first=self.package();self.assertEqual(first.returncode,0,first.stderr)
+        one=self.root/'dist/aclt-singlehost-update.zip';expected=one.read_bytes()
+        import os
+        for path in (self.root/'tools').rglob('*.py'):os.utime(path,(1000000000,1000000000))
+        other=self.root/'dist/second.zip';r=subprocess.run([sys.executable,'-B',str(self.root/'scripts/package-singlehost.py'),str(other)],capture_output=True,text=True)
+        self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(other.read_bytes(),expected)
+        with zipfile.ZipFile(other) as z:
+            self.assertTrue(all(i.date_time==(1980,1,1,0,0,0) and i.compress_type==zipfile.ZIP_STORED for i in z.infolist()))
+            self.assertIn('AGENTS.md',z.namelist());self.assertTrue(any(n.startswith('docs/codocs/') for n in z.namelist()))
+            self.assertIn('.github/workflows/validate.yml',z.namelist())
+
     def test_stale_source_refuses_package_without_rewriting_manifest(self):
         checksum = self.root / 'SINGLEHOST-SHA256SUMS'
         before = checksum.read_bytes()

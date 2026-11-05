@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Experimental v2 wire format. Not the normative ACLt encoding or Receipt."""
+import os
 import hashlib
 import hmac
 import json
@@ -108,9 +109,10 @@ def create_keys(directory):
     private, public = directory / 'authority.key', directory / 'authority.pub'
     if private.exists() or public.exists():
         raise FileExistsError('key files already exist')
-    subprocess.run(['openssl', 'genpkey', '-algorithm', 'RSA', '-pkeyopt',
-                    'rsa_keygen_bits:2048', '-out', str(private)], check=True, capture_output=True)
-    private.chmod(0o600)
+    fd=os.open(private,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as output:
+        subprocess.run(['openssl','genpkey','-algorithm','RSA','-pkeyopt','rsa_keygen_bits:2048'],stdout=output,stderr=subprocess.PIPE,check=True)
+        output.flush();os.fsync(output.fileno())
     subprocess.run(['openssl', 'pkey', '-in', str(private), '-pubout', '-out', str(public)],
                    check=True, capture_output=True)
     return private, public

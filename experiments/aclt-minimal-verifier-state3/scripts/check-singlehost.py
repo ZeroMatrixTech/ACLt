@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """Remaining local scheduler boundaries, quotas and task binding; no network claims."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import ctypes, hashlib, json, os, pathlib, signal, subprocess, tempfile, time
 ROOT=pathlib.Path(__file__).resolve().parents[1];COORD=ROOT/'target/debug/coordinator';WORKER=ROOT/'build/worker'
 assert ctypes.CDLL(None,use_errno=True).prctl(36,1,0,0,0)==0

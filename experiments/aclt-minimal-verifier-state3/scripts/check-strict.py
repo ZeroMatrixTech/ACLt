@@ -1,4 +1,8 @@
 """Strict policy tests: execution/receipt evidence, not a distributed vote simulation."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import hashlib,json,os,pathlib,shutil,subprocess,tempfile,time
 E=pathlib.Path(__file__).resolve().parents[1];C=pathlib.Path(os.environ.get('ACLT_COORDINATOR',str(E/'target/debug/coordinator-test-registry')));W=E/'build/worker'
 B=pathlib.Path(tempfile.mkdtemp(prefix='strict-'));R=B/'registry';I=B/'input'

@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Frozen binary adapters, independent math/C++ oracle, and runtime differential."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import copy
 import hashlib
 import json

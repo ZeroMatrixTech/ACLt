@@ -3,12 +3,15 @@ mod admission;
 use aclt_minimal_verifier::{chunk_size, expected, fields, input, read, summary, verify};
 use std::{collections::VecDeque, env, fs::{self, File, OpenOptions}, io::Write,
     os::unix::{process::CommandExt, fs::OpenOptionsExt}, path::{Path, PathBuf}, process::{self, Child, Command, Stdio},
-    thread, time::{Duration, Instant}, sync::atomic::{AtomicUsize, AtomicU64, Ordering}};
+    thread, time::{Duration, Instant}, sync::atomic::{AtomicU64, Ordering}};
 
 // Linux-only lifecycle protection; no external Rust dependencies.
 extern "C" { fn prctl(option: i32, ...) -> i32; fn getppid() -> i32; fn setrlimit(resource: i32, limit: *const RLimit) -> i32; }
 #[repr(C)]
 struct RLimit { current: u64, maximum: u64 }
+#[cfg(feature="test-faults")]
+use std::sync::atomic::AtomicUsize;
+
 static STORAGE_CAP: AtomicU64=AtomicU64::new(0);
 static STATE_RESERVE: AtomicU64=AtomicU64::new(0);
 static LOG_CAP: AtomicU64=AtomicU64::new(1_048_576);
@@ -22,11 +25,6 @@ struct State {
     worker: PathBuf, worker_hash: String, values: Vec<i64>, attempts: Vec<usize>, accepted: Vec<Option<String>>,
 }
 fn hex(bytes: &[u8]) -> String { bytes.iter().map(|x| format!("{x:02x}")).collect() }
-fn unhex(s: &str) -> Result<String,String> {
-    if s.len() % 2 != 0 || !s.is_ascii() { return Err("invalid path encoding".into()); }
-    let bytes = (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i+2],16).map_err(|e|e.to_string())).collect::<Result<Vec<_>,_>>()?;
-    String::from_utf8(bytes).map_err(|e|e.to_string())
-}
 fn hash(data: &[u8]) -> Result<String,String> {
     let mut child = Command::new("sha256sum").stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().map_err(|e|e.to_string())?;
     let written = child.stdin.take().unwrap().write_all(data);
@@ -47,6 +45,9 @@ fn body(s: &State) -> Result<String,String> {
     text.push_str(&format!("LIMITS {} {} {} {} {} {} {} {} {} {}\nEND\n",s.boot,s.deadline_ms,s.recoveries,s.recovery_limit,s.reason,s.verify_used,s.verify_limit,s.storage_limit,s.log_limit,s.task_id)); Ok(text)
 }
 // Fault hooks are opt-in and only used by the local failure-injection tests.
+#[cfg(not(feature="test-faults"))]
+fn io_fault(_name: &str, _stage: &str) -> Result<(),String> { Ok(()) }
+#[cfg(feature="test-faults")]
 fn io_fault(name: &str, stage: &str) -> Result<(),String> {
     static MATCHES: AtomicUsize=AtomicUsize::new(0);
     if let Ok(spec)=env::var("ACLT_TEST_IO_FAIL") {
@@ -96,70 +97,9 @@ fn validate_config(chunk: usize,timeout: usize,maximum: usize,scenario: &str) ->
     if !["normal","slow","wrong","crash","hang","duplicate","malformed","wrong-attempt","always-wrong"].contains(&scenario) { return Err("unknown scenario".into()); }
     Ok(())
 }
-fn load(directory: &Path) -> Result<State,String> {
-    let raw=read(directory.join("state.txt").to_str().ok_or("non-UTF8 path")?,16_000_000)?;
-    let mut parts=raw.splitn(3,'\n');
-    if parts.next()!=Some("ACLT-STATE-3") { return Err("state version invalid".into()); }
-    let digest=parts.next().ok_or("state truncated")?;
-    let text=parts.next().ok_or("state truncated")?;
-    if hash(text.as_bytes())?!=digest { return Err("state checksum mismatch".into()); }
-    let lines=text.lines().collect::<Vec<_>>();
-    if lines.len()<6 { return Err("state truncated".into()); }
-    let config=lines[0].split(' ').collect::<Vec<_>>();
-    if config.len()!=5 { return Err("state configuration invalid".into()); }
-    let chunk=chunk_size(config[0])?; let timeout_ms=chunk_size(config[1])?; let maximum=chunk_size(config[2])?;
-    validate_config(chunk,timeout_ms,maximum,config[3])?;
-    if !["RUN","DONE","FAILED","EXPIRED"].contains(&config[4]) { return Err("state phase invalid".into()); }
-    let worker=PathBuf::from(unhex(lines[1])?);
-    let values=input(directory.join("input.txt").to_str().ok_or("non-UTF8 path")?)?;
-    if read(directory.join("input.txt").to_str().unwrap(),2_000_000)?!=lines[3] || snapshot(&values)!=lines[3] { return Err("input snapshot mismatch".into()); }
-    let count=values.len().div_ceil(chunk);
-    if lines[4]!=count.to_string() || lines.len()!=count+7 || lines.last()!=Some(&"END") { return Err("state block count invalid".into()); }
-    let limits=lines[count+5].split(' ').collect::<Vec<_>>();
-    if limits.len()!=11 || limits[0]!="LIMITS" { return Err("state limits invalid".into()); }
-    let deadline_ms=limits[2].parse::<u64>().map_err(|_|"invalid deadline")?;
-    let recoveries=limits[3].parse::<u64>().map_err(|_|"invalid recovery count")?;
-    let recovery_limit=limits[4].parse::<u64>().map_err(|_|"invalid recovery limit")?;
-    if recovery_limit>100 || recoveries>recovery_limit || deadline_ms==0 ||
-        !["NONE","ATTEMPTS","RECOVERIES","DEADLINE","VERIFY","STORAGE","LOG"].contains(&limits[5]) {
-        return Err("state limits out of range".into());
-    }
-    if (config[4]=="RUN" || config[4]=="DONE") != (limits[5]=="NONE") ||
-       (config[4]=="EXPIRED" && limits[5]!="DEADLINE") ||
-       (config[4]=="FAILED" && !["ATTEMPTS","RECOVERIES","VERIFY","STORAGE","LOG"].contains(&limits[5])) {
-        return Err("state phase/reason mismatch".into());
-    }
-    let verify_used=limits[6].parse::<u64>().map_err(|_|"invalid verification counter")?;
-    let verify_limit=limits[7].parse::<u64>().map_err(|_|"invalid verification limit")?;
-    let storage_limit=limits[8].parse::<u64>().map_err(|_|"invalid storage limit")?;
-    let log_limit=limits[9].parse::<u64>().map_err(|_|"invalid log limit")?;
-    if verify_used>verify_limit || verify_limit>100_000_000 || !(4096..=268_435_456).contains(&storage_limit) || log_limit>16_777_216 {
-        return Err("resource limits out of range".into());
-    }
-    let mut attempts=Vec::new(); let mut accepted=Vec::new();
-    for id in 0..count {
-        let row=lines[5+id].splitn(3,' ').collect::<Vec<_>>();
-        if row.len()!=3 || row[0]!=id.to_string() { return Err("state block order invalid".into()); }
-        let attempt=aclt_minimal_verifier::number(row[1])?;
-        if attempt<0 || attempt as usize>maximum { return Err("state attempts invalid".into()); }
-        attempts.push(attempt as usize);
-        if row[2]=="PENDING" { accepted.push(None); }
-        else {
-            if attempt==0 || fields(row[2])?.len()!=6 { return Err("saved result invalid".into()); }
-            accepted.push(Some(row[2].to_string()));
-        }
-    }
-    let s=State {chunk,timeout_ms,maximum,scenario:config[3].into(),phase:config[4].into(),verify_used,verify_limit,storage_limit,log_limit,task_id:limits[10].into(),boot:limits[1].into(),deadline_ms,recoveries,recovery_limit,reason:limits[5].into(),worker,worker_hash:lines[2].into(),values,attempts,accepted};
-    if read(directory.join("contract.txt").to_str().ok_or("non-UTF8 path")?,16_000_000)?!=contract(&s)? {
-        return Err("frozen task contract mismatch".into());
-    }
-    if body(&s)?!=text { return Err("noncanonical state".into()); }
-    if s.phase=="DONE" && s.accepted.iter().any(Option::is_none) { return Err("incomplete DONE state".into()); }
-    if hash(&fs::read(&s.worker).map_err(|e|e.to_string())?)?!=s.worker_hash { return Err("worker binary mismatch".into()); }
-    // Loading validates the snapshot structure and contract without changing it.
-    // Recomputing accepted blocks is budgeted only after recovery admission.
-    Ok(s)
-}
+#[cfg(not(feature="test-faults"))]
+fn checkpoint(_directory: &Path, _name: &str) -> Result<(),String> { Ok(()) }
+#[cfg(feature="test-faults")]
 fn checkpoint(directory: &Path,name: &str) -> Result<(),String> {
     if env::var("ACLT_TEST_PAUSE").ok().as_deref()==Some(name) {
         atomic(directory,"checkpoint.txt",format!("{name}\n").as_bytes())?;
@@ -252,11 +192,9 @@ fn run() -> Result<(),String> {
     if args.len()==4 && args[1]=="audit" {return admission::audit(Path::new(&args[2]),&input(&args[3])?);}
     if ![9,11,14].contains(&args.len()) {return Err("strict usage: coordinator INPUT CHUNK WORKER NEW_RUN_DIR SCENARIO TIMEOUT_MS 1 [TASK_TTL_MS 0 [VERIFY_UNITS STORAGE_BYTES LOG_BYTES]] REGISTRY | init-registry REGISTRY | audit REGISTRY INPUT; legacy execution disabled".into());}
     let registry=PathBuf::from(args.pop().unwrap());
-    let resume=false;
-    let mut admission=None;
-    if !resume && args.len()!=8 && args.len()!=10 && args.len()!=13 { return Err("usage: coordinator INPUT CHUNK WORKER NEW_RUN_DIR SCENARIO TIMEOUT_MS MAX_ATTEMPTS [TASK_TTL_MS MAX_RECOVERIES [VERIFY_UNITS STORAGE_BYTES LOG_BYTES]] | coordinator resume RUN_DIR".into()); }
-    let directory=PathBuf::from(if resume {&args[2]} else {&args[4]});
-    let mut s=if resume { load(&directory)? } else {
+    let directory=PathBuf::from(&args[4]);
+    let admission;
+    let mut s={
         let values=input(&args[1])?; let chunk=chunk_size(&args[2])?;
         let timeout_ms=chunk_size(&args[6])?; let maximum=chunk_size(&args[7])?;
         if maximum!=1 {return Err("strict policy requires MAX_ATTEMPTS=1".into());}
@@ -278,7 +216,7 @@ fn run() -> Result<(),String> {
             worker_hash:hash(&fs::read(&worker).map_err(|e|e.to_string())?)?,worker,values,attempts:vec![0;count],accepted:vec![None;count]};
         configure_limits(&state)?;
         if directory.try_exists().map_err(|e|e.to_string())? {return Err("new run directory required".into());}
-        admission=Some(admission::Admission::reserve(&registry,&state)?);
+        admission=admission::Admission::reserve(&registry,&state)?;
         fs::create_dir(&directory).map_err(|e|format!("qualification consumed, run creation failed: {e}"))?;
         atomic(&directory,"contract.txt",contract(&state)?.as_bytes())?;
         atomic(&directory,"input.txt",snapshot(&state.values).as_bytes())?;
@@ -304,20 +242,6 @@ fn run() -> Result<(),String> {
         println!("{}",summary(&s.values,s.chunk)); return Ok(());
     }
     check_deadline(&directory,&mut s)?;
-    if resume {
-        if s.recoveries>=s.recovery_limit { return terminal(&directory,&mut s,"FAILED","RECOVERIES"); }
-        s.recoveries+=1; save(&directory,&s)?;
-        checkpoint(&directory,"recovery-reserved")?;
-        let units=s.accepted.iter().enumerate().filter(|(_,row)|row.is_some())
-            .map(|(id,_)|(s.values.len()-id*s.chunk).min(s.chunk) as u64).sum();
-        if units>0 { charge_verification(&directory,&mut s,units)?; }
-        for (id,row) in s.accepted.iter().enumerate() {
-            if let Some(row)=row {
-                if fields(row)?!=expected(&s.values,s.chunk,id) {return Err("saved result invalid".into());}
-            }
-        }
-    }
-    if resume { event(&mut log,"RESUME",0,0,"unfinished old attempts invalidated; counts retained")?; }
     let mut queue=VecDeque::new();
     for id in 0..s.attempts.len() {
         if s.accepted[id].is_none() {
@@ -421,7 +345,7 @@ fn run() -> Result<(),String> {
     s.phase="DONE".into();save(&directory,&s)?;
     checkpoint(&directory,"terminal-saved")?;
     event(&mut log,"COMPLETE",0,0,"all blocks verified")?;
-    admission.as_ref().ok_or("missing strict admission")?.accept(&s,&rows)?;
+    admission.accept(&s,&rows)?;
     println!("{}",summary(&s.values,s.chunk)); Ok(())
     })();
     if s.phase=="RUN" {

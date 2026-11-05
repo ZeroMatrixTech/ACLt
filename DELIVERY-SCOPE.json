@@ -1,0 +1,9 @@
+{
+  "schema": "aclt.delivery-scope@1",
+  "scope": "Source delivery including historical archives; active runtime entry remains state3/FM, not historical state1/state2/VM paths.",
+  "source_directories": ["tools", "tests", "schemas", "registries", "scripts", "docs", "experiments", ".github"],
+  "top_level_files": ["README.md", "CONTRIBUTING.md", "LICENSE", "Makefile", ".gitignore", "AGENTS.md", "DELIVERY-SCOPE.json", "WORKFLOW-SHA256SUMS", ".aclt-flow/template.json", ".aclt-flow/.gitignore"],
+  "excluded_generated_paths": ["**/__pycache__/**", "**/.git/**", "experiments/*/target/**", "experiments/*/build/**", "experiments/*/artifacts/**", "experiments/*/dist/**", "experiments/*/.toolchain/**", "experiments/aclt-multinode-admission/local-tests.json"],
+  "tracked_exceptions": {"SINGLEHOST-SHA256SUMS": "Digest manifest cannot hash itself; the external archive checksum covers its bytes."},
+  "trust_boundary": "Checksums establish inventory/byte consistency, not publisher authenticity. No external signing root is established. Git coverage is checked only when the repository itself is a Git checkout; archive verification reports that dimension NOT_RUN."
+}

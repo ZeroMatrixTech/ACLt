@@ -2,7 +2,11 @@
 name = "aclt-minimal-verifier"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.89"
 
 [features]
 # Explicitly insecure multi-domain fixtures; never enable in a deployed coordinator.
 admission-test-registry = []
+
+# Fault injection only; independent of test registry authority relaxation.
+test-faults = []

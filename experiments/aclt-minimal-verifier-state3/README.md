@@ -1,173 +1,19 @@
-# Strict local admission revision (2026-10-10)
+# state3：严格单机局部回归
 
-The default coordinator now refuses **all** resume requests, uses one irreversible
-qualification per canonical input in a fixed local deployment registry, and accepts
-one whole-task receipt only after every block is verified. A failed attempt is not
-refunded. MAX_ATTEMPTS must be 1 and MAX_RECOVERIES must be 0. Blocks are computational
-partitions, not independent votes.
+当前入口是 `bash scripts/run-ubuntu.sh`。它执行 68 个基础用例、strict、strict-adversarial 和 Rust/C++ 差分/资源检查；以运行日志为准。旧的 265 合计含当前不再调用的恢复/生命周期脚本，不是当前门禁计数。
 
-See [strict policy](docs/STRICT-POLICY.md) for deployment, trust boundaries and tests.
-Historical recovery commands/tests below describe the pre-policy experiment and
-are not acceptance checks for this revision. Existing results are retained as
-historical evidence; they do not automatically become strict admission receipts.
-
-# ACLt 单机最小验证试验
-
-2026-10-03 单机扩展：当前入口执行 **265 个调度/验证场景**，另执行随机数据对拍、结果变异、内存检查和 Rust/C++ 原因归约器对拍。运行记录升级为 `ACLT-STATE-3`；旧版记录明确拒绝。最新范围见 [单机扩展说明](docs/SINGLEHOST-NOTES.md)。
-
-使用 **Rust 调度与验证 + C++ 计算进程**，在一台 Ubuntu 26.04 LTS 电脑上完成“分块计算 → 检查 → 故障重派 → 汇总”。不需要第三方语言库、网络服务或账户。使用 Ubuntu 自带的 `sha256sum`（coreutils）检查文件完整性。
-
-这是主仓库当前维护的单机试验，不代表 P0-1B 或整个协议已完成。
-
-## 仓库位置
-
-当前实现位于 `experiments/aclt-minimal-verifier-state3/`。根目录统一测试入口、workflow 和打包工具均指向这里。旧代目录保留为历史参考，不进入当前统一测试，不兼容迁移旧运行状态。
-
-## 从零运行
-
-在 Ubuntu 26.04 LTS 安装官方工具链（已有则跳过）：
-
-```sh
-sudo apt-get update
-sudo apt-get install -y g++ rustc cargo python3
-```
-
-进入本文件所在目录后执行：
+当前策略见 [STRICT-POLICY.md](STRICT-POLICY.md)：每项资格只消费一次，MAX_ATTEMPTS=1，MAX_RECOVERIES=0；`resume` 始终拒绝，不提供恢复计算入口。单机回归不替代物理双机部署证据，也不关闭任何协议 Gate。
 
 ```sh
 bash scripts/run-ubuntu.sh
+# 配置新的本地资格 registry，按 STRICT-POLICY.md 使用当前 CLI。
+target/debug/coordinator init-registry REGISTRY
+# 计算前需有合法、空闲且受支持的 registry。
+target/debug/coordinator examples/input.txt 4 build/worker NEW_RUN normal 500 1 REGISTRY
 ```
 
-脚本离线构建程序，并执行 **265 个案例/场景：68 个基础验证 + 12 个多进程 + 12 个恢复 + 90 个批次故障 + 22 个任务生命周期 + 61 个额度/任务绑定/参数边界场景**；任何失败都会以非零退出码结束。正常输出末尾包括：
+部署编译产物 `build/coordinator-deployment` / `build/worker` 不包含测试环境钩子。`test-faults`（Rust）和 `ACLT_ENABLE_TEST_FAULTS`（C++）显式开启故障注入；独立的 `admission-test-registry` 只用于测试 registry root。runner 在隔离目录构建测试变体，部署产物不被覆盖。即使部署构建是 debug，也不会读取故障变量。
 
-```text
-ACCEPT count=10 chunks=3 sum=28 min=-7 max=12
-PASS: 68 verification cases; worker input rejection and Python reference totals checked
-PASS: 12 multi-process scenarios; retries, late results, attempt limits, cleanup, and overwrite refusal checked
-PASS: 12 recovery scenarios; 13 actual coordinator SIGKILLs; maximum observed live workers=2
-```
+保留的 `scripts/check-{recovery,lifecycle,processes,batch,singlehost}.py` 是历史测试资产，依赖旧恢复语义，未接回当前门禁。原始 [恢复报告](docs/RECOVERY-REPORT.md)、[阶段报告](docs/STAGE-REVIEW.md)、[批次报告](docs/BATCH-REPORT.md)保留其时间范围；不能按旧命令重开已消费资格。历史源实现也只作归档，不是新的执行授权路径。
 
-Python 仅负责测试；实际调度和验证由 Rust 完成，计算由 C++ 完成。Rust 需要 1.89 或更新版本的文件锁 API，已实测 Ubuntu 官方 1.93.1；C++ 使用 C++17。
-
-## 看一次正常运行和一次超时重派
-
-```sh
-bash scripts/demo.sh normal
-bash scripts/demo.sh slow
-```
-
-完整测试还会执行随机中断和文件故障注入，通常比单次演示耗时更长；所有破坏性测试均在测试驱动创建的临时目录中进行。
-
-每次演示创建新的 `build/demo-*/run/` 目录并打印其路径。其中有输入快照、参数、每次尝试的结果与错误输出、事件记录，以及全部验证通过后发布的 `results.txt`。
-
-`slow` 让第 0 块的首次计算等待 1 秒，超过 500 毫秒期限；调度器重派该块。第二次结果通过后，首次迟到的结果会记为 `STALE` 并忽略。
-
-事件含义：
-
-| 事件 | 意义 |
-|---|---|
-| START | 启动一个真实 C++ 进程，记录块号、尝试编号和进程号 |
-| ACCEPT_BLOCK | 当前有效尝试的结果通过检查 |
-| REJECT_BLOCK | 程序失败、格式错误、尝试编号错误或统计错误 |
-| TIMEOUT | 当前尝试到期失效，并进入重派流程 |
-| STALE | 过期结果被忽略 |
-| KILL | 仍不退出的过期进程被终止并回收 |
-| COMPLETE | 所有块检查通过，最终结果已写入 |
-
-还可演示 `wrong`、`crash`、`hang`、`duplicate`、`malformed`、`wrong-attempt`、`always-wrong`。这些是内置故障注入模式，不是完整安全测试。`always-wrong` 应失败，不产生最终结果。
-
-## 本轮固定规则
-
-- 最多两个计算进程同时存在，过期而尚未退出的进程也占用一个名额。每次分块尝试创建一个新进程，不是常驻节点。
-- 输入为六种 ASCII 空白字符分隔的十进制整数；不允许加号、前导零或负零。
-- 输入非空，最多 100,000 个整数，各在 -1,000,000,000 至 1,000,000,000 之间；输入文件最多 2,000,000 字节。
-- 分块大小为 1 至 100,000，最后一块可以不足指定大小。结果文件最多 12,000,000 字节，单次尝试输出只读取最多 256 字节并拒绝超限内容。
-- 输入先被读取并规范化保存；本次运行按内存中的输入和固定分块大小检查结果。
-- 超时或错误结果可重派；总尝试次数包含首次执行，可配置为 1 至 5 次，演示和正常故障测试使用 2 次。
-- 超时以后，即使旧结果正确也不能被接受。期限以调度器观察时的单调时钟为准。
-- 过期进程保留到启动后的三倍期限，以测试迟到结果；到时仍不退出则终止并回收。始终不突破两个进程的上限。
-- 每块只能接受一次；全部通过后按块号合并，再检查一次，发布前再次核对输入快照和临时结果，并用不覆盖已有目标的硬链接创建 `results.txt`，随后删除临时名称。任一块耗尽尝试次数，整个任务失败。
-- 新建命令要求新目录；已有运行使用显式 `resume` 命令。系统文件锁防止同时调度同一任务，计算进程继承锁并设置 Linux 父进程死亡信号。普通错误会终止并回收计算进程；调度器被 SIGKILL 时计算进程也会被内核终止。
-
-## 程序入口与结果格式
-
-```sh
-build/worker examples/input.txt 4 > build/results.txt
-target/debug/aclt-minimal-verifier examples/input.txt 4 build/results.txt
-
-target/debug/coordinator examples/input.txt 4 build/worker build/my-new-run normal 500 2
-```
-
-汇总结果每行依次是：块编号、起始位置、数量、总和、最小值、最大值。块编号和位置从零开始。单块进程额外输出尝试编号，由调度器检查后移除。
-
-## 今天的完成边界
-
-本轮已验证单台机器上两种语言的计算一致性、真实子进程调度、超时重派、旧结果拒绝、错误结果拒绝、尝试次数上限及普通失败后的进程清理。基础证据见 [测试报告](docs/TEST-REPORT.md)，恢复证据见 [恢复测试报告](docs/RECOVERY-REPORT.md)。
-
-验证器会完整重算，且每个计算进程仍读取整份输入；本轮不证明速度或成本优势。两个进程也不是两个独立的参与者。
-
-已实现并测试调度器被 SIGKILL 后的恢复。尚未验证操作系统崩溃或断电后的恢复；尚未实现真实网络、任务摘要与签名、参与者身份、敌对程序隔离、持续运行的节点、付款或模拟账务。输入快照不防同一用户恶意改文件；事件日志也不是防篡改审计记录。文件同步和原子发布不等于已验证物理断电后的持久性。本轮 Linux 计算进程退出保护仅覆盖本项目的直接计算子进程，不保证任意敌对程序或其后代进程均受控。
-
-本试验已接入主仓库入口，后续继续对应既有规则；本轮已补充随机中断、写入失败、损坏记录和并发恢复测试。本次已增加有限范围的验证计数与文件配额；是否进入两机通信，仍需按主仓库未实现项与协议边界判断。
-
-## 阶段整理与后续测试
-
-- [上一轮结果整理](docs/STAGE-REVIEW.md)：恢复功能加入前的阶段记录。
-- [恢复测试原方案](docs/NEXT-TEST.md)：12 个场景已实现并执行。
-- [恢复测试报告](docs/RECOVERY-REPORT.md)：恢复场景的实际注入方法和证据。
-- [先前批次报告](docs/BATCH-REPORT.md)：90 个新增案例、三个已修复问题和本轮结论。
-
-
-## 从中断处恢复（Linux）
-
-```sh
-target/debug/coordinator resume build/my-new-run
-```
-
-恢复只使用该目录保存的输入、参数和已核对结果，并检查计算程序内容未改变。运行记录保存原计算程序的绝对路径，因此目录迁移或重新编译程序后，不保证旧任务仍可恢复；不要把运行目录当成可跨机器迁移的任务包。
-
-每次尝试先保存额度再启动进程；中间中断也消耗该次额度。未完成的旧尝试在重启后失效，额度耗尽会明确失败，不自动从头开始。记录校验失败或输入不匹配也会拒绝恢复。SHA-256 用来发现文件损坏，不是签名或防恶意改写的保护。
-
-进度以 `state.txt` 为准，`events.tsv` 是辅助记录。进度文件通过临时文件、同步、改名保存。中断后残留的 `.writing` 文件不参与恢复；正式进度文件缺失或损坏会拒绝恢复。
-
-`ACLT_TEST_PAUSE`、`ACLT_TEST_WORKER_GATE`、`ACLT_TEST_IO_FAIL` 和 `ACLT_TEST_IO_ERRNO` 是自动化测试专用环境变量，正常运行不要设置。恢复测试会强制终止它自己启动的调度器，并作为 Linux 子进程收养者回收遗留计算进程；不会重启电脑。
-
-
-## 本轮发布保护
-
-发布前重新核对磁盘上的输入快照和临时结果，任何变化都明确失败；最终结果若已存在，不会覆盖。输出文件遇到符号链接会拒绝，读取输入、状态和结果只接受普通文件，避免误读命名管道而一直等待。
-
-这些检查覆盖本地故障和列出的测试注入，不提供防御同一用户持续恶意修改文件的完整隔离。首次状态尚未保存完整时中断，恢复可能明确拒绝，不能把临时残片当作有效任务。目录中的写入失败修复后，可用显式恢复命令重新检查并继续。
-
-
-## 任务结束与累计恢复限制（2026-10-03）
-
-默认整体期限为 300 秒，最多恢复 32 次。可以在新建命令末尾指定整体期限（毫秒，50 至 86,400,000）及最大恢复次数（0 至 100）：
-
-```sh
-target/debug/coordinator examples/input.txt 4 build/worker build/new-limited-run normal 500 2 300000 32
-```
-
-- `RUN`：尚未永久结束。临时文件错误可在修复后重试恢复。
-- `DONE`：发布结果经过核对，保存成功状态；再次恢复只核对并返回结果。
-- `FAILED`：尝试次数或恢复次数耗尽，状态保存后不能转为成功。
-- `EXPIRED`：整体期限已到，状态保存后不能转为成功。
-
-恢复额度先持久保存，再推进工作；中途终止不返还。终止状态保存失败只返回存储错误，不能宣称永久状态已经提交。已经发布、且与完整已接受分块一致的结果，在恢复时可补记 DONE；较晚到达的期限不会推翻这次发布。发布前的期限判断以调度器观察时间为准，不保证操作系统调用在精确的墙钟瞬间完成。
-
-整体期限使用 Linux 开机时间并绑定启动标识，因此同一次系统启动中的进程恢复不重置期限，系统重启后明确拒绝自动恢复。没有把这项保护解释为跨断电恢复能力。
-
-`events.tsv` 仍为辅助诊断：缺失、截断或伪造的 COMPLETE 不会替代状态文件决定结果；它也不保证完整事件重放。已记录的最终状态不会因辅助日志被修改而反转。SHA-256 仅检测损坏，不能阻止同一用户重写状态和校验值。
-
-本次新增验证比较单位、日志字节及运行目录普通文件字节的限制，见单机扩展说明。它们不等于宿主机 CPU、内存、磁盘块、恶意程序和资金的完整配额。
-
-
-## 同时运行主仓库已有验证器与模型测试
-
-在仓库根目录执行：
-
-```sh
-bash scripts/run-singlehost.sh
-```
-
-本目录为当前 `state3` 实现，运行记录为 v3。未完成的 v1/v2 任务须用相应旧程序处理；新版新建任务目录，不迁移旧记录。
+当前验证器完整重算结果；无速度/成本优势、身份独立性或敌对宿主隔离保证。校验和用于发现意外变化，不防拥有运行目录者的持续恶意改写。后续集成遵循 [双物理机 SSH 约定](../../docs/08-governance/dualhost-ssh-validation.md)。

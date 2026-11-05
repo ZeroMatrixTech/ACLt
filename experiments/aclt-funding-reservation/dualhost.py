@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Opt-in two-physical-host LAN reservation matrix; SSH only controls/provisions."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import argparse
 import copy
 import importlib.util

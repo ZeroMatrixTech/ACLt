@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Generate Unicode 16.0 canonical data, not normalization code (Python stdlib)."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import unicodedata as u
 from pathlib import Path
 assert u.unidata_version == '16.0.0', 'use Unicode 16.0.0 generator'

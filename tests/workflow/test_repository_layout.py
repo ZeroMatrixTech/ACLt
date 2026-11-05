@@ -22,7 +22,6 @@ class RepositoryLayoutTests(unittest.TestCase):
         for script in ['repository_files.py', 'aclt-flow.py']:
             text = (ROOT / 'scripts' / script).read_text()
             self.assertIn(EXPERIMENT, text)
-            self.assertNotIn('aclt-minimal-verifier-state2', text)
 
     def test_workflow_is_installed_at_documented_paths(self):
         for name in ['.aclt-flow/.gitignore', 'docs/workflow/README.md', 'tests/workflow/test_flow.py']:

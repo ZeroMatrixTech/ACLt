@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """Linux SIGKILL recovery tests with explicit checkpoints, not guessed sleep timing."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import ctypes, fcntl, hashlib, json, os, pathlib, signal, subprocess, tempfile, threading, time
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 COORD=ROOT/'target/debug/coordinator'; WORKER=ROOT/'build/worker'; VERIFY=ROOT/'target/debug/aclt-minimal-verifier'

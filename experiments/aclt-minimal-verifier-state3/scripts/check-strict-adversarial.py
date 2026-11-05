@@ -3,6 +3,10 @@
 Original worker drafts are preserved in the round's DeepSeek responses. They
 were not executable/valid evidence and are not claimed as accepted worker code.
 """
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import hashlib,json,os,pathlib,subprocess,tempfile,traceback
 C=os.environ['ACLT_COORDINATOR'];W=os.environ['ACLT_WORKER'];REPORT=pathlib.Path(os.environ['ACLT_STRICT_ADVERSARIAL_REPORT'])
 TEXT='3 -1 8 0 -7 12 5 2 -3 9';KEY=hashlib.sha256(('ACLT-LOCAL-CLAIM-1\nstats-int-v1\n'+TEXT).encode()).hexdigest()

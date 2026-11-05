@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 """Reproducible exact arithmetic, input mutation, sanitizers and narrow reducers."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import itertools,json,os,pathlib,random,subprocess,tempfile
 ROOT=pathlib.Path(__file__).resolve().parents[1];WORKER=ROOT/'build/worker';SAN=ROOT/'build/worker-sanitized';VERIFY=ROOT/'target/debug/aclt-minimal-verifier'
 records=[];seed=20261003;rng=random.Random(seed)

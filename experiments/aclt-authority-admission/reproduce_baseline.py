@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Retain authenticated old-version rollback/clone counterexamples; no worker executed."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import argparse
 import json
 from pathlib import Path

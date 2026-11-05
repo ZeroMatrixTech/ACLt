@@ -1,7 +1,7 @@
-# ADR-0006 分层评审记录
+# REVIEW-20261028：ADR-0006 分层评审记录
 
 日期：2026-10-28；基线 `d669b02`。这是范围与证据评审，不是新的接受决定。
-唯一决定载体仍为 [ADR-0006](ADR-0006-rir-deterministic-wasm-core-subset.md)。
+唯一决定载体仍为 [ADR-0006](../ADR-0006-rir-deterministic-wasm-core-subset.md)。
 
 ## 结论
 
@@ -29,10 +29,10 @@
 
 | 条款 | 已有证据 | 仍缺 | 判定 |
 |---|---|---|---|
-| 1 两语言规范编解码/拒绝 | [独立核心](../testing/RIR-INDEPENDENT-CORE-20261028.md)，38 固定向量；两机各 161 项 | 全 module grammar/七阶段顺序/全部列举负例与静态范围 | PARTIAL |
+| 1 两语言规范编解码/拒绝 | [独立核心](../../testing/RIR-INDEPENDENT-CORE-20261028.md)，38 固定向量；两机各 161 项 | 全 module grammar/七阶段顺序/全部列举负例与静态范围 | PARTIAL |
 | 2 解释器/gas/trap 对拍 | stats、80 seeded 程序、exact/short gas、div/rem、输出/深度等 | memory.grow/call_indirect/typed control 与完整指令/边界套件 | PARTIAL |
 | 3 可选第三方引擎 | 旧 I/O/stats 已有部分 oracle 报告 | 可选项；本轮不引入依赖，也不把它当 gas/绑定 oracle | OPTIONAL，非统一阻塞项 |
-| 4 stats-int 与 C++ | [Work 1 收尾](../testing/RIR-WORK1-CLOSEOUT-20261023.md)保留构建与结果比较证据 | 仅支持原报告范围；新正式对象集成后重跑相应路径 | 已有受限证据，非本轮新跑 |
+| 4 stats-int 与 C++ | [Work 1 收尾](../../testing/RIR-WORK1-CLOSEOUT-20261023.md)保留构建与结果比较证据 | 仅支持原报告范围；新正式对象集成后重跑相应路径 | 已有受限证据，非本轮新跑 |
 | 5 宿主故障/validator 分歧 | 内存路径注入、实际输入 I/O 丢失、step ceiling 不产生 Task 摘要 | 全分配点/进程故障容纳；同一工件上实际 validator 判定分歧的故障注入 | PARTIAL |
 | 6 版本/成本/上限与正式 ID | 限额变化保持 rir_digest；候选 Receipt 可重绑定 | 真正正式 ReceiptID 的正负变化向量、RIRVersion/成本变化联动 | OPEN |
 

@@ -2,7 +2,7 @@
 
 > 文档状态：Living index and governance  
 > 当前语义基线：v0.5  
-> 最后更新：2026-10-20
+> 最后更新：2026-11-05
 
 本目录是 ACLt Protocol 的权威文档中心。文档不是一次性说明材料，而是随反例、证明、仿真、实现、攻击测试和工程试点持续修订的规格系统。
 
@@ -36,13 +36,13 @@
 7. [`05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md`](05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md)
 8. [`05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md`](05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md)（`PROPOSED` 草案）
 9. [`05-decisions/ADR-0007-formal-object-migration-foundation.md`](05-decisions/ADR-0007-formal-object-migration-foundation.md)（D-1～D-6 首轮迁移路线已接受；字段/实现未验收）
-9. [`06-research/verification-round-mathematical-model.md`](06-research/verification-round-mathematical-model.md)
-10. [`06-research/last-two-problem-trees.md`](06-research/last-two-problem-trees.md)
-11. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
-12. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
-13. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
-14. [`07-roadmap/formal-object-migration.md`](07-roadmap/formal-object-migration.md)（工程规划草案，非规范）
-15. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
+10. [`06-research/verification-round-mathematical-model.md`](06-research/verification-round-mathematical-model.md)
+11. [`06-research/last-two-problem-trees.md`](06-research/last-two-problem-trees.md)
+12. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
+13. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
+14. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
+15. [`07-roadmap/formal-object-migration.md`](07-roadmap/formal-object-migration.md)（工程规划草案，非规范）
+16. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
 
 ### 工程证据与维护
 
@@ -212,7 +212,7 @@ Decision / evidence
 | `02-architecture` | 当前候选分层与生命周期 | G0 draft |
 | `03-protocol` | 当前规范性协议骨架与 V1 VersionDisposition Profile | G0 draft |
 | `04-analysis` | 鲁棒性和行政成本证据账本 | 进行中 |
-| `05-decisions` | 已接受架构决定 | ADR-0001—0005 已建立 |
+| `05-decisions` | 已接受架构决定 | ADR-0001—0007 已建立 |
 | `06-research` | 论断—来源—边界 | 持续核查 |
 | `07-roadmap` | 状态和未决问题 | 持续更新 |
 | `08-governance` | 审计程序、模板和审计记录 | 程序已接受；报告持续追加 |
@@ -261,6 +261,8 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 
 - [RIR 独立 stats-core](testing/RIR-INDEPENDENT-CORE-20261028.md)：原始外壳直接进入 Rust、受限验证和独立结果编码/摘要；[入口与剩余边界](../experiments/aclt-rir-stats-probe/INDEPENDENT-CORE.md)。全 ADR conformance 尚未完成。
 
-- [FM-S2 前置收口](testing/FM-S2-READINESS-20261028.md)：[保留双机机器摘要](testing/MIGRATION-EVIDENCE-20261028.md)、[ADR-0006 分层评审](05-decisions/ADR-0006-layered-review-20261028.md)及 [FM-S3 audit 依赖](07-roadmap/fm-s3-audit-dependencies.md)。
+- [FM-S2 前置收口](testing/FM-S2-READINESS-20261028.md)：[保留双机机器摘要](testing/MIGRATION-EVIDENCE-20261028.md)、[ADR-0006 分层评审](05-decisions/reviews/REVIEW-20261028-layered.md)及 [FM-S3 audit 依赖](07-roadmap/fm-s3-audit-dependencies.md)。
 
 - [FM-S2 限定测试集成](testing/FM-S2-20261031.md)：单权威原子资金/暴露、唯一 Attempt、17 双机场景与公共日志重放；[机器摘要](testing/FM-S2-20261031.summary.json)。非正式准入，资金保持预留待 FM-S3。
+
+- [2026-11-05 有界审计修复](testing/AUDIT-FIXES-20261105.md)：历史来源更正、控制面/验证器加固、确定性源码交付与本地/双机回归；不提升协议验收状态。

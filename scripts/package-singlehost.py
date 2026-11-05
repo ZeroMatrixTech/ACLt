@@ -4,6 +4,7 @@ import argparse
 import hashlib
 from pathlib import Path
 import tempfile
+import stat
 import zipfile
 from repository_files import verify
 
@@ -21,11 +22,16 @@ def main():
     if errors:
         parser.error('Stale manifests: ' + ', '.join(errors) + '; review and run make manifests')
     source = (root / 'SINGLEHOST-SHA256SUMS').read_text()
-    entries = [line.split('  ', 1) for line in source.splitlines()]
+    entries = sorted([line.split('  ', 1) for line in source.splitlines()],key=lambda row:row[1])
+    if len({name for _,name in entries})!=len(entries):raise ValueError('Duplicate archive path')
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.aclt-package-', dir=output.parent) as temp:
         archive = Path(temp) / 'update.zip'
-        with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as bundle:
+        with zipfile.ZipFile(archive, 'w', zipfile.ZIP_STORED) as bundle:
+            def put(name,data):
+                entry=zipfile.ZipInfo(name,date_time=(1980,1,1,0,0,0));entry.create_system=3
+                entry.external_attr=(stat.S_IFREG|0o644)<<16;entry.compress_type=zipfile.ZIP_STORED
+                bundle.writestr(entry,data)
             for digest, name in entries:
                 path = Path(name)
                 if path.is_absolute() or '..' in path.parts:
@@ -33,8 +39,8 @@ def main():
                 data = (root / path).read_bytes()
                 if hashlib.sha256(data).hexdigest() != digest:
                     raise ValueError('Source changed while packaging: ' + name)
-                bundle.writestr(name, data)
-            bundle.writestr('SINGLEHOST-SHA256SUMS', source)
+                put(name, data)
+            put('SINGLEHOST-SHA256SUMS', source)
         with zipfile.ZipFile(archive) as bundle:
             for digest, name in entries:
                 if hashlib.sha256(bundle.read(name)).hexdigest() != digest:

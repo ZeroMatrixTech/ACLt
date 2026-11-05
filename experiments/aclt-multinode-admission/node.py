@@ -1,6 +1,11 @@
 import http.server,json,os,pathlib,subprocess,threading,time
+
+import sys
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[2]/"tools"))
+import test_control
+
 from protocol import canonical,claim,digest,envelope,request,sign
-D=pathlib.Path('/data');BOOT=pathlib.Path('/proc/sys/kernel/random/boot_id').read_text().strip();CONF=json.loads((D/'node.json').read_text());LOCK=threading.Lock()
+D=None;BOOT='';CONF=None;LOCK=threading.Lock()
 WORKER='/repo/experiments/aclt-minimal-verifier-state3/build/worker'
 def durable(path,data,new=True):
  with path.open('xb' if new else 'wb') as f:f.write(data);f.flush();os.fsync(f.fileno())
@@ -44,14 +49,24 @@ def perform(obj):
   msg.pop('mac');msg=sign(msg,secret)
   return transmit(msg,secret)
  raise ValueError('unknown node action')
-class Handler(http.server.BaseHTTPRequestHandler):
+class Handler(test_control.BoundedHandler):
  def log_message(self,*a):pass
  def do_POST(self):
   try:
-   obj=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+   obj=test_control.request(self)
    if obj['action']=='info':result={'boot':BOOT,'files':{p.name:digest(p.read_bytes()) for p in D.iterdir() if p.is_file()}}
    else:result=perform(obj)
-   data=canonical(result);self.send_response(200)
-  except Exception as ex:data=canonical({'error':type(ex).__name__+': '+str(ex),'boot':BOOT});self.send_response(400)
-  self.end_headers();self.wfile.write(data)
-print('NODE_READY '+BOOT,flush=True);http.server.ThreadingHTTPServer(('0.0.0.0',9001),Handler).serve_forever()
+   test_control.response(self,result)
+  except Exception as ex:test_control.response(self,{'error':type(ex).__name__},403 if isinstance(ex,PermissionError) else 400)
+def control_server(directory,config,token,bind='127.0.0.1',port=9001):
+ global D,BOOT,CONF
+ test_control.validate_token(token)
+ D=pathlib.Path(directory);BOOT=pathlib.Path('/proc/sys/kernel/random/boot_id').read_text().strip();CONF=config
+ service=http.server.ThreadingHTTPServer((bind,port),Handler);service.control_token=token;service.daemon_threads=True;return service
+
+if __name__=='__main__':
+ import argparse
+ p=argparse.ArgumentParser();p.add_argument('--data',type=pathlib.Path,default=pathlib.Path('/data'));p.add_argument('--test-control-token-file',type=pathlib.Path,required=True);p.add_argument('--bind',default='127.0.0.1');p.add_argument('--port',type=int,default=9001);a=p.parse_args()
+ token=test_control.token_file(a.test_control_token_file)
+ with control_server(a.data,json.loads((a.data/'node.json').read_text()),token,a.bind,a.port) as service:
+  print('NODE_READY '+BOOT,flush=True);service.serve_forever()

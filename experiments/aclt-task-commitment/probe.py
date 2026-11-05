@@ -1,5 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Generate inspectable commitment/binding evidence using the unchanged stats fixture."""
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import argparse
 import copy
 import hashlib

@@ -4,6 +4,10 @@
 
 Explicit restricted stats-core independence evidence; not full ADR acceptance.
 """
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import argparse
 import copy
 import hashlib

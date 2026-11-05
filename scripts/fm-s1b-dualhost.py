@@ -5,6 +5,10 @@
 Only tests encoding and signature adapters. No task TCP protocol, remote compute
 admission, fault injection, identity independence or settlement claim is made.
 """
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import argparse
 import hashlib
 import json

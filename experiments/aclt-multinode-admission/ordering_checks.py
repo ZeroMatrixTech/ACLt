@@ -1,3 +1,7 @@
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import itertools
 import pathlib
 

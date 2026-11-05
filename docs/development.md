@@ -91,23 +91,23 @@
 
 ## 第二项切片 3：因果记录与完整包重传
 
-[aclt-task-replay](../experiments/aclt-task-replay/README.md)新增独立实验部署，保留旧实验源文件。`make check-task-replay` 新增 26 项本地回归，默认合计 191 项，依赖已有 OpenSSL/Python/SQLite。显式双机入口使用全新目录，实际 LAN 走 CHECK/CONSUME/SUBMIT；正常 `replay` 仅重传封存包，`offline.py` 仅检查导出证据并要求调用者另存 key/checkpoint digest。不得把不完整状态自动续算，或把实验接纳解释成正确性/TRUSTED。字段、恢复规则、依赖与复现见 [报告](testing/TASK-REPLAY-SLICE3-20261024.md)。
+[aclt-task-replay](../experiments/aclt-task-replay/README.md)新增独立实验部署，保留旧实验源文件。`make check-task-replay` 新增 26 项本地回归，该片完成时默认合计 191 项，依赖已有 OpenSSL/Python/SQLite。显式双机入口使用全新目录，实际 LAN 走 CHECK/CONSUME/SUBMIT；正常 `replay` 仅重传封存包，`offline.py` 仅检查导出证据并要求调用者另存 key/checkpoint digest。不得把不完整状态自动续算，或把实验接纳解释成正确性/TRUSTED。字段、恢复规则、依赖与复现见 [报告](testing/TASK-REPLAY-SLICE3-20261024.md)。
 
 ## 第二项工作统一收尾入口
 
-`make test-task-work2` 显式使用现有 SSH、LAN 和全新两端目录，重跑承诺、授权及因果重放三个切片；`scripts/task-work2.py verify` 只核对保存证据，需要独立留存的 key/checkpoint pin，不连接 B 或重新执行任务。五项收尾工具回归纳入默认检查（合计 196 项）；原三个实验源码保持不变。完整命令、证据布局、恢复边界与交接见 [维护入口](testing/TASK-WORK2-MAINTENANCE.md) 和 [总报告](testing/TASK-WORK2-CLOSEOUT-20261024.md)。
+`make test-task-work2` 显式使用现有 SSH、LAN 和全新两端目录，重跑承诺、授权及因果重放三个切片；`scripts/task-work2.py verify` 只核对保存证据，需要独立留存的 key/checkpoint pin，不连接 B 或重新执行任务。五项收尾工具回归纳入默认检查（当时合计 196 项）；原三个实验源码保持不变。完整命令、证据布局、恢复边界与交接见 [维护入口](testing/TASK-WORK2-MAINTENANCE.md) 和 [总报告](testing/TASK-WORK2-CLOSEOUT-20261024.md)。
 
 ## 第三项切片 1：资金政策与预留
 
-`make check-funding-reservation` 运行新增 22 项本地回归，默认合计 218 项，使用既有 Python/SQLite/OpenSSL。真实 LAN 矩阵显式运行 [实验目录](../experiments/aclt-funding-reservation/README.md)的 `dualhost.py`，仅全新目录，A 为单一测试资金账本、B 为请求端。`audit.py` 按独立保存的 key/checkpoint pin 只读重建账目。没有真实资金、付款/退款或旧执行入口资金门禁；字段、恢复边界和证据见 [报告](testing/FUNDING-RESERVATION-SLICE1-20261024.md)。
+`make check-funding-reservation` 运行新增 22 项本地回归，该片完成时默认合计 218 项，使用既有 Python/SQLite/OpenSSL。真实 LAN 矩阵显式运行 [实验目录](../experiments/aclt-funding-reservation/README.md)的 `dualhost.py`，仅全新目录，A 为单一测试资金账本、B 为请求端。`audit.py` 按独立保存的 key/checkpoint pin 只读重建账目。没有真实资金、付款/退款或旧执行入口资金门禁；字段、恢复边界和证据见 [报告](testing/FUNDING-RESERVATION-SLICE1-20261024.md)。
 
 ## 第三项切片 2：固定结算实验入口
 
-`make check-fixed-settlement` 新增 26 项局部回归，默认合计 244 项，不联网。独立 [v2 实验](../experiments/aclt-fixed-settlement/README.md)提供 `executor.py execute|submit`、`client.py settle|status` 和只读 `audit.py`；真实双机矩阵显式使用全新目录、严格 SSH 和实际 LAN。比较/费用在执行前冻结，完整报告重传不续算；旧执行/账本入口不迁移。恢复与信任边界见 [报告](testing/FIXED-SETTLEMENT-SLICE2-20261024.md)。
+`make check-fixed-settlement` 新增 26 项局部回归，该片完成时默认合计 244 项，不联网。独立 [v2 实验](../experiments/aclt-fixed-settlement/README.md)提供 `executor.py execute|submit`、`client.py settle|status` 和只读 `audit.py`；真实双机矩阵显式使用全新目录、严格 SSH 和实际 LAN。比较/费用在执行前冻结，完整报告重传不续算；旧执行/账本入口不迁移。恢复与信任边界见 [报告](testing/FIXED-SETTLEMENT-SLICE2-20261024.md)。
 
 ## 第三项切片 3：结算恢复入口
 
-`make check-settlement-recovery` 新增 16 项局部回归，默认合计 260 项，不联网。独立 [恢复 wrapper](../experiments/aclt-settlement-recovery/README.md)保留原 v2 转移/审计，`client.py recover` 只发 STATUS；fault_driver/服务 test-control 仅显式测试使用。真实双机矩阵采用全新目录和严格 SSH，验证实际丢回复/自有进程 SIGKILL 与原权利恢复；9 份 checkpoint 可由原 auditor 只读复核。命令/范围见 [报告](testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)。
+`make check-settlement-recovery` 新增 16 项局部回归，该片完成时默认合计 260 项，不联网。独立 [恢复 wrapper](../experiments/aclt-settlement-recovery/README.md)保留原 v2 转移/审计，`client.py recover` 只发 STATUS；fault_driver/服务 test-control 仅显式测试使用。真实双机矩阵采用全新目录和严格 SSH，验证实际丢回复/自有进程 SIGKILL 与原权利恢复；9 份 checkpoint 可由原 auditor 只读复核。命令/范围见 [报告](testing/SETTLEMENT-RECOVERY-SLICE3-20261024.md)。
 
 ## 第三项工作统一收尾入口
 
@@ -152,3 +152,15 @@
 ## FM-S2 限定集成
 
 `make check-fm-s2` 运行离线状态机、签名、竞争、固定向量与快照回归，不连接远端。显式 `make test-fm-s2 FM_S2_PEER=user@B FM_S2_A_HOST=A_LAN_IP FM_S2_REMOTE_ROOT=/new/B/path FM_S2_OUTPUT=/new/A/path` 创建全新双物理机测试部署。复核公共快照使用 `scripts/check-fm-s2-evidence.py`，必须提供带外保存的 genesis；详见[本轮报告](testing/FM-S2-20261031.md)与[候选合约](../schemas/formal-migration/execution.md)。所有正式准入/结算保持关闭。
+
+## 2026-11-05 有界修复后的门禁与交付
+
+`make check` 保持轻量本地检查，新增环境/文档/证据元数据与测试控制帧回归；以本次日志为准，前文各片总数均为当时快照。`make test` 才构建 Rust/C++、跑独立对拍、回环 HTTP 和 sanitizer；`make verify-source` 在含完整 Git 历史的 checkout 校验三份历史摘要的 52 项 pin 及 SOURCE-BASELINE 的 43 项 pin。元数据通过不能代替源码核对，源码核对不能代替重新执行。无 .git 的解包目录仍可校验清单并运行本地检查，Git 源码维度标为 NOT_RUN。
+
+`DELIVERY-SCOPE.json` 明示完整源码交付范围，包含 AGENTS、历史 state1/state2、codocs 与 CI 配置；历史文件的入包不使其成为运行入口。已存在的受管文件不能藏在枚举之外。生成目录排除锚定在明确的实验构建路径；新增 tools/.../build/*.py 等源码仍会使旧清单失效。新文件和经审阅的删除可以先更新清单，未提交交付也可验收。
+
+ZIP 使用固定 1980 时间、顺序、Unix 普通文件 0644 与 ZIP_STORED，避免墙钟、源文件 mtime/mode 和压缩库版本引入差异；源码体积稍大。ZIP 内 .sh 以 `bash` 调用，不靠可执行位。SHA 仅证明内容一致，发布来源签名/外部信任根仍未建立。
+
+CI 配置只在 PR、main push 和手动触发时跑完整本地检查和打包重现，不含双机/VM。checkout 固定到 action revision、只读权限且不保留凭据；Ubuntu 镜像与 apt 来源版本仍非完整内容锁。入库不等于 GitHub 已执行，首次远端 CI 验收需在人工推送后观察。
+
+预检固定已测 Python 3.14/Unicode 16.0.0、Rust/Cargo 1.93.1、G++ 15 与 OpenSSL 3.5；版本范围外明确拒绝，需单独重新验收。没有引入 rustup 或下载隐式依赖。state3 部署二进制与测试故障开关分离，旧恢复脚本未接回门禁。

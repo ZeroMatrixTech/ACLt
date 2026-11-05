@@ -5,6 +5,10 @@
 Creates new private directories and touches only its own child processes. No
 system service/firewall/VM changes, payments, adjudication or automatic guest retry.
 """
+
+if not __debug__:
+    raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
+
 import argparse
 import hashlib
 import io

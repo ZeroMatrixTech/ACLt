@@ -1,6 +1,9 @@
 """One inventory for delivery manifests and packaging (Python standard library)."""
 from pathlib import Path
 import hashlib
+import json
+import subprocess
+import fnmatch
 
 EXPERIMENT = 'experiments/aclt-minimal-verifier-state3'
 MULTINODE = 'experiments/aclt-multinode-admission'
@@ -37,19 +40,51 @@ def manifest(root, paths):
     return ''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(root).as_posix()}\n'
                    for p in sorted(set(paths)))
 
+def policy(root):
+    value=json.loads((root/'DELIVERY-SCOPE.json').read_text())
+    if value['schema']!='aclt.delivery-scope@1':raise ValueError('delivery policy version')
+    return value
+
+def skipped(relative,patterns):
+    # Patterns are anchored to known generated locations, never arbitrary build/ names.
+    parts=relative.parts
+    if '__pycache__' in parts or '.git' in parts:return True
+    return any(relative.full_match(p) for p in patterns if not p.startswith('**/'))
+
+def delivery_files(root):
+    cfg=policy(root);paths=[]
+    for name in cfg['source_directories']:
+        base=root/name
+        if base.is_symlink() or (base.exists() and not base.is_dir()):raise ValueError('Unsafe source directory: '+name)
+        for path in sorted(base.rglob('*')):
+            relative=path.relative_to(root)
+            if skipped(relative,cfg['excluded_generated_paths']):continue
+            if path.is_symlink():raise ValueError('Symlink is not a delivery input: '+str(relative))
+            if path.is_file():paths.append(path)
+    for name in cfg['top_level_files']:
+        path=root/name
+        if path.is_symlink() or any(p.is_symlink() for p in path.parents if p!=root and root in p.parents) or not path.is_file():raise ValueError('Missing/unsafe delivery input: '+name)
+        paths.append(path)
+    return sorted(set(paths))
+
+def tracked_coverage(root,paths):
+    # Do not accidentally use a parent checkout for an unpacked source directory.
+    r=subprocess.run(['git','-C',str(root),'rev-parse','--show-toplevel'],capture_output=True,text=True)
+    if r.returncode or Path(r.stdout.strip()).resolve()!=root.resolve():return 'NOT_RUN_NO_CHECKOUT'
+    names=set(subprocess.check_output(['git','-C',str(root),'ls-files','-z']).decode().rstrip('\0').split('\0'))
+    covered={p.relative_to(root).as_posix() for p in paths}|set(policy(root)['tracked_exceptions'])
+    present={n for n in names if (root/n).exists() or (root/n).is_symlink()}
+    missing=present-covered
+    if missing:raise ValueError('Unclassified tracked delivery paths: '+', '.join(sorted(missing)))
+    return 'PASS'
+
 def inventories(root):
     workflow = files(root, 'docs/workflow') + files(root, 'tests/workflow')
     workflow += [root / name for name in [
         '.aclt-flow/template.json', '.aclt-flow/.gitignore', 'scripts/aclt-flow.py',
         'scripts/package-singlehost.py', 'scripts/repository_files.py']]
-    delivery = []
-    for directory in ['tools', 'tests', 'schemas', 'registries', 'scripts', 'docs', EXPERIMENT, MULTINODE, AUTHORITY, RIR_BUILD, RIR_IO, RIR_STATS, TASK_COMMITMENT, TASK_AUTHORIZATION, TASK_REPLAY, FUNDING_RESERVATION, FIXED_SETTLEMENT, SETTLEMENT_RECOVERY]:
-        delivery.extend(p for p in files(root, directory)
-                        if not p.relative_to(root).as_posix().startswith('docs/codocs/'))
-    delivery += [root / name for name in [
-        'README.md', 'CONTRIBUTING.md', 'LICENSE', 'Makefile', '.gitignore',
-        '.aclt-flow/template.json', '.aclt-flow/.gitignore', 'WORKFLOW-SHA256SUMS',
-        'experiments/README.md']]
+    delivery=delivery_files(root)
+    tracked_coverage(root,delivery)
     return {
         EXPERIMENT + '/SHA256SUMS': (root / EXPERIMENT, [
             p for p in files(root, EXPERIMENT) if p.name != 'SHA256SUMS']),
