@@ -1,0 +1,28 @@
+{
+  "id": "CI-GIT-SOURCE-FIX-20261105",
+  "baseline": "58ae7b09e85c7e44b2d6517216e2687448c40643",
+  "scope": "repository tooling only",
+  "clean_clone": "no-local single-branch",
+  "simulated_foreign_ownership": true,
+  "source_pins": 95,
+  "source_verification": "PASS",
+  "migration_source_verification": "PASS",
+  "new_regression_methods": 7,
+  "online_rerun": "NOT_RUN",
+  "new_dualhost_runs": 0,
+  "gate_changes": false,
+  "local_make_test": "PASS",
+  "default_unittest_methods": 398,
+  "local_make_test_log_sha256": "bc62666347335eb3872d621fab0e400d345d09b7363f2631aa23aae161b33624",
+  "initial_restricted_test": "Blocked by local socket permission; full suite passed with local socket access",
+  "source_sha256": {
+    "tools/git_sources.py": "4f2de51c89db6010ce57112516b0aac929f5e3ed12e485699f6f9d04452be488",
+    "tools/migration_evidence.py": "e142bc34577681b00528f92b3e73bb5d025e38da92d00e4c4501a5be7819675d",
+    "scripts/check-repository-evidence.py": "089048f547c866f5bc89971cb00d01bcb4ec34db785e670869efe76861f00035",
+    "scripts/check-migration-evidence.py": "898333fd1011a80ce78a9f05aa81e87fb922e8ff4c7919e59add38c569b88cb3",
+    "scripts/repository_files.py": "b1f9539b88e50875b75a7732f0eaf6c26b3aae7e3ed6b3c8b32d1eb2b18f3eb1",
+    "tests/repository_hardening/test_git_sources.py": "3d247d079895e729f55918bff3f3d2dde4ccc38eab64a7abd424c158a1d87092"
+  },
+  "deterministic_package": "PASS",
+  "package_entries": 536
+}

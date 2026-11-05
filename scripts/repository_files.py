@@ -2,7 +2,9 @@
 from pathlib import Path
 import hashlib
 import json
-import subprocess
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tools.git_sources import git
 import fnmatch
 
 EXPERIMENT = 'experiments/aclt-minimal-verifier-state3'
@@ -69,9 +71,11 @@ def delivery_files(root):
 
 def tracked_coverage(root,paths):
     # Do not accidentally use a parent checkout for an unpacked source directory.
-    r=subprocess.run(['git','-C',str(root),'rev-parse','--show-toplevel'],capture_output=True,text=True)
-    if r.returncode or Path(r.stdout.strip()).resolve()!=root.resolve():return 'NOT_RUN_NO_CHECKOUT'
-    names=set(subprocess.check_output(['git','-C',str(root),'ls-files','-z']).decode().rstrip('\0').split('\0'))
+    if not (root/'.git').exists() and not (root/'.git').is_symlink():return 'NOT_RUN_NO_CHECKOUT'
+    r=git(root,'rev-parse','--show-toplevel')
+    if Path(r.stdout.decode().strip()).resolve()!=root.resolve():
+        raise ValueError('Git checkout root mismatch')
+    names=set(git(root,'ls-files','-z').stdout.decode().rstrip('\0').split('\0'))
     covered={p.relative_to(root).as_posix() for p in paths}|set(policy(root)['tracked_exceptions'])
     present={n for n in names if (root/n).exists() or (root/n).is_symlink()}
     missing=present-covered

@@ -4,17 +4,15 @@
 import argparse
 import json
 from pathlib import Path
-import subprocess
 import sys
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
+from tools.git_sources import read_blob
 from tools.repository_checks import source_baseline,check_documents
 from tools.migration_evidence import verify as verify_summary
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--repository',type=Path);a=p.parse_args()
     def blob(revision,name):
-        r=subprocess.run(['git','-C',str(a.repository),'show',revision+':'+name],capture_output=True)
-        if r.returncode:raise ValueError('unavailable source '+revision+':'+name)
-        return r.stdout
+        return read_blob(a.repository,revision,name)
     try:
         baseline=source_baseline(ROOT,blob if a.repository else None);reports=[]
         for name in ('FM-S1A-20261028','FM-S1B-20261028','RIR-INDEPENDENT-CORE-20261028'):
