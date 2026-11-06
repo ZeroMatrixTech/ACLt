@@ -1,6 +1,6 @@
 # 开发与维护入口
 
-> 更新：2026-10-14。工程操作指南；不改变协议语义、Gate 或历史证据。
+> 更新：2026-11-06。工程操作指南；不改变协议语义、Gate 或历史证据。
 
 ## 统一入口
 
@@ -45,7 +45,7 @@
 
 文件选择与过滤集中在 `scripts/repository_files.py`。`update-manifests.py` 负责更新/校验，`package-singlehost.py` 使用同一清单并验证归档内容。
 
-四份清单分别覆盖 state3、多节点、工作流和更新包。刷新按依赖顺序进行。更新包保留原命名接口，包含两个当前实验、脚本、模型与配置测试、注册种子、使用文档及 LICENSE；不包含旧实验和 `docs/codocs/`。它是叠加到现有 checkout 的更新包，不能替代完整仓库或删除接收方旧文件。完整源码交付使用 Git checkout/归档。
+四份清单分别覆盖 state3、多节点、工作流和更新包。刷新按依赖顺序进行。更新包保留原命名接口；自 2026-11-05 起文件选择以 `DELIVERY-SCOPE.json` 为准，包含全部受管源码输入及历史 state1/state2、`docs/codocs/`（见下文“有界修复后的门禁与交付”），2026-10-14 版“不含旧实验和 codocs”的范围已被替代。解包到新目录可独立运行本地检查；叠加到已有 checkout 时不会删除接收方旧文件。Git 源码 pin 校验（`make verify-source`）仍需完整 Git checkout。
 
 默认输出 `dist/aclt-singlehost-update.zip` 和同名 `.sha256`。输出已存在、清单失效或交付输入为符号链接时拒绝打包；不会自动重签源码。中途失败的产物需要审查后另行处理。
 
@@ -168,3 +168,11 @@ CI 配置只在 PR、main push 和手动触发时跑完整本地检查和打包�
 ## FM-S3a 签名结果局部切片
 
 `make check-fm-s3-results` 运行固定候选审计合约、Receipt 重绑定、双角色签名结果与 S2 快照纯重放的本地回归；默认 `make check` 包含此入口。详见[报告](testing/FM-S3A-RESULTS-20261105.md)与[合约](../schemas/formal-migration/audit-results.md)。使用合成 outcome 字节，不产生新执行或双机证据；权威接纳、显式假设求值、终态和权利账务尚未接通。
+
+## FM-S3b/S3c 候选权威、权利与 Task trap
+
+上节“尚未接通”为 FM-S3a 当时状态。`make check-fm-s3-authority` 运行候选权威接纳、幂等与冲突、唯一终态、权利派生、COMMIT 中断恢复及 opt-in Task trap 的本地回归，默认 `make check` 包含此入口。显式双机运行 `python3 -B scripts/fm-s3-dualhost.py --peer <B_USER>@<B_IP> --a-host <A_IP> --remote-root /new/B/path --output /new/A/path`，加 `--task-trap` 使用固定除零工件；两端须为新目录，B 主机密钥严格校验；A/B 均用系统 rustc 构建同一执行器并比对摘要，脚本拒绝相同 hostname 的对端。A 同时承载权威与审计者，B 承载执行者。见[总体收尾](testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](testing/FM-S3-TASK-TRAP-20261106.md)与[接口规范切片](testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)。正式接口、准入、执行闭合与可耗尽预算仍未接通。
+
+## 开发者预览打包
+
+预览源码包用 `make package PACKAGE=/new/path/aclt-preview-<DATE>-src.zip` 生成，命名与范围见[发行说明草案](releases/PREVIEW-20261106.md)。打包前须清单有效、工作区干净且位于待发布 commit；发布前检查清单以发行说明为准。预览名称不是 ProtocolVersion 或 ConformanceTarget。

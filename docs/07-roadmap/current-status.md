@@ -2,7 +2,7 @@
 
 > 文档性质：持续更新的项目快照（living document）  
 > 基线版本：v0.5  
-> 快照日期：2026-11-05
+> 快照日期：2026-11-06
 > 当前阶段：G0 — 语义与问题空间冻结  
 > 权威范围：记录“现在已经知道什么、还没有证明什么、下一步需要什么证据”；不替代协议规范、ADR 或测试结果。
 
@@ -12,11 +12,12 @@
 |---|---|---|
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
-| 当前主线 | [FM-S3 候选总体收尾](../testing/FM-S3-CLOSEOUT-20261106.md)通过 8 个双物理机 LAN 场景，A/B 独立重放 39 事件，测试资金守恒 | 正式接口保持 OPEN。后续补正式启动来源、Phase B/D、执行闭合、Task trap 与预算耗尽证据 |
+| 当前主线 | [FM-S3 候选总体收尾](../testing/FM-S3-CLOSEOUT-20261106.md)通过 8 个双物理机 LAN 场景，A/B 独立重放 39 事件，测试资金守恒 | 正式接口保持 OPEN。Task trap 已由下方切片覆盖；后续补正式启动来源、Phase B/D、执行闭合与预算耗尽证据 |
 | 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | PR #65 已合并；线上 CI 验收以 Actions 运行记录为准，正式准入仍关闭 |
-| FM-S3 规范对齐 | [第一项四片收尾](../testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)覆盖无 claim 编码、Phase B、接纳边界和非主网部署草案 | 进入候选 Task trap、执行闭合与可耗尽预算；正式信封和准入另行评审 |
+| FM-S3 规范对齐 | [第一项四片收尾](../testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)覆盖无 claim 编码、Phase B、接纳边界和非主网部署草案 | Task trap 已完成；继续执行闭合与可耗尽预算；正式信封和准入另行评审 |
 | FM-S3 终态覆盖 | [Task trap 双机切片](../testing/FM-S3-TASK-TRAP-20261106.md)已验证真实除零结果接纳、候选判决及账务恢复 | 下一片补可验证执行闭合，再接可耗尽预算及正式启动来源 |
-| 验收边界 | P0-1B 仍 3/24/92，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
+| 开发者预览 | [发行说明草案](../releases/PREVIEW-20261106.md)与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：源码包可重现、包内本地检查可运行 | 发布前在待打标签 commit 上重跑双机并确认 CI；预览不是 ProtocolVersion、ConformanceTarget 或部署启用 |
+| 验收边界 | P0-1B 为 3/24/92，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
 当前依据：[ADR-0006 分层评审](../05-decisions/reviews/REVIEW-20261028-layered.md)、[三份机器摘要与校验](../testing/MIGRATION-EVIDENCE-20261028.md)、[FM-S3 audit 依赖](fm-s3-audit-dependencies.md)。以下带日期记录为历史，不覆盖本表优先级。
 
