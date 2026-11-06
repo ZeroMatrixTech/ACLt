@@ -1,0 +1,39 @@
+{
+  "status": "PASS",
+  "scenarios": [
+    "cross_host_rpr_and_result",
+    "duplicate_and_conflict",
+    "concurrent_settlement",
+    "cross_host_result_reply_loss",
+    "settlement_before_commit_restart",
+    "settlement_after_commit_restart",
+    "cross_host_deadline_rejection",
+    "cross_host_public_replay"
+  ],
+  "task_outcome": "TRAP_INTEGER_DIVIDE_BY_ZERO",
+  "runtime_sha256": "3942c7bb33b667c13832ffe793e6f3632cd0fc434993b13de80087c8ef6d158e",
+  "replay": {
+    "status": "PASS",
+    "events": 39,
+    "head": "993aaf1ba13fc50e3cd884605039dfaab2e66410f33f4b9257cc96c2c3593984",
+    "state_digest": "da410156e09635435fbcae7f95dcf851772c82d6eadbe730262a41f97d18f307",
+    "funds_held": 0,
+    "official_admission": false
+  },
+  "genesis": "836324a2cb2f70ec0212c285ce9c24ac85667818f19596c3c5af871908e8a489",
+  "total": 68,
+  "available": 39,
+  "paid": 29,
+  "holdings": 0,
+  "source_manifest_sha256": "28d16dc39341862145cf0b3c155c09bb8feeb3388b04de65f514d6c840852f45",
+  "base_revision": "3275a63",
+  "scope": "two physical hosts, opt-in trap Receipt, candidate audit-only",
+  "public_sha256": {
+    "config.cbor": "ed8651dfeb9e570fa23d5c84709017d83b02c627099cbd35af268e7bea4264d5",
+    "anchor.cbor": "6c6c0adb0c4ece54711fbcc01a8b8c7efdb947e2248a4327bdee6685f5fbbbb5",
+    "snapshot.cbor": "d28d295bdc509e0813e2446830262a76158f1c5facc89936ca6d4cf47d39203f",
+    "source-sha256.json": "28d16dc39341862145cf0b3c155c09bb8feeb3388b04de65f514d6c840852f45",
+    "summary.json": "691eb977f68cf131a34e3dceabf37238e68f081c89c23ca6ee22d80b35cd6817"
+  },
+  "public_archive_sha256": "7fda15a96dd71557a8a29377f76c4150e55634e1436261d00351c3bc403ae9df"
+}

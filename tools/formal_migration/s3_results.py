@@ -62,17 +62,32 @@ def bundle_profile(bundle):
     return check_profile(c.decode(contract['content']))
 
 
-def outcome_check(raw, execution):
+TASK_TRAPS = frozenset({
+    'TRAP_CALL_DEPTH', 'TRAP_GAS_EXHAUSTED', 'TRAP_HOST_ARGUMENT',
+    'TRAP_INTEGER_DIVIDE_BY_ZERO', 'TRAP_INTEGER_OVERFLOW', 'TRAP_MEMORY_OOB',
+    'TRAP_OUTPUT_LIMIT', 'TRAP_UNREACHABLE',
+})
+
+
+def outcome_check(raw, execution, *, allow_traps=False):
     c.need(type(raw) is bytes and 0 < len(raw) <= execution['output_bytes_limit'] + 128,
-           'S3a outcome byte bound')
+           'task outcome byte bound')
     obj = c.decode(raw)
-    # Initial stats-int-v1 path only; semantic traps need a later explicit contract.
-    s2.fields(obj, {'outcome', 'gas_used', 'output'})
-    c.need(obj['outcome'] == 'OK', 'S3a supports OK task outcomes only')
+    c.need(type(obj) is dict and type(obj.get('outcome')) is str, 'task outcome kind')
+    kind = obj['outcome']
+    if kind == 'OK':
+        s2.fields(obj, {'outcome', 'gas_used', 'output'})
+        c.need(type(obj['output']) is bytes and len(obj['output']) <= execution['output_bytes_limit'],
+               'outcome output bound')
+    else:
+        c.need(allow_traps and (kind == 'ABORT' or kind in TASK_TRAPS), 'unsupported task outcome')
+        if kind == 'ABORT':
+            s2.fields(obj, {'outcome', 'gas_used', 'abort_code'})
+            c.need(type(obj['abort_code']) is int and 0 <= obj['abort_code'] < 2**32, 'abort code uint32')
+        else:
+            s2.fields(obj, {'outcome', 'gas_used'})
     s2.uint(obj['gas_used'])
     c.need(obj['gas_used'] <= execution['fuel'], 'outcome fuel bound')
-    c.need(type(obj['output']) is bytes and len(obj['output']) <= execution['output_bytes_limit'],
-           'outcome output bound')
     c.need(c.encode(obj) == raw, 'canonical outcome encoding')
     return c.domain_hash('ACLt/RIR-0/ExecutionOutcome/1', raw)
 
