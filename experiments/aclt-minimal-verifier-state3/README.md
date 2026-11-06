@@ -2,7 +2,7 @@
 
 当前入口是 `bash scripts/run-ubuntu.sh`。它执行 68 个基础用例、strict、strict-adversarial 和 Rust/C++ 差分/资源检查；以运行日志为准。旧的 265 合计含当前不再调用的恢复/生命周期脚本，不是当前门禁计数。
 
-当前策略见 [STRICT-POLICY.md](STRICT-POLICY.md)：每项资格只消费一次，MAX_ATTEMPTS=1，MAX_RECOVERIES=0；`resume` 始终拒绝，不提供恢复计算入口。单机回归不替代物理双机部署证据，也不关闭任何协议 Gate。
+当前策略见 [STRICT-POLICY.md](docs/STRICT-POLICY.md)：每项资格只消费一次，MAX_ATTEMPTS=1，MAX_RECOVERIES=0；`resume` 始终拒绝，不提供恢复计算入口。单机回归不替代物理双机部署证据，也不关闭任何协议 Gate。
 
 ```sh
 bash scripts/run-ubuntu.sh

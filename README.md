@@ -4,7 +4,7 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-10-20**
+> **最后更新：2026-11-06**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -125,11 +125,15 @@ make workflow    # 按指纹执行并收集各组证据
 
 ## 当前工程入口与证据
 
-截至 2026-10-07，当前单机实验入口为 [state3](experiments/aclt-minimal-verifier-state3/README.md)。[2026-10-03 集成报告](docs/testing/INTEGRATION-FIX.md)记录 265 个实验场景、13 项模型测试、24 项验证配置测试及 22 项流程/集成测试通过；这是已保存的历史证据，不是本次全量重跑结果。P0-1B 保持 `STARTED / NOT CLOSED`。
+当前进度与优先级以[当前状态](docs/07-roadmap/current-status.md)的“当前实施入口”表为准。截至 2026-11-06，工程主线是 [ADR-0007](docs/05-decisions/ADR-0007-formal-object-migration-foundation.md) 与 [ADR-0008](docs/05-decisions/ADR-0008-fm-s3-interface-decisions.md) 下的候选 FM-S3 audit-only 路径：[双机收尾](docs/testing/FM-S3-CLOSEOUT-20261106.md)与 [Task trap 切片](docs/testing/FM-S3-TASK-TRAP-20261106.md)各通过 8 个双物理机场景。正式接口与准入保持 `OPEN`；P0-1B 保持 `STARTED / NOT CLOSED`，Type A 为 3 implemented / 24 partial / 92 not implemented。开发者预览的范围、复现方式与已知限制见[发行说明草案](docs/releases/PREVIEW-20261106.md)。
+
+state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifier-state3/README.md)）。[2026-10-03 集成报告](docs/testing/INTEGRATION-FIX.md)记录 265 个实验场景、13 项模型测试、24 项验证配置测试及 22 项流程/集成测试通过；这是已保存的历史证据，不是本次全量重跑结果。
 
 | 目录/入口 | 用途 |
 |---|---|
-| `experiments/aclt-minimal-verifier-state3/` | 当前单机实现；旧代见 [实验索引](experiments/README.md) |
+| `tools/formal_migration/`、`tests/formal_migration/` | 正式对象迁移候选实现（FM-S1a～FM-S3）及本地回归 |
+| `scripts/fm-s2-dualhost.py`、`scripts/fm-s3-dualhost.py` | 显式双物理机集成驱动；按 [DUALHOST-SSH-1](docs/08-governance/dualhost-ssh-validation.md) 运行 |
+| `experiments/aclt-minimal-verifier-state3/` | 本地单机回归入口；旧代见 [实验索引](experiments/README.md) |
 | `experiments/aclt-multinode-admission/` | 预登记身份、持久接收器与故障注入原型；见[多节点实验说明](experiments/aclt-multinode-admission/README.md) |
 | `schemas/verification-profile/`、`registries/` | Schema 骨架、覆盖登记与注册种子 |
 | `tools/verification_profile/`、`tests/verification_profile/` | 验证配置实现与测试 |
@@ -184,7 +188,7 @@ make workflow    # 按指纹执行并收集各组证据
 
 代码与参考实现的许可方案已经确定为 **Apache License 2.0**，SPDX 标识为 `Apache-2.0`。该决定不自动覆盖协议规范、项目文档、研究论文、名称、商标或兼容性声明；这些工件的许可与使用政策将分别决定。
 
-仓库根目录已经包含未经修改的 Apache License 2.0 英文全文 `LICENSE`。未来适用源码仍需加入 SPDX 标识；存在归属声明或第三方通知要求时再维护 `NOTICE`。应准确表述为“代码许可证已经选定并在根目录落地”，而不是“仓库全部工件的开源授权已经完成”。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
+仓库根目录 `LICENSE` 为 Apache License 2.0 英文全文；2026-11-06 起，文末附录示例中的版权行填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`，许可条款正文未改。未来适用源码仍需加入 SPDX 标识；存在归属声明或第三方通知要求时再维护 `NOTICE`。应准确表述为“代码许可证已经选定并在根目录落地”，而不是“仓库全部工件的开源授权已经完成”。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
 
 ## 名称说明
 
