@@ -25,13 +25,13 @@ AuditFailureMapping 必须精确覆盖规范方法矩阵的 13 个事件；五�
 
 这里的 **84 个 Type A 依赖不等于新写 84 项实现**：公共基础需要复用、对象绑定要分阶段集成，部分还被官方接口阻塞。另有 35 个 Type A 由限定功能边界守卫拒绝，合计仍为原 119 项；守卫也要正负测试，不能标成已实现或全局 N/A。Type B 中 SV-56 属 bounded 抽样路径，限定 audit 入口必须证明不存在该路径，不能借此关闭其全局义务。
 
-未来新模块/向量位置、每个 SV 的主责包及守卫编号列在 JSON 中。所有验收仍是 PLANNED_NOT_RUN，全球覆盖登记仍为 **3/19/97**。
+未来新模块/向量位置、每个 SV 的主责包及守卫编号列在 JSON 中。所有验收仍是 PLANNED_NOT_RUN，全球覆盖登记仍为 **3/24/92**。
 
 ## 正式实现前必须明确的四个接口
 
-1. **AUDIT-WIRE-BOTTOM**：`verified_claim_spec=⊥` 的唯一 CBOR/Schema View 表示。不能将 bootstrap JSON null 当成符合全局禁 null 的正式 wire。
-2. **AUDIT-PHASE-B-PATH**：Audit 不冻结 EligibilitySnapshot 时，Phase B 六种 payload/round_stage 的合法执行/终态路径；post-freeze 变体的必填 Snapshot 不能擅自补假对象，transition 也不能省略。
-3. **NONMAINNET-ASSURANCE**：现行 RI-6/MAP 的 outside_network_disposition=DISABLED 与本轮非主网测试声明之间的正式接口；候选 network/deployment pin 不是 MAP。
+1. **AUDIT-WIRE-BOTTOM**：Profile schema v2 的 CBOR 与 Schema View 已规定 audit 省略 claim 键。局部 bootstrap 实现与固定字节向量见 [Schema 工件](../../schemas/verification-profile/README.md)。完整 ContentMap、L2 摘要和注册验收待完成。
+2. **AUDIT-PHASE-B-PATH**：已定义无 Snapshot 的 Phase B 变体、四条转换及启动/终态因果守卫。局部向量已接默认回归，正式日志来源、完整信封接线与跨机验收仍待完成。
+3. **NONMAINNET-ASSURANCE**：§9.2.2 定义带 tag 的非主网部署声明与各相位接线草案，局部 guard 已覆盖绑定和拒绝向量。正式信封、来源证明及准入待验收。
 4. **AUTHORITATIVE-OBSERVATIONS**：S1b 报价的 COMPLETE/MISSING/HOST_FAULT 是假设输入；只有 FM-S2 提供的已认证、当前 Lease/epoch、资金/期限/事件事实，才可能进入 FM-S3 求值。报价不是合法权利证明。
 
 2026-11-06 [ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) 收敛了四项接口及首轮计费路线，适用于候选 S3b/S3c。精确字段、来源 contract、正式规范兼容与准入按 ADR 的实施顺序验收。SV-66/91/92/93/94/105/112/117/119 等共同约束继续适用。

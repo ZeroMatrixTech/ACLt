@@ -3,7 +3,7 @@
 import copy
 
 from tools.formal_migration import foundation as f, policy as p, s2, s2_evidence, s3_results, s3_settlement
-from tools.verification_profile import codec as c
+from tools.verification_profile import admission, codec as c
 
 SCHEMA = 'ACLt/FM/S3b/1'
 ROLE_BINDING = {'receipt', 'profile', 'role', 'assignment', 'epoch', 'intent', 'consume_event'}
@@ -210,7 +210,8 @@ class Ledger(s2.Ledger):
                 view['conflicts'][role] = identity
             else:
                 cost = task['bundle']['funding'][BUCKET[role]] if op == 'S3_RESULT' else 0
-                c.need(view['accepted_cost'] + cost <= task['funding_held'], 'S3b admission budget')
+                c.need(admission.within_funding_cap(view['accepted_cost'], cost, task['funding_held']),
+                       'S3b admission budget')
                 result = dict(identity=identity, kind=op, received_at=received_at, cost=cost)
                 if op == 'S3_RESULT':
                     result['outcome'] = body['outcome']

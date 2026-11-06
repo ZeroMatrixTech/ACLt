@@ -7,6 +7,8 @@
 > 来源：[FM-S3 audit 依赖入口](../../07-roadmap/fm-s3-audit-dependencies.md)中“正式实现前必须明确的四个接口”。
 >
 > 规范依据：[VerificationProfile 规范](../../03-protocol/verification-profile-schema.md)（下称“规范”）、[ADR-0005](../ADR-0005-engineering-assumptions-and-mainnet-assurance.md)、[ADR-0007](../ADR-0007-formal-object-migration-foundation.md)。
+>
+> 后续决定见 [ADR-0008](../ADR-0008-fm-s3-interface-decisions.md)。首轮候选路线以首次重执行入口划定 RUNNING，并保留首份合法结果的计费资格。这两点分别对应下文 §2 的阶段边界与 §1 的 O-6b。
 
 ## 0. 总览
 

@@ -6,15 +6,15 @@
   "inventory": "schemas/verification-profile/inventory.json",
   "coverage": "schemas/verification-profile/coverage.json",
   "source_sha256": {
-    "docs/03-protocol/verification-profile-schema.md": "864890b61048060de724f49b1397985115794a95035a1e37ac7371c22670b512",
-    "schemas/verification-profile/inventory.json": "154980baf521f14cfbb9669efc6f81f577ebd069ab814ce33963054d49d9a4a2",
-    "schemas/verification-profile/coverage.json": "a35638448b4577ecdaa492f7e29a80208e8b7c9f6c01469dec2279a16540de8e"
+    "docs/03-protocol/verification-profile-schema.md": "2d05cca5fcdfcc111e1506a6ce78f2cea0248fa4641e776160937c2c32de3bc5",
+    "schemas/verification-profile/inventory.json": "9b97e8ffd0d6023e050ef9cd40bca2dde61978a29e5766b89ba8cd7b751c1b9f",
+    "schemas/verification-profile/coverage.json": "b5df0d324341fb175f1e7fb15fa4f3819ada14edf4b87a0dd4eb430ecfbee2b3"
   },
   "scope_contract": {
     "method": "REEXEC_AUDIT_ONLY",
     "profile_selection": "one fixed Profile; no selection/degradation/weakening registration",
     "claim_template_allowed": false,
-    "verified_claim_spec": "BOTTOM_REQUIRES_WIRE_REVIEW",
+    "verified_claim_spec": "OMIT_KEY_IN_PROFILE_V2",
     "eligibility_snapshot_allowed": false,
     "bounded_safety_or_liveness_parameters": false,
     "assumption_evaluation": "explicit COMPLETE(snapshot) or INVALIDATING(failure); AssumptionStateSnapshot is not EligibilitySnapshot",
@@ -154,7 +154,7 @@
       "id": "AUDIT-WIRE-BOTTOM",
       "owner": "A0",
       "source": "verification-profile-schema.md §3.2.1/§7.4/§17",
-      "issue": "verified_claim_spec=⊥ 与全局禁 null 的具体 canonical wire/Schema View 表达需要权威澄清；不能沿用 bootstrap JSON null 冒充正式 CBOR。",
+      "issue": "Profile v2 采用省略键；完整 Profile ContentMap、L2 摘要与注册验收待完成。",
       "status": "OPEN",
       "exit": "明确唯一 wire shape、Profile ContentMap与正负字节向量后审查。"
     },
@@ -162,7 +162,7 @@
       "id": "AUDIT-PHASE-B-PATH",
       "owner": "A3",
       "source": "verification-profile-schema.md §10.2/§13.0.4/§13.1B",
-      "issue": "audit 不冻结 EligibilitySnapshot；六种 PhaseB payload 与 round_stage 在 audit 执行/终态路径中的适用关系需明确，尤其 post-freeze 分支必带快照。",
+      "issue": "已定义无 Snapshot 变体和显式因果证据检查。事件来源、完整信封接线及正式验收仍待补。",
       "status": "OPEN",
       "exit": "说明合法的无快照 Lease/round/Decision 路径；不伪造快照、不删除必填 transition。"
     },
@@ -1485,8 +1485,8 @@
   ],
   "global_coverage_unchanged": {
     "implemented": 3,
-    "partial": 19,
-    "not_implemented": 97
+    "partial": 24,
+    "not_implemented": 92
   },
   "type_a_count": 119,
   "global_gate_changes": false,
