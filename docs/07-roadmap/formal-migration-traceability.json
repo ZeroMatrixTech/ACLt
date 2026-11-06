@@ -1,6 +1,6 @@
 {
   "document_kind": "engineering-planning-traceability",
-  "date": "2026-11-05",
+  "date": "2026-11-06",
   "baseline": "f5f415f7c65952adba01f7b0c9f21d554b14c264",
   "authority": "engineering traceability; ADR-0007 route accepted by human, fields and implementation not accepted",
   "adr": "docs/05-decisions/ADR-0007-formal-object-migration-foundation.md",
@@ -327,7 +327,7 @@
       "authority": "human acceptance 2026-10-26"
     }
   ],
-  "new_dualhost_runs": 6,
+  "new_dualhost_runs": 7,
   "protocol_object_schema_status_changes": [],
   "version_disposition_changes": [],
   "gate_changes": [],
@@ -336,8 +336,8 @@
     "entry_ready": true,
     "implementation_started": true,
     "runtime_admission": false,
-    "requires": "review four open interfaces; implement signed results, audit-only evaluation/decision, policy-derived rights and bounded recovery; do not treat S2 FENCE or local outcomes as terminal/fulfillment",
-    "local_results_slice": "FM-S3a-results; no result authority admission, Decision or entitlement"
+    "requires": "formal interface review; trusted RPR start and execution closure, Task trap and budget exhaustion, complete Phase B/D and non-mainnet interface evidence",
+    "local_results_slice": "FM-S3 candidate LAN closeout complete; formal interface acceptance open"
   },
   "slice_results": {
     "FM-S1a": {
@@ -399,6 +399,19 @@
       "settlement": false,
       "formal_admission": false,
       "full_FM_acceptance_closed": false
+    },
+    "FM-S3-candidate-closeout": {
+      "limited_slice_complete": true,
+      "report": "docs/testing/FM-S3-CLOSEOUT-20261106.md",
+      "machine_summary": "docs/testing/FM-S3-CLOSEOUT-20261106.summary.json",
+      "archived_dualhost_runs": 1,
+      "scenarios_per_run": [
+        8
+      ],
+      "replayed_events": 39,
+      "candidate_result_decision_settlement": true,
+      "formal_admission": false,
+      "full_FM_acceptance_closed": false
     }
   },
   "parallel_tracks": {
@@ -413,7 +426,7 @@
       "next": "prioritize gaps exercised by FM-S2 fixed-task integration; keep full RIR conformance/formal Receipt evidence as separate unclosed gates"
     }
   },
-  "primary_work": "FM-S3 limited audit-only results/decision/accounting integration; official admission disabled",
+  "primary_work": "FM-S3 limited candidate closeout retained; formal interface acceptance open",
   "readiness_closeout": {
     "report": "docs/testing/FM-S2-READINESS-20261028.md",
     "machine_evidence": "docs/testing/MIGRATION-EVIDENCE-20261028.md",

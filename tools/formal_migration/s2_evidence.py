@@ -14,19 +14,20 @@ def export(ledger):
         c.need([r[0] for r in rows]==list(range(1,len(rows)+1)),'snapshot SQL sequence')
         checkpoint=dict(schema=s2.SCHEMA,genesis=genesis,seq=len(rows),head=rows[-1][2] if rows else s2.ZERO,state_digest=s2.h(c.decode(state)))
         pack=dict(schema=s2.SCHEMA,checkpoint=checkpoint,signature=s2.sign(ledger.private,'SNAPSHOT',checkpoint),state=state,events=[r[1] for r in rows]);db.rollback()
-    verify(ledger.cfg,pack);return pack
+    verify(ledger.cfg,pack,transition=ledger.transition);return pack
 
-def verify(cfg,pack,anchor=None):
+def verify(cfg,pack,anchor=None,*,transition=s2.Ledger.transition):
     s2.config_check(cfg);s2.fields(pack,{'schema','checkpoint','signature','state','events'})
     cp=pack['checkpoint'];s2.fields(cp,{'schema','genesis','seq','head','state_digest'})
     c.need(pack['schema']==cp['schema']==s2.SCHEMA and cp['genesis']==s2.h(cfg),'snapshot context')
     s2.verify_signature(cfg['issuer_der'],'SNAPSHOT',cp,pack['signature'])
     c.need(type(pack['events']) is list and len(pack['events'])==cp['seq']<=256,'snapshot count')
-    state=s2.initial(cfg);head=s2.ZERO;seen={0:(head,s2.h(state))}
+    state=s2.initial(cfg);head=s2.ZERO;seen={0:(head,s2.h(state))};prefix=[]
     for seq,raw in enumerate(pack['events'],1):
         event=c.decode(raw);s2.fields(event,{'schema','genesis','seq','prev','parents','now','request','state_digest','result_digest'})
         c.need(event['schema']==s2.SCHEMA and event['genesis']==s2.h(cfg) and event['seq']==seq and event['prev']==head and event['parents']==([] if seq==1 else [head]),'snapshot chain')
-        nxt,result=s2.reduce(cfg,state,event['request'],event['now'])
+        nxt,result,_=transition(cfg,state,event['request'],event['now'],prefix)
+        prefix.append(raw)
         c.need(s2.h(nxt)==event['state_digest'] and s2.h(result)==event['result_digest'],'snapshot replay digest')
         state=nxt;head=s2.h(event);seen[seq]=(head,s2.h(state))
     c.need(c.encode(state)==pack['state'] and head==cp['head'] and s2.h(state)==cp['state_digest'],'snapshot projection')

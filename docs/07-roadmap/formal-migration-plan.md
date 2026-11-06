@@ -8,9 +8,11 @@
 
 2026-10-31 [FM-S2 限定测试集成](../testing/FM-S2-20261031.md)完成，接通单权威 Lease/epoch、资金与五维暴露原子预留、持久 intent/唯一 Attempt、统一事件/签名 checkpoint 与公开重放；17 个真实双机场景通过。限定候选命名域内运行，官方 schema/非主网 assurance/完整 RPR 尚未准入。到期 FENCE 释放暴露但保持测试资金，不能提前模拟 FM-S3 的终态/退款。
 
-本轮先完成 [FM-S3a 结果接入的局部切片](../testing/FM-S3A-RESULTS-20261105.md)：新候选 Audit 合约进入新 Receipt，签名结果对照 S2 消费日志纯重放。尚无权威结果接纳/收到时点、AssumptionEvaluation、Decision 或账务转移；不是完整 FM-S3。
+前置的 [FM-S3a 结果接入的局部切片](../testing/FM-S3A-RESULTS-20261105.md)：新候选 Audit 合约进入新 Receipt，签名结果对照 S2 消费日志纯重放。后续接纳、判决和账务的证据见下列双机收尾。
 
-下一主线 **FM-S3 限定 audit-only 结果/显式求值/判决/权利与恢复**，依赖按 [audit 清单](fm-s3-audit-dependencies.md)处理。四个接口审查记录仍 OPEN；固定 raw-artifact Rust 只优先补实际路径缺口，完整 conformance 保留独立门槛。此前 FM-S1a/S1b 与[前置收口](../testing/FM-S2-READINESS-20261028.md)保留原报告。P0-1B 3/19/97、ADR-0006 PROPOSED、OQ/Gate/主网资格不升级。
+首轮候选 FM-S3 已完成 [双机验收与总体收尾](../testing/FM-S3-CLOSEOUT-20261106.md)。正式接口和准入按收尾记录中的门槛独立验收。
+
+实施范围 **FM-S3 限定 audit-only 结果/显式求值/判决/权利与恢复**，依赖按 [audit 清单](fm-s3-audit-dependencies.md)处理。[ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) 已接受首轮候选接口路线，精确合约与正式接口验收仍按切片推进；固定 raw-artifact Rust 只优先补实际路径缺口，完整 conformance 保留独立门槛。此前 FM-S1a/S1b 与[前置收口](../testing/FM-S2-READINESS-20261028.md)保留原报告。P0-1B 3/19/97、ADR-0006 PROPOSED、OQ/Gate/主网资格不升级。
 
 ## 实施顺序
 

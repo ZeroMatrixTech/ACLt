@@ -34,6 +34,6 @@ AuditFailureMapping 必须精确覆盖规范方法矩阵的 13 个事件；五�
 3. **NONMAINNET-ASSURANCE**：现行 RI-6/MAP 的 outside_network_disposition=DISABLED 与本轮非主网测试声明之间的正式接口；候选 network/deployment pin 不是 MAP。
 4. **AUTHORITATIVE-OBSERVATIONS**：S1b 报价的 COMPLETE/MISSING/HOST_FAULT 是假设输入；只有 FM-S2 提供的已认证、当前 Lease/epoch、资金/期限/事件事实，才可能进入 FM-S3 求值。报价不是合法权利证明。
 
-这些是待审查事项，本轮不私自改规范。不能为简化 audit 而删掉 SV-66/91/92/93/94/105/112/117/119 等共同约束。
+2026-11-06 [ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) 收敛了四项接口及首轮计费路线，适用于候选 S3b/S3c。精确字段、来源 contract、正式规范兼容与准入按 ADR 的实施顺序验收。SV-66/91/92/93/94/105/112/117/119 等共同约束继续适用。
 
-FM-S2 限定双机集成已交付权威事实源；[FM-S3a](../testing/FM-S3A-RESULTS-20261105.md)先实现候选 Profile 内容绑定和签名结果的纯重放，尚未实现正式 A0/A1 注册或 A4 判决。下一步接权威结果接纳与显式求值，构成 FM-S3 的最小 audit-only 闭环。完整其他方法、selection 与后续 qualification 不随本清单自动完成，也不影响未来其他任务族采用 DIRECT_VERIFIED 的决定。
+FM-S2 限定双机集成已交付权威事实源；[FM-S3a](../testing/FM-S3A-RESULTS-20261105.md)先实现候选 Profile 内容绑定和签名结果的纯重放，尚未实现正式 A0/A1 注册或 A4 判决。候选接纳、求值、判决和账务已有 [FM-S3 双机收尾证据](../testing/FM-S3-CLOSEOUT-20261106.md)。正式规则验收按本清单和收尾记录继续推进。完整其他方法、selection 与后续 qualification 不随本清单自动完成，也不影响未来其他任务族采用 DIRECT_VERIFIED 的决定。

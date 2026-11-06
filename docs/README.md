@@ -36,6 +36,7 @@
 7. [`05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md`](05-decisions/ADR-0005-engineering-assumptions-and-mainnet-assurance.md)
 8. [`05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md`](05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md)（`PROPOSED` 草案）
 9. [`05-decisions/ADR-0007-formal-object-migration-foundation.md`](05-decisions/ADR-0007-formal-object-migration-foundation.md)（D-1～D-6 首轮迁移路线已接受；字段/实现未验收）
+10. [ADR-0008 FM-S3 首轮接口决定](05-decisions/ADR-0008-fm-s3-interface-decisions.md)（候选 S3b/S3c 路线）
 10. [`06-research/verification-round-mathematical-model.md`](06-research/verification-round-mathematical-model.md)
 11. [`06-research/last-two-problem-trees.md`](06-research/last-two-problem-trees.md)
 12. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)

@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 import struct
 import subprocess
-from tools.formal_migration import s2,policy as p
+from tools.formal_migration import s2,policy as p,s3_authority,s3_results
 from tools.formal_migration.s2_transport import rpc
 from tools.verification_profile import codec as c
 
@@ -24,7 +24,7 @@ def durable(path,raw):
         try:os.fsync(directory)
         finally:os.close(directory)
 
-def run(cfg,bundle,role,private,host,port,exe,directory,now,hook=None):
+def run(cfg,bundle,role,private,host,port,exe,directory,now,hook=None,*,s3b=False):
     s2.config_check(cfg);c.need(role in s2.ROLES,'worker role');hook=hook or (lambda _:None)
     rid=p.bundle(bundle);c.need(rid in cfg['allowed_receipts'],'worker receipt pin')
     prop=s2.proposal(cfg,rid,role,bundle);actor=prop['provider'];directory=Path(directory);directory.mkdir(mode=0o700,exist_ok=True)
@@ -56,6 +56,17 @@ def run(cfg,bundle,role,private,host,port,exe,directory,now,hook=None):
         durable(directory/'consume',c.encode(reply));hook('AFTER_CONSUME')
         values=c.decode(bundle['inputs'][0]['content']);inp=struct.pack('<QQ',2,len(values))+b''.join(struct.pack('<q',x) for x in values)
         durable(directory/'input',inp);durable(directory/'artifact',cfg['artifact'])
+        if s3b:
+            s3_authority.check_bundle(bundle)
+            start_body = dict(receipt=rid, profile=s3_authority.profile_ref(), role=role,
+                              assignment=prop['assignment'], epoch=1, intent=intent,
+                              consume_event=s3_results.consumed_event(reply, prop['assignment'], intent))
+            start_req = s2.request(cfg,private,actor,'S3_START',start_body,now)
+            try:
+                entry = s2.check_response(cfg,start_req,rpc(host,port,c.encode(start_req)),reply['checkpoint'])
+            except (OSError,ConnectionError,ValueError):
+                return dict(status='UNKNOWN_NO_REEXECUTION')
+            durable(directory/'s3-start',c.encode(dict(start_body,start=entry['result']['start'])))
         durable(directory/'invocation',c.encode(dict(intent=intent)));hook('BEFORE_GUEST')
         e=bundle['receipt']['execution']
         args=[str(Path(exe).resolve()),'--artifact',str(directory/'artifact'),str(directory/'input'),str(e['fuel']),str(e['output_bytes_limit']),'8','20000000',str(e['memory_bytes']//65536),prop['rir_digest'].hex()]
@@ -68,3 +79,14 @@ def run(cfg,bundle,role,private,host,port,exe,directory,now,hook=None):
         except (OSError,subprocess.TimeoutExpired,ValueError,KeyError):observation=dict(status='HOST_FAULT_NO_TASK_OUTCOME',intent=intent)
         hook('AFTER_GUEST');durable(directory/'observation',c.encode(observation));return observation
     finally:os.close(lock)
+
+
+def s3_result_body(directory):
+    directory = Path(directory)
+    binding = c.decode((directory/'s3-start').read_bytes())
+    observation = c.decode((directory/'observation').read_bytes())
+    c.need(observation['intent'] == binding['intent'], 'S3b local intent mismatch')
+    core = c.decode(observation['core'])
+    c.need(core['status'] == 'TASK_OUTCOME' and core['result']['outcome'] == 'OK',
+           'S3b result adapter requires a completed OK outcome')
+    return dict(binding, outcome=bytes.fromhex(core['canonical_outcome_hex']))

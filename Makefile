@@ -186,3 +186,8 @@ verify-source:
 .PHONY: check-fm-s3-results
 check-fm-s3-results:
 	$(PYTHON) -B -m unittest discover -s tests/formal_migration -p test_s3_results.py -v
+
+.PHONY: check-fm-s3-authority
+check: check-fm-s3-authority
+check-fm-s3-authority:
+	$(PYTHON) -B -m unittest discover -s tests/formal_migration -p test_s3_authority.py -v
