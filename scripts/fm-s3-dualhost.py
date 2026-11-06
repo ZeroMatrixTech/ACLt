@@ -28,6 +28,7 @@ def main():
     for name in ('peer', 'a-host', 'remote-root'):
         parser.add_argument('--'+name, required=True)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--task-trap', action='store_true', help='run the pinned divide-by-zero artifact')
     args = parser.parse_args()
     if not re.fullmatch(r'[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+', args.peer):
         parser.error('explicit user@host required')
@@ -81,8 +82,13 @@ print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform()
          'runtime pins differ')
 
     private = output/'private'
-    cfg, templates = s2_fixture.build(ROOT, private, digest, count=3)
-    bundles = [s3_authority.bind_bundle(bundle) for bundle in templates]
+    artifact = None
+    if args.task_trap:
+        vectors = json.loads((ROOT/'experiments/aclt-rir-stats-probe/tests/independent-vectors.json').read_text())
+        vector = next(v for v in vectors['vectors'] if v['id'] == 'divzero')
+        artifact = bytes.fromhex(vector['artifact_hex'])
+    cfg, templates = s2_fixture.build(ROOT, private, digest, count=3, artifact=artifact)
+    bundles = [s3_authority.bind_bundle(bundle, task_traps=args.task_trap) for bundle in templates]
     receipts = [policy.bundle(bundle) for bundle in bundles]
     cfg['allowed_receipts'] = receipts
     for name, value in [('config.cbor',cfg),('bundles.cbor',bundles)]:
@@ -174,7 +180,11 @@ print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform()
         need(submit(0)['result'] == original, 'B result retry changed allocation')
         body = c.decode(run(['cat','result-0.cbor'],'B-original',remote=True))
         outcome = c.decode(body['outcome'])
-        outcome['output'] += b'conflict'
+        if args.task_trap:
+            need(outcome['outcome'] == 'TRAP_INTEGER_DIVIDE_BY_ZERO', 'unexpected real trap outcome')
+            outcome['outcome'] = 'TRAP_UNREACHABLE'
+        else:
+            outcome['output'] += b'conflict'
         body['outcome'] = c.encode(outcome)
         put({'conflict.cbor':c.encode(body)})
         conflict = call('S3_RESULT',0,'EXECUTOR',body_file='conflict.cbor')['result']
@@ -237,7 +247,8 @@ print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform()
         replay = s3_authority.verify_snapshot(cfg,snapshot,anchor)
         need(json.loads(result)==replay,'A/B public replay mismatch')
         cases.append('cross_host_public_replay')
-        summary = dict(status='PASS', scenarios=cases, runtime_sha256=digest.hex(), replay=replay,
+        summary = dict(status='PASS', scenarios=cases, task_outcome='TRAP_INTEGER_DIVIDE_BY_ZERO' if args.task_trap else 'OK',
+                       runtime_sha256=digest.hex(), replay=replay,
                        genesis=s2.h(cfg).hex(), total=cfg['balance'], available=state['free'], paid=paid,
                        holdings=state['held'], source_manifest_sha256=hashlib.sha256(
                            (output/'source-sha256.json').read_bytes()).hexdigest())

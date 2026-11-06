@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import json
 import tempfile
 import unittest
 
 from tools.formal_migration import foundation as f, policy as p, s2, s2_evidence, s2_fixture
-from tools.formal_migration import s3_authority as s3
+from tools.formal_migration import s3_authority as s3, s3_results
 from tools.verification_profile import codec as c
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,11 +18,12 @@ class AuthorityTests(unittest.TestCase):
         cls.temp = tempfile.TemporaryDirectory()
         cls.addClassCleanup(cls.temp.cleanup)
         cls.keys = Path(cls.temp.name) / 'keys'
-        cls.cfg, bundles = s2_fixture.build(ROOT, cls.keys, b'x' * 32, count=2)
+        cls.cfg, bundles = s2_fixture.build(ROOT, cls.keys, b'x' * 32, count=3)
         cls.bundle = s3.bind_bundle(bundles[0])
         cls.rid = p.bundle(cls.bundle)
         cls.second_bundle = s3.bind_bundle(bundles[1])
-        cls.cfg['allowed_receipts'] = [cls.rid, p.bundle(cls.second_bundle)]
+        cls.trap_bundle = s3.bind_bundle(bundles[2], task_traps=True)
+        cls.cfg['allowed_receipts'] = [cls.rid, p.bundle(cls.second_bundle), p.bundle(cls.trap_bundle)]
         cls.signature = s2_fixture.receipt_sign(cls.keys / 'requester.pem', cls.bundle)
 
     def setUp(self):
@@ -31,7 +33,12 @@ class AuthorityTests(unittest.TestCase):
         self.deadline = self.bundle['receipt']['execution']['deadline']
         self.ledger = s3.Ledger(Path(temp.name) / 'ledger', self.cfg, self.keys / 'issuer.pem',
                                 clock=lambda: self.now, create=True)
-        self.call('requester', 'CREATE', dict(bundle=self.bundle, receipt_signature=self.signature))
+        self.prepare_receipt(self.bundle, self.signature)
+
+    def prepare_receipt(self, bundle, signature):
+        self.bundle = bundle
+        self.rid = p.bundle(bundle)
+        self.call('requester', 'CREATE', dict(bundle=bundle, receipt_signature=signature))
         self.bindings = {}
         for role in s2.ROLES:
             proposal = s2.proposal(self.cfg, self.rid, role, self.bundle)
@@ -304,3 +311,47 @@ class AuthorityTests(unittest.TestCase):
         self.assertEqual(state['free'] + state['held'] + first['paid'], self.cfg['balance'])
         self.assertEqual(self.settlement_call(), first)
         self.ledger.replay()
+
+    def test_task_trap_is_an_opt_in_result_and_replays_through_settlement(self):
+        vectors = json.loads((ROOT / 'experiments/aclt-rir-stats-probe/tests/independent-vectors.json').read_text())
+        trap = next(v['expected'] for v in vectors['vectors'] if v['id'] == 'divzero')
+        outcome = bytes.fromhex(trap['canonical_outcome_hex'])
+        start = self.start('EXECUTOR')
+        before = self.ledger.state()
+        with self.assertRaises(c.CodecError):
+            self.call('executor', 'S3_RESULT',
+                      dict(self.bindings['EXECUTOR'], start=start, outcome=outcome))
+        self.assertEqual(self.ledger.state(), before)
+
+        signature = s2_fixture.receipt_sign(self.keys / 'requester.pem', self.trap_bundle)
+        self.prepare_receipt(self.trap_bundle, signature)
+        for role in s2.ROLES:
+            self.call(role.lower(), 'S3_RESULT',
+                      dict(self.bindings[role], start=self.start(role), outcome=outcome))
+        decision = self.finalize()
+        self.assertEqual((decision['terminal'], decision['method_observation']),
+                         ('UNRESOLVED', 'CONCORDANT'))
+        settlement = self.settlement_call()
+        self.assertEqual(settlement['fulfillment']['executor'], 'COMPLETE')
+        self.assertEqual(settlement['fulfillment']['auditor'], 'COMPLETE')
+        self.assertGreater(settlement['paid'], 0)
+        self.ledger.replay()
+
+    def test_task_outcome_trap_shapes_distinguish_host_faults(self):
+        limits = self.bundle['receipt']['execution']
+        for kind in s3_results.TASK_TRAPS:
+            s3_results.outcome_check(c.encode(dict(outcome=kind, gas_used=8192)), limits,
+                                     allow_traps=True)
+        s3_results.outcome_check(c.encode(dict(outcome='ABORT', gas_used=8192, abort_code=2**32-1)),
+                                 limits, allow_traps=True)
+        for outcome in (dict(outcome='ABORT', gas_used=8192),
+                        dict(outcome='ABORT', gas_used=8192, abort_code=2**32),
+                        dict(outcome='ABORT', gas_used=8192, abort_code=True),
+                        dict(outcome='TRAP_UNREACHABLE', gas_used=8192, output=b'partial'),
+                        dict(outcome='TRAP_UNREACHABLE', gas_used=8192, abort_code=1),
+                        dict(outcome='TRAP_UNREACHABLE', gas_used=limits['fuel']+1),
+                        dict(outcome='TRAP_UNKNOWN', gas_used=8192),
+                        dict(outcome='HOST_FAULT', gas_used=8192),
+                        dict(outcome='REJECTED', gas_used=8192)):
+            with self.subTest(outcome=outcome), self.assertRaises(c.CodecError):
+                s3_results.outcome_check(c.encode(outcome), limits, allow_traps=True)

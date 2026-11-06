@@ -57,8 +57,8 @@ def run(cfg,bundle,role,private,host,port,exe,directory,now,hook=None,*,s3b=Fals
         values=c.decode(bundle['inputs'][0]['content']);inp=struct.pack('<QQ',2,len(values))+b''.join(struct.pack('<q',x) for x in values)
         durable(directory/'input',inp);durable(directory/'artifact',cfg['artifact'])
         if s3b:
-            s3_authority.check_bundle(bundle)
-            start_body = dict(receipt=rid, profile=s3_authority.profile_ref(), role=role,
+            task_traps = s3_authority.check_bundle(bundle)
+            start_body = dict(receipt=rid, profile=s3_authority.profile_ref(task_traps=task_traps), role=role,
                               assignment=prop['assignment'], epoch=1, intent=intent,
                               consume_event=s3_results.consumed_event(reply, prop['assignment'], intent))
             start_req = s2.request(cfg,private,actor,'S3_START',start_body,now)
@@ -87,6 +87,8 @@ def s3_result_body(directory):
     observation = c.decode((directory/'observation').read_bytes())
     c.need(observation['intent'] == binding['intent'], 'S3b local intent mismatch')
     core = c.decode(observation['core'])
-    c.need(core['status'] == 'TASK_OUTCOME' and core['result']['outcome'] == 'OK',
-           'S3b result adapter requires a completed OK outcome')
-    return dict(binding, outcome=bytes.fromhex(core['canonical_outcome_hex']))
+    c.need(core['status'] == 'TASK_OUTCOME', 'S3b result adapter requires a completed task outcome')
+    raw = bytes.fromhex(core['canonical_outcome_hex'])
+    c.need(c.domain_hash('ACLt/RIR-0/ExecutionOutcome/1', raw).hex() == core['outcome_digest'],
+           'S3b runtime outcome digest mismatch')
+    return dict(binding, outcome=raw)

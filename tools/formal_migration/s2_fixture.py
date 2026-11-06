@@ -22,11 +22,13 @@ def receipt_sign(private,bundle):
 def rebind(b):
     r=b['receipt'];r['funding_ref']=p.ref('FUNDING',b['funding']);r['settlement_ref']=p.ref('SETTLEMENT',b['settlement']);r['input_refs']=[p.ref('LOGICAL',x) for x in b['inputs']];r['component_refs']=[p.ref(x['kind'],x) for x in b['components']];return b
 
-def build(root,out,runtime_sha256,count=3):
+def build(root,out,runtime_sha256,count=3,*,artifact=None):
     out=Path(out);out.mkdir(mode=0o700);network=os.urandom(32);deployment=os.urandom(32);records={}
     for name,role in [('requester','REQUESTER'),('executor','PROVIDER'),('auditor','PROVIDER')]:records[name]=record(keypair(out/(name+'.pem')),role,network,deployment)
     issuer=keypair(out/'issuer.pem');vectors=json.loads((root/'tests/formal_migration/policy-vectors.json').read_text())['vectors'];template=c.decode(bytes.fromhex(next(r['cbor_hex'] for r in vectors if r['id']=='bundle')))
-    artifact=bytes.fromhex(json.loads((root/'experiments/aclt-rir-stats-probe/tests/independent-vectors.json').read_text())['vectors'][0]['artifact_hex']);bundles=[]
+    if artifact is None:
+        artifact=bytes.fromhex(json.loads((root/'experiments/aclt-rir-stats-probe/tests/independent-vectors.json').read_text())['vectors'][0]['artifact_hex'])
+    bundles=[]
     for i in range(count):
         b=copy.deepcopy(template)
         for x in (b['receipt'],b['funding'],b['settlement'],b['inputs'][0]):x.update(network_id=network,deployment_id=deployment)

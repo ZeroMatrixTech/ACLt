@@ -19,25 +19,27 @@ ACTIONS = {
 BUCKET = {'EXECUTOR': 'execution_limit', 'AUDITOR': 'verification_limit'}
 
 
-def profile():
+def profile(*, task_traps=False):
     value = s3_results.profile()
     for key in ('verified_claim_spec', 'safety_parameters', 'liveness_parameters'):
         del value[key]
     value.update(schema=SCHEMA, start_source='PINNED_PROVIDER_TEST_ENTRY_ATTESTATION',
                  conflict_limit_per_role=1, acceptance_cost='RESERVE_ROLE_BUCKET',
                  clock='PINNED_MONOTONIC_TEST_TIME')
+    if task_traps:
+        value['task_outcomes'] = 'RIR_OK_ABORT_AND_TRAPS_V1'
     return value
 
 
-def profile_ref():
-    return c.domain_hash(SCHEMA + '/PROFILE', c.encode(profile()))
+def profile_ref(*, task_traps=False):
+    return c.domain_hash(SCHEMA + '/PROFILE', c.encode(profile(task_traps=task_traps)))
 
 
-def bind_bundle(bundle):
+def bind_bundle(bundle, *, task_traps=False):
     value = copy.deepcopy(bundle)
     for component in value['components']:
         if component['kind'] == 'AUDIT_CONTRACT':
-            component['content'] = c.encode(profile())
+            component['content'] = c.encode(profile(task_traps=task_traps))
     value['receipt']['component_refs'] = [p.ref(x['kind'], x) for x in value['components']]
     p.bundle(value)
     return value
@@ -45,7 +47,11 @@ def bind_bundle(bundle):
 
 def check_bundle(bundle):
     component = next(x for x in bundle['components'] if x['kind'] == 'AUDIT_CONTRACT')
-    c.need(component['content'] == c.encode(profile()), 'S3b profile required')
+    content = component['content']
+    if content == c.encode(profile()):
+        return False
+    c.need(content == c.encode(profile(task_traps=True)), 'S3b profile required')
+    return True
 
 
 def initial_audit():
@@ -56,7 +62,7 @@ def initial_audit():
 def role_binding(task, events, role):
     lease = task['leases'][role]
     prop = lease['proposal']
-    return dict(receipt=task['rid'], profile=profile_ref(), role=role,
+    return dict(receipt=task['rid'], profile=profile_ref(task_traps=check_bundle(task['bundle'])), role=role,
                 assignment=prop['assignment'], epoch=prop['epoch'], intent=lease['intent'],
                 consume_event=s3_results.consumed_event({'events': events}, prop['assignment'], lease['intent']))
 
@@ -79,7 +85,7 @@ def evaluate(task, now):
     comparison = 'NO_PAIR'
     if pair:
         comparison = 'CONCORDANT' if executor['outcome'] == auditor['outcome'] else 'DISCORDANT'
-    return dict(receipt=task['rid'], profile=profile_ref(), evaluated_at=now,
+    return dict(receipt=task['rid'], profile=profile_ref(task_traps=check_bundle(task['bundle'])), evaluated_at=now,
                 assumption_evaluation=dict(status='INVALIDATING' if causes else 'COMPLETE',
                                            causes=causes, unknown_starts=unknown),
                 conditions=[[rule, conditions[rule]] for rule in s3_results.RULES],
@@ -144,7 +150,8 @@ class Ledger(s2.Ledger):
             if op != 'S3_START':
                 c.need(body['start'] == audit['starts'].get(role), 'S3b start reference')
                 if op == 'S3_RESULT':
-                    s3_results.outcome_check(body['outcome'], task['bundle']['receipt']['execution'])
+                    s3_results.outcome_check(body['outcome'], task['bundle']['receipt']['execution'],
+                                             allow_traps=check_bundle(task['bundle']))
                 else:
                     c.need(body['reason'] in ('IO', 'RESOURCE', 'INTERRUPTED'), 'S3b fault reason')
 
