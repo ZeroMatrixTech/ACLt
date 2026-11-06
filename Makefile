@@ -191,3 +191,8 @@ check-fm-s3-results:
 check: check-fm-s3-authority
 check-fm-s3-authority:
 	$(PYTHON) -B -m unittest discover -s tests/formal_migration -p test_s3_authority.py -v
+
+.PHONY: check-fm-s3-terminals
+check: check-fm-s3-terminals
+check-fm-s3-terminals:
+	$(PYTHON) -B -m unittest discover -s tests/formal_migration -p test_s3_terminals.py -v

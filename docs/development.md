@@ -171,7 +171,9 @@ CI 配置只在 PR、main push 和手动触发时跑完整本地检查和打包�
 
 ## FM-S3b/S3c 候选权威、权利与 Task trap
 
-上节“尚未接通”为 FM-S3a 当时状态。`make check-fm-s3-authority` 运行候选权威接纳、幂等与冲突、唯一终态、权利派生、COMMIT 中断恢复及 opt-in Task trap 的本地回归，默认 `make check` 包含此入口。显式双机运行 `python3 -B scripts/fm-s3-dualhost.py --peer <B_USER>@<B_IP> --a-host <A_IP> --remote-root /new/B/path --output /new/A/path`，加 `--task-trap` 使用固定除零工件；两端须为新目录，B 主机密钥严格校验；A/B 均用系统 rustc 构建同一执行器并比对摘要，脚本拒绝相同 hostname 的对端。A 同时承载权威与审计者，B 承载执行者。见[总体收尾](testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](testing/FM-S3-TASK-TRAP-20261106.md)与[接口规范切片](testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)。正式接口、准入、执行闭合与可耗尽预算仍未接通。
+上节“尚未接通”为 FM-S3a 当时状态。`make check-fm-s3-authority` 运行候选权威接纳、幂等与冲突、唯一终态、权利派生、COMMIT 中断恢复及 opt-in Task trap 的本地回归，默认 `make check` 包含此入口。显式双机运行 `python3 -B scripts/fm-s3-dualhost.py --peer <B_USER>@<B_IP> --a-host <A_IP> --remote-root /new/B/path --output /new/A/path`，加 `--task-trap` 使用固定除零工件；两端须为新目录，B 主机密钥严格校验；A/B 均用系统 rustc 构建同一执行器并比对摘要，脚本拒绝相同 hostname 的对端。A 同时承载权威与审计者，B 承载执行者。见[总体收尾](testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](testing/FM-S3-TASK-TRAP-20261106.md)与[接口规范切片](testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)。正式接口与准入仍未接通。
+
+`make check-fm-s3-terminals` 运行可选合约字段的本地回归：已核验 RPR 入口与启动状态、观察方签名的执行闭合（FAILED）和激活时的资金边界（FUNDING_EXHAUSTED）。双机入口另有 `--execution-closure`（观察方闭合矩阵）与 `--terminals`（五个 Receipt 的组合矩阵）。字段与限制见[候选合约](../schemas/formal-migration/audit-terminals.md)，验收见[本切片报告](testing/FM-S3-TERMINALS-20261106.md)。
 
 ## 开发者预览打包
 

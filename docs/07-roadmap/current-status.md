@@ -15,7 +15,7 @@
 | 当前主线 | [FM-S3 候选总体收尾](../testing/FM-S3-CLOSEOUT-20261106.md)通过 8 个双物理机 LAN 场景，A/B 独立重放 39 事件，测试资金守恒 | 正式接口保持 OPEN。Task trap 已由下方切片覆盖；后续补正式启动来源、Phase B/D、执行闭合与预算耗尽证据 |
 | 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | PR #65 已合并；线上 CI 验收以 Actions 运行记录为准，正式准入仍关闭 |
 | FM-S3 规范对齐 | [第一项四片收尾](../testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)覆盖无 claim 编码、Phase B、接纳边界和非主网部署草案 | Task trap 已完成；继续执行闭合与可耗尽预算；正式信封和准入另行评审 |
-| FM-S3 终态覆盖 | [Task trap 双机切片](../testing/FM-S3-TASK-TRAP-20261106.md)已验证真实除零结果接纳、候选判决及账务恢复 | 下一片补可验证执行闭合，再接可耗尽预算及正式启动来源 |
+| FM-S3 终态覆盖 | [Task trap 双机切片](../testing/FM-S3-TASK-TRAP-20261106.md)已验证真实除零结果接纳；[执行闭合、可耗尽预算与 RPR 入口切片](../testing/FM-S3-TERMINALS-20261106.md)本地回归通过，观察方签名闭合有双机结果 | 用 `--terminals` 在两台物理机上验收入口绑定、资金边界与 FAILED 恢复；正式信封与准入另行评审 |
 | 开发者预览 | [发行说明草案](../releases/PREVIEW-20261106.md)与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：源码包可重现、包内本地检查可运行 | 发布前在待打标签 commit 上重跑双机并确认 CI；预览不是 ProtocolVersion、ConformanceTarget 或部署启用 |
 | 验收边界 | P0-1B 为 3/24/92，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
