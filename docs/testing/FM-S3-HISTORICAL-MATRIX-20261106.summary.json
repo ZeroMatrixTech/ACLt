@@ -1,0 +1,167 @@
+{
+  "status": "PASS",
+  "source_baseline": "b555231143b462c54fd320dc2924107a57fac4af",
+  "historical_scenarios_mapped": 38,
+  "historical_groups": [
+    12,
+    12,
+    14
+  ],
+  "ledgers": {
+    "terminals-primary": {
+      "status": "PASS",
+      "scenarios": [
+        "cross_host_verified_entry_pair",
+        "physical_rpr_fault_through_verified_entry",
+        "self_report_does_not_close",
+        "forged_observer_rejected",
+        "observer_closure_failed",
+        "executor_killed_after_permit_consume",
+        "start_unknown_invalidating",
+        "failed_settlement_before_commit_restart",
+        "failed_settlement_after_commit_restart",
+        "terminal_settlements",
+        "cross_host_public_replay"
+      ],
+      "task_outcome": "OK_AND_HOST_RESOURCE_EXHAUSTED",
+      "runtime_sha256": "3942c7bb33b667c13832ffe793e6f3632cd0fc434993b13de80087c8ef6d158e",
+      "replay": {
+        "status": "PASS",
+        "events": 36,
+        "head": "a055f3453e969994eeb946000b06c9dba8f96bbe551710bca7d9f87a8018d245",
+        "state_digest": "69e139511faeeab5f856e661f125f479bca0112365abe3430eb81a873043c0a8",
+        "funds_held": 0,
+        "official_admission": false
+      },
+      "genesis": "c1139c5e34af19ad22720ee28c519885b7eeac3e1992178d42b0bd5a9aee7c7f",
+      "total": 68,
+      "available": 51,
+      "paid": 17,
+      "holdings": 0,
+      "source_manifest_sha256": "86b3bdcaa6f1f2b41d364892c2e03ac0f48899e2741fef3f1dc577400e4b4cdc",
+      "mode": "TERMINALS",
+      "group": "primary",
+      "terminals": {
+        "0": "UNRESOLVED",
+        "1": "FAILED",
+        "2": "UNRESOLVED"
+      },
+      "topology": {
+        "A": "authority, auditor and closure observer key",
+        "B": "executor"
+      }
+    },
+    "terminals-secondary": {
+      "status": "PASS",
+      "scenarios": [
+        "executor_interrupted_after_entry_before_guest",
+        "underfunded_activation_boundary",
+        "deadline_after_unclosed_interruption",
+        "terminal_boundary_settlements",
+        "cross_host_public_replay"
+      ],
+      "task_outcome": "OK_AND_HOST_RESOURCE_EXHAUSTED",
+      "runtime_sha256": "3942c7bb33b667c13832ffe793e6f3632cd0fc434993b13de80087c8ef6d158e",
+      "replay": {
+        "status": "PASS",
+        "events": 13,
+        "head": "e2bbff8025f73bf78417e34928e6d75d925b767fcded6747f00eee4ef205c2f1",
+        "state_digest": "cdf7ea53027b718b35d993f0daeea8d48f6fd83086f8d3c4f7654f2bb4280555",
+        "funds_held": 0,
+        "official_admission": false
+      },
+      "genesis": "17a9fd2803e47c26f8f4429c9b9b0b7111c238f1682160326238eff62f50286d",
+      "total": 22,
+      "available": 22,
+      "paid": 0,
+      "holdings": 0,
+      "source_manifest_sha256": "86b3bdcaa6f1f2b41d364892c2e03ac0f48899e2741fef3f1dc577400e4b4cdc",
+      "mode": "TERMINALS",
+      "group": "secondary",
+      "terminals": {
+        "0": "EXPIRED",
+        "1": "FUNDING_EXHAUSTED"
+      },
+      "topology": {
+        "A": "authority and auditor",
+        "B": "executor"
+      }
+    },
+    "historical-gaps-primary": {
+      "status": "PASS",
+      "scenarios": [
+        "saved_outcome_process_exit_holds_funds",
+        "saved_outcome_resubmitted_without_guest",
+        "invalid_first_result_then_valid",
+        "concurrent_exact_result_replay",
+        "restart_exact_result_replay",
+        "non_requester_settlement_rejected",
+        "first_settlement_two_B_clients_barrier",
+        "result_commit_reply_loss_and_recovery",
+        "single_role_holds_full_reservation",
+        "payment_commit_reply_loss_and_recovery",
+        "cross_host_public_replay"
+      ],
+      "task_outcome": "OK",
+      "runtime_sha256": "3942c7bb33b667c13832ffe793e6f3632cd0fc434993b13de80087c8ef6d158e",
+      "replay": {
+        "status": "PASS",
+        "events": 29,
+        "head": "99e047c97e9f74b262c0dc325806369884afd6ca84e1614671c849dbfcaed62a",
+        "state_digest": "3a52a4845284ce4fd98e2abf0eb01b0c4eaa2bca8db3090668aaa5dda2b30aea",
+        "funds_held": 0,
+        "official_admission": false
+      },
+      "genesis": "2d6b9b97fb8f4421f2d260e659051e6afe1531519d876f92b3d5719166d149b3",
+      "total": 68,
+      "available": 44,
+      "paid": 24,
+      "holdings": 0,
+      "source_manifest_sha256": "86b3bdcaa6f1f2b41d364892c2e03ac0f48899e2741fef3f1dc577400e4b4cdc",
+      "mode": "HISTORICAL_GAPS",
+      "group": "primary",
+      "topology": {
+        "A": "authority and auditor",
+        "B": "executor and signed request sender"
+      }
+    },
+    "historical-gaps-secondary": {
+      "status": "PASS",
+      "scenarios": [
+        "unfunded_start_no_guest",
+        "foreign_receipt_no_guest",
+        "worker_exit_before_guest_holds_funds",
+        "worker_exit_after_intent_no_reexecution",
+        "worker_exit_after_guest_before_persistence_no_reexecution",
+        "offline_settlement_query_no_inference",
+        "restart_incomplete_holds_full_reservation",
+        "full_refund_commit_reply_loss_and_recovery",
+        "cross_host_public_replay"
+      ],
+      "task_outcome": "OK",
+      "runtime_sha256": "3942c7bb33b667c13832ffe793e6f3632cd0fc434993b13de80087c8ef6d158e",
+      "replay": {
+        "status": "PASS",
+        "events": 24,
+        "head": "1232c11813a7253a78a2c4d3a430cc49e5b1b7c7fa6bbd18018d36d56ea45f75",
+        "state_digest": "3628e64a9af8b8254d24bade8c73f722d4505be618eaabbb16921e6a0903e670",
+        "funds_held": 0,
+        "official_admission": false
+      },
+      "genesis": "3a5a475fb8205a1ce0349e825250b9b3f350e1ac1e41616b437b6d04ec08ac03",
+      "total": 68,
+      "available": 68,
+      "paid": 0,
+      "holdings": 0,
+      "source_manifest_sha256": "86b3bdcaa6f1f2b41d364892c2e03ac0f48899e2741fef3f1dc577400e4b4cdc",
+      "mode": "HISTORICAL_GAPS",
+      "group": "secondary",
+      "topology": {
+        "A": "authority and auditor",
+        "B": "executor and signed request sender"
+      }
+    }
+  },
+  "dualhost_assertion_groups": 36,
+  "replayed_events_total_across_independent_ledgers": 102
+}
