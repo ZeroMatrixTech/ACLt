@@ -71,19 +71,22 @@ def proposal(cfg,rid,role,bundle):
     return dict(schema=SCHEMA,genesis=h(cfg),receipt=rid,assignment=aid(cfg,rid,role),provider=f.principal_digest(record),role=role,epoch=1,deadline=e['deadline'],receipt_execution=e,rir_digest=c.domain_hash('ACLt/RIR-0/Artifact/1',cfg['artifact']),runtime_sha256=cfg['runtime_sha256'],input_ref=bundle['receipt']['input_refs'][0]['digest'])
 def capability(cfg,prop):return h(['CAPABILITY',h(cfg),prop])
 
-def verify_request(cfg,req,now):
+def verify_request(cfg,req,now,actions=ACTIONS):
     fields(req,REQUEST)
     c.need(req['schema']==SCHEMA and req['genesis']==h(cfg),'S2 genesis/schema')
     pin(req['actor']);pin(req['nonce']);uint(req['issued_at']);uint(req['expires_at'])
-    c.need(type(req['op']) is str and req['op'] in ACTIONS,'unsupported S2 operation')
-    fields(req['body'],ACTIONS[req['op']])
+    c.need(type(req['op']) is str and req['op'] in actions,'unsupported S2 operation')
+    fields(req['body'],actions[req['op']])
     records=[cfg['requester'],*cfg['providers'].values()]
     record=next((r for r in records if f.principal_digest(r)==req['actor']),None)
     c.need(record is not None,'unknown actor pin')
-    c.need(cfg['valid_from']<=now<cfg['valid_until'] and record['valid_from']<=req['issued_at']<=now<req['expires_at']<=record['valid_until'],'expired request/config')
+    check_request_time(cfg,req,record,now)
     c.need(req['expires_at']-req['issued_at']<=120,'request lifetime')
     verify_signature(record['public_key_der'],'REQUEST',{k:req[k] for k in req if k!='signature'},req['signature'])
     return record
+
+def check_request_time(cfg,req,record,now):
+    c.need(cfg['valid_from']<=now<cfg['valid_until'] and record['valid_from']<=req['issued_at']<=now<req['expires_at']<=record['valid_until'],'expired request/config')
 
 def exposure(cfg,state):
     out={}
@@ -99,6 +102,13 @@ def exposure(cfg,state):
         cap=cfg['caps'][key.split(':')[0]]
         c.need(all(row[k]<=cap[k] for k in row),'exposure cap '+key.split(':')[0])
     return out
+
+def check_funding_conservation(cfg, state):
+    tasks = state['tasks'].values()
+    paid = sum(task.get('settlement', {}).get('paid', 0) for task in tasks)
+    held = sum(task['funding_held'] for task in tasks)
+    c.need(state['free'] + state['held'] + paid == cfg['balance'] and state['held'] == held,
+           'funding conservation')
 
 def task_view(t):
     return dict(receipt=t['rid'],funding_held=t['funding_held'],fenced=t['fenced'],leases=t['leases'],terminal='NOT_IMPLEMENTED_FM_S3',settlement='DISABLED')
@@ -160,12 +170,17 @@ def reduce(cfg,state,req,now):
                 c.need(l['state']=='ACTIVE' and b['capability']==l['capability'],'consumed/inactive/capability mismatch')
                 l['state']='CONSUMED';l['intent']=b['intent'];result=copy.deepcopy(l)
     exposure(cfg,nxt)
-    c.need(nxt['free']+nxt['held']==cfg['balance'] and nxt['held']==sum(t['funding_held'] for t in nxt['tasks'].values()),'funding conservation')
+    check_funding_conservation(cfg,nxt)
     nxt['last_time']=now;nxt['nonces'][nonce]=dict(request=h(req),result=({'query':True} if op=='QUERY' else copy.deepcopy(result)))
     c.decode(c.encode(nxt))  # state must remain within the shared bounded codec
     return nxt,result
 
 class Ledger:
+    @staticmethod
+    def transition(cfg,state,req,now,events,clock=None):
+        nxt,result=reduce(cfg,state,req,now)
+        return nxt,result,now
+
     def __init__(self,path,cfg,private,clock=None,create=False,hook=None):
         config_check(cfg);verify_signature(cfg['issuer_der'],'GENESIS',h(cfg),sign(private,'GENESIS',h(cfg)));self.path=Path(path);self.cfg=cfg;self.private=private;self.clock=clock or (lambda:int(time.time()));self.hook=hook or (lambda _:None)
         if create:
@@ -182,27 +197,32 @@ class Ledger:
     def replay(self):
         with closing(self.connect()) as db:
             db.execute('BEGIN');row=db.execute('SELECT genesis,state FROM meta').fetchone();c.need(row is not None and row[0]==h(self.cfg),'database genesis')
-            state=initial(self.cfg);prev=ZERO
+            state=initial(self.cfg);prev=ZERO;proof=[]
             for seq,(stored_seq,raw,digest) in enumerate(db.execute('SELECT seq,raw,digest FROM events ORDER BY seq'),1):
                 c.need(stored_seq==seq,'stored event sequence')
                 event=c.decode(raw);fields(event,{'schema','genesis','seq','prev','parents','now','request','state_digest','result_digest'})
                 c.need(event['schema']==SCHEMA and event['genesis']==h(self.cfg) and event['seq']==seq and event['prev']==prev and event['parents']==([] if seq==1 else [prev]) and h(event)==digest,'event chain')
-                state,result=reduce(self.cfg,state,event['request'],event['now'])
+                state,result,_=self.transition(self.cfg,state,event['request'],event['now'],proof)
+                proof.append(raw)
                 c.need(h(state)==event['state_digest'] and h(result)==event['result_digest'],'replay projection')
                 prev=digest
             c.need(c.encode(state)==row[1],'stored projection differs from replay')
             db.rollback();return dict(seq=seq if 'seq' in locals() else 0,head=prev,state_digest=h(state))
     def handle(self,raw):
-        req=c.decode(raw);now=self.clock();uint(now)
+        req=c.decode(raw)
         db=self.connect()
         try:
-            db.execute('BEGIN IMMEDIATE');state=c.decode(db.execute('SELECT state FROM meta').fetchone()[0]);nxt,result=reduce(self.cfg,state,req,now)
+            db.execute('BEGIN IMMEDIATE')
+            now=self.clock();uint(now)
+            state=c.decode(db.execute('SELECT state FROM meta').fetchone()[0])
+            proof=[r[0] for r in db.execute('SELECT raw FROM events ORDER BY seq')]
+            nxt,result,now=self.transition(self.cfg,state,req,now,proof,self.clock)
             last=db.execute('SELECT seq,digest FROM events ORDER BY seq DESC LIMIT 1').fetchone();seq,prev=(0,ZERO) if last is None else last
             if nxt!=state:
                 seq+=1;c.need(seq<=256,'finite deployment event budget');event=dict(schema=SCHEMA,genesis=h(self.cfg),seq=seq,prev=prev,parents=[] if seq==1 else [prev],now=now,request=req,state_digest=h(nxt),result_digest=h(result));prev=h(event)
                 db.execute('INSERT INTO events VALUES(?,?,?)',(seq,c.encode(event),prev));db.execute('UPDATE meta SET state=?',(c.encode(nxt),))
+                proof.append(c.encode(event))
             checkpoint=dict(schema=SCHEMA,genesis=h(self.cfg),seq=seq,head=prev,state_digest=h(nxt))
-            proof=[r[0] for r in db.execute('SELECT raw FROM events ORDER BY seq')]
             payload=dict(schema=SCHEMA,genesis=h(self.cfg),request=h(req),now=now,result=result,checkpoint=checkpoint,events=proof)
             # Sign before commit: signing failure cannot consume a business right.
             response=c.encode(dict(payload=payload,signature=sign(self.private,'RESPONSE',payload)))

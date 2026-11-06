@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "scenarios": [
+    "cross_host_rpr_and_result",
+    "duplicate_and_conflict",
+    "concurrent_settlement",
+    "cross_host_result_reply_loss",
+    "settlement_before_commit_restart",
+    "settlement_after_commit_restart",
+    "cross_host_deadline_rejection",
+    "cross_host_public_replay"
+  ],
+  "runtime_sha256": "3942c7bb33b667c13832ffe793e6f3632cd0fc434993b13de80087c8ef6d158e",
+  "replay": {
+    "status": "PASS",
+    "events": 39,
+    "head": "d72ea7fbc9a5090a3272e14874e234f2fcdc42773dcd38d3bef5d578402d37ad",
+    "state_digest": "840434e568d16ef04c06db5ffe6d2dfb264a63f49b3b28604824440d403f9c72",
+    "funds_held": 0,
+    "official_admission": false
+  },
+  "genesis": "b6f031e200bca4f67b3207c1f5eade5ce825bdb5291bd761e0713cb946a3a9ff",
+  "total": 68,
+  "available": 39,
+  "paid": 29,
+  "holdings": 0,
+  "source_manifest_sha256": "4346ef19264f95b0df132bfbb77f66ffdc7794d2c6d41b94a52160c078b53cd1",
+  "public_sha256": {
+    "anchor.cbor": "77593ed20716c65a8735e0fa80d824565ddd09c65caa56f72d365417540bd6f0",
+    "config.cbor": "ed271738fa3d4c43b454d8fe15855bce07f655be19e2c9f0d35b6b2a69695321",
+    "snapshot.cbor": "3d8f4a61dc81a507825ad0db114670976e2a8be8ff83657615e27a06c523d9e8",
+    "source-sha256.json": "4346ef19264f95b0df132bfbb77f66ffdc7794d2c6d41b94a52160c078b53cd1"
+  },
+  "public_archive_sha256": "6abcc7a59b6915b333c42e98150195db4b08fce48b8cb1dae138ccb40fc8ab96",
+  "scope": "physical LAN candidate audit-only OK-outcome settlement",
+  "base_revision": "959878253178c87fca82d0b7cb9d410a3d9e83d8",
+  "formal_interface_acceptance": "OPEN"
+}

@@ -12,7 +12,7 @@
 |---|---|---|
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
-| 当前主线 | [FM-S2 限定集成](../testing/FM-S2-20261031.md)已完成：单一 Lease/epoch、原子资金/五维暴露、统一日志；17 双机场景与公开离线快照 | [FM-S3a 结果切片](../testing/FM-S3A-RESULTS-20261105.md)：候选合约绑定、双方签名结果与 S2 快照纯重放；下一步接权威接纳时点、显式求值/唯一终态，再接账务。FENCE 后资金仍预留，正式准入关闭 |
+| 当前主线 | [FM-S3 候选总体收尾](../testing/FM-S3-CLOSEOUT-20261106.md)通过 8 个双物理机 LAN 场景，A/B 独立重放 39 事件，测试资金守恒 | 正式接口保持 OPEN。后续补正式启动来源、Phase B/D、执行闭合、Task trap 与预算耗尽证据 |
 | 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | PR #65 已合并；线上 CI 验收以 Actions 运行记录为准，正式准入仍关闭 |
 | 验收边界 | P0-1B 仍 3/19/97，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
