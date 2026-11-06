@@ -15,12 +15,12 @@ def main():
     ap=argparse.ArgumentParser(description=__doc__)
     for k in ('config','bundles','private','output'):ap.add_argument('--'+k,type=Path,required=True)
     ap.add_argument('--host',required=True);ap.add_argument('--port',type=int,required=True);ap.add_argument('--index',type=int,default=0);ap.add_argument('--role',choices=['REQUESTER',*s2.ROLES],required=True);ap.add_argument('--op',required=True)
-    ap.add_argument('--body-file',type=Path);ap.add_argument('--s3b',action='store_true');ap.add_argument('--now',type=int,default=3000);ap.add_argument('--epoch',type=int,default=1);ap.add_argument('--reuse',type=Path);ap.add_argument('--runtime',type=Path);ap.add_argument('--directory',type=Path);ap.add_argument('--crash-hook');ap.add_argument('--bad-capability',action='store_true');ap.add_argument('--bad-signature',action='store_true');a=ap.parse_args()
+    ap.add_argument('--body-file',type=Path);ap.add_argument('--s3b',action='store_true');ap.add_argument('--closure-fault',action='store_true');ap.add_argument('--now',type=int,default=3000);ap.add_argument('--epoch',type=int,default=1);ap.add_argument('--reuse',type=Path);ap.add_argument('--runtime',type=Path);ap.add_argument('--directory',type=Path);ap.add_argument('--crash-hook');ap.add_argument('--bad-capability',action='store_true');ap.add_argument('--bad-signature',action='store_true');a=ap.parse_args()
     a.output.mkdir(mode=0o700);cfg=c.decode(a.config.read_bytes());bundles=c.decode(a.bundles.read_bytes());b=bundles[a.index];rid=p.bundle(b)
     if a.op=='WORK':
         def hook(point):
             if point==a.crash_hook:os._exit(73)
-        result=s2_worker.run(cfg,b,a.role,a.private,a.host,a.port,a.runtime,a.directory,a.now,hook,s3b=a.s3b)
+        result=s2_worker.run(cfg,b,a.role,a.private,a.host,a.port,a.runtime,a.directory,a.now,hook,s3b=a.s3b,closure_fault=a.closure_fault)
         (a.output/'result.cbor').write_bytes(c.encode(result));print(json.dumps(dict(status=result['status'])));return
     actor=f.principal_digest(cfg['requester'] if a.role=='REQUESTER' else cfg['providers'][a.role])
     prop=s2.proposal(cfg,rid,a.role,b) if a.role in s2.ROLES else None
