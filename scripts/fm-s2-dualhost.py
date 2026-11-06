@@ -29,7 +29,7 @@ from tools.formal_migration.s2_transport import rpc
 from tools.verification_profile import codec as c
 
 def source_files():
-    names=['tools/verification_profile/__init__.py','tools/verification_profile/codec.py','tests/formal_migration/policy-vectors.json','experiments/aclt-rir-stats-probe/tests/independent-vectors.json','scripts/fm-s2-client.py','scripts/fm-s2-service.py','scripts/fm-s2-dualhost.py']
+    names=['tools/verification_profile/__init__.py','tools/verification_profile/codec.py','tools/verification_profile/admission.py','tools/verification_profile/event_frontier.py','tests/formal_migration/policy-vectors.json','experiments/aclt-rir-stats-probe/tests/independent-vectors.json','scripts/fm-s2-client.py','scripts/fm-s2-service.py','scripts/fm-s2-dualhost.py']
     for directory,pattern in [('tools/formal_migration','*.py'),('tools/verification_profile/rust','*.rs'),('experiments/aclt-rir-stats-probe/src','*.rs')]:names += [x.relative_to(ROOT).as_posix() for x in sorted((ROOT/directory).glob(pattern))]
     return sorted(set(names))
 def tar_bytes(entries):

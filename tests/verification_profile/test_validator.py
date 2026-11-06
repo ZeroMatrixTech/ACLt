@@ -1,6 +1,9 @@
 import copy
+import json
+from pathlib import Path
 import unittest
 
+from tools.verification_profile import codec
 from tools.verification_profile.validator import (
     parse_rational,
     reduce_causes,
@@ -121,6 +124,39 @@ class BootstrapValidatorTests(unittest.TestCase):
         profile = bounded_profile()
         profile["assumption_references"].append(copy.deepcopy(profile["assumption_references"][0]))
         self.assertIn("SV-76", {issue.sv_id for issue in validate(profile)})
+
+
+
+class ProfileV2ClaimPresenceTests(unittest.TestCase):
+    def test_fixed_cbor_projection_and_schema_view_presence(self):
+        path = Path(__file__).with_name('codec') / 'profile-v2-claim-presence.json'
+        for vector in json.loads(path.read_text())['vectors']:
+            with self.subTest(vector=vector['id']):
+                raw = bytes.fromhex(vector['cbor_hex'])
+                if vector.get('decode_reject'):
+                    with self.assertRaises(codec.CodecError):
+                        codec.decode(raw)
+                    continue
+                fragment = codec.decode(raw)
+                self.assertEqual(codec.encode(fragment), raw)
+                profile = bounded_profile()
+                del profile['verified_claim_spec']
+                profile.update(fragment, schema_version=str(fragment['schema_version']))
+                if profile['verification_method'] != 'REEXEC_BOUNDED':
+                    del profile['safety_parameters']
+                    del profile['liveness_parameters']
+                issues = validate(profile)
+                self.assertEqual(not issues, vector['accepted'], issues)
+                if issues:
+                    self.assertEqual({issue.sv_id for issue in issues}, {'SV-30'})
+
+    def test_schema_view_null_is_not_absence(self):
+        profile = bounded_profile()
+        del profile['safety_parameters']
+        del profile['liveness_parameters']
+        profile.update(schema_version='2', verification_method='REEXEC_AUDIT_ONLY',
+                       verified_claim_spec=None)
+        self.assertEqual({issue.sv_id for issue in validate(profile)}, {'SV-30'})
 
 
 if __name__ == "__main__":

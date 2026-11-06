@@ -103,12 +103,15 @@ def validate_l1a_bootstrap(profile: dict[str, Any]) -> list[ValidationIssue]:
     required = {
         "schema_version", "encoding_profile_id", "profile_id", "profile_version",
         "profile_digest", "task_type", "contract_tuple_constraints",
-        "admission_predicate", "verified_claim_spec", "excluded_claims",
+        "admission_predicate", "excluded_claims",
         "verification_method", "method_parameters", "result_equivalence",
         "cost_parameters", "assumption_references", "failure_mapping",
         "decision_mapping", "documentation",
     }
-    allowed = required | {"supersedes", "safety_parameters", "liveness_parameters", "degradation"}
+    version = profile.get("schema_version")
+    if version != "2":
+        required.add("verified_claim_spec")
+    allowed = required | {"verified_claim_spec", "supersedes", "safety_parameters", "liveness_parameters", "degradation"}
     missing = sorted(required - set(profile))
     extra = sorted(set(profile) - allowed)
     if missing:
@@ -116,7 +119,7 @@ def validate_l1a_bootstrap(profile: dict[str, Any]) -> list[ValidationIssue]:
     if extra:
         issues.append(_issue("SV-01", "$", f"unknown fields: {extra}"))
 
-    if profile.get("schema_version") != "1":
+    if version not in ("1", "2"):
         issues.append(_issue("SV-01", "$.schema_version", "unsupported schema version"))
     if profile.get("encoding_profile_id") != "acl.enc.p0-1@1":
         issues.append(_issue("SV-01", "$.encoding_profile_id", "unsupported encoding profile"))
@@ -137,11 +140,18 @@ def validate_l1a_bootstrap(profile: dict[str, Any]) -> list[ValidationIssue]:
             issues.append(_issue("SV-31", "$", "REEXEC_BOUNDED requires safety and liveness parameters"))
     elif has_safety or has_liveness:
         issues.append(_issue("SV-31", "$", "only REEXEC_BOUNDED may carry safety/liveness parameters"))
-    if method == "REEXEC_AUDIT_ONLY" and profile.get("verified_claim_spec") != "BOTTOM":
-        issues.append(_issue("SV-30", "$.verified_claim_spec", "audit-only claim must be BOTTOM"))
-
-    if profile.get("verified_claim_spec") == "BOTTOM" and method != "REEXEC_AUDIT_ONLY":
-        issues.append(_issue("SV-30", "$.verified_claim_spec", "only audit-only may declare BOTTOM"))
+    claim_key = "verified_claim_spec"
+    claim = profile.get(claim_key)
+    if version == "2":
+        if method == "REEXEC_AUDIT_ONLY" and claim_key in profile:
+            issues.append(_issue("SV-30", "$.verified_claim_spec", "audit-only must omit the claim key"))
+        elif isinstance(method, str) and method in METHODS and method != "REEXEC_AUDIT_ONLY":
+            if not isinstance(claim, dict):
+                issues.append(_issue("SV-30", "$.verified_claim_spec", "method requires a claim object"))
+    elif method == "REEXEC_AUDIT_ONLY" and claim != "BOTTOM":
+        issues.append(_issue("SV-30", "$.verified_claim_spec", "legacy audit-only claim must be BOTTOM"))
+    elif claim == "BOTTOM" and method != "REEXEC_AUDIT_ONLY":
+        issues.append(_issue("SV-30", "$.verified_claim_spec", "only legacy audit-only may declare BOTTOM"))
 
     references = profile.get("assumption_references", [])
     if not isinstance(references, list) or any(not isinstance(row, dict) for row in references):

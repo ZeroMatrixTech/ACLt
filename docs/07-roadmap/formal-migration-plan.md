@@ -12,7 +12,7 @@
 
 首轮候选 FM-S3 已完成 [双机验收与总体收尾](../testing/FM-S3-CLOSEOUT-20261106.md)。正式接口和准入按收尾记录中的门槛独立验收。
 
-实施范围 **FM-S3 限定 audit-only 结果/显式求值/判决/权利与恢复**，依赖按 [audit 清单](fm-s3-audit-dependencies.md)处理。[ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) 已接受首轮候选接口路线，精确合约与正式接口验收仍按切片推进；固定 raw-artifact Rust 只优先补实际路径缺口，完整 conformance 保留独立门槛。此前 FM-S1a/S1b 与[前置收口](../testing/FM-S2-READINESS-20261028.md)保留原报告。P0-1B 3/19/97、ADR-0006 PROPOSED、OQ/Gate/主网资格不升级。
+实施范围 **FM-S3 限定 audit-only 结果/显式求值/判决/权利与恢复**，依赖按 [audit 清单](fm-s3-audit-dependencies.md)处理。[ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) 已接受首轮候选接口路线，精确合约与正式接口验收仍按切片推进；固定 raw-artifact Rust 只优先补实际路径缺口，完整 conformance 保留独立门槛。此前 FM-S1a/S1b 与[前置收口](../testing/FM-S2-READINESS-20261028.md)保留原报告。P0-1B 3/24/92、ADR-0006 PROPOSED、OQ/Gate/主网资格不升级。
 
 ## 实施顺序
 

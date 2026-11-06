@@ -372,14 +372,16 @@
       "layer": "L1a",
       "kind": "A",
       "status": "PARTIAL",
-      "requirement": "`verified_claim_spec = ⊥` 当且仅当 `REEXEC_AUDIT_ONLY`",
+      "requirement": "v2 在 `REEXEC_AUDIT_ONLY` 下省略 `verified_claim_spec`，其余方法要求合法 `VerifiedClaimSpec` 对象",
       "implementation": [
         "tools/verification_profile/validator.py#validate_l1a_bootstrap"
       ],
       "tests": [
-        "tests/verification_profile/test_singlehost.py#test_method_parameter_matrix"
+        "tests/verification_profile/test_singlehost.py#test_method_parameter_matrix",
+        "tests/verification_profile/test_validator.py#test_fixed_cbor_projection_and_schema_view_presence",
+        "tests/verification_profile/test_validator.py#test_schema_view_null_is_not_absence"
       ],
-      "gap": "BOTTOM 双向检查已有；ClaimSpec 完整结构及 Schema/validator 一致性缺失。"
+      "gap": "Profile v2 已校验键在场性和顶层对象类型；完整 VerifiedClaimSpec 形状、正式 Profile wire 与注册接线待验收。"
     },
     {
       "id": "SV-31",
@@ -835,7 +837,7 @@
       "layer": "L1a",
       "kind": "A",
       "status": "NOT_IMPLEMENTED",
-      "requirement": "相位输入是合法 discriminated union；Phase B payload 为 §13.0.4 六个封闭变体之一；Phase D 必带完整 `evaluation_input`。不重复检查 bundle 内部结构（归 SV-91）",
+      "requirement": "相位输入是合法 discriminated union；Phase B payload 为 §13.0.4 七个封闭变体之一；Phase D 必带完整 `evaluation_input`。不重复检查 bundle 内部结构（归 SV-91）",
       "implementation": [],
       "tests": [],
       "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
@@ -1174,22 +1176,30 @@
       "phase": "B",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
-      "requirement": "`PhaseBEnvelope.payload` 恰为 §13.0.4 六个 tagged union 变体之一，字段集合精确匹配且 transition 必填",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "status": "PARTIAL",
+      "requirement": "`PhaseBEnvelope.payload` 恰为 §13.0.4 七个 tagged union 变体之一，字段集合精确匹配且 transition 必填",
+      "implementation": [
+        "tools/verification_profile/phase_b.py#validate_no_snapshot_round"
+      ],
+      "tests": [
+        "tests/verification_profile/test_phase_b.py#test_snapshot_fields_old_tag_and_invalid_edges_reject"
+      ],
+      "gap": "局部 guard 已检查新 payload 形状，完整七变体与信封接线待验收。"
     },
     {
       "id": "SV-94",
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
-      "requirement": "状态转换约束 PB-6—PB-9 与 RG-1/RG-2，仅用 `transition.prior_round_state → proposed_round_state` 与 `snapshot_freeze_record` 判定（owner，§13.1B.2A）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "status": "PARTIAL",
+      "requirement": "状态转换约束 PB-6—PB-9、RG-1/RG-2 与 NS-1—NS-3，使用显式状态、方法、绑定和因果快照判定（owner，§13.1B.2A）",
+      "implementation": [
+        "tools/verification_profile/phase_b.py#validate_no_snapshot_round"
+      ],
+      "tests": [
+        "tests/verification_profile/test_phase_b.py#test_terminal_requires_unique_commit_and_correct_start_order"
+      ],
+      "gap": "已验证 NS-1—NS-3 的显式输入，bounded 路径、完整 RB 和 PB-9 调用接线待验收。"
     },
     {
       "id": "SV-95",
@@ -1306,11 +1316,15 @@
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
-      "requirement": "`round_stage` 单调，且 trigger—阶段转换满足 RG-1/RG-2 四行矩阵",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "status": "PARTIAL",
+      "requirement": "`round_stage` 单调，且方法、payload 与阶段转换满足 RG-1/RG-2",
+      "implementation": [
+        "tools/verification_profile/phase_b.py#validate_no_snapshot_round"
+      ],
+      "tests": [
+        "tests/verification_profile/test_phase_b.py#test_four_legal_edges_and_method_dispatch"
+      ],
+      "gap": "已验证无 Snapshot 四条边，完整旧变体矩阵接线待验收。"
     },
     {
       "id": "SV-106",
@@ -1383,11 +1397,16 @@
       "phase": "D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "从 `BoundaryObservation` 的显式 funding/deadline refs 与事件 DAG 调用 `ResolveBoundary`；事件缺失、kind/subject 错误先产生 invalidating",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/admission.py#resolve_boundary"
+      ],
+      "tests": [
+        "tests/verification_profile/test_admission.py#test_boundary_order_and_concurrency",
+        "tests/verification_profile/test_admission.py#test_invalid_boundary_facts_are_not_concurrent"
+      ],
+      "gap": "已验证显式边界引用和 DAG 的局部投影；完整 Phase D、快照认证及权威边界来源接线待验收。"
     },
     {
       "id": "SV-113",
@@ -1438,11 +1457,16 @@
       "phase": "I/F/B/D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
-      "requirement": "`MainnetAssuranceProfile` 的 network、窗口、Profile capability、组件/ExecutionCapability contract/reducer 允许集合与损失上限绑定；未 `ENABLED` 的方法不得产生 `ACCEPT`",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "status": "PARTIAL",
+      "requirement": "`MainnetAssuranceProfile` 的 network、窗口、Profile capability、组件/ExecutionCapability contract/reducer 允许集合与损失上限绑定；未 `ENABLED` 的方法不得产生 `ACCEPT`；新版非主网分支按 §9.2.2 验证部署绑定",
+      "implementation": [
+        "tools/verification_profile/deployment.py#check_nonmainnet_binding"
+      ],
+      "tests": [
+        "tests/verification_profile/test_deployment.py#test_declaration_mutation_and_cross_deployment_substitution",
+        "tests/verification_profile/test_deployment.py#test_expiry_revocation_source_and_funding_boundaries"
+      ],
+      "gap": "已检查非主网局部绑定与显式事实；正式信封接线、来源证明和主网能力全量验收待完成。"
     },
     {
       "id": "SV-118",
@@ -1496,7 +1520,7 @@
   "digests": [
     {
       "name": "`profile_digest`",
-      "tag": "ACLt/P0-1/Profile/1",
+      "tag": "ACLt/P0-1/Profile/2",
       "input": "`cbor(ContentMap_Profile)`（§3.3.3）",
       "owner": "SV-02",
       "layer": "L2",
