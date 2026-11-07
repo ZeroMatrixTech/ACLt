@@ -13,9 +13,10 @@
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
 | 当前主线 | [FM-S3 候选总体收尾](../testing/FM-S3-CLOSEOUT-20261106.md)通过 8 个双物理机 LAN 场景，A/B 独立重放 39 事件，测试资金守恒 | 正式接口保持 OPEN。继续推进正式启动来源、Phase B/D、信封和准入证据 |
-| 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | PR #65 已合并；线上 CI 验收以 Actions 运行记录为准，正式准入仍关闭 |
+| 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | PR #65 已合并；首次失败与修复后通过已留存 [CI 记录](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md#github-ci-运行记录)，正式准入仍关闭 |
 | FM-S3 规范对齐 | [第一项四片收尾](../testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)覆盖无 claim 编码、Phase B、接纳边界和非主网部署草案 | 正式信封和准入另行评审 |
 | FM-S3 终态与历史回归 | [组合双机结果](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md)通过入口、执行闭合、资金边界与结算恢复，并逐项对照 Work 2/3 的 38 个历史场景 | 候选证据与正式 FM-A 验收分开记录 |
+| FM 证据归档 | [第四项收尾](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md)归档五份公开包并重放 24 套快照，补齐原始审计、CI 记录和 12 项 FM-A 候选证据 | 正式 FM-A 仍逐项验收；本轮改动的 CI 随提交触发 |
 | 开发者预览 | [发行说明草案](../releases/PREVIEW-20261106.md)与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：源码包可重现、包内本地检查可运行 | 发布前在待打标签 commit 上重跑双机并确认 CI；预览不是 ProtocolVersion、ConformanceTarget 或部署启用 |
 | 验收边界 | P0-1B 为 3/24/92，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 

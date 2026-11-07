@@ -1,0 +1,214 @@
+{
+  "status": "PASS",
+  "mode": "PUBLIC_REPLAY",
+  "archives": 5,
+  "snapshots": 24,
+  "events": 249,
+  "new_dualhost_runs": 0,
+  "formal_acceptance": false,
+  "results": [
+    {
+      "id": "FM-S2",
+      "archive_sha256": "3fff4c97e2fe1e98ed72acb7deea66ba04b8c9dbde6b54633d6fb560e0ddc49f",
+      "source_files_verified": 27,
+      "snapshots": [
+        {
+          "id": "normal",
+          "events": 7,
+          "replay": "PASS",
+          "head": "20fba05ed8b786563e26f82c29935b401e70677ddbb539c51307c260fc0c780f",
+          "state_digest": "975d3d3cea3777a9b15008f0bdce2823342b64151f27a790cbba6eb4065aaa53"
+        },
+        {
+          "id": "duplicate-activation",
+          "events": 2,
+          "replay": "PASS",
+          "head": "c37179d0df7f0a845435336f26cb8209a18cca5d13c13ea15c03d3c8dcd08154",
+          "state_digest": "10694f048d2a0f28d773f4f440d73df60edd4e6e12f575810060073aa426b519"
+        },
+        {
+          "id": "old-epoch",
+          "events": 2,
+          "replay": "PASS",
+          "head": "ffd584ac36b25ff933e87265b2375734cbe626f366e413afb82f5939c56c86a2",
+          "state_digest": "bd47e6d6fb7a72dbc69a72eaeef0c8f5087fa6cf52acd0d27041979730f3fb1f"
+        },
+        {
+          "id": "wrong-capability",
+          "events": 2,
+          "replay": "PASS",
+          "head": "37bd6808e58345c00e844a121e5c9e7552b0a0d92c055e02626054d81ffe497f",
+          "state_digest": "c611bbab21ccecfb8db9114788339aadf09bf43018ba603e2bcf62bebf41c597"
+        },
+        {
+          "id": "bad-signature",
+          "events": 2,
+          "replay": "PASS",
+          "head": "851adfef4334f3cba2cfd531d2f1d00ab69f13afab3adc60334123dcdd76c5a1",
+          "state_digest": "2d54b58a7e81501ffcd66cc15ebc65cfb6835ea5d0e36cdc1fa84e19f5673201"
+        },
+        {
+          "id": "legacy-start",
+          "events": 2,
+          "replay": "PASS",
+          "head": "d04a4450abe82fe02824d7afd006bec59903c6612656c93b0f82b880ec099845",
+          "state_digest": "79adcf456f7a4d492361e7f07474ed85e79913bc054368dd8e528c44243d886d"
+        },
+        {
+          "id": "concurrent-consume",
+          "events": 3,
+          "replay": "PASS",
+          "head": "f5240dc60fbaff903ccd43c0065ae119e4fa6ca50668c0ce8de8a39319edfd02",
+          "state_digest": "c85f7ff6a2d0718ec4c55bc45e311b0550ff275b246c1814bae51e60f6b953d1"
+        },
+        {
+          "id": "exposure-reject",
+          "events": 7,
+          "replay": "PASS",
+          "head": "02078fbdd5ccf7c879c34d4702c9414c4bdb11e75850c5dead0607eddf8468b6",
+          "state_digest": "10fd1715920bbb858900d101e99f08bdaa381b4eee9e45739741b0701a776b11"
+        },
+        {
+          "id": "drop-activation-reply",
+          "events": 5,
+          "replay": "PASS",
+          "head": "a277a51b62bb9552a71e0a80a7bc6bc7fbaefb79d72f8576508e4cb7d2556d63",
+          "state_digest": "34a2b39a0109159ebab6a469749c172ab32a8f5cc19539ec7abc9849dc16f31f"
+        },
+        {
+          "id": "drop-consume-reply",
+          "events": 4,
+          "replay": "PASS",
+          "head": "917a7bb1a83e1c5cf73bb1ed944730c4eb75a1e5e2c114fff6c561f783965bc7",
+          "state_digest": "04e2538bc8a9f8f8539ad3f3174941aa42309aafbd6042efc680fbcd0f55ac5f"
+        },
+        {
+          "id": "before-commit",
+          "events": 4,
+          "replay": "PASS",
+          "head": "9e217bf4edc78e640bf919b54b7a6843acf0aa95fc63427ca0b05159c580019b",
+          "state_digest": "64cb923bb2c662e5c81bf6e15b64f420815526afd36143586d255b20fffde74b"
+        },
+        {
+          "id": "after-commit",
+          "events": 4,
+          "replay": "PASS",
+          "head": "9d6f13b603213b6282f079f40d221ea836c94424f7f446ec9b1f9f58eed73d70",
+          "state_digest": "11da9f3bc270caa862b8b19c8d0a555dbe92302d9071923f3418eeb81310092a"
+        },
+        {
+          "id": "worker-after-intent",
+          "events": 3,
+          "replay": "PASS",
+          "head": "907c90d864db6d231db879b83a274f67d8f85e6d3c3e9af72da05fe6d2fb1ad6",
+          "state_digest": "ea6d3e330e670f9dda14ccd2864e5e5fd516f43d3e8a3914f73aa82f428a9376"
+        },
+        {
+          "id": "worker-after-consume",
+          "events": 4,
+          "replay": "PASS",
+          "head": "d819b1f36381fcfd29c2fc1ec656f5295c98acb63e02ef4f13fa7a17c1d3a339",
+          "state_digest": "e9abc421e9029b302afac106d915e2d3c33b7555e79472861d362e300208dd90"
+        },
+        {
+          "id": "worker-after-guest",
+          "events": 4,
+          "replay": "PASS",
+          "head": "24674b185aca9747c5cf60d72fb804fd0d4699c511498e3dc36b8bfa75601a10",
+          "state_digest": "d4f9fb9d654bd598a4d3fe62a425d44bb8ea7a01a49195d920b5838543f72864"
+        },
+        {
+          "id": "authority-down",
+          "events": 2,
+          "replay": "PASS",
+          "head": "33e1e9a3bbb4f6eecdadf5382815dfdd5845f74d0017a7bfe39959a9fd40cdfa",
+          "state_digest": "2ffd5dab8b1e02b8b397281e5341e997dadd4617d5eddd7fcf591acd0492459e"
+        },
+        {
+          "id": "deadline-fence",
+          "events": 3,
+          "replay": "PASS",
+          "head": "8d7530fc2e939a5bf9be009ee669f16531e4c15e56101a634c60e55ac90880a5",
+          "state_digest": "aa3dc5f894ccd3df53f424e20a581899e1caa36766647b3b77b979855585aacb"
+        }
+      ]
+    },
+    {
+      "id": "FM-S3-CLOSEOUT",
+      "archive_sha256": "6abcc7a59b6915b333c42e98150195db4b08fce48b8cb1dae138ccb40fc8ab96",
+      "source_files_verified": 32,
+      "snapshots": [
+        {
+          "id": "FM-S3-CLOSEOUT",
+          "events": 39,
+          "replay": "PASS",
+          "head": "d72ea7fbc9a5090a3272e14874e234f2fcdc42773dcd38d3bef5d578402d37ad",
+          "state_digest": "840434e568d16ef04c06db5ffe6d2dfb264a63f49b3b28604824440d403f9c72"
+        }
+      ]
+    },
+    {
+      "id": "FM-S3-TASK-TRAP",
+      "archive_sha256": "7fda15a96dd71557a8a29377f76c4150e55634e1436261d00351c3bc403ae9df",
+      "source_files_verified": 32,
+      "snapshots": [
+        {
+          "id": "FM-S3-TASK-TRAP",
+          "events": 39,
+          "replay": "PASS",
+          "head": "993aaf1ba13fc50e3cd884605039dfaab2e66410f33f4b9257cc96c2c3593984",
+          "state_digest": "da410156e09635435fbcae7f95dcf851772c82d6eadbe730262a41f97d18f307"
+        }
+      ]
+    },
+    {
+      "id": "FM-S3-EXECUTION-CLOSURE",
+      "archive_sha256": "acbbc8b12be5f54a745dedb2e38b3598df48133b0e4bd839ef6ea942be255643",
+      "source_files_verified": 35,
+      "snapshots": [
+        {
+          "id": "FM-S3-EXECUTION-CLOSURE",
+          "events": 9,
+          "replay": "PASS",
+          "head": "8e0d4a4c49fcf810e78a15052904265ddb958bbcdd5bd948a38d5dddd43f130e",
+          "state_digest": "6f3effe027ff5e777e66d9a29d51fc03c5d98a4c1e68e073f04179ac47bca802"
+        }
+      ]
+    },
+    {
+      "id": "FM-S3-HISTORICAL",
+      "archive_sha256": "706b92fdbbca8d7d411769a008c592e0e470d1561ec95fd57c68b85ad872cba8",
+      "source_files_verified": 36,
+      "snapshots": [
+        {
+          "id": "terminals-primary",
+          "events": 36,
+          "replay": "PASS",
+          "head": "a055f3453e969994eeb946000b06c9dba8f96bbe551710bca7d9f87a8018d245",
+          "state_digest": "69e139511faeeab5f856e661f125f479bca0112365abe3430eb81a873043c0a8"
+        },
+        {
+          "id": "terminals-secondary",
+          "events": 13,
+          "replay": "PASS",
+          "head": "e2bbff8025f73bf78417e34928e6d75d925b767fcded6747f00eee4ef205c2f1",
+          "state_digest": "cdf7ea53027b718b35d993f0daeea8d48f6fd83086f8d3c4f7654f2bb4280555"
+        },
+        {
+          "id": "historical-gaps-primary",
+          "events": 29,
+          "replay": "PASS",
+          "head": "99e047c97e9f74b262c0dc325806369884afd6ca84e1614671c849dbfcaed62a",
+          "state_digest": "3a52a4845284ce4fd98e2abf0eb01b0c4eaa2bca8db3090668aaa5dda2b30aea"
+        },
+        {
+          "id": "historical-gaps-secondary",
+          "events": 24,
+          "replay": "PASS",
+          "head": "1232c11813a7253a78a2c4d3a430cc49e5b1b7c7fa6bbd18018d36d56ea45f75",
+          "state_digest": "3628e64a9af8b8254d24bade8c73f722d4505be618eaabbb16921e6a0903e670"
+        }
+      ]
+    }
+  ]
+}

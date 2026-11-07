@@ -1,5 +1,7 @@
 # 2026-11-05 有界审计修复
 
+2026-11-07 补记。所依据的 [外部审计原文](../08-governance/audits/external/AUDIT-20261105-01.original.txt)已按原字节归档，首次 CI 失败及修复后通过见 [收尾记录](FM-EVIDENCE-CLOSEOUT-20261107.md#github-ci-运行记录)。
+
 基线：main `9cf939838c6d8c59c3568d3b23dd8614b6aefb72`。依据维护者授权，对 AUDIT-20261105-01 的已确认项和定点复核结论执行有限修复；不是接受报告全部指控。完整 `make test` 退出 0：默认 391 个 unittest，Claim 29766、FM-S1a 179、FM-S1b 196、RIR 独立核心 161 项对拍及 20 次 sanitizer 通过；同名机器摘要记录确切范围。本轮不改变协议状态、B/Q、V1、OQ/Gate 或正式准入；主线继续 FM-S3。
 
 ## 交付与边界

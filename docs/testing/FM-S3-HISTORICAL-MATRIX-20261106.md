@@ -90,6 +90,8 @@ H 的首套账本确认两条来自 B 的首次结算连接只追加一条分配
 
 四套账本的 genesis、链头、状态摘要和源码清单 SHA-256 见 [机器摘要](FM-S3-HISTORICAL-MATRIX-20261106.summary.json)。外置公开归档 `FM-S3-HISTORICAL-MATRIX-public-evidence.tar.gz` 的 SHA-256 为 `706b92fdbbca8d7d411769a008c592e0e470d1561ec95fd57c68b85ad872cba8`，包含每套的 config、anchor、snapshot、回放入口和本轮固定源码。归档内不含私钥或运行数据库。
 
+2026-11-07 公开材料已按留存字节入库，归档摘要、genesis/checkpoint 索引与离线回放入口见 [证据归档收尾](FM-EVIDENCE-CLOSEOUT-20261107.md)。
+
 ## 复跑入口
 
 沿用 DUALHOST-SSH-1。两个模式使用同一源码树，各启动两套独立 genesis 与运行目录，每套最多三份 Receipt。A 持权威、审计和 T 的观察方密钥；B 运行执行方，H 的结算请求由 A 签名后通过 B 的 TCP 连接发出。事务故障和 worker 故障通过测试钩子受控退出进程。测试时钟由操作者提供。各模式保留单独的账本与 A/B 重放证据。

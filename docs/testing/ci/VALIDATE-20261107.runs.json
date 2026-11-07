@@ -1,0 +1,477 @@
+{
+  "repository": "ZeroMatrixTech/ACLt",
+  "observed_date": "2026-11-07",
+  "access": "authenticated read-only GitHub CLI after connector access failed",
+  "runs": [
+    {
+      "attempt": 1,
+      "conclusion": "failure",
+      "createdAt": "2026-11-05T10:18:58Z",
+      "databaseId": 42009685044,
+      "event": "pull_request",
+      "headBranch": "fix/bounded-audit-20261105",
+      "headSha": "58ae7b09e85c7e44b2d6517216e2687448c40643",
+      "jobs": [
+        {
+          "completedAt": "2026-11-05T10:19:44Z",
+          "conclusion": "failure",
+          "databaseId": 127185225939,
+          "name": "local-validation",
+          "startedAt": "2026-11-05T10:19:01Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-11-05T10:19:03Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-11-05T10:19:03Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:09Z",
+              "conclusion": "success",
+              "name": "Initialize containers",
+              "number": 2,
+              "startedAt": "2026-11-05T10:19:03Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:36Z",
+              "conclusion": "success",
+              "name": "Install Ubuntu build prerequisites",
+              "number": 3,
+              "startedAt": "2026-11-05T10:19:09Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:37Z",
+              "conclusion": "success",
+              "name": "Checkout complete retained history",
+              "number": 4,
+              "startedAt": "2026-11-05T10:19:36Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:37Z",
+              "conclusion": "success",
+              "name": "Check tested environment scope",
+              "number": 5,
+              "startedAt": "2026-11-05T10:19:37Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:37Z",
+              "conclusion": "failure",
+              "name": "Verify retained source pins against Git",
+              "number": 6,
+              "startedAt": "2026-11-05T10:19:37Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:37Z",
+              "conclusion": "skipped",
+              "name": "Run all local implementations and sanitizers",
+              "number": 7,
+              "startedAt": "2026-11-05T10:19:37Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:37Z",
+              "conclusion": "skipped",
+              "name": "Check deterministic source delivery",
+              "number": 8,
+              "startedAt": "2026-11-05T10:19:37Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:38Z",
+              "conclusion": "success",
+              "name": "Post Checkout complete retained history",
+              "number": 15,
+              "startedAt": "2026-11-05T10:19:37Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:42Z",
+              "conclusion": "success",
+              "name": "Stop containers",
+              "number": 16,
+              "startedAt": "2026-11-05T10:19:38Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:19:42Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "startedAt": "2026-11-05T10:19:42Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/ZeroMatrixTech/ACLt/actions/runs/42009685044/job/127185225939"
+        }
+      ],
+      "status": "completed",
+      "updatedAt": "2026-11-05T10:19:45Z",
+      "url": "https://github.com/ZeroMatrixTech/ACLt/actions/runs/42009685044",
+      "workflowName": "Validate source and local implementations",
+      "retrieved_log_sha256": "90d25514119555e51ebf4dada70ff9d0795a8066d45c256f674a4f022281e5db",
+      "checkout_commit_from_log": "c119ccbf96f05d81edac0a2a0a1b69987eb3b0cf",
+      "retained_log_excerpt": [
+        "local-validation\tUNKNOWN STEP\t2026-11-05T10:19:37.5252234Z [command]/usr/bin/git log -1 --format=%H",
+        "local-validation\tUNKNOWN STEP\t2026-11-05T10:19:37.5293636Z c119ccbf96f05d81edac0a2a0a1b69987eb3b0cf",
+        "local-validation\tUNKNOWN STEP\t2026-11-05T10:19:37.9301168Z FAIL: unavailable source 802cd74389d8b338b7fd5b03c985eab769b7c19b:tools/verification_profile/validator.py",
+        "local-validation\tUNKNOWN STEP\t2026-11-05T10:19:37.9433360Z ##[error]Process completed with exit code 1."
+      ]
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "createdAt": "2026-11-05T10:33:20Z",
+      "databaseId": 42011671890,
+      "event": "pull_request",
+      "headBranch": "fix/bounded-audit-20261105",
+      "headSha": "9ebbe3f7dce0366423e7e61917128c67602d1082",
+      "jobs": [
+        {
+          "completedAt": "2026-11-05T10:36:01Z",
+          "conclusion": "success",
+          "databaseId": 127191973825,
+          "name": "local-validation",
+          "startedAt": "2026-11-05T10:33:23Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-11-05T10:33:25Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-11-05T10:33:24Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:33:31Z",
+              "conclusion": "success",
+              "name": "Initialize containers",
+              "number": 2,
+              "startedAt": "2026-11-05T10:33:25Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:33:56Z",
+              "conclusion": "success",
+              "name": "Install Ubuntu build prerequisites",
+              "number": 3,
+              "startedAt": "2026-11-05T10:33:31Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:33:58Z",
+              "conclusion": "success",
+              "name": "Checkout complete retained history",
+              "number": 4,
+              "startedAt": "2026-11-05T10:33:56Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:33:58Z",
+              "conclusion": "success",
+              "name": "Check tested environment scope",
+              "number": 5,
+              "startedAt": "2026-11-05T10:33:58Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:33:58Z",
+              "conclusion": "success",
+              "name": "Verify retained source pins against Git",
+              "number": 6,
+              "startedAt": "2026-11-05T10:33:58Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:35:56Z",
+              "conclusion": "success",
+              "name": "Run all local implementations and sanitizers",
+              "number": 7,
+              "startedAt": "2026-11-05T10:33:58Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:35:57Z",
+              "conclusion": "success",
+              "name": "Check deterministic source delivery",
+              "number": 8,
+              "startedAt": "2026-11-05T10:35:56Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:35:57Z",
+              "conclusion": "success",
+              "name": "Post Checkout complete retained history",
+              "number": 15,
+              "startedAt": "2026-11-05T10:35:57Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:35:58Z",
+              "conclusion": "success",
+              "name": "Stop containers",
+              "number": 16,
+              "startedAt": "2026-11-05T10:35:57Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-05T10:35:58Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "startedAt": "2026-11-05T10:35:58Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/ZeroMatrixTech/ACLt/actions/runs/42011671890/job/127191973825"
+        }
+      ],
+      "status": "completed",
+      "updatedAt": "2026-11-05T10:36:02Z",
+      "url": "https://github.com/ZeroMatrixTech/ACLt/actions/runs/42011671890",
+      "workflowName": "Validate source and local implementations"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "createdAt": "2026-11-06T13:12:07Z",
+      "databaseId": 42223578937,
+      "event": "push",
+      "headBranch": "main",
+      "headSha": "b555231143b462c54fd320dc2924107a57fac4af",
+      "jobs": [
+        {
+          "completedAt": "2026-11-06T13:14:47Z",
+          "conclusion": "success",
+          "databaseId": 127911319109,
+          "name": "local-validation",
+          "startedAt": "2026-11-06T13:12:10Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-11-06T13:12:11Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-11-06T13:12:11Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:12:17Z",
+              "conclusion": "success",
+              "name": "Initialize containers",
+              "number": 2,
+              "startedAt": "2026-11-06T13:12:11Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:12:39Z",
+              "conclusion": "success",
+              "name": "Install Ubuntu build prerequisites",
+              "number": 3,
+              "startedAt": "2026-11-06T13:12:17Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:12:40Z",
+              "conclusion": "success",
+              "name": "Checkout complete retained history",
+              "number": 4,
+              "startedAt": "2026-11-06T13:12:39Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:12:40Z",
+              "conclusion": "success",
+              "name": "Check tested environment scope",
+              "number": 5,
+              "startedAt": "2026-11-06T13:12:40Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:12:40Z",
+              "conclusion": "success",
+              "name": "Verify retained source pins against Git",
+              "number": 6,
+              "startedAt": "2026-11-06T13:12:40Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:14:43Z",
+              "conclusion": "success",
+              "name": "Run all local implementations and sanitizers",
+              "number": 7,
+              "startedAt": "2026-11-06T13:12:40Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:14:43Z",
+              "conclusion": "success",
+              "name": "Check deterministic source delivery",
+              "number": 8,
+              "startedAt": "2026-11-06T13:14:43Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:14:44Z",
+              "conclusion": "success",
+              "name": "Post Checkout complete retained history",
+              "number": 15,
+              "startedAt": "2026-11-06T13:14:43Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:14:45Z",
+              "conclusion": "success",
+              "name": "Stop containers",
+              "number": 16,
+              "startedAt": "2026-11-06T13:14:44Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T13:14:45Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "startedAt": "2026-11-06T13:14:45Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/ZeroMatrixTech/ACLt/actions/runs/42223578937/job/127911319109"
+        }
+      ],
+      "status": "completed",
+      "updatedAt": "2026-11-06T13:14:47Z",
+      "url": "https://github.com/ZeroMatrixTech/ACLt/actions/runs/42223578937",
+      "workflowName": "Validate source and local implementations"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "createdAt": "2026-11-06T20:37:44Z",
+      "databaseId": 42289957609,
+      "event": "pull_request",
+      "headBranch": "feat/fm-s3-historical-matrix-20261106",
+      "headSha": "4138d9921362d2077c6cc8f5b4ebf1fe920f4359",
+      "jobs": [
+        {
+          "completedAt": "2026-11-06T20:40:01Z",
+          "conclusion": "success",
+          "databaseId": 128140475588,
+          "name": "local-validation",
+          "startedAt": "2026-11-06T20:37:47Z",
+          "status": "completed",
+          "steps": [
+            {
+              "completedAt": "2026-11-06T20:37:48Z",
+              "conclusion": "success",
+              "name": "Set up job",
+              "number": 1,
+              "startedAt": "2026-11-06T20:37:48Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:37:53Z",
+              "conclusion": "success",
+              "name": "Initialize containers",
+              "number": 2,
+              "startedAt": "2026-11-06T20:37:48Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:38:10Z",
+              "conclusion": "success",
+              "name": "Install Ubuntu build prerequisites",
+              "number": 3,
+              "startedAt": "2026-11-06T20:37:53Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:38:12Z",
+              "conclusion": "success",
+              "name": "Checkout complete retained history",
+              "number": 4,
+              "startedAt": "2026-11-06T20:38:10Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:38:12Z",
+              "conclusion": "success",
+              "name": "Check tested environment scope",
+              "number": 5,
+              "startedAt": "2026-11-06T20:38:12Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:38:12Z",
+              "conclusion": "success",
+              "name": "Verify retained source pins against Git",
+              "number": 6,
+              "startedAt": "2026-11-06T20:38:12Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:39:58Z",
+              "conclusion": "success",
+              "name": "Run all local implementations and sanitizers",
+              "number": 7,
+              "startedAt": "2026-11-06T20:38:12Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:39:58Z",
+              "conclusion": "success",
+              "name": "Check deterministic source delivery",
+              "number": 8,
+              "startedAt": "2026-11-06T20:39:58Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:39:58Z",
+              "conclusion": "success",
+              "name": "Post Checkout complete retained history",
+              "number": 15,
+              "startedAt": "2026-11-06T20:39:58Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:40:00Z",
+              "conclusion": "success",
+              "name": "Stop containers",
+              "number": 16,
+              "startedAt": "2026-11-06T20:39:58Z",
+              "status": "completed"
+            },
+            {
+              "completedAt": "2026-11-06T20:40:00Z",
+              "conclusion": "success",
+              "name": "Complete job",
+              "number": 17,
+              "startedAt": "2026-11-06T20:40:00Z",
+              "status": "completed"
+            }
+          ],
+          "url": "https://github.com/ZeroMatrixTech/ACLt/actions/runs/42289957609/job/128140475588"
+        }
+      ],
+      "status": "completed",
+      "updatedAt": "2026-11-06T20:40:02Z",
+      "url": "https://github.com/ZeroMatrixTech/ACLt/actions/runs/42289957609",
+      "workflowName": "Validate source and local implementations",
+      "retrieved_log_sha256": "0f6416766990da2adfc23a21a5820ef7524871c2e17c77031de2c38c05254a1b",
+      "checkout_commit_from_log": "963c9821496ee6a0b952443c977e0b97236d23a0",
+      "retained_log_excerpt": [
+        "local-validation\tUNKNOWN STEP\t2026-11-06T20:38:11.7972403Z [command]/usr/bin/git log -1 --format=%H",
+        "local-validation\tUNKNOWN STEP\t2026-11-06T20:38:11.7995240Z 963c9821496ee6a0b952443c977e0b97236d23a0"
+      ]
+    }
+  ]
+}

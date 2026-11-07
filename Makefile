@@ -196,3 +196,11 @@ check-fm-s3-authority:
 check: check-fm-s3-terminals
 check-fm-s3-terminals:
 	$(PYTHON) -B -m unittest discover -s tests/formal_migration -p test_s3_terminals.py -v
+
+.PHONY: check-fm-public-evidence test-fm-public-evidence
+check: check-fm-public-evidence
+test: test-fm-public-evidence
+check-fm-public-evidence:
+	$(PYTHON) -B scripts/check-fm-public-evidence.py
+test-fm-public-evidence:
+	$(PYTHON) -B scripts/check-fm-public-evidence.py --replay
