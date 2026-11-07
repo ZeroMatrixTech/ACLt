@@ -281,5 +281,6 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 
 - [FM-S3 执行闭合、可耗尽预算与 RPR 入口](testing/FM-S3-TERMINALS-20261106.md)：观察方签名闭合、激活时资金边界与已核验入口启动状态；本地与后续组合双机矩阵均通过。
 - [Work 2/3 历史矩阵与 FM-S3 双机回归](testing/FM-S3-HISTORICAL-MATRIX-20261106.md)：逐项对照 38 个历史场景，补跑结果与结算回放、首次结算并发、worker 中断及停服恢复。
+- [FM 第四项证据归档收尾](testing/FM-EVIDENCE-CLOSEOUT-20261107.md)：五份公开归档、24 套历史快照的离线重放，外部审计原文、CI 运行记录和 FM-A 候选证据列。
 
 - [2026-11-06 仓库维护记录](08-governance/audits/audit-20261106-01-repository-maintenance.md)与[开发者预览发行说明草案](releases/PREVIEW-20261106.md)：索引与入口同步、发布准备检查；预览尚未发布。

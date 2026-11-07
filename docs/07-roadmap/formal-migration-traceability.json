@@ -1,6 +1,6 @@
 {
   "document_kind": "engineering-planning-traceability",
-  "date": "2026-11-06",
+  "date": "2026-11-07",
   "baseline": "f5f415f7c65952adba01f7b0c9f21d554b14c264",
   "authority": "engineering traceability; ADR-0007 route accepted by human, fields and implementation not accepted",
   "adr": "docs/05-decisions/ADR-0007-formal-object-migration-foundation.md",
@@ -336,7 +336,7 @@
     "entry_ready": true,
     "implementation_started": true,
     "runtime_admission": false,
-    "requires": "formal interface review; trusted RPR start and execution closure, Task trap and budget exhaustion, complete Phase B/D and non-mainnet interface evidence",
+    "requires": "formal interface review, full source/time/frontier and Phase B/D contracts, official schema and non-mainnet assurance",
     "local_results_slice": "FM-S3 candidate LAN closeout complete; formal interface acceptance open"
   },
   "slice_results": {
@@ -426,7 +426,7 @@
       "next": "prioritize gaps exercised by FM-S2 fixed-task integration; keep full RIR conformance/formal Receipt evidence as separate unclosed gates"
     }
   },
-  "primary_work": "FM-S3 limited candidate closeout retained; formal interface acceptance open",
+  "primary_work": "Candidate FM-S3 terminal and historical regressions retained, public archives and CI records linked to all FM-A rows",
   "readiness_closeout": {
     "report": "docs/testing/FM-S2-READINESS-20261028.md",
     "machine_evidence": "docs/testing/MIGRATION-EVIDENCE-20261028.md",
@@ -435,5 +435,151 @@
     "new_dualhost_runs": 0,
     "new_rule_implementations": 0,
     "new_acceptance_decisions": false
+  },
+  "candidate_path_evidence": {
+    "FM-A01": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S2-20261031.md"
+      ],
+      "test_file": "tests/formal_migration/test_s2.py",
+      "test_method": "test_legacy_unknown_fields_network_and_receipt",
+      "covered": "候选 S2 拒绝旧操作、未知字段和错网络/Receipt，拒绝前后业务状态核对。",
+      "formal_gap": "正式入口、官方 schema/ID 及完整迁移拒绝矩阵。"
+    },
+    "FM-A02": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S1A-20261028.md",
+        "docs/testing/FM-S1B-20261028.md",
+        "docs/testing/RIR-INDEPENDENT-CORE-20261028.md"
+      ],
+      "test_file": "tests/formal_migration/test_foundation.py",
+      "test_method": "test_resource_limits",
+      "covered": "Python/Rust 字节和签名对拍，资源拒绝，独立受限 RIR 核心。",
+      "formal_gap": "通用官方对象的完整跨语言编码、validator 与 conformance。"
+    },
+    "FM-A03": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S1B-20261028.md",
+        "docs/testing/FM-S2-20261031.md"
+      ],
+      "test_file": "tests/formal_migration/test_policy.py",
+      "test_method": "test_policy_changes_require_new_commitment_without_changing_rir",
+      "covered": "政策与执行组件绑定 Receipt，变化后原承诺与签名不可复用。",
+      "formal_gap": "正式版本、资源、语义变化与授权撤销的完整接线。"
+    },
+    "FM-A04": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S1B-20261028.md"
+      ],
+      "test_file": "tests/formal_migration/test_policy.py",
+      "test_method": "test_closed_reference_dag_rejects_receipt_backedges",
+      "covered": "候选政策先冻结，Receipt 单向引用，拒绝反向摘要依赖。",
+      "formal_gap": "官方 ContentMap 与正式对象图的注册及验收。"
+    },
+    "FM-A05": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S1A-20261028.md",
+        "docs/testing/FM-S2-20261031.md",
+        "docs/testing/FM-S3-CLOSEOUT-20261106.md"
+      ],
+      "test_file": "tests/formal_migration/test_s3_results.py",
+      "test_method": "test_wrong_signer_and_signature_tamper_rejected",
+      "covered": "Requester、Provider 与 issuer 分钥，结果角色/签名错位被拒绝。",
+      "formal_gap": "正式 PrincipalRecord、密钥生命周期与部署 assurance。"
+    },
+    "FM-A06": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S2-20261031.md",
+        "docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md"
+      ],
+      "test_file": "tests/formal_migration/test_s2.py",
+      "test_method": "test_concurrent_activate_and_consume_one_winner",
+      "covered": "单 Lease，资金与五维暴露原子预留，并发 CONSUME 单一成功，中断后不补算。",
+      "formal_gap": "完整正式调度、Lease/epoch 生命周期与 RPR 准入。"
+    },
+    "FM-A07": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S2-20261031.md",
+        "docs/testing/FM-S3-CLOSEOUT-20261106.md",
+        "docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md"
+      ],
+      "test_file": "tests/formal_migration/test_s2.py",
+      "test_method": "test_conflicting_nonce_and_repeat_attempt",
+      "covered": "旧 epoch 与冲突 nonce 拒绝，原签名请求重放、结果冲突和首次结算竞争保留原事实。",
+      "formal_gap": "正式幂等对象、epoch 演进和跨部署迁移。"
+    },
+    "FM-A08": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S3-CLOSEOUT-20261106.md",
+        "docs/testing/FM-S3-TERMINALS-20261106.md"
+      ],
+      "test_file": "tests/formal_migration/test_s3_results.py",
+      "test_method": "test_profile_rejects_bounded_claim_null_and_reordered_rules",
+      "covered": "audit-only 配对产生 CONCORDANT/UNRESOLVED，无 claim 与 EligibilitySnapshot 依赖。",
+      "formal_gap": "官方 Profile、正式证据/求值对象与完整 Phase B/D。"
+    },
+    "FM-A09": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S3-CLOSEOUT-20261106.md",
+        "docs/testing/FM-S3-TERMINALS-20261106.md",
+        "docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md"
+      ],
+      "test_file": "tests/formal_migration/test_s3_authority.py",
+      "test_method": "test_settlement_rejects_client_selected_policy_amount_and_terminal",
+      "covered": "已提交终态和冻结政策派生过程费/退款，调用者指定金额/政策/终态被拒，重复取原权利。",
+      "formal_gap": "完整 INV-07 与正式结算/履约对象和实际支付边界。"
+    },
+    "FM-A10": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S3-TERMINALS-20261106.md",
+        "docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md"
+      ],
+      "test_file": "tests/formal_migration/test_s3_terminals.py",
+      "test_method": "test_consumed_without_entry_is_start_unknown_at_evaluation",
+      "covered": "入口未知触发失效，闭合 FAILED、激活时资金边界、期限与持久状态恢复得到双机覆盖。",
+      "formal_gap": "正式来源 contract、完整期限/预算 frontier 与可信时钟。"
+    },
+    "FM-A11": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S3-CLOSEOUT-20261106.md",
+        "docs/testing/FM-S3-TERMINALS-20261106.md",
+        "docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md"
+      ],
+      "test_file": "tests/formal_migration/test_s3_authority.py",
+      "test_method": "test_settlement_commit_boundary_recovers_by_query",
+      "covered": "双机丢回复、COMMIT 前后退出、B 屏障首次结算及退款恢复，签名 checkpoint 与守恒核对。",
+      "formal_gap": "正式账本恢复 contract、外部支付、断电和权威回滚边界。"
+    },
+    "FM-A12": {
+      "status": "PARTIAL_CANDIDATE_EVIDENCE",
+      "reports": [
+        "docs/testing/FM-S2-20261031.md",
+        "docs/testing/FM-S3-CLOSEOUT-20261106.md",
+        "docs/testing/FM-S3-TERMINALS-20261106.md"
+      ],
+      "test_file": "tests/formal_migration/test_s2.py",
+      "test_method": "test_snapshot_missing_event_and_wrong_anchor_refused",
+      "covered": "错锚点/截断快照拒绝，未知启动与自述不驱动 FAILED；公开回放绑定外部 genesis/checkpoint。",
+      "formal_gap": "正式来源、新鲜性、抗回滚与独立认证根。"
+    }
+  },
+  "evidence_archive_closeout": {
+    "report": "docs/testing/FM-EVIDENCE-CLOSEOUT-20261107.md",
+    "public_index": "docs/testing/public-evidence/index.json",
+    "replay_summary": "docs/testing/FM-PUBLIC-EVIDENCE-20261107.summary.json",
+    "CI_runs": "docs/testing/ci/VALIDATE-20261107.runs.json",
+    "new_dualhost_runs": 0,
+    "new_formal_acceptance": false
   }
 }

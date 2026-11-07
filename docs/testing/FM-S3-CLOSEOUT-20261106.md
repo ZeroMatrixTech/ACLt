@@ -15,6 +15,8 @@
 
 账本最终为可用 39、已分配 29、预留 0，共 68 测试单位。两条 UNRESOLVED 与一条 EXPIRED 记录均有各自唯一分配。候选入口和结算合同见 [S3b](FM-S3B-AUTHORITY-20261106.md)与 [S3c](FM-S3C-SETTLEMENT-20261106.md)。
 
+2026-11-07 公开材料已按留存字节入库，归档摘要、genesis/checkpoint 索引与离线回放入口见 [证据归档收尾](FM-EVIDENCE-CLOSEOUT-20261107.md)。
+
 ## 四项工作收尾
 
 | 工作 | 已交付范围 | 正式验收待补 |

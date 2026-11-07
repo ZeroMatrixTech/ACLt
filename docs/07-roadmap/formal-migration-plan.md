@@ -47,20 +47,22 @@ FM-S3 应以新对象重跑原授权提交/重放 12 场景、结算 12 场景�
 
 ## 迁移验收编号
 
-| ID | 迁移完成时要证明的性质 |
-|---|---|
-| FM-A01 | 正式入口拒绝旧实验 schema/ID，业务状态不变 |
-| FM-A02 | 两语言规范编码/未知字段/数值/资源拒绝及独立字节对拍 |
-| FM-A03 | 版本、政策、输入、资源或语义变化不沿用旧承诺/授权 |
-| FM-A04 | 政策→Receipt 与其他因果/摘要依赖无环 |
-| FM-A05 | 角色/密钥/网络/签名责任正确，issuer 不代签 Provider |
-| FM-A06 | 唯一 Lease、两类原子预留、并发/超额与重复启动拒绝 |
-| FM-A07 | 旧 epoch/冲突幂等键不覆盖当前事实或产生新权利 |
-| FM-A08 | 方法特定 Profile/证据/求值；audit-only 无 ACCEPT/TRUSTED，无 EligibilitySnapshot |
-| FM-A09 | INV-07 五项前提齐全，金额由政策派生，重复请求取原权利 |
-| FM-A10 | 有界 deadline/恢复/unknown，按冻结规则唯一终态，无自动 guest 重试 |
-| FM-A11 | 丢回复/COMMIT 边界/竞争下至多一次与守恒 |
-| FM-A12 | 来源未知/错锚点不驱动新安全终态，合法旧签名不等于新鲜性 |
+| ID | 迁移完成时要证明的性质 | 候选路径证据 |
+|---|---|---|
+| FM-A01 | 正式入口拒绝旧实验 schema/ID，业务状态不变 | 候选 S2 拒绝旧操作、未知字段和错网络/Receipt，拒绝前后业务状态核对。 [FM-S2-20261031](../testing/FM-S2-20261031.md) |
+| FM-A02 | 两语言规范编码/未知字段/数值/资源拒绝及独立字节对拍 | Python/Rust 字节和签名对拍，资源拒绝，独立受限 RIR 核心。 [FM-S1A-20261028](../testing/FM-S1A-20261028.md)、[FM-S1B-20261028](../testing/FM-S1B-20261028.md)、[RIR-INDEPENDENT-CORE-20261028](../testing/RIR-INDEPENDENT-CORE-20261028.md) |
+| FM-A03 | 版本、政策、输入、资源或语义变化不沿用旧承诺/授权 | 政策与执行组件绑定 Receipt，变化后原承诺与签名不可复用。 [FM-S1B-20261028](../testing/FM-S1B-20261028.md)、[FM-S2-20261031](../testing/FM-S2-20261031.md) |
+| FM-A04 | 政策→Receipt 与其他因果/摘要依赖无环 | 候选政策先冻结，Receipt 单向引用，拒绝反向摘要依赖。 [FM-S1B-20261028](../testing/FM-S1B-20261028.md) |
+| FM-A05 | 角色/密钥/网络/签名责任正确，issuer 不代签 Provider | Requester、Provider 与 issuer 分钥，结果角色/签名错位被拒绝。 [FM-S1A-20261028](../testing/FM-S1A-20261028.md)、[FM-S2-20261031](../testing/FM-S2-20261031.md)、[FM-S3-CLOSEOUT-20261106](../testing/FM-S3-CLOSEOUT-20261106.md) |
+| FM-A06 | 唯一 Lease、两类原子预留、并发/超额与重复启动拒绝 | 单 Lease，资金与五维暴露原子预留，并发 CONSUME 单一成功，中断后不补算。 [FM-S2-20261031](../testing/FM-S2-20261031.md)、[FM-S3-HISTORICAL-MATRIX-20261106](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md) |
+| FM-A07 | 旧 epoch/冲突幂等键不覆盖当前事实或产生新权利 | 旧 epoch 与冲突 nonce 拒绝，原签名请求重放、结果冲突和首次结算竞争保留原事实。 [FM-S2-20261031](../testing/FM-S2-20261031.md)、[FM-S3-CLOSEOUT-20261106](../testing/FM-S3-CLOSEOUT-20261106.md)、[FM-S3-HISTORICAL-MATRIX-20261106](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md) |
+| FM-A08 | 方法特定 Profile/证据/求值；audit-only 无 ACCEPT/TRUSTED，无 EligibilitySnapshot | audit-only 配对产生 CONCORDANT/UNRESOLVED，无 claim 与 EligibilitySnapshot 依赖。 [FM-S3-CLOSEOUT-20261106](../testing/FM-S3-CLOSEOUT-20261106.md)、[FM-S3-TERMINALS-20261106](../testing/FM-S3-TERMINALS-20261106.md) |
+| FM-A09 | INV-07 五项前提齐全，金额由政策派生，重复请求取原权利 | 已提交终态和冻结政策派生过程费/退款，调用者指定金额/政策/终态被拒，重复取原权利。 [FM-S3-CLOSEOUT-20261106](../testing/FM-S3-CLOSEOUT-20261106.md)、[FM-S3-TERMINALS-20261106](../testing/FM-S3-TERMINALS-20261106.md)、[FM-S3-HISTORICAL-MATRIX-20261106](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md) |
+| FM-A10 | 有界 deadline/恢复/unknown，按冻结规则唯一终态，无自动 guest 重试 | 入口未知触发失效，闭合 FAILED、激活时资金边界、期限与持久状态恢复得到双机覆盖。 [FM-S3-TERMINALS-20261106](../testing/FM-S3-TERMINALS-20261106.md)、[FM-S3-HISTORICAL-MATRIX-20261106](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md) |
+| FM-A11 | 丢回复/COMMIT 边界/竞争下至多一次与守恒 | 双机丢回复、COMMIT 前后退出、B 屏障首次结算及退款恢复，签名 checkpoint 与守恒核对。 [FM-S3-CLOSEOUT-20261106](../testing/FM-S3-CLOSEOUT-20261106.md)、[FM-S3-TERMINALS-20261106](../testing/FM-S3-TERMINALS-20261106.md)、[FM-S3-HISTORICAL-MATRIX-20261106](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md) |
+| FM-A12 | 来源未知/错锚点不驱动新安全终态，合法旧签名不等于新鲜性 | 错锚点/截断快照拒绝，未知启动与自述不驱动 FAILED；公开回放绑定外部 genesis/checkpoint。 [FM-S2-20261031](../testing/FM-S2-20261031.md)、[FM-S3-CLOSEOUT-20261106](../testing/FM-S3-CLOSEOUT-20261106.md)、[FM-S3-TERMINALS-20261106](../testing/FM-S3-TERMINALS-20261106.md) |
+
+候选列对应追踪表中的 `candidate_path_evidence`。正式验收状态仍逐项记录为 `PLANNED_NOT_RUN`。本轮证据归档和回放见 [第四项收尾](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md)。
 
 这些是整条迁移的要求，不意味着 FM-S1a 一片完成全部 FM-A。完整 RIR/RPR、身份控制独立、B/Q、真实支付、主网资格和 Gate 都不能由局部编码对拍替代。
 
