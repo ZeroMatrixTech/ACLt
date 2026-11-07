@@ -4,6 +4,8 @@ mod sha256;
 mod nfc;
 mod fm;
 mod fm_policy;
+mod profile;
+mod registration;
 use std::io::{self,BufRead};
 pub(crate) type R<T> = Result<T,String>;
 const MAX:usize=1<<20;
@@ -136,6 +138,8 @@ impl J<'_>{
 fn parse_json(input:&str)->R<V>{need(input.len()<=MAX*4,"JSON size")?;let mut j=J{b:input.as_bytes(),p:0,n:0};let v=j.value(0)?;j.ws();need(j.p==j.b.len(),"JSON trailing")?;Ok(v)}
 fn run(line:&str)->R<V>{
  let (mode,input)=line.split_once('\t').ok_or("mode TAB input")?;
+ if let Some(pin)=mode.strip_prefix("phase-r:"){return registration::run(input,pin);}
+ if ["profile-digest","profile-decision","audit-profile"].contains(&mode){return profile::run(mode,input);}
  if mode=="sha256"{return Ok(s(&hex(&sha256::hash(&unhex(input)?))));}
  if mode.strip_prefix("view-").unwrap_or(mode).starts_with("fm2-"){return fm_policy::run(mode,input);}
  if mode.strip_prefix("view-").unwrap_or(mode).starts_with("fm-"){return fm::run(mode,input);}

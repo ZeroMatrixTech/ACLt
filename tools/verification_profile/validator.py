@@ -254,11 +254,51 @@ def validate(profile: dict[str, Any]) -> list[ValidationIssue]:
     return validate_l1a_bootstrap(profile) + validate_reexec_bounds(profile)
 
 
+
+def validate_profile_cbor(raw: bytes) -> list[ValidationIssue]:
+    """Formal v2 digest plus selected registration rules, without full SchemaValid."""
+    from tools.verification_profile import codec, profile as profile_codec
+    try:
+        value = codec.decode(raw)
+        profile_codec.content_map(value)
+        profile_codec.verify_digest(value)
+        profile_codec.decision_fields(value)
+        if value['verification_method'] == 'REEXEC_AUDIT_ONLY':
+            profile_codec.audit_fields(value)
+    except (codec.CodecError, KeyError, TypeError, RecursionError) as exc:
+        message = str(exc)
+        rule = message.split(':', 1)[0] if message.startswith('SV-') else 'PROFILE_INPUT'
+        return [_issue(rule, '$', message)]
+    return []
+
+
+
+def validate_registration_cbor(raw: bytes, lock_pin: bytes) -> list[ValidationIssue]:
+    from tools.verification_profile import codec, registration
+    try:
+        registration.inspect(raw, lock_pin)
+    except (codec.CodecError, KeyError, TypeError, RecursionError) as exc:
+        message = str(exc)
+        rule = message.split(':', 1)[0] if message.startswith('SV-') else 'REGISTRATION_INPUT'
+        return [_issue(rule, '$', message)]
+    return []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the P0-1B bootstrap validator")
     parser.add_argument("profile", type=Path)
     parser.add_argument("--production", action="store_true", help="always fail while coverage is incomplete")
+    parser.add_argument('--profile-cbor', action='store_true',
+                        help='Profile v2 L2 digest and selected Phase R rules on raw CBOR')
+    parser.add_argument('--registration-cbor', action='store_true',
+                        help='nested audit types, pinned schema imports and Phase R bundle')
+    parser.add_argument('--schema-lock-sha256',
+                        help='caller-supplied trusted schema lock pin for --registration-cbor')
     args = parser.parse_args()
+    if args.registration_cbor == (args.schema_lock_sha256 is None):
+        parser.error('--registration-cbor requires --schema-lock-sha256')
+    if args.registration_cbor and args.profile_cbor:
+        parser.error('choose one CBOR entry')
     def unique_object(pairs):
         result={}
         for key,value in pairs:
@@ -268,8 +308,14 @@ def main() -> int:
     def invalid_constant(value):
         raise ValueError(f"invalid JSON constant: {value}")
     try:
-        profile = json.loads(args.profile.read_text(encoding="utf-8"), object_pairs_hook=unique_object, parse_constant=invalid_constant)
-        issues = validate(profile)
+        if args.registration_cbor:
+            pin = bytes.fromhex(args.schema_lock_sha256)
+            issues = validate_registration_cbor(args.profile.read_bytes(), pin)
+        elif args.profile_cbor:
+            issues = validate_profile_cbor(args.profile.read_bytes())
+        else:
+            profile = json.loads(args.profile.read_text(encoding="utf-8"), object_pairs_hook=unique_object, parse_constant=invalid_constant)
+            issues = validate(profile)
     except (OSError, UnicodeError, ValueError, RecursionError) as exc:
         issues = [_issue("INPUT", "$", f"unreadable or malformed JSON: {exc}")]
     if args.production:

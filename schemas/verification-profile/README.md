@@ -14,8 +14,12 @@
 
 2026-10-23：全量盘点为 119 项 Type A（3 implemented、8 partial、108 not implemented），18 个规范摘要均未实现。详见 [逐项盘点](../../docs/testing/P0-1B-INVENTORY-20261023.md)。此次只修正覆盖登记，不新增验证能力；历史数量保留为当时快照。
 
-后续编码切片更新：本页 3/8/108 与 18 摘要全未实现的统计保留为盘点时基线；当前登记已变为 3/24/92，2 个摘要部分实现、16 个未实现。Python/Rust 限域对拍及 SV-42 说明勘误见 [编码切片记录](../../docs/testing/CLAIM-CODEC-20261023.md)；以 coverage.json / inventory.json 当前记录为准。
+后续编码切片更新（历史快照）：本页 3/8/108 与 18 摘要全未实现的统计保留为盘点时基线；当时登记变为 3/24/92，2 个摘要部分实现、16 个未实现。Python/Rust 限域对拍及 SV-42 说明勘误见 [编码切片记录](../../docs/testing/CLAIM-CODEC-20261023.md)；以 coverage.json / inventory.json 当前记录为准。
 
 无 Snapshot Phase B 的局部 guard 和[转换向量](../../tests/verification_profile/test_phase_b.py)覆盖 SV-93/94/105 的新增分支，三项登记为 partial。调用依赖已验证的 frontier 与 Receipt/Profile 绑定。正式来源 contract、全信封校验和日志忠实性另行验收。
 
 结果接纳切片补充 EA-4—EA-6，并在候选 S3 权威复用精确预算检查。SV-112 登记为 partial，局部向量覆盖严格期限、预算上限、边界因果序和无效来源。[向量](../../tests/verification_profile/test_admission.py)
+
+2026-11-07 [Profile 摘要第一片](../../docs/testing/PROFILE-DIGEST-R1-20261107.md)实现正式 ContentMap/摘要及通用判决结构，登记为 7 implemented / 28 partial / 84 not implemented。Profile 摘要 implemented，模板/claim 摘要 partial，其余 15 项摘要未实现。原始 CBOR 入口见 `python3 -m tools.verification_profile.validator PROFILE --profile-cbor`。完整 SchemaValid、导入/注册与生产准入继续独立验收。
+
+2026-11-07 [Profile 注册第二片](../../docs/testing/PROFILE-REGISTRATION-R2-20261107.md)新增四项规则级完成与八项 partial，当前 **11 implemented / 36 partial / 72 not implemented**。RegistrySnapshot/事件快照摘要已实现，audit Phase R 接显式 bundle；导入内部结构采用调用方钉住的测试 opaque schema，尚非正式全量 SchemaValid。原 JSON bootstrap schema 文件维持原骨架，新增严格类型表位于 `tools/verification_profile/rust/audit_types.json`。
