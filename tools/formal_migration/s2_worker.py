@@ -94,7 +94,10 @@ def run(cfg,bundle,role,private,host,port,exe,directory,now,hook=None,*,s3b=Fals
             if obj['status']!='TASK_OUTCOME':c.need('outcome_digest' not in obj and 'canonical_outcome_hex' not in obj,'host fault is not task outcome')
             observation=dict(status='LOCAL_OBSERVATION_ONLY',intent=intent,core=c.encode(obj),returncode=result.returncode)
         except (OSError,subprocess.TimeoutExpired,ValueError,KeyError):observation=dict(status='HOST_FAULT_NO_TASK_OUTCOME',intent=intent)
-        hook('AFTER_GUEST');durable(directory/'observation',c.encode(observation));return observation
+        hook('AFTER_GUEST')
+        durable(directory/'observation',c.encode(observation))
+        hook('AFTER_OBSERVATION')
+        return observation
     finally:os.close(lock)
 
 

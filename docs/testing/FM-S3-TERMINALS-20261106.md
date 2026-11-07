@@ -37,6 +37,8 @@
 
 ## 双机验收
 
+**后续实测通过。** 组合矩阵已在两套独立测试账本上通过，见 [本轮双机结果](FM-S3-HISTORICAL-MATRIX-20261106.md#本轮双机结果2026-11-06)。以下保留 #71 合入时的计划和未运行记录。
+
 `python3 -B scripts/fm-s3-dualhost.py --terminals --peer <B_USER>@<B_IP> --a-host <A_IP> --remote-root /tmp/fm-s3-terminals-<RUN> --output <NEW_DIR>`
 
 状态：**NOT_RUN**。本切片新增的入口绑定与资金边界路径尚无双物理机证据。上文执行闭合的双机结果对应的是闭合原始源码，不覆盖本切片的入口绑定与资金边界。

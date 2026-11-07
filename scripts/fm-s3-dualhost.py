@@ -4,7 +4,8 @@
 
 A hosts the authority, the auditor and the closure observer key; B hosts the
 executor. --terminals combines verified RPR entries, observer-signed execution
-closure and the funding boundary on one new genesis.
+closure and the funding boundary in two isolated ledgers. --historical-gaps
+runs the Work 2/3 fault and recovery cases in two more isolated ledgers.
 """
 import argparse
 import hashlib
@@ -22,7 +23,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from tools.formal_migration import policy, s2, s2_evidence, s2_fixture, s2_worker, s3_authority, s3_closure
+from tools.formal_migration import foundation, policy, s2, s2_evidence, s2_fixture, s2_worker, s3_authority, s3_closure
 from tools.verification_profile import codec as c
 
 BASE = runpy.run_path(str(ROOT/'scripts/fm-s2-dualhost.py'))
@@ -37,8 +38,14 @@ def main():
     parser.add_argument('--execution-closure', action='store_true', help='run the pinned observer closure matrix')
     parser.add_argument('--terminals', action='store_true',
                         help='run verified-entry, FAILED, FUNDING_EXHAUSTED and start-state scenarios')
+    parser.add_argument('--historical-gaps', action='store_true',
+                        help='run Work 2/3 candidate migration fault and recovery regressions')
+    parser.add_argument('--group', choices=('primary','secondary'), help=argparse.SUPPRESS)
     args = parser.parse_args()
-    if sum((args.task_trap, args.execution_closure, args.terminals)) > 1:
+    grouped = args.terminals or args.historical_gaps
+    if args.group and not grouped:
+        parser.error('--group requires --terminals or --historical-gaps')
+    if sum((args.task_trap, args.execution_closure, args.terminals, args.historical_gaps)) > 1:
         parser.error('choose one specialized matrix')
     if not re.fullmatch(r'[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+', args.peer):
         parser.error('explicit user@host required')
@@ -46,6 +53,26 @@ def main():
         parser.error('new dedicated /tmp/fm-s3-* directory required')
     output = args.output.resolve()
     output.mkdir(mode=0o700)
+    if grouped and args.group is None:
+        # Bound each state and deployment input to at most three full Receipts.
+        mode = '--terminals' if args.terminals else '--historical-gaps'
+        failed = []
+        for group in ('primary','secondary'):
+            with (output/f'{group}.log').open('wb') as log:
+                result = subprocess.run([sys.executable,'-B',str(Path(__file__).resolve()),mode,
+                    '--group',group,'--peer',args.peer,'--a-host',args.a_host,
+                    '--remote-root',f'{args.remote_root}-{group}','--output',str(output/group)],
+                    cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
+            if result.returncode:
+                failed.append(f'{group} (exit {result.returncode})')
+        if failed:
+            raise RuntimeError('failed groups: '+', '.join(failed)+f'; logs: {output}')
+        summary = {group:json.loads((output/group/'summary.json').read_text())
+                   for group in ('primary','secondary')}
+        (output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+        print(json.dumps(summary,indent=2))
+        return
+    secondary = args.group == 'secondary'
     ssh = ['ssh', '-F', '/dev/null', '-o', 'BatchMode=yes', '-o',
            'StrictHostKeyChecking=yes', '-o', 'ConnectTimeout=10', args.peer]
     remote_root = shlex.quote(args.remote_root)
@@ -97,14 +124,18 @@ print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform()
         vectors = json.loads((ROOT/'experiments/aclt-rir-stats-probe/tests/independent-vectors.json').read_text())
         vector = next(v for v in vectors['vectors'] if v['id'] == 'divzero')
         artifact = bytes.fromhex(vector['artifact_hex'])
-    # --terminals: four held Receipts leave 5 of 73 units, so the fifth activation is under-funded.
-    receipt_count, balance = (5, 73) if args.terminals else (3, 68)
+    receipt_count = 2 if (args.terminals and secondary) or (args.historical_gaps and not secondary) else 3
+    # One held Receipt leaves 5 of 22 units in the funding boundary group.
+    balance = 22 if args.terminals and secondary else 68
     cfg, templates = s2_fixture.build(ROOT, private, digest, count=receipt_count, artifact=artifact,
                                       balance=balance)
+    if args.historical_gaps and secondary:
+        # Three interrupted executor assignments stay open until the common deadline.
+        cfg['caps']['provider'] = dict(concurrency=3,value=21,attempts=3)
     observer = private/'closure-observer.pem'
-    observer_der = s2_fixture.keypair(observer) if args.execution_closure or args.terminals else None
+    observer_der = s2_fixture.keypair(observer) if args.execution_closure or (args.terminals and not secondary) else None
     bundles = [s3_authority.bind_bundle(bundle, task_traps=args.task_trap or args.terminals,
-                                        closure_observer_der=observer_der, rpr_entry=args.terminals,
+                                        closure_observer_der=observer_der, rpr_entry=args.terminals or args.historical_gaps,
                                         funding_boundary=args.terminals) for bundle in templates]
     receipts = [policy.bundle(bundle) for bundle in bundles]
     cfg['allowed_receipts'] = receipts
@@ -148,7 +179,7 @@ print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform()
         raise RuntimeError('authority startup timeout')
 
     call_number = count(1)
-    def call(op, index, role='REQUESTER', *, expect=0, **extra):
+    def call(op, index, role='REQUESTER', *, expect=0, rejection=None, **extra):
         index_of_call = next(call_number)
         remote = role == 'EXECUTOR'
         base = Path('.') if remote else private
@@ -163,9 +194,14 @@ print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform()
                 command += [str(value)]
         stdout = run(command, f'{role}-{op}', remote=remote, expected=expect)
         if expect:
+            if rejection is not None:
+                # The diagnostic is unsigned. Checkpoint equality is checked separately.
+                path = out/'response.cbor'
+                raw = run(['cat',str(path)], 'B-rejection-diagnostic', remote=True) if remote else path.read_bytes()
+                need(c.decode(raw)==dict(error=rejection), f'{op}: unexpected rejection diagnostic')
             return json.loads(stdout) if stdout.strip() else None
         if op == 'WORK':
-            if not args.terminals:
+            if not (args.terminals or args.historical_gaps):
                 return None
             raw = run(['cat',str(out/'result.cbor')], 'B-work-result', remote=True) if remote else (out/'result.cbor').read_bytes()
             return c.decode(raw)
@@ -216,9 +252,13 @@ print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform()
                        genesis=s2.h(cfg).hex(), total=cfg['balance'], available=state['free'], paid=paid,
                        holdings=state['held'], source_manifest_sha256=hashlib.sha256(
                            (output/'source-sha256.json').read_bytes()).hexdigest())
+        if args.historical_gaps:
+            summary.update(mode='HISTORICAL_GAPS', group=args.group,
+                           topology=dict(A='authority and auditor', B='executor and signed request sender'))
         if terminals is not None:
-            summary.update(mode='TERMINALS', terminals=terminals,
-                           topology=dict(A='authority, auditor and closure observer key', B='executor'))
+            roles_on_a = 'authority and auditor' if secondary else 'authority, auditor and closure observer key'
+            summary.update(mode='TERMINALS', group=args.group, terminals=terminals,
+                           topology=dict(A=roles_on_a, B='executor'))
         (output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
         print(json.dumps(summary,indent=2))
 
@@ -297,43 +337,21 @@ print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform()
         work(2,'EXECUTOR',crash='AFTER_CONSUME')
         need(work(2,'EXECUTOR')==dict(status='UNKNOWN_NO_REEXECUTION',stage='AUTHORIZATION_CONSUMED'),
              'B consume-only stage')
+        run(['test','!','-e','work-2/invocation'], 'B-consumed-without-invocation', remote=True)
         need(states(2)['EXECUTOR']=='AUTHORIZATION_CONSUMED','authorization consumed state')
         call('ACTIVATE',2,'AUDITOR')
         work(2,'AUDITOR')
         submit(2,'AUDITOR')
         found.append('executor_killed_after_permit_consume')
 
-        call('CREATE',3)
-        call('ACTIVATE',3,'EXECUTOR')
-        work(3,'EXECUTOR',crash='BEFORE_GUEST')
-        need(work(3,'EXECUTOR')==dict(status='UNKNOWN_NO_REEXECUTION',stage='INVOCATION_RECORDED'),
-             'B restart re-executed or lost the entry stage')
-        run(['test','!','-e','work-3/observation'],'B-no-guest-output',remote=True)
-        need(states(3)==dict(EXECUTOR='EXECUTION_STARTED',AUDITOR='NOT_CONSUMED'),'interrupted entry state')
-        call('S3_HOST_FAULT',3,'EXECUTOR',body_file=body_on_b(3,'hostfault','INTERRUPTED'))
-        found.append('executor_interrupted_after_entry_before_guest')
-
-        call('CREATE',4)
-        boundary = call('ACTIVATE',4,'EXECUTOR')['result']
-        need(boundary==dict(funding_exhausted=True,receipt=receipts[4],role='EXECUTOR',required=17,available=5),
-             'funding boundary record')
-        blocked = call('ACTIVATE',4,'AUDITOR',expect=2)
-        need('funding boundary' in blocked['reason'],'post-boundary activation was not rejected')
-        decisions[4] = call('S3_FINALIZE',4)['result']
-        need((decisions[4]['condition'],decisions[4]['terminal'])==('BUDGET_EXHAUSTED','FUNDING_EXHAUSTED'),
-             'funding boundary decision')
-        found.append('underfunded_activation_boundary')
-
         now = bundles[2]['receipt']['execution']['deadline']
         clock.write_text(str(now))
         decisions[2] = call('S3_FINALIZE',2)['result']
         need((decisions[2]['condition'],decisions[2]['terminal'],decisions[2]['start_states']['EXECUTOR'])
              ==('VERIFICATION_INVALIDATING','UNRESOLVED','START_UNKNOWN'),'start unknown decision')
-        decisions[3] = call('S3_FINALIZE',3)['result']
-        need((decisions[3]['condition'],decisions[3]['terminal'],'execution_observation' in decisions[3])
-             ==('DEADLINE_REACHED','EXPIRED',False),'self-reported interruption must not close execution')
-        found += ['start_unknown_invalidating', 'deadline_after_unclosed_interruption']
+        found.append('start_unknown_invalidating')
 
+        before = call('S3_SETTLEMENT_STATUS',1)['checkpoint']
         for marker, code, status in [('BEFORE_COMMIT',71,'READY'),('AFTER_COMMIT',72,'COMMITTED')]:
             fault.write_text(marker)
             lost = call('S3_SETTLE',1,expect=2)
@@ -341,27 +359,280 @@ print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform()
             need(proc.wait(timeout=10)==code,'wrong fault boundary')
             stop()
             start()
-            recovered = call('S3_SETTLEMENT_STATUS',1)['result']
+            response = call('S3_SETTLEMENT_STATUS',1)
+            recovered = response['result']
             need(recovered['status']==status,'FAILED settlement recovery status mismatch')
+            checkpoint = response['checkpoint']
+            if status == 'READY':
+                need(checkpoint == before,'rolled-back settlement changed checkpoint')
+            else:
+                need(checkpoint['seq'] == before['seq']+1 and
+                     c.decode(response['events'][-1])['prev'] == before['head'],
+                     'committed settlement did not extend checkpoint exactly once')
         failed = call('S3_SETTLE',1)['result']
         need(failed==recovered['settlement'] and (failed['paid'],failed['refund'])==(0,17),
              'FAILED settlement changed after recovery')
         found += ['failed_settlement_before_commit_restart', 'failed_settlement_after_commit_restart']
-        expected_paid = {0: 12, 2: 5, 3: 0, 4: 0}
-        last = None
-        for index in (0, 2, 3, 4):
+        for index, paid in [(0,12),(2,5)]:
             last = call('S3_SETTLE',index)
-            need(last['result']['paid']==expected_paid[index],'terminal settlement amount')
-        need(last['result']['entitlements']==[] and last['result']['terminal']=='FUNDING_EXHAUSTED',
-             'funding boundary settlement')
+            need((last['result']['paid'],last['result']['refund'])==(paid,17-paid),
+                 'terminal settlement amount')
         found.append('terminal_settlements')
         return found, last, {str(k): v['terminal'] for k, v in sorted(decisions.items())}
+
+    def terminal_boundary_flow():
+        nonlocal now
+        found = []
+        decisions = {}
+        call('CREATE',0)
+        call('ACTIVATE',0,'EXECUTOR')
+        work(0,'EXECUTOR',crash='BEFORE_GUEST')
+        need(work(0,'EXECUTOR')==dict(status='UNKNOWN_NO_REEXECUTION',stage='INVOCATION_RECORDED'),
+             'B restart re-executed or lost the entry stage')
+        run(['test','!','-e','work-0/observation'],'B-no-guest-output',remote=True)
+        need(states(0)==dict(EXECUTOR='EXECUTION_STARTED',AUDITOR='NOT_CONSUMED'),'interrupted entry state')
+        call('S3_HOST_FAULT',0,'EXECUTOR',body_file=body_on_b(0,'hostfault','INTERRUPTED'))
+        found.append('executor_interrupted_after_entry_before_guest')
+
+        call('CREATE',1)
+        boundary = call('ACTIVATE',1,'EXECUTOR')['result']
+        need(boundary==dict(funding_exhausted=True,receipt=receipts[1],role='EXECUTOR',required=17,available=5),
+             'funding boundary record')
+        call('ACTIVATE',1,'AUDITOR',expect=2,rejection='S3 funding boundary recorded')
+        decisions[1] = call('S3_FINALIZE',1)['result']
+        need((decisions[1]['condition'],decisions[1]['terminal'])==('BUDGET_EXHAUSTED','FUNDING_EXHAUSTED'),
+             'funding boundary decision')
+        found.append('underfunded_activation_boundary')
+
+        now = bundles[0]['receipt']['execution']['deadline']
+        clock.write_text(str(now))
+        decisions[0] = call('S3_FINALIZE',0)['result']
+        need((decisions[0]['condition'],decisions[0]['terminal'],'execution_observation' in decisions[0])
+             ==('DEADLINE_REACHED','EXPIRED',False),'self-reported interruption must not close execution')
+        expired = call('S3_SETTLE',0)['result']
+        need((expired['paid'],expired['refund'])==(0,17),'interrupted task refund')
+        final = call('S3_SETTLE',1)
+        need(final['result']['entitlements']==[] and final['result']['terminal']=='FUNDING_EXHAUSTED',
+             'funding boundary settlement')
+        found += ['deadline_after_unclosed_interruption', 'terminal_boundary_settlements']
+        return found, final, {str(k): v['terminal'] for k, v in sorted(decisions.items())}
+
+    def signed_request(op, index, *, role='REQUESTER', body=None):
+        record = cfg['requester'] if role == 'REQUESTER' else cfg['providers'][role]
+        return s2.request(cfg, private/(role.lower()+'.pem'), foundation.principal_digest(record),
+                          op, dict(receipt=receipts[index]) if body is None else body, now)
+
+    def from_b(label, *requests, failure=None):
+        # B owns the client connections. The requester signing key stays on A.
+        names = [f'{label}-{i}.request.cbor' for i in range(len(requests))]
+        put({name:c.encode(req) for name,req in zip(names,requests)})
+        remote_client = """import json, sys
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from threading import Barrier
+from tools.formal_migration.s2_transport import rpc
+host, port, *names = sys.argv[1:]
+requests = [Path(name).read_bytes() for name in names]
+ready = Barrier(len(requests), timeout=15)
+def call(request):
+    ready.wait()
+    try:
+        return {'response': rpc(host, int(port), request).hex()}
+    except ConnectionRefusedError:
+        return {'connection_refused': True}
+    except OSError as exc:
+        return {'transport_error': str(exc)}
+with ThreadPoolExecutor(max_workers=len(requests)) as pool:
+    print(json.dumps(list(pool.map(call, requests))))
+"""
+        replies = json.loads(run(['python3','-B','-c',remote_client,args.a_host,str(port),*names],
+                                 label,remote=True))
+        if failure == 'offline':
+            need(replies==[dict(connection_refused=True)], f'{label}: expected refused connection')
+            return
+        if failure == 'drop':
+            need(replies==[dict(transport_error='incomplete S2 frame')] and not fault.exists(),
+                 f'{label}: reply was not dropped')
+            return
+        return [s2.check_response(cfg,req,bytes.fromhex(reply['response']))
+                for req,reply in zip(requests,replies,strict=True)]
+
+    def same_checkpoint(response, before, label):
+        need(response['checkpoint']==before['checkpoint'], f'{label}: changed checkpoint')
+
+    def one_event(response, before, request, label):
+        event = c.decode(response['events'][-1])
+        need(response['checkpoint']['seq']==before['checkpoint']['seq']+1 and
+             event['prev']==before['checkpoint']['head'] and
+             (request is None or event['request']==request), f'{label}: expected exactly one event')
+        return event
+
+    def historical_flow():
+        call('CREATE',0)
+        call('ACTIVATE',0,'EXECUTOR')
+        work(0,'EXECUTOR',crash='AFTER_OBSERVATION')
+        saved = run(['cat','work-0/observation'],'B-saved-observation',remote=True)
+        held = call('QUERY',0)['result']
+        need(held['task']['funding_held']==17 and not held['audit']['slots'],
+             'persisted but unsent outcome affected authority')
+        waiting = call('S3_SETTLEMENT_STATUS',0)
+        need(waiting['result']==dict(status='AWAITING_TERMINAL'),'unsent outcome unlocked settlement')
+        call('S3_SETTLE',0,expect=2)
+        call('WORK',0,'EXECUTOR',runtime='executor',directory='clone-0',s3b=True,expect=1)
+        stop()
+        need(work(0,'EXECUTOR')==c.decode(saved),'offline worker changed its saved outcome')
+        start()
+        path = body_on_b(0,'result')
+        body = c.decode(run(['cat',path],'B-sealed-result',remote=True))
+        # Valid signature over a malformed outcome must not consume the result slot.
+        before = call('S3_SETTLEMENT_STATUS',0)
+        put({'invalid-0.cbor':c.encode(dict(body,outcome=b''))})
+        call('S3_RESULT',0,'EXECUTOR',expect=2,rejection='task outcome byte bound',body_file='invalid-0.cbor')
+        same_checkpoint(call('S3_SETTLEMENT_STATUS',0),before,'invalid first result')
+        request = signed_request('S3_RESULT',0,role='EXECUTOR',body=body)
+        accepted, = from_b('saved-outcome-submit',request)
+        one_event(accepted,before,request,'saved outcome acceptance')
+        need(accepted['result']['outcome']==body['outcome'],'saved outcome changed on submission')
+        duplicates = from_b('result-concurrent-exact-replay',request,request)
+        for duplicate in duplicates:
+            same_checkpoint(duplicate,accepted,'concurrent result replay')
+            need(duplicate['result']==accepted['result'],'exact replay changed original acceptance')
+        stop()
+        start()
+        replayed, = from_b('result-restart-exact-replay',request)
+        same_checkpoint(replayed,accepted,'result restart replay')
+        need(replayed['result']==accepted['result'],'restart changed original acceptance')
+        call('ACTIVATE',0,'AUDITOR')
+        work(0,'AUDITOR')
+        submit(0,'AUDITOR')
+        decision = call('S3_FINALIZE',0)
+        call('S3_SETTLE',0,'EXECUTOR',expect=2,rejection='S3b requester role')
+        before = call('S3_SETTLEMENT_STATUS',0)
+        same_checkpoint(before,decision,'non-requester settlement')
+        need(before['result']==dict(status='READY'),'first settlement was already committed')
+        first, second = [signed_request('S3_SETTLE',0) for _ in range(2)]
+        settled = from_b('first-settlement-B-barrier',first,second)
+        for response in settled:
+            event = one_event(response,before,None,'first settlement race')
+            need(event['request'] in (first,second),'race event has a different request')
+        need(settled[0]['result']==settled[1]['result'] and
+             settled[0]['checkpoint']==settled[1]['checkpoint'] and
+             (settled[0]['result']['paid'],settled[0]['result']['refund'])==(12,5),
+             'first settlement race changed allocation')
+
+        call('CREATE',1)
+        call('ACTIVATE',1,'EXECUTOR')
+        work(1,'EXECUTOR')
+        body_on_b(1,'result')
+        before = call('S3_SETTLEMENT_STATUS',1)
+        fault.write_text('DROP_REPLY')
+        lost = submit(1,expect=2)
+        need(lost['reason']=='incomplete S2 frame' and not fault.exists(),'result reply was not dropped')
+        recovered = submit(1)
+        event = one_event(recovered,before,None,'result recovery after missing reply')
+        need(event['request']['op']=='S3_RESULT' and event['result_digest']==s2.h(recovered['result']),
+             'original result not recovered')
+        only_one = call('QUERY',1)['result']
+        need(only_one['task']['funding_held']==17 and set(only_one['audit']['slots'])=={'EXECUTOR'},
+             'single role released reservation')
+        call('S3_FINALIZE',1,expect=2)
+        need(call('S3_SETTLEMENT_STATUS',1)['result']==dict(status='AWAITING_TERMINAL'),
+             'missing role unlocked settlement')
+        call('ACTIVATE',1,'AUDITOR')
+        work(1,'AUDITOR')
+        submit(1,'AUDITOR')
+        call('S3_FINALIZE',1)
+
+        final = drop_settlement(1,12,5)
+        return [
+            'saved_outcome_process_exit_holds_funds', 'saved_outcome_resubmitted_without_guest',
+            'invalid_first_result_then_valid', 'concurrent_exact_result_replay', 'restart_exact_result_replay',
+            'non_requester_settlement_rejected', 'first_settlement_two_B_clients_barrier',
+            'result_commit_reply_loss_and_recovery', 'single_role_holds_full_reservation',
+            'payment_commit_reply_loss_and_recovery',
+        ], final
+
+    def drop_settlement(index, paid, refund):
+        before = call('S3_SETTLEMENT_STATUS',index)
+        request = signed_request('S3_SETTLE',index)
+        fault.write_text('DROP_REPLY')
+        from_b(f'settlement-{index}-drop',request,failure='drop')
+        query = signed_request('S3_SETTLEMENT_STATUS',index)
+        recovery, = from_b(f'settlement-{index}-recovery',query)
+        allocation = recovery['result'].get('settlement',{})
+        event = one_event(recovery,before,request,'settlement after missing reply')
+        need(recovery['result']['status']=='COMMITTED' and
+             (allocation.get('paid'),allocation.get('refund'))==(paid,refund) and
+             event['result_digest']==s2.h(allocation),'query did not recover the original allocation')
+        retry, fresh = from_b(f'settlement-{index}-retry',request,signed_request('S3_SETTLE',index))
+        for response in (retry,fresh):
+            same_checkpoint(response,recovery,'settlement retry')
+            need(response['result']==allocation,'settlement retry changed allocation')
+        return recovery
+
+    def historical_interruptions_flow():
+        nonlocal now
+        call('CREATE',0)
+        call('WORK',0,'EXECUTOR',runtime='executor',directory='unfunded',s3b=True,expect=1)
+        run(['test','!','-e','unfunded/intent'],'B-unfunded-no-intent',remote=True)
+        call('CREATE',1)
+        call('ACTIVATE',1,'EXECUTOR')
+        call('WORK',1,'EXECUTOR',runtime='executor',directory='unfunded',s3b=True,expect=1)
+        run(['test','!','-e','unfunded/invocation'],'B-foreign-receipt-no-invocation',remote=True)
+        call('ACTIVATE',0,'EXECUTOR')
+        call('CREATE',2)
+        call('ACTIVATE',2,'EXECUTOR')
+        for index, hook, stage in [(0,'BEFORE_GUEST','INVOCATION_RECORDED'),
+                                    (1,'AFTER_INTENT','INTENT_ONLY'),
+                                    (2,'AFTER_GUEST','INVOCATION_RECORDED')]:
+            work(index,'EXECUTOR',crash=hook)
+            need(work(index,'EXECUTOR')==dict(status='UNKNOWN_NO_REEXECUTION',stage=stage),
+                 f'{hook}: worker resumed a partial attempt')
+            run(['test','!','-e',f'work-{index}/observation'],'B-no-complete-outcome',remote=True)
+            run(['python3','-B','-c',
+                 'from tools.formal_migration.s2_worker import s3_result_body; import sys; s3_result_body(sys.argv[1])',
+                 f'work-{index}'],'B-partial-outcome-not-submittable',remote=True,expected=1)
+            held = call('QUERY',index)['result']
+            need(held['task']['funding_held']==17 and not held['audit']['slots'],
+                 f'{hook}: incomplete execution released funding or submitted a result')
+        before = call('S3_SETTLEMENT_STATUS',0)
+        stop()
+        query = signed_request('S3_SETTLEMENT_STATUS',0)
+        from_b('settlement-offline-recovery',query,failure='offline')
+        start()
+        recovered, = from_b('settlement-restart-incomplete',query)
+        same_checkpoint(recovered,before,'offline recovery')
+        need(recovered['result']==dict(status='AWAITING_TERMINAL') and
+             call('QUERY',0)['result']['task']['funding_held']==17,
+             'incomplete execution released funds after restart')
+
+        now = bundles[0]['receipt']['execution']['deadline']
+        clock.write_text(str(now))
+        for index in (0,1,2):
+            decision = call('S3_FINALIZE',index)['result']
+            need(decision['terminal']=='EXPIRED','incomplete task failed to expire')
+        final = drop_settlement(0,0,17)
+        for index in (1,2):
+            final = call('S3_SETTLE',index)
+            need((final['result']['paid'],final['result']['refund'])==(0,17),'incomplete task allocation')
+
+        return [
+            'unfunded_start_no_guest', 'foreign_receipt_no_guest',
+            'worker_exit_before_guest_holds_funds', 'worker_exit_after_intent_no_reexecution',
+            'worker_exit_after_guest_before_persistence_no_reexecution',
+            'offline_settlement_query_no_inference', 'restart_incomplete_holds_full_reservation',
+            'full_refund_commit_reply_loss_and_recovery',
+        ], final
 
     cases = []
     try:
         start()
+        if args.historical_gaps:
+            found, final = historical_interruptions_flow() if secondary else historical_flow()
+            finish(found, final)
+            return
         if args.terminals:
-            found, final, terminals = terminals_flow()
+            found, final, terminals = terminal_boundary_flow() if secondary else terminals_flow()
             finish(found, final, terminals)
             return
         if args.execution_closure:
