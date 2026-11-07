@@ -1,0 +1,480 @@
+{
+  "ProfileRef": {
+    "fields": {
+      "id": {
+        "identifier": "PROFILE"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "RegistryRef": {
+    "fields": {
+      "id": {
+        "identifier": "REGISTRY_SNAPSHOT"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "ExcludedRef": {
+    "fields": {
+      "id": {
+        "identifier": "EXCLUDED_CLAIMS_REGISTRY"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "RuntimeHeader": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "FRONTIER"
+      },
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "RegistryHeader": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "REGISTRY_SNAPSHOT"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "Constraints": {
+    "fields": {
+      "protocol_version_range": "version-range",
+      "rir_version_range": "version-range",
+      "runtime_profile_version_range": "version-range",
+      "allowed_effects": {
+        "set": {
+          "import_": "EffectID"
+        }
+      },
+      "resource_bounds": {
+        "import_": "ResourceBounds"
+      }
+    },
+    "optional": {
+      "frontend_profile_version_range": "version-range"
+    }
+  },
+  "ExcludedClaims": {
+    "fields": {
+      "registry_ref": "ExcludedRef",
+      "exclusion_ids": {
+        "set": {
+          "identifier": "EXCLUSION"
+        }
+      },
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "AuditParams": {
+    "fields": {
+      "min_reexecutions": "uint",
+      "evidence_retention": {
+        "import_": "RetentionPolicyRef"
+      },
+      "reachable_terminals": {
+        "set": "text"
+      }
+    },
+    "optional": {
+      "audit_coverage_target": "rational"
+    }
+  },
+  "Equivalence": {
+    "fields": {
+      "equivalence_id": {
+        "identifier": "EQUIVALENCE"
+      },
+      "canonical_encoding_id": {
+        "identifier": "ENCODING"
+      },
+      "relation_kind": {
+        "enum": [
+          "CANONICAL_BITWISE",
+          "DECIDER_PREDICATE"
+        ]
+      },
+      "totality": {
+        "enum": [
+          "TOTAL",
+          "PARTIAL"
+        ]
+      },
+      "undecided_mapping": {
+        "enum": [
+          "EQUIVALENCE_UNDECIDED"
+        ]
+      },
+      "resource_exceeded_mapping": {
+        "enum": [
+          "EQUIVALENCE_RESOURCE_EXCEEDED"
+        ]
+      }
+    },
+    "optional": {
+      "decider_ref": {
+        "identifier": "PREDICATE"
+      },
+      "decider_resource_bound": {
+        "import_": "ResourceBounds"
+      }
+    }
+  },
+  "Costs": {
+    "fields": {
+      "c_admission_estimate": "rational",
+      "c_verification_estimate": "rational",
+      "c_storage_estimate": "rational",
+      "c_dispute_estimate": "rational",
+      "unresolved_rate_target": "rational",
+      "expected_external_loss": "rational",
+      "cost_model_id": "text",
+      "draw_quantiles_hint": {
+        "array": "rational"
+      }
+    },
+    "optional": {
+      "c_proof_estimate": "rational",
+      "planning_q_hint": "rational",
+      "direct_cost_ratio_estimate": "rational"
+    }
+  },
+  "Scope": {
+    "fields": {
+      "task_class": {
+        "identifier": "TASK"
+      },
+      "rir_profile_range": "version-range",
+      "rpr_version_range": "version-range",
+      "environment_class": {
+        "import_": "EnvironmentClassID"
+      },
+      "fault_domains": {
+        "array": {
+          "import_": "FaultDomainID"
+        }
+      },
+      "geography": {
+        "array": {
+          "import_": "RegionID"
+        }
+      }
+    },
+    "optional": {}
+  },
+  "Revocation": {
+    "fields": {
+      "before_verification": {
+        "enum": [
+          "BLOCK_ADMISSION",
+          "PROCEED"
+        ]
+      },
+      "during_verification": {
+        "enum": [
+          "VERIFICATION_INVALIDATING",
+          "PROCEED"
+        ]
+      },
+      "after_terminal": {
+        "enum": [
+          "QUALIFY_REVOKED",
+          "QUALIFY_WEAKENED",
+          "NO_EFFECT"
+        ]
+      }
+    },
+    "optional": {}
+  },
+  "Assumption": {
+    "fields": {
+      "assumption_id": {
+        "identifier": "ASSUMPTION"
+      },
+      "assumption_class": {
+        "enum": [
+          "SUPPORT_CAPABILITY_BOUND",
+          "RANDOMNESS",
+          "SNAPSHOT",
+          "CORRECTNESS_BRIDGE",
+          "PREDICATE_SOUNDNESS",
+          "PROOF_SYSTEM",
+          "CALIBRATION",
+          "OTHER"
+        ]
+      },
+      "role": {
+        "enum": [
+          "SAFETY_CRITICAL",
+          "LIVENESS",
+          "INFORMATIONAL"
+        ]
+      },
+      "statement_digest": "digest",
+      "evidence_ref": {
+        "import_": "EvidenceRef"
+      },
+      "evidence_version": "semver",
+      "acceptance_basis": {
+        "enum": [
+          "ENGINEERING_AUDIT",
+          "CONFORMANCE_TEST",
+          "FAULT_INJECTION",
+          "FORMAL_ARGUMENT",
+          "CALIBRATION_DATA"
+        ]
+      },
+      "evidence_issuer_ref": {
+        "import_": "EvidenceIssuerRef"
+      },
+      "scope": "Scope",
+      "validity_window": "time-range",
+      "revocation_channel": {
+        "import_": "ChannelRef"
+      },
+      "revocation_mapping": "Revocation"
+    },
+    "optional": {}
+  },
+  "FailureRow": {
+    "fields": {
+      "key": "text",
+      "value": {
+        "fields": {
+          "outcome": "text",
+          "attribution": "text"
+        },
+        "optional": {}
+      }
+    },
+    "optional": {}
+  },
+  "Decision": {
+    "fields": {
+      "rules": {
+        "array": "text"
+      },
+      "default": {
+        "enum": [
+          "UNRESOLVED"
+        ]
+      }
+    },
+    "optional": {}
+  },
+  "Degradation": {
+    "fields": {
+      "target": "ProfileRef",
+      "triggers": {
+        "array": {
+          "enum": [
+            "SUPPORT_CAPABILITY_BOUND_UNAVAILABLE",
+            "POPULATION_TOO_SMALL",
+            "CALIBRATION_OUT_OF_SCOPE"
+          ]
+        }
+      }
+    },
+    "optional": {}
+  },
+  "Profile": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "profile_id": {
+        "identifier": "PROFILE"
+      },
+      "profile_version": "semver",
+      "profile_digest": "digest",
+      "task_type": {
+        "identifier": "TASK"
+      },
+      "contract_tuple_constraints": "Constraints",
+      "admission_predicate": {
+        "identifier": "PREDICATE"
+      },
+      "excluded_claims": "ExcludedClaims",
+      "verification_method": {
+        "enum": [
+          "REEXEC_AUDIT_ONLY"
+        ]
+      },
+      "method_parameters": "AuditParams",
+      "result_equivalence": "Equivalence",
+      "cost_parameters": "Costs",
+      "documentation": {
+        "import_": "DocBlock"
+      },
+      "assumption_references": {
+        "array": "Assumption"
+      },
+      "failure_mapping": {
+        "fields": {
+          "entries": {
+            "array": "FailureRow"
+          }
+        },
+        "optional": {}
+      },
+      "decision_mapping": "Decision"
+    },
+    "optional": {
+      "supersedes": "ProfileRef",
+      "degradation": "Degradation"
+    }
+  },
+  "RegistryEntry": {
+    "fields": {
+      "object_kind": {
+        "enum": [
+          "VERIFICATION_PROFILE",
+          "CLAIM_TEMPLATE",
+          "PROFILE_SELECTION_POLICY",
+          "WEAKENING_EDGE",
+          "EXCLUDED_CLAIMS_REGISTRY",
+          "MAINNET_ASSURANCE_PROFILE"
+        ]
+      },
+      "id": "text",
+      "version": "semver",
+      "digest": "digest",
+      "state": {
+        "enum": [
+          "REGISTERED",
+          "ACTIVE",
+          "DEPRECATED",
+          "REVOKED"
+        ]
+      }
+    },
+    "optional": {}
+  },
+  "Registry": {
+    "fields": {
+      "header": "RegistryHeader",
+      "entries": {
+        "array": "RegistryEntry"
+      }
+    },
+    "optional": {}
+  },
+  "Context": {
+    "fields": {
+      "evaluation_instant": "int",
+      "registry_snapshot_ref": "RegistryRef",
+      "event_frontier_ref": {
+        "fields": {
+          "id": {
+            "identifier": "FRONTIER"
+          },
+          "digest": "digest"
+        },
+        "optional": {}
+      }
+    },
+    "optional": {}
+  },
+  "Subject": {
+    "fields": {
+      "tag": "text",
+      "id": "native"
+    },
+    "optional": {
+      "schema_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      }
+    }
+  },
+  "Event": {
+    "fields": {
+      "event_ref": {
+        "import_": "EventRef"
+      },
+      "event_kind": "text",
+      "parent_refs": {
+        "set": {
+          "import_": "EventRef"
+        }
+      },
+      "subject_ref": "Subject"
+    },
+    "optional": {}
+  },
+  "LogBinding": {
+    "fields": {
+      "backend_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      },
+      "finalized_checkpoint": {
+        "import_": "ExternalTypedObject"
+      },
+      "event_inclusion_proofs": {
+        "array": {
+          "import_": "ExternalTypedObject"
+        }
+      }
+    },
+    "optional": {}
+  },
+  "Frontier": {
+    "fields": {
+      "header": "RuntimeHeader",
+      "frontier_event_ref": {
+        "import_": "EventRef"
+      },
+      "event_records": {
+        "array": "Event"
+      },
+      "log_binding": "LogBinding"
+    },
+    "optional": {}
+  },
+  "Bundle": {
+    "fields": {
+      "context": "Context",
+      "registry_snapshot": "Registry",
+      "event_frontier_snapshot": "Frontier"
+    },
+    "optional": {}
+  },
+  "Envelope": {
+    "fields": {
+      "phase": {
+        "enum": [
+          "R"
+        ]
+      },
+      "bundle": "Bundle",
+      "object": "Profile"
+    },
+    "optional": {}
+  }
+}

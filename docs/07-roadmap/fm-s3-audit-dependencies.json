@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "date": "2026-10-28",
+  "date": "2026-11-07",
   "scope": "FM-S3 limited REEXEC_AUDIT_ONLY dependency plan, not implemented Profile/conformance",
   "normative_source": "docs/03-protocol/verification-profile-schema.md",
   "inventory": "schemas/verification-profile/inventory.json",
   "coverage": "schemas/verification-profile/coverage.json",
   "source_sha256": {
     "docs/03-protocol/verification-profile-schema.md": "2d05cca5fcdfcc111e1506a6ce78f2cea0248fa4641e776160937c2c32de3bc5",
-    "schemas/verification-profile/inventory.json": "9b97e8ffd0d6023e050ef9cd40bca2dde61978a29e5766b89ba8cd7b751c1b9f",
-    "schemas/verification-profile/coverage.json": "b5df0d324341fb175f1e7fb15fa4f3819ada14edf4b87a0dd4eb430ecfbee2b3"
+    "schemas/verification-profile/inventory.json": "230c74f6bd7bc406b1b1cdaebd82d82f186a8f6ac28c1f85e8c6b4fc122f22a6",
+    "schemas/verification-profile/coverage.json": "c4fcae340f7d581a600c0846a8edf2f0bf9ae540ba63f101f8b93e88d0b1989a"
   },
   "scope_contract": {
     "method": "REEXEC_AUDIT_ONLY",
@@ -1484,9 +1484,9 @@
     }
   ],
   "global_coverage_unchanged": {
-    "implemented": 3,
-    "partial": 24,
-    "not_implemented": 92
+    "implemented": 11,
+    "partial": 36,
+    "not_implemented": 72
   },
   "type_a_count": 119,
   "global_gate_changes": false,

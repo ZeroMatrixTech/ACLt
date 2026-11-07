@@ -1,6 +1,6 @@
 # FM-S3 的 audit-only 依赖入口
 
-日期：2026-10-28；这是实施依赖清单，不是规则实现或规范状态升级。
+日期：2026-10-28；2026-11-07 同步覆盖与来源清单。这是实施依赖清单，不是规则实现或规范状态升级。
 [机器清单](fm-s3-audit-dependencies.json)按现有 inventory 的全部编号逐项分类；要求、实现状态和原测试路径只引用原 inventory，不在此复制另一份权威。
 
 ## 限定范围
@@ -25,11 +25,11 @@ AuditFailureMapping 必须精确覆盖规范方法矩阵的 13 个事件；五�
 
 这里的 **84 个 Type A 依赖不等于新写 84 项实现**：公共基础需要复用、对象绑定要分阶段集成，部分还被官方接口阻塞。另有 35 个 Type A 由限定功能边界守卫拒绝，合计仍为原 119 项；守卫也要正负测试，不能标成已实现或全局 N/A。Type B 中 SV-56 属 bounded 抽样路径，限定 audit 入口必须证明不存在该路径，不能借此关闭其全局义务。
 
-未来新模块/向量位置、每个 SV 的主责包及守卫编号列在 JSON 中。所有验收仍是 PLANNED_NOT_RUN，全球覆盖登记仍为 **3/24/92**。
+未来新模块/向量位置、每个 SV 的主责包及守卫编号列在 JSON 中。所有验收仍是 PLANNED_NOT_RUN，全局覆盖登记现为 **11/36/72**。
 
 ## 正式实现前必须明确的四个接口
 
-1. **AUDIT-WIRE-BOTTOM**：Profile schema v2 的 CBOR 与 Schema View 已规定 audit 省略 claim 键。局部 bootstrap 实现与固定字节向量见 [Schema 工件](../../schemas/verification-profile/README.md)。完整 ContentMap、L2 摘要和注册验收待完成。
+1. **AUDIT-WIRE-BOTTOM**：Profile schema v2 的 CBOR 与 Schema View 已规定 audit 省略 claim 键。局部 bootstrap 实现与固定字节向量见 [Schema 工件](../../schemas/verification-profile/README.md)。Profile ContentMap/摘要已由 R1 实现；R2 补 audit 注册上下文，正式导入、其他引用与完整注册验收仍待完成。
 2. **AUDIT-PHASE-B-PATH**：已定义无 Snapshot 的 Phase B 变体、四条转换及启动/终态因果守卫。局部向量已接默认回归，正式日志来源、完整信封接线与跨机验收仍待完成。
 3. **NONMAINNET-ASSURANCE**：§9.2.2 定义带 tag 的非主网部署声明与各相位接线草案，局部 guard 已覆盖绑定和拒绝向量。正式信封、来源证明及准入待验收。
 4. **AUTHORITATIVE-OBSERVATIONS**：S1b 报价的 COMPLETE/MISSING/HOST_FAULT 是假设输入；只有 FM-S2 提供的已认证、当前 Lease/epoch、资金/期限/事件事实，才可能进入 FM-S3 求值。报价不是合法权利证明。
@@ -37,3 +37,7 @@ AuditFailureMapping 必须精确覆盖规范方法矩阵的 13 个事件；五�
 2026-11-06 [ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) 收敛了四项接口及首轮计费路线，适用于候选 S3b/S3c。精确字段、来源 contract、正式规范兼容与准入按 ADR 的实施顺序验收。SV-66/91/92/93/94/105/112/117/119 等共同约束继续适用。
 
 FM-S2 限定双机集成已交付权威事实源；[FM-S3a](../testing/FM-S3A-RESULTS-20261105.md)先实现候选 Profile 内容绑定和签名结果的纯重放，尚未实现正式 A0/A1 注册或 A4 判决。候选接纳、求值、判决和账务已有 [FM-S3 双机收尾证据](../testing/FM-S3-CLOSEOUT-20261106.md)。正式规则验收按本清单和收尾记录继续推进。完整其他方法、selection 与后续 qualification 不随本清单自动完成，也不影响未来其他任务族采用 DIRECT_VERIFIED 的决定。
+
+2026-11-07 [Profile 第一片](../testing/PROFILE-DIGEST-R1-20261107.md)落实四项全局规则及四项 audit 分支。A0/A1 工作包的整体验收仍按剩余规则推进；机器清单只同步当前覆盖和来源 pin，不由依赖规划授予验收。
+
+2026-11-07 [R2](../testing/PROFILE-REGISTRATION-R2-20261107.md)补四项规则级完成、八项 audit Phase R 局部检查。工作包整体验收仍保持计划状态，不能用局部向量代替完整信封、正式导入或来源认证。

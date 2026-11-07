@@ -204,3 +204,13 @@ check-fm-public-evidence:
 	$(PYTHON) -B scripts/check-fm-public-evidence.py
 test-fm-public-evidence:
 	$(PYTHON) -B scripts/check-fm-public-evidence.py --replay
+
+.PHONY: test-profile-digest
+test: test-profile-digest
+test-profile-digest:
+	$(PYTHON) -B scripts/check-profile-digest.py --report artifacts/profile-digest/cross-language.json
+
+.PHONY: test-profile-registration
+test: test-profile-registration
+test-profile-registration:
+	$(PYTHON) -B scripts/check-profile-registration.py --report artifacts/profile-registration/cross-language.json

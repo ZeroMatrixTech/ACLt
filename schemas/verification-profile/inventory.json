@@ -1,5 +1,5 @@
 {
-  "review_date": "2026-10-23",
+  "review_date": "2026-11-07",
   "baseline_commit": "6750c18c391e3b44407fa86486eab48fb9d31673",
   "normative_source": "docs/03-protocol/verification-profile-schema.md",
   "scope": "覆盖盘点，不是独立 conformance 认证；实现状态以 coverage.json 为唯一登记。",
@@ -24,11 +24,15 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`profile_digest` 按 §17.4 与 UVP-1V 重算一致",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/profile.py#verify_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_formal_tag_and_content_input_with_independent_hash"
+      ],
+      "gap": "该条规则已在原始 CBOR Phase R 入口实现。完整 SchemaValid、registry/source 与其他 SV 独立验收。"
     },
     {
       "id": "SV-03",
@@ -213,44 +217,60 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`REEXEC_AUDIT_ONLY`：`decision_mapping` 的条件序列不含 `ACCEPT`，故值域不含 `TRUSTED`（AO-1 的推论）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/profile.py#decision_fields"
+      ],
+      "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_audit_accept_is_rejected_before_terminal_evaluation"
+      ],
+      "gap": "该条规则已在原始 CBOR Phase R 入口实现。完整 SchemaValid、registry/source 与其他 SV 独立验收。"
     },
     {
       "id": "SV-18",
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`failure_mapping` 变体正确，且 `entries` 键集合**恰好等于** §10.2 矩阵为本方法确定的适用事件集合",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/profile.py#audit_fields"
+      ],
+      "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_fixed_positive_and_negative_vectors"
+      ],
+      "gap": "audit 方法分支已实现并有双语言向量；其余方法分支仍待实现，不能关闭全局规则。"
     },
     {
       "id": "SV-19",
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`failure_mapping` 变体与方法匹配；`INVALID_SAMPLE` 只出现在 `ReexecFailureMapping`（FM-0）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/profile.py#audit_fields"
+      ],
+      "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_fixed_positive_and_negative_vectors"
+      ],
+      "gap": "audit 方法分支已实现并有双语言向量；其余方法分支仍待实现，不能关闭全局规则。"
     },
     {
       "id": "SV-20",
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`decision_mapping.rules` 的元素集合恰好等于 §11.3.3 为本方法规定的适用 `DecisionCondition` 集合；缺失、多余、重复均拒绝",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/profile.py#audit_fields"
+      ],
+      "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_fixed_positive_and_negative_vectors"
+      ],
+      "gap": "audit 方法分支已实现并有双语言向量；其余方法分支仍待实现，不能关闭全局规则。"
     },
     {
       "id": "SV-21",
@@ -418,11 +438,16 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "每个 `AssumptionReference` 的 `revocation_mapping` 三阶段字段齐备",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#inspect"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_revocation_shape_and_safety_values",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
     },
     {
       "id": "SV-34",
@@ -466,11 +491,16 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`role = SAFETY_CRITICAL` ⇒ `revocation_mapping` 恰为 AR-1 的三元组，无 `PROCEED`/`NO_EFFECT`",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#inspect"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_revocation_shape_and_safety_values",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
     },
     {
       "id": "SV-38",
@@ -488,11 +518,15 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`decision_mapping.rules` 顺序与 §11.3 冻结优先级一致；`default = UNRESOLVED`",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/profile.py#decision_fields"
+      ],
+      "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_generic_decision_checks_cover_every_method"
+      ],
+      "gap": "该条规则已在原始 CBOR Phase R 入口实现。完整 SchemaValid、registry/source 与其他 SV 独立验收。"
     },
     {
       "id": "SV-40",
@@ -751,11 +785,16 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`ScopeSpec` 六维齐备，无可选维度（SC-1）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#typed"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_nested_type_rejects_even_with_valid_profile_digest",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
     },
     {
       "id": "SV-60",
@@ -803,22 +842,30 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`DecisionMapping.rules` 是 `[DecisionCondition]`，**不含** `terminal` 字段；无 `CanonicalTerminal` 覆盖字段（§11.3.2）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/profile.py#decision_fields"
+      ],
+      "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_generic_decision_checks_cover_every_method"
+      ],
+      "gap": "该条规则已在原始 CBOR Phase R 入口实现。完整 SchemaValid、registry/source 与其他 SV 独立验收。"
     },
     {
       "id": "SV-64",
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`reachable_terminals` 恰等于 `CanonicalTerminal[rules] ∪ {UNRESOLVED}`；不重复检查 rules 集合（归 SV-20）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/profile.py#audit_fields"
+      ],
+      "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_fixed_positive_and_negative_vectors"
+      ],
+      "gap": "audit 方法分支已实现并有双语言向量；其余方法分支仍待实现，不能关闭全局规则。"
     },
     {
       "id": "SV-65",
@@ -836,11 +883,16 @@
       "phase": "R/I/F/B/D",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "相位输入是合法 discriminated union；Phase B payload 为 §13.0.4 七个封闭变体之一；Phase D 必带完整 `evaluation_input`。不重复检查 bundle 内部结构（归 SV-91）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#inspect"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_validator_cli_and_fail_closed_production",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
     },
     {
       "id": "SV-67",
@@ -939,22 +991,32 @@
       "phase": "R/I/F/B/D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`registry_snapshot_ref` 可解析；`bundle.registry_snapshot` 的三元组与该引用逐位一致（CTX-6）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#check_bundle"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_registry_content_hash_and_context_identity_are_separate",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
     },
     {
       "id": "SV-75b",
       "phase": "R/I/F/B/D",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "对**显式提供的** `RegistrySnapshot` 原始字节重算 `registry_snapshot_digest`（owner；CTX-10：L2 不得取远程对象）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#check_registry"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_registry_content_hash_and_context_identity_are_separate",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
     },
     {
       "id": "SV-76",
@@ -998,11 +1060,16 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`RegistrySnapshot.entries` 按 RS-1 排序、按 RS-2 去重；`object_kind` ∈ 封闭枚举（RS-3；「不含快照自身」是该封闭枚举的结构推论，在 L1a 即被拒，见 RS-4）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#check_registry"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_registry_duplicate_identity_ignores_digest_and_state",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
     },
     {
       "id": "SV-80",
@@ -1047,11 +1114,16 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`supersedes` 若存在，是完整三元组且所指对象在 `RegistrySnapshot` 中可解析（UVP-4）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#inspect"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
     },
     {
       "id": "SV-85",
@@ -1143,22 +1215,32 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`RegistryEntry` 的每个 `object_kind`（含 `MAINNET_ASSURANCE_PROFILE`）都有可解析的 `VersionedObjectRef`（RS-7）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#check_registry"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_all_registry_kinds_require_legal_versioned_refs",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
     },
     {
       "id": "SV-91",
       "phase": "R/I/F/B/D",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`bundle.context`、`registry_snapshot`、`event_frontier_snapshot` 均在场；两个快照字段缺一即拒绝",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#check_bundle"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_both_snapshots_and_context_required",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
     },
     {
       "id": "SV-92",
@@ -1353,22 +1435,32 @@
       "phase": "R/I/F/B/D",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`event_frontier_digest` 按 §17.4 重算 `ContentMap_EventFrontierSnapshot`（owner）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#check_frontier"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_runtime_id_is_content_bound_and_version_is_forbidden",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
     },
     {
       "id": "SV-109",
       "phase": "R/I/F/B/D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "EventFrontierSnapshot 身份与 context 引用一致；事件排序、唯一、闭合、无环，frontier 存在（EF-1—EF-4）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration.py#check_frontier"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+      ],
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
     },
     {
       "id": "SV-110",
@@ -1524,10 +1616,15 @@
       "input": "`cbor(ContentMap_Profile)`（§3.3.3）",
       "owner": "SV-02",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "status": "IMPLEMENTED",
+      "implementation": [
+        "tools/verification_profile/profile.py#profile_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_all_frozen_fields_are_projected_and_digest_bound",
+        "tests/verification_profile/test_profile_digest.py#test_legacy_digest_is_read_only_and_not_rewritten"
+      ],
+      "gap": "Profile v2 正式 ContentMap 和域已实现，保留 v1 域只读复核。嵌套结构、导入和注册合法性由其他 SV 校验。"
     },
     {
       "name": "`policy_digest`",
@@ -1686,10 +1783,10 @@
       "input": "`cbor(ContentMap_RegistrySnapshot)`（§3.3.3、§3.5；`entries` 排序去重见 RS-1/RS-2）",
       "owner": "SV-75b",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "正式 ContentMap/tag/摘要重算已实现并有 Python/Rust 正负向量；其他相位完整接线与来源认证单独验收。"
     },
     {
       "name": "`phase_i_record_digest`",
@@ -1719,10 +1816,10 @@
       "input": "`cbor(ContentMap_EventFrontierSnapshot)`（§3.3.3、§13.0.1）",
       "owner": "SV-108",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "正式 ContentMap/tag/摘要重算已实现并有 Python/Rust 正负向量；其他相位完整接线与来源认证单独验收。"
     }
   ],
   "slice_evidence": {
@@ -1733,5 +1830,41 @@
     "report": "docs/testing/CLAIM-CODEC-20261023.md",
     "baseline_commit": "6750c18",
     "scope": "有限候选切片，不升级任何规则为完整 implemented。"
+  },
+  "profile_digest_slice": {
+    "id": "PROFILE-R1",
+    "report": "docs/testing/PROFILE-DIGEST-R1-20261107.md",
+    "completed_rules": [
+      "SV-02",
+      "SV-17",
+      "SV-39",
+      "SV-63"
+    ],
+    "partial_rules": [
+      "SV-18",
+      "SV-19",
+      "SV-20",
+      "SV-64"
+    ]
+  },
+  "profile_registration_slice": {
+    "id": "PROFILE-R2",
+    "report": "docs/testing/PROFILE-REGISTRATION-R2-20261107.md",
+    "completed_rules": [
+      "SV-75b",
+      "SV-79",
+      "SV-90",
+      "SV-108"
+    ],
+    "partial_rules": [
+      "SV-33",
+      "SV-37",
+      "SV-59",
+      "SV-66",
+      "SV-75a",
+      "SV-84",
+      "SV-91",
+      "SV-109"
+    ]
   }
 }
