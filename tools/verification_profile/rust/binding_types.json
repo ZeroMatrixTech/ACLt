@@ -1,0 +1,446 @@
+{
+  "TemplateHeaderR8": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "CLAIM_TEMPLATE"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "AssumptionHeaderR8": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "ASSUMPTION_SNAPSHOT"
+      },
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "AssuranceHeaderR8": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "MAINNET_ASSURANCE_PROFILE"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "TemplateRefR8": {
+    "fields": {
+      "id": {
+        "identifier": "CLAIM_TEMPLATE"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "AssuranceRefR8": {
+    "fields": {
+      "id": {
+        "identifier": "MAINNET_ASSURANCE_PROFILE"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "SnapshotRefR8": {
+    "fields": {
+      "id": {
+        "identifier": "ASSUMPTION_SNAPSHOT"
+      },
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "SlotDeclR8": {
+    "fields": {
+      "kind": {
+        "enum": [
+          "STATIC",
+          "RUNTIME"
+        ]
+      },
+      "value_type": "native",
+      "source": {
+        "enum": [
+          "PROFILE",
+          "RECEIPT",
+          "EVIDENCE_CHAIN",
+          "SNAPSHOT"
+        ]
+      }
+    },
+    "optional": {}
+  },
+  "SlotRowR8": {
+    "fields": {
+      "slot": "text",
+      "decl": "SlotDeclR8"
+    },
+    "optional": {}
+  },
+  "TemplateR8": {
+    "fields": {
+      "header": "TemplateHeaderR8",
+      "normative_text": "text",
+      "slot_decls": {
+        "array": "SlotRowR8"
+      },
+      "translations": {
+        "array": {
+          "fields": {
+            "lang": "text",
+            "text": "text"
+          },
+          "optional": {}
+        }
+      }
+    },
+    "optional": {}
+  },
+  "StaticRowR8": {
+    "fields": {
+      "slot": "text",
+      "value": "external-object"
+    },
+    "optional": {}
+  },
+  "ConcreteRowR8": {
+    "fields": {
+      "slot_id": "text",
+      "value": "external-object"
+    },
+    "optional": {}
+  },
+  "ClaimSpecR8": {
+    "fields": {
+      "claim_spec_id": {
+        "identifier": "CLAIM_SPEC"
+      },
+      "claim_template_ref": "TemplateRefR8",
+      "binding_schema": {
+        "array": "SlotRowR8"
+      },
+      "static_bindings": {
+        "array": "StaticRowR8"
+      },
+      "binding_function_ref": {
+        "identifier": "BINDING_FUNCTION"
+      }
+    },
+    "optional": {}
+  },
+  "CauseR8": {
+    "fields": {
+      "cause_code": {
+        "enum": [
+          "WINDOW_EXPIRED",
+          "OUT_OF_SCOPE",
+          "REVOKED"
+        ]
+      },
+      "evidence_ref": {
+        "import_": "EvidenceRef"
+      },
+      "observed_event_ref": {
+        "import_": "EventRef"
+      }
+    },
+    "optional": {}
+  },
+  "StateRowR8": {
+    "fields": {
+      "assumption_id": {
+        "identifier": "ASSUMPTION"
+      },
+      "evidence_ref": {
+        "import_": "EvidenceRef"
+      },
+      "evidence_version": "semver",
+      "cause_set": {
+        "array": "CauseR8"
+      },
+      "effective_verdict": {
+        "enum": [
+          "VALID",
+          "WINDOW_EXPIRED",
+          "OUT_OF_SCOPE",
+          "REVOKED"
+        ]
+      }
+    },
+    "optional": {}
+  },
+  "StateSnapshotR8": {
+    "fields": {
+      "header": "AssumptionHeaderR8",
+      "receipt_id": "digest",
+      "evaluation_instant": "int",
+      "reducer_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      },
+      "assumption_states": {
+        "array": "StateRowR8"
+      }
+    },
+    "optional": {}
+  },
+  "AssumptionFailureR8": {
+    "fields": {
+      "assumption_id": {
+        "identifier": "ASSUMPTION"
+      },
+      "failure_class": {
+        "enum": [
+          "EVIDENCE_UNAVAILABLE",
+          "EVIDENCE_MALFORMED",
+          "REGISTRY_UNAVAILABLE",
+          "VERDICT_UNDETERMINED"
+        ]
+      },
+      "observed_at": "int"
+    },
+    "optional": {
+      "evidence_ref": {
+        "import_": "EvidenceRef"
+      }
+    }
+  },
+  "CapabilityR8": {
+    "fields": {
+      "profile_ref": "ProfileRef",
+      "disposition": {
+        "enum": [
+          "DISABLED",
+          "AUDIT_ONLY",
+          "ENABLED"
+        ]
+      },
+      "required_assumption_ids": {
+        "set": {
+          "identifier": "ASSUMPTION"
+        }
+      },
+      "max_receipt_exposure_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      }
+    },
+    "optional": {}
+  },
+  "AssuranceR8": {
+    "fields": {
+      "header": "AssuranceHeaderR8",
+      "network_id": {
+        "import_": "NetworkID"
+      },
+      "issuer_ref": {
+        "import_": "MaintenanceAuthorityRef"
+      },
+      "validity_window": "wire-time-range",
+      "profile_capabilities": {
+        "array": "CapabilityR8"
+      },
+      "allowed_rpr_refs": {
+        "array": {
+          "import_": "ExternalVersionedObjectRef"
+        }
+      },
+      "allowed_validator_refs": {
+        "array": {
+          "import_": "ExternalVersionedObjectRef"
+        }
+      },
+      "log_backend_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      },
+      "execution_capability_contract_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      },
+      "assumption_verdict_reducer_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      },
+      "correlation_policy_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      },
+      "loss_budget_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      },
+      "required_conformance_refs": {
+        "array": {
+          "import_": "ExternalVersionedObjectRef"
+        }
+      },
+      "outside_network_disposition": {
+        "enum": [
+          "DISABLED"
+        ]
+      },
+      "human_summary": {
+        "import_": "DocBlock"
+      }
+    },
+    "optional": {
+      "supersedes": "AssuranceRefR8"
+    }
+  },
+  "ClaimBindingR8": {
+    "fields": {
+      "claim_spec_id": {
+        "identifier": "CLAIM_SPEC"
+      },
+      "claim_template_ref": "TemplateRefR8",
+      "profile_ref": "ProfileRef",
+      "network_id": {
+        "import_": "NetworkID"
+      },
+      "assurance_profile_ref": "AssuranceRefR8",
+      "assurance_boundary_digest": "digest",
+      "verification_method": {
+        "enum": [
+          "DIRECT_VERIFIED",
+          "PROOF_VERIFIED",
+          "REEXEC_BOUNDED",
+          "REEXEC_AUDIT_ONLY"
+        ]
+      },
+      "concrete_bindings": {
+        "array": "ConcreteRowR8"
+      },
+      "rendered_claim_digest": "digest",
+      "excluded_claims_registry_ref": "ExcludedRef",
+      "excluded_claims_ids": {
+        "set": {
+          "identifier": "EXCLUSION"
+        }
+      },
+      "excluded_claims_digest": "digest",
+      "assumption_set_digest": "digest",
+      "assumption_state_digest": "digest",
+      "assumption_state_snapshot_ref": "SnapshotRefR8"
+    },
+    "optional": {
+      "algorithm_id": "text",
+      "snapshot_digest": "digest"
+    }
+  },
+  "MethodEvaluationR8": {
+    "fields": {
+      "evaluator_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      },
+      "canonical_input": "external-object",
+      "claimed_outcome": "external-object",
+      "claimed_aggregate": "external-object"
+    },
+    "optional": {}
+  },
+  "BoundaryR8": {
+    "fields": {},
+    "optional": {
+      "funding_event_ref": {
+        "import_": "EventRef"
+      },
+      "deadline_event_ref": {
+        "import_": "EventRef"
+      }
+    }
+  },
+  "DecisionInputR8": {
+    "fields": {
+      "receipt_binding": "ReceiptBindingR8",
+      "profile_ref": "ProfileRef",
+      "assurance_profile": "AssuranceR8",
+      "method_evaluation": "MethodEvaluationR8",
+      "assumption_evaluation": "native",
+      "boundary_observation": "BoundaryR8",
+      "execution_observation": "native"
+    },
+    "optional": {}
+  },
+  "CandidateTupleR8": {
+    "fields": {
+      "protocol_version": "semver",
+      "rir_version": "semver",
+      "rpr_version": "semver",
+      "allowed_effects": {
+        "set": {
+          "import_": "EffectID"
+        }
+      },
+      "resource_bounds": {
+        "import_": "ResourceBounds"
+      }
+    },
+    "optional": {
+      "frontend_profile_version": "semver"
+    }
+  },
+  "CandidateIntentR8": {
+    "fields": {
+      "schema_version": {
+        "enum": [
+          "R8_CANDIDATE_1"
+        ]
+      },
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "base_intent": "ReceiptIntent",
+      "task_type": {
+        "identifier": "TASK"
+      },
+      "environment_class": {
+        "import_": "EnvironmentClassID"
+      },
+      "fault_domains": {
+        "set": {
+          "import_": "FaultDomainID"
+        }
+      },
+      "geography": {
+        "set": {
+          "import_": "RegionID"
+        }
+      },
+      "contract_tuple": "CandidateTupleR8",
+      "n_max": "uint"
+    },
+    "optional": {}
+  },
+  "ReceiptBindingR8": {
+    "fields": {
+      "receipt_id": "digest",
+      "profile_ref": "ProfileRef",
+      "network_id": {
+        "import_": "NetworkID"
+      },
+      "assurance_profile_ref": "AssuranceRefR8"
+    },
+    "optional": {}
+  }
+}

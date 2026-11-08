@@ -20,7 +20,7 @@ FIXED_IMPORTS = {name:'acl.schema.'+identifier+'@1' for name,identifier in [
 PREFIXES = dict(VERIFICATION_PROFILE='acl.vp.',CLAIM_TEMPLATE='acl.ct.',
                 PROFILE_SELECTION_POLICY='acl.vps.',WEAKENING_EDGE='acl.we.',
                 EXCLUDED_CLAIMS_REGISTRY='acl.ecr.',MAINNET_ASSURANCE_PROFILE='acl.map.',
-                MANIFEST='acl.cm.',PROFILE='acl.vp.',REGISTRY_SNAPSHOT='acl.rs.',FRONTIER='acl.efs.',
+                CLAIM_SPEC='acl.cs.',ASSUMPTION_SNAPSHOT='acl.ass.',CLUSTER_MAPPING='acl.cmap.',SCHEMA='acl.schema.',BINDING_FUNCTION='acl.bind.',MANIFEST='acl.cm.',PROFILE='acl.vp.',REGISTRY_SNAPSHOT='acl.rs.',FRONTIER='acl.efs.',
                 CREATION_CONTEXT='acl.cctx.',PHASE_I_RECORD='acl.pir.',TASK='acl.tt.',PREDICATE='acl.pred.',VALIDATOR='acl.val.',EQUIVALENCE='acl.eq.',ENCODING='acl.enc.')
 NAME = '[a-z][a-z0-9-]{0,62}'
 ULID = '[0-9A-HJKMNP-TV-Z]{26}'
@@ -36,18 +36,20 @@ def identifier(value, kind):
         suffix = NAME
         if kind in ('PROFILE','VERIFICATION_PROFILE'):
             suffix += r'\.'+NAME
-        elif kind in ('REGISTRY_SNAPSHOT','FRONTIER','CREATION_CONTEXT','PHASE_I_RECORD'):
+        elif kind in ('REGISTRY_SNAPSHOT','FRONTIER','CREATION_CONTEXT','PHASE_I_RECORD','ASSUMPTION_SNAPSHOT','CLUSTER_MAPPING'):
             suffix = ULID
-        elif kind in ('PREDICATE','VALIDATOR'):
+        elif kind in ('PREDICATE','VALIDATOR','BINDING_FUNCTION'):
             suffix += r'@(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)'
-        elif kind in ('EQUIVALENCE','ENCODING'):
+        elif kind in ('EQUIVALENCE','ENCODING','SCHEMA'):
             suffix += r'@(0|[1-9][0-9]*)'
         pattern = re.escape(PREFIXES[kind])+suffix
     c.need(re.fullmatch(pattern,value) is not None,'SV-80: identifier')
-    if kind in ('PREDICATE','VALIDATOR'):
+    if kind in ('PREDICATE','VALIDATOR','BINDING_FUNCTION'):
         parts=value.rsplit('@',1)[1].split('.')
         c.need(all(len(part)<=20 for part in parts),'reference SemVer overflow')
         c.semver([int(part) for part in parts])
+    if kind=='SCHEMA':
+        suffix=value.rsplit('@',1)[1];c.need(len(suffix)<=20 and int(suffix)<=2**64-1,'schema major overflow')
     return value
 
 

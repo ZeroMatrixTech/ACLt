@@ -1,0 +1,38 @@
+{
+  "artifact_status": "PROPOSED_TEST_ONLY",
+  "normative_intent_upgrade": false,
+  "type_catalog": "tools/verification_profile/rust/binding_types.json",
+  "wire_type": "CandidateIntentR8",
+  "candidate_tag": "ACLt/TEST/R8/AdmissionInput/1",
+  "base_intent_tag_unchanged": "ACLt/P0-1/ReceiptIntent/1",
+  "fields": [
+    "schema_version",
+    "encoding_profile_id",
+    "base_intent",
+    "task_type",
+    "environment_class",
+    "fault_domains",
+    "geography",
+    "contract_tuple",
+    "n_max"
+  ],
+  "schema_version_marker": "R8_CANDIDATE_1",
+  "contract_equality": "base_intent.contract_tuple == canonical CBOR(candidate.contract_tuple)",
+  "derived_scope": {
+    "task_class": "task_type",
+    "rir_version": "contract_tuple.rir_version",
+    "rpr_version": "contract_tuple.rpr_version",
+    "environment_class": "environment_class",
+    "fault_domains": "fault_domains",
+    "geography": "geography"
+  },
+  "effects_source": "contract_tuple.allowed_effects",
+  "limit_source": "n_max",
+  "acceptance_requirements": [
+    "Choose a formally versioned Intent/ContractTuple import and signature/Receipt commitment; existing Intent digest alone does not bind capsule-only fields.",
+    "Freeze complete FailureReason/predicate/gate interfaces and resource/budget meaning of n_max.",
+    "Freeze ENUM and sum wire representations separately from native commitment projections.",
+    "Validate program/contract/runtime binding and complete I/F/B/D/source evidence before deployment."
+  ],
+  "production_admission": false
+}

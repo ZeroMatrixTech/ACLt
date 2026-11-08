@@ -47,3 +47,12 @@ python3 -B -m tools.verification_profile.validator /path/asset.cbor --registrati
 ```
 
 适配器入口有 `policy`、`edge`、`manifest`、`profile-refs`、`profile-lookup`、`events`、`applicability-test` 七个操作。测试 imports 由外部可信 schema lock pin 绑定；调用者不得从待验输入现算 pin 自授信。`applicability-test` 的 DeclaredScope/effects/N_max/原因标签是显式测试事实，不是新增协议字段，不读取不透明 ContractTuple 子字段。当前覆盖 50/40/29，摘要 12 implemented / 2 partial / 4 not implemented；参见 [R7 报告](../../docs/testing/PROFILE-SELECTION-R7-20261108.md)。
+
+R8 新入口提供 Claim/快照/承诺检查与独立候选输入胶囊：
+
+```sh
+make test-commitment-bindings
+python3 -B -m tools.verification_profile.validator /path/input.cbor --commitment-bindings-cbor --schema-lock-sha256 <trusted-lock-pin>
+```
+
+外部 schema pin 是带外信任输入，不能从待验输入现算后自授信。`NATIVE_CBOR` 仅限本片显式 `acl.schema.r8-native-value@1` 测试载荷；旧入口不扩展该表示。所有模式只验证组件，不产生协议 Decision，生产模式始终拒绝。候选胶囊使用 `ACLt/TEST/R8/AdmissionInput/1`，不改变 `ReceiptIntent/1` 或接受新的正式版本。覆盖 69/35/15，18 个摘要 owner 的公式/投影已实现；参见 [R8 报告](../../docs/testing/PROFILE-COMMITMENTS-R8-20261108.md)。

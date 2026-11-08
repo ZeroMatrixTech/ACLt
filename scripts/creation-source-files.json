@@ -22,6 +22,7 @@
   "tools/verification_profile/registration.py",
   "tools/verification_profile/registration_rules.py",
   "tools/verification_profile/rust/audit_types.json",
+  "tools/verification_profile/rust/binding_types.json",
   "tools/verification_profile/rust/fm.rs",
   "tools/verification_profile/rust/fm_policy.rs",
   "tools/verification_profile/rust/main.rs",
