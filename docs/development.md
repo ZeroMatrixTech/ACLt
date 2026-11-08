@@ -1,6 +1,6 @@
 # 开发与维护入口
 
-> 更新：2026-11-06。工程操作指南；不改变协议语义、Gate 或历史证据。
+> 更新：2026-11-08。工程操作指南；不改变协议语义、Gate 或历史证据。
 
 ## 统一入口
 
@@ -174,6 +174,27 @@ CI 配置只在 PR、main push 和手动触发时跑完整本地检查和打包�
 上节“尚未接通”为 FM-S3a 当时状态。`make check-fm-s3-authority` 运行候选权威接纳、幂等与冲突、唯一终态、权利派生、COMMIT 中断恢复及 opt-in Task trap 的本地回归，默认 `make check` 包含此入口。显式双机运行 `python3 -B scripts/fm-s3-dualhost.py --peer <B_USER>@<B_IP> --a-host <A_IP> --remote-root /new/B/path --output /new/A/path`，加 `--task-trap` 使用固定除零工件；两端须为新目录，B 主机密钥严格校验；A/B 均用系统 rustc 构建同一执行器并比对摘要，脚本拒绝相同 hostname 的对端。A 同时承载权威与审计者，B 承载执行者。见[总体收尾](testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](testing/FM-S3-TASK-TRAP-20261106.md)与[接口规范切片](testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)。正式接口与准入仍未接通。
 
 `make check-fm-s3-terminals` 运行可选合约字段的本地回归：已核验 RPR 入口与启动状态、观察方签名的执行闭合（FAILED）和激活时的资金边界（FUNDING_EXHAUSTED）。双机入口另有 `--execution-closure`（观察方闭合矩阵）与 `--terminals`（五个 Receipt 的组合矩阵）。字段与限制见[候选合约](../schemas/formal-migration/audit-terminals.md)，验收见[本切片报告](testing/FM-S3-TERMINALS-20261106.md)。
+
+## FM 公开证据与组合双机矩阵
+
+`make check-fm-public-evidence` 离线检查五份公开归档、固定源码与 24 套快照输入的索引；`make test-fm-public-evidence` 用当前实现完整重放 249 个历史事件，无需 Git 历史。genesis 与 checkpoint 的可信来源仍是留存报告或审查过的仓库版本，见[证据归档收尾](testing/FM-EVIDENCE-CLOSEOUT-20261107.md)。
+
+`scripts/fm-s3-dualhost.py --terminals` 在两套独立账本上组合验收入口、执行闭合、资金边界与结算恢复；`--historical-gaps` 补跑 Work 2/3 迁移后的故障边界。两种模式的场景对照与复跑命令见[历史矩阵](testing/FM-S3-HISTORICAL-MATRIX-20261106.md)。
+
+## Profile 规则 R1–R6
+
+以下入口都在 `make test` 中，各自用独立的 Python 与 Rust 实现处理同一组固定向量，并比较结果流：
+
+| 入口 | 切片 | 报告 |
+|---|---|---|
+| `make test-profile-digest` | R1 Profile 摘要与判决 | [R1](testing/PROFILE-DIGEST-R1-20261107.md) |
+| `make test-profile-registration` | R2 嵌套类型、导入与 audit 注册 | [R2](testing/PROFILE-REGISTRATION-R2-20261107.md) |
+| `make test-profile-references` | R3 排除引用与修正后的 wire 类型 | [R3](testing/PROFILE-REFERENCES-R3-20261108.md) |
+| `make test-registration-rules` | R4 共同注册规则 | [R4](testing/PROFILE-RULES-R4-20261108.md) |
+| `make test-method-matrices` | R5 四方法参数、失败与判决矩阵 | [R5](testing/PROFILE-MATRICES-R5-20261108.md) |
+| `make test-creation-bindings` | R6 固定 audit I/F 测试接线 | [R6](testing/PROFILE-CREATION-R6-20261108.md) |
+
+这些入口不是完整 ReplayPhaseI、CreateReceipt 或生产准入。每片的公开最小源码包在 `docs/testing/public-evidence/` 中，覆盖计数以 [coverage 登记](../schemas/verification-profile/coverage.json)为准。
 
 ## 开发者预览打包
 

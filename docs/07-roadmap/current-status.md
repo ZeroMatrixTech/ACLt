@@ -12,7 +12,7 @@
 |---|---|---|
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
-| 当前主线 | [FM-S3 候选总体收尾](../testing/FM-S3-CLOSEOUT-20261106.md)通过 8 个双物理机 LAN 场景，A/B 独立重放 39 事件，测试资金守恒 | 正式接口保持 OPEN。继续推进正式启动来源、Phase B/D、信封和准入证据 |
+| 当前主线 | 候选 FM-S3 audit-only 链路覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态：[8 场景收尾](../testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](../testing/FM-S3-TASK-TRAP-20261106.md)与[终态和历史矩阵](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md)；P0-1B 按 Profile R1–R6 切片推进 | 正式接口保持 OPEN。继续推进正式启动来源、Phase B/D、信封和准入证据；[终态报告](../testing/FM-S3-TERMINALS-20261106.md#留给规范修订的事项)中的 4 项与非主网部署联合类型评审待规范修订 |
 | 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | PR #65 已合并；首次失败与修复后通过已留存 [CI 记录](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md#github-ci-运行记录)，正式准入仍关闭 |
 | FM-S3 规范对齐 | [第一项四片收尾](../testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)覆盖无 claim 编码、Phase B、接纳边界和非主网部署草案 | 正式信封和准入另行评审 |
 | FM-S3 终态与历史回归 | [组合双机结果](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md)通过入口、执行闭合、资金边界与结算恢复，并逐项对照 Work 2/3 的 38 个历史场景 | 候选证据与正式 FM-A 验收分开记录 |

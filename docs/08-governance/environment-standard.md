@@ -3,14 +3,14 @@
 > 文档状态：Living engineering policy（本次建立的工程协作约定）  
 > 当前语义基线：v0.5；ConformanceTarget：V1  
 > 环境规范版本：ENV-1  
-> 最后更新：2026-11-06
+> 最后更新：2026-11-08
 > 适用范围：Linux 本地回归、候选 FM 集成与双物理机 SSH 验证
 
 ## 1. 范围与权威边界
 
 本规范统一开发、测试和交接的环境记录，不定义协议执行语义，不改变 SemanticStatus、V1 VersionDisposition、ADR 或 Gate。协议与贡献要求沿用 [文档中心](../README.md)、[贡献指南](../../CONTRIBUTING.md)和[审计程序](audit-procedure.md)。
 
-当前主线是候选 FM-S3 audit-only 双机集成（2026-11-06 收尾与 Task trap 切片，见[当前状态](../07-roadmap/current-status.md)）；state3 保留为本地历史阶段的当前回归入口。Python 标准库 SQLite、系统 OpenSSL、Rust/C++ 及 SSH 用于相应测试，无新增第三方 Python/Cargo 包。默认本地检查不要求 Docker/VM、GPU、链节点或真实付款；显式双机集成按 DUALHOST-SSH-1 运行。软件安装可能联网，本地构建与检查可离线。
+当前主线是候选 FM-S3 audit-only 双机集成与 P0-1B Profile 规则的 Python/Rust 独立实现（见[当前状态](../07-roadmap/current-status.md)）；state3 保留为本地历史阶段的当前回归入口。Python 标准库 SQLite、系统 OpenSSL、Rust/C++ 及 SSH 用于相应测试，无新增第三方 Python/Cargo 包。默认本地检查不要求 Docker/VM、GPU、链节点或真实付款；显式双机集成按 DUALHOST-SSH-1 运行。软件安装可能联网，本地构建与检查可离线。
 
 本文件是环境协作约定的唯一入口；其他说明链接本文件。新增依赖时必须同步本文件、依赖锁定文件、安装步骤与测试证据。
 
