@@ -181,7 +181,7 @@ def main():
     rows=json.loads(VECTOR.read_text())['vectors']
     with tempfile.TemporaryDirectory(prefix='aclt-creation-') as path:
         binary=Path(path)/'codec';subprocess.run([os.environ.get('RUSTC','rustc'),'--edition=2021','-D','warnings',str(ROOT/'tools/verification_profile/rust/main.rs'),'-o',str(binary)],check=True,timeout=120);outputs=run(binary,rows)
-    names={'scripts/check-creation-bindings.py','tools/verification_profile/creation.py','tools/verification_profile/rust/creation_types.json','tests/verification_profile/test_creation.py','tests/verification_profile/codec/creation-bindings-vectors.json'}
+    names={'scripts/check-creation-bindings.py','tools/verification_profile/creation.py','tools/verification_profile/rust/creation_types.json','tools/verification_profile/rust/binding_types.json','tests/verification_profile/test_creation.py','tests/verification_profile/codec/creation-bindings-vectors.json'}
     names.update(json.loads((ROOT/'scripts/creation-source-files.json').read_text()))
     names.update(x.relative_to(ROOT).as_posix() for x in (ROOT/'tools/verification_profile/rust').glob('*.rs'))
     report=dict(status='PASS',cases=len(rows),positive=sum(x['valid'] for x in rows),results_sha256=hashlib.sha256(json.dumps(outputs,sort_keys=True,separators=(',',':')).encode()).hexdigest(),hostname=socket.gethostname(),python=sys.version.split()[0],kernel=platform.release(),rustc=subprocess.check_output([os.environ.get('RUSTC','rustc'),'--version'],text=True).strip(),source_sha256={n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest() for n in sorted(names)},full_schema_valid=False,full_phase_i_replay=False,production_admission=False,source_authentication=False,receipt_created=False)

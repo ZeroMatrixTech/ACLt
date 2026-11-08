@@ -17,7 +17,11 @@
       "SV-31",
       "SV-51",
       "SV-85",
-      "SV-87"
+      "SV-87",
+      "SV-05",
+      "SV-86a",
+      "SV-86b",
+      "SV-86c"
     ],
     "L1b": [
       "SV-10",
@@ -43,7 +47,16 @@
       "SV-45",
       "SV-47",
       "SV-53a",
-      "SV-120"
+      "SV-120",
+      "SV-06",
+      "SV-09",
+      "SV-35",
+      "SV-36",
+      "SV-44",
+      "SV-48",
+      "SV-49",
+      "SV-78",
+      "SV-95"
     ],
     "L2": [
       "SV-02",
@@ -57,7 +70,13 @@
       "SV-104",
       "SV-53b",
       "SV-74",
-      "SV-88"
+      "SV-88",
+      "SV-46",
+      "SV-54b",
+      "SV-70",
+      "SV-71",
+      "SV-113",
+      "SV-114"
     ]
   },
   "partial": {
@@ -65,18 +84,14 @@
       "SV-01",
       "SV-30",
       "SV-80",
-      "SV-86a",
-      "SV-86c",
       "SV-93",
       "SV-66",
       "SV-91",
       "SV-04",
-      "SV-98"
+      "SV-98",
+      "SV-116"
     ],
     "L1b": [
-      "SV-54a",
-      "SV-57",
-      "SV-35",
       "SV-62",
       "SV-94",
       "SV-105",
@@ -85,7 +100,6 @@
       "SV-64",
       "SV-75a",
       "SV-109",
-      "SV-09",
       "SV-65",
       "SV-96",
       "SV-102",
@@ -96,21 +110,21 @@
       "SV-29I",
       "SV-43",
       "SV-55",
-      "SV-58"
+      "SV-58",
+      "SV-54a",
+      "SV-57"
     ],
     "L2": [
       "SV-25",
       "SV-42",
-      "SV-46",
       "SV-52",
       "SV-60",
-      "SV-70",
       "SV-118"
     ]
   },
   "not_implemented": {
     "policy": "§13.2 Type A 中既不在 implemented 也不在 partial 的规则均为 NOT_IMPLEMENTED；生产模式保持 fail closed。",
-    "l2": "十二个摘要 implemented，模板/claim 两个 partial，其余四项与完整五相位 L2 未完成。",
+    "l2": "18 个摘要 owner 的现行公式与 ContentMap/完整显式输入投影已实现；这不关闭其他 L2 规则、未冻结的 ENUM/正式 wire、完整五相位或 SchemaValid。",
     "registries": "当前只有种子数据，不是官方 ACTIVE 主网注册表。",
     "cross_implementation": "Python/Rust 已对拍候选切片；尚非全量第二语言 conformance。"
   },
@@ -125,7 +139,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-08: R7 后 119 Type A = 50 implemented + 40 partial + 29 not implemented。约定 13 项基础规则完成，扩展 SV-23 完成，另外 7 项已有显式输入组件但保持 partial。12/18 摘要完成；正式 Intent 取值链、通用 ReplayPhaseI、完整五相位/来源认证/部署准入仍缺。",
+  "review_note": "2026-11-08: R8 后 119 Type A = 69 implemented + 35 partial + 15 not implemented。19 项由未完成转为完成，新增 SV-116 partial；18/18 摘要 owner 完成现行公式/输入投影。七项适用性规则仍 partial，候选胶囊不是正式 Intent 升级；完整相位、evaluator/source/部署验收继续 OPEN。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],

@@ -72,22 +72,30 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`claim_template_ref.template_id` 与方法一一对应（CLM-3）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#check_spec"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_template_mapping_and_registry_identity"
+      ],
+      "gap": "三种产生 claim 的方法固定对应模板 ID；audit 不引用模板。注册授权与模板正文来源独立验收。"
     },
     {
       "id": "SV-06",
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`binding_schema` 键集合 = 模板槽位集合；`RUNTIME` 槽位不出现在 `static_bindings`（CS-1、CS-3）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#check_spec"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_binding_schema_and_runtime_static_overlap"
+      ],
+      "gap": "模板与 binding_schema 的 slot/decl 按规范 CBOR 字节一致；STATIC 键完整，RUNTIME 不得进入 static_bindings。bool 与整数不能用 Python 相等关系混同。"
     },
     {
       "id": "SV-07",
@@ -128,15 +136,15 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "方法特定排除项齐备；`soundness_class = SOUND` ⇒ `reject_attribution = NO_ATTRIBUTION`（DV-1）",
       "implementation": [
-        "tools/verification_profile/method_rules.py#check_parameters"
+        "tools/verification_profile/commitments.py#check_method_exclusions"
       ],
       "tests": [
-        "tests/verification_profile/test_method_matrices.py#test_direct_declarations_and_q_source"
+        "tests/verification_profile/test_commitments.py#test_method_specific_exclusions_not_baseline_only"
       ],
-      "gap": "已检查 Direct SOUND 拒绝归因；方法特定排除项与完整 claim/注册引用仍待接入。"
+      "gap": "三方法的六个冻结排除项已接入显式排除注册表解析；Direct SOUND 仍强制 NO_ATTRIBUTION。"
     },
     {
       "id": "SV-10",
@@ -192,12 +200,14 @@
       "status": "PARTIAL",
       "requirement": "该假设在 `scope` 与 `validity_window` 内。**失败产生 `SUPPORT_CAPABILITY_BOUND_UNAVAILABLE` 触发条件，不是拒绝**",
       "implementation": [
-        "tools/verification_profile/selection.py#applicability"
+        "tools/verification_profile/selection.py#applicability",
+        "tools/verification_profile/commitments.py#candidate_input"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_window_is_half_open_and_separate_from_scope"
+        "tests/verification_profile/test_selection.py#test_window_is_half_open_and_separate_from_scope",
+        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule"
       ],
-      "gap": "已检查引用假设的六维包含与半开有效窗，失败作为测试判定结果，不拒绝 Profile；DeclaredScope 来自显式测试适配器，NormalizeDeclaredScope(Intent) 与正式触发原因 wire 未接。"
+      "gap": "已检查引用假设的六维包含与半开有效窗，失败作为测试判定结果，不拒绝 Profile；DeclaredScope 来自显式测试适配器，NormalizeDeclaredScope(Intent) 与正式触发原因 wire 未接。 R8 已有独立 TEST tag 的候选输入胶囊派生与字节绑定，但没有升级现行 ReceiptIntent/1、正式 imports 或通用 ReplayPhaseI，故仍 partial。"
     },
     {
       "id": "SV-13",
@@ -223,12 +233,14 @@
       "status": "PARTIAL",
       "requirement": "\\(N_{required}\\le N_{max}\\)；失败产生 `POPULATION_TOO_SMALL`",
       "implementation": [
-        "tools/verification_profile/selection.py#applicability"
+        "tools/verification_profile/selection.py#applicability",
+        "tools/verification_profile/commitments.py#candidate_input"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_population_and_invalid_sample_thresholds_are_distinct"
+        "tests/verification_profile/test_selection.py#test_population_and_invalid_sample_thresholds_are_distinct",
+        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule"
       ],
-      "gap": "N_required≤N_max 的独立测试判定已对拍，N_max 为显式适配器输入；从正式 Intent/预算约束导出 N_max 和创建期触发接线仍缺。"
+      "gap": "N_required≤N_max 的独立测试判定已对拍，N_max 为显式适配器输入；从正式 Intent/预算约束导出 N_max 和创建期触发接线仍缺。 R8 已有独立 TEST tag 的候选输入胶囊派生与字节绑定，但没有升级现行 ReceiptIntent/1、正式 imports 或通用 ReplayPhaseI，故仍 partial。"
     },
     {
       "id": "SV-15",
@@ -406,12 +418,14 @@
       "status": "PARTIAL",
       "requirement": "`allowed_effects` ⊇ Intent 的允许 effects",
       "implementation": [
-        "tools/verification_profile/selection.py#applicability"
+        "tools/verification_profile/selection.py#applicability",
+        "tools/verification_profile/commitments.py#candidate_input"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_effects_direction_and_informational_exclusion"
+        "tests/verification_profile/test_selection.py#test_effects_direction_and_informational_exclusion",
+        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule"
       ],
-      "gap": "已实现 Intent effects⊆Profile allowed_effects 的精确集合方向；Intent/ContractTuple 的实际 effects 取值链尚未冻结接入。"
+      "gap": "已实现 Intent effects⊆Profile allowed_effects 的精确集合方向；Intent/ContractTuple 的实际 effects 取值链尚未冻结接入。 R8 已有独立 TEST tag 的候选输入胶囊派生与字节绑定，但没有升级现行 ReceiptIntent/1、正式 imports 或通用 ReplayPhaseI，故仍 partial。"
     },
     {
       "id": "SV-27",
@@ -463,12 +477,14 @@
       "status": "PARTIAL",
       "requirement": "`max_invalid_samples ≤ N_max`（FM-2；依赖 Intent，故属 Phase I）",
       "implementation": [
-        "tools/verification_profile/selection.py#applicability"
+        "tools/verification_profile/selection.py#applicability",
+        "tools/verification_profile/commitments.py#candidate_input"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_population_and_invalid_sample_thresholds_are_distinct"
+        "tests/verification_profile/test_selection.py#test_population_and_invalid_sample_thresholds_are_distinct",
+        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule"
       ],
-      "gap": "max_invalid_samples≤N_max 的独立测试判定已对拍；N_max 正式来源与 Phase I 接线仍缺。"
+      "gap": "max_invalid_samples≤N_max 的独立测试判定已对拍；N_max 正式来源与 Phase I 接线仍缺。 R8 已有独立 TEST tag 的候选输入胶囊派生与字节绑定，但没有升级现行 ReceiptIntent/1、正式 imports 或通用 ReplayPhaseI，故仍 partial。"
     },
     {
       "id": "SV-30",
@@ -558,26 +574,30 @@
       "phase": "D",
       "layer": "L1b",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`concrete_bindings` 键集合 = `binding_schema`；`STATIC` 槽位值与 `static_bindings` 逐位相同（CB-1）",
       "implementation": [
-        "tools/verification_profile/codec.py#verify_chain"
+        "tools/verification_profile/commitments.py#check_concrete"
       ],
       "tests": [
-        "tests/verification_profile/test_codec.py#test_claim_transitive_binding"
+        "tests/verification_profile/test_commitments.py#test_concrete_static_substitution_fails_even_with_new_claim_hash"
       ],
-      "gap": "测试 envelope 检查模板槽位与绑定集合；未接 Profile binding_schema/STATIC 值等式。"
+      "gap": "concrete_bindings 键集合与 schema 精确相等；STATIC 外壳和值逐位等于 Profile 冻结绑定，即使重算 claim digest 也不能替换。"
     },
     {
       "id": "SV-36",
       "phase": "D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`terminal_state = TRUSTED` ⇒ `claim_binding` 完整（D-08-a）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#check_claim_guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_trusted_requires_complete_claim_binding"
+      ],
+      "gap": "TRUSTED 输入必须有完整、方法匹配的 ClaimBinding；audit 不得携带 claim。仅组件 guard，不重放 evaluator 或产生 Decision。"
     },
     {
       "id": "SV-37",
@@ -678,23 +698,29 @@
       "status": "PARTIAL",
       "requirement": "`DEGRADED` slot 的 `failure_reasons[degraded_from] ⊆ enabling_triggers`（D-06）",
       "implementation": [
-        "tools/verification_profile/selection.py#applicability"
+        "tools/verification_profile/selection.py#applicability",
+        "tools/verification_profile/commitments.py#candidate_input"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_mixed_failure_reasons_cannot_enable_degradation"
+        "tests/verification_profile/test_selection.py#test_mixed_failure_reasons_cannot_enable_degradation",
+        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule"
       ],
-      "gap": "测试原因标签的全集包含判定及混合非触发原因跳过已对拍；测试入口还要求非空失败事实。正式 FailureReason/触发投影、来源 slot 落选记录及 D-06 接线尚未完成。"
+      "gap": "测试原因标签的全集包含判定及混合非触发原因跳过已对拍；测试入口还要求非空失败事实。正式 FailureReason/触发投影、来源 slot 落选记录及 D-06 接线尚未完成。 R8 已有独立 TEST tag 的候选输入胶囊派生与字节绑定，但没有升级现行 ReceiptIntent/1、正式 imports 或通用 ReplayPhaseI，故仍 partial。"
     },
     {
       "id": "SV-44",
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`static_bindings` 的每个值与 method parameters 对应字段逐位相同（CS-2）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#check_spec"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_static_values_are_exact_native_frozen_fields"
+      ],
+      "gap": "Direct/Proof/Bounded 的全部规范 STATIC 对应字段使用显式映射、锁定载荷 schema 和原生 CBOR 字节比较；不是第二份参数权威。"
     },
     {
       "id": "SV-45",
@@ -716,15 +742,15 @@
       "phase": "D",
       "layer": "L2",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`rendered_claim_digest` 按 §5.1.1 与 §17.4 正确（CB-2）",
       "implementation": [
-        "tools/verification_profile/codec.py#claim_digest"
+        "tools/verification_profile/commitments.py#rendered_digest"
       ],
       "tests": [
-        "tests/verification_profile/test_codec.py#test_claim_transitive_binding"
+        "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection"
       ],
-      "gap": "结构化二元组摘要与显式模板引用链已对拍；仅锁定本地测试 import，无完整 Phase D。"
+      "gap": "正式 RenderedClaim/1 对完整 [template_ref, concrete_bindings] 重算；支持已锁定的通用原生载荷与外部版本引用，不再限定 claim-test-bytes；不验证任务性质。"
     },
     {
       "id": "SV-47",
@@ -746,22 +772,30 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`claim_template_ref` 的 `template_digest` 与注册表中模板实际 digest 一致；模板状态 ∈ {`REGISTERED`, `ACTIVE`}",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#check_spec"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_deprecated_or_revoked_template_cannot_register_spec"
+      ],
+      "gap": "模板实际对象、三元引用和显式快照一致；只允许 REGISTERED/ACTIVE。未证明快照/注册来源真实。"
     },
     {
       "id": "SV-49",
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "Profile 侧以 `VersionRange` 约束的量，其同名 claim 槽位为 `RUNTIME`（CS-4）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#range_slots"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_version_range_slots_must_be_runtime"
+      ],
+      "gap": "已冻结 VersionRange 字段到声明 slot 的显式映射，相关 slot 必须 RUNTIME；约束范围不等于运行时点值。"
     },
     {
       "id": "SV-50",
@@ -843,24 +877,27 @@
       "status": "PARTIAL",
       "requirement": "当 `assumption_evaluation = COMPLETE(snapshot)` 时，状态行恰好覆盖 `SAFETY_CRITICAL/LIVENESS`、排除 `INFORMATIONAL`；行与 `cause_set` 排序去重；`effective_verdict = Reduce(reducer_ref, cause_set)`；`INVALIDATING` 分支不要求快照",
       "implementation": [
-        "tools/verification_profile/validator.py#validate_assumption_snapshot"
+        "tools/verification_profile/commitments.py#check_states"
       ],
       "tests": [
-        "tests/verification_profile/test_singlehost.py#test_snapshot_coverage_order_duplicates_and_claimed_verdict",
-        "tests/verification_profile/test_singlehost.py#test_all_snapshot_cause_combinations"
+        "tests/verification_profile/test_commitments.py#test_cause_order_uses_encoded_bytes_and_keeps_all_facts"
       ],
-      "gap": "独立 helper；COMPLETE/INVALIDATING envelope 与完整 Phase D 尚未接入。"
+      "gap": "新增原始 CBOR 状态组件：精确角色覆盖、证据版本、编码字节排序与默认 reducer 复算；保留全部原因。正式 sum wire、Phase D 与 reducer 发布/来源闭合仍缺。"
     },
     {
       "id": "SV-54b",
       "phase": "D",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`assumption_state_digest` 按 §17.4 重算一致（owner）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#state_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection"
+      ],
+      "gap": "AssumptionState/1 精确覆盖 [reducer_ref, sorted(rows)]；不把 Receipt/id 混入该派生摘要。源码与字节向量独立对拍。"
     },
     {
       "id": "SV-55",
@@ -870,12 +907,14 @@
       "status": "PARTIAL",
       "requirement": "每个 `SAFETY_CRITICAL`/`LIVENESS` 假设满足 `Intent ⊑ scope`（AR-4）",
       "implementation": [
-        "tools/verification_profile/selection.py#scope_contains"
+        "tools/verification_profile/selection.py#scope_contains",
+        "tools/verification_profile/commitments.py#candidate_input"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_scope_subset_direction_and_empty_dimensions"
+        "tests/verification_profile/test_selection.py#test_scope_subset_direction_and_empty_dimensions",
+        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule"
       ],
-      "gap": "纯 ScopeContains 已覆盖标量相等、半开版本区间和 Intent⊆Scope；仅检查 SAFETY_CRITICAL/LIVENESS，INFO 不影响结果。正式 Intent→DeclaredScope 投影仍缺。"
+      "gap": "纯 ScopeContains 已覆盖标量相等、半开版本区间和 Intent⊆Scope；仅检查 SAFETY_CRITICAL/LIVENESS，INFO 不影响结果。正式 Intent→DeclaredScope 投影仍缺。 R8 已有独立 TEST tag 的候选输入胶囊派生与字节绑定，但没有升级现行 ReceiptIntent/1、正式 imports 或通用 ReplayPhaseI，故仍 partial。"
     },
     {
       "id": "SV-56",
@@ -896,12 +935,12 @@
       "status": "PARTIAL",
       "requirement": "`terminal_state = TRUSTED` ⇒ `assumption_evaluation = COMPLETE(snapshot)` 且全部 `SAFETY_CRITICAL` 假设的 `effective_verdict = VALID`（AS-1/ASS-7）",
       "implementation": [
-        "tools/verification_profile/validator.py#validate_assumption_snapshot"
+        "tools/verification_profile/commitments.py#check_claim_guard"
       ],
       "tests": [
-        "tests/verification_profile/test_singlehost.py#test_all_snapshot_cause_combinations"
+        "tests/verification_profile/test_commitments.py#test_safety_failure_prevents_trusted_even_with_consistent_hashes"
       ],
-      "gap": "helper 安全假设闸门已有；完整 COMPLETE 分支与 Decision 入口缺失。"
+      "gap": "COMPLETE 分支和所有 safety-critical VALID guard 已在新组件接入并覆盖重算摘要后的反例；完整 evaluator/Phase D/主网准入未验收，不产生 Decision。"
     },
     {
       "id": "SV-58",
@@ -911,12 +950,14 @@
       "status": "PARTIAL",
       "requirement": "`NormalizeDeclaredScope(Intent)` 六维齐备，且 `fault_domains`、`geography` 非空（SC-1）",
       "implementation": [
-        "tools/verification_profile/selection.py#applicability"
+        "tools/verification_profile/selection.py#applicability",
+        "tools/verification_profile/commitments.py#candidate_input"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_scope_subset_direction_and_empty_dimensions"
+        "tests/verification_profile/test_selection.py#test_scope_subset_direction_and_empty_dimensions",
+        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule"
       ],
-      "gap": "显式 DeclaredScope 六维、类型与非空 fault_domains/geography 已对拍；当前冻结 ReceiptIntent 没有直接提供全部字段，不能从不透明 ContractTuple 猜内部结构，NormalizeDeclaredScope 接线未完成。"
+      "gap": "显式 DeclaredScope 六维、类型与非空 fault_domains/geography 已对拍；当前冻结 ReceiptIntent 没有直接提供全部字段，不能从不透明 ContractTuple 猜内部结构，NormalizeDeclaredScope 接线未完成。 R8 已有独立 TEST tag 的候选输入胶囊派生与字节绑定，但没有升级现行 ReceiptIntent/1、正式 imports 或通用 ReplayPhaseI，故仍 partial。"
     },
     {
       "id": "SV-59",
@@ -1081,26 +1122,30 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`template_digest` 按 §17.4 与 UVP-1V 重算一致（owner）",
       "implementation": [
-        "tools/verification_profile/codec.py#template_digest"
+        "tools/verification_profile/commitments.py#check_digest"
       ],
       "tests": [
-        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+        "tests/verification_profile/test_commitments.py#test_template_enum_contents_are_hashed_without_inventing_semantics"
       ],
-      "gap": "ClaimTemplate 候选 wire 表、非 ENUM 子集与摘要已对拍；完整模板类型/注册入口未完成。"
+      "gap": "完整 ContentMap_Template 与正式 tag 已重算；原生 value_type/ENUM 内容按原始 CBOR 保留，不猜 ENUM wire。L1a 类型语义和完整注册另验收，摘要 owner 不承担该职责。"
     },
     {
       "id": "SV-71",
       "phase": "D",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`AssumptionStateSnapshot.snapshot_digest` 按 §17.4 重算一致（owner）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#check_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_snapshot_identity_and_state_digest_are_different_commitments"
+      ],
+      "gap": "AssumptionStateSnapshot/1 覆盖 runtime id、Receipt、instant、reducer 和全部行；不同于仅 reducer/rows 的派生状态摘要。"
     },
     {
       "id": "SV-72",
@@ -1213,11 +1258,15 @@
       "phase": "D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "当产生 `TRUSTED` 时，`COMPLETE(snapshot)` 的 identity 与 `claim_binding.assumption_state_snapshot_ref` 一致且 snapshot.receipt_id 匹配；其他终态按方法规则允许无 ClaimBinding",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#check_claim_guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_receipt_and_snapshot_identity_match_full_reference"
+      ],
+      "gap": "ClaimBinding 与 COMPLETE snapshot 的完整 runtime 引用、实际 ReceiptID 一致；其他终态允许无 ClaimBinding，INVALIDATING 不要求快照。"
     },
     {
       "id": "SV-79",
@@ -1312,41 +1361,45 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "版本化对象严格使用 §3.3.2 为该对象冻结的唯一 wire shape；不得同时接受嵌套/展开两种形态",
       "implementation": [
-        "tools/verification_profile/codec.py#template"
+        "tools/verification_profile/commitments.py#wire_check"
       ],
       "tests": [
-        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+        "tests/verification_profile/test_commitments.py#test_frozen_vectors"
       ],
-      "gap": "只覆盖模板 NESTED_HEADER；其他版本化对象未覆盖。"
+      "gap": "八种版本化治理对象的唯一 wire shape 已集中检查；Profile 为 FLAT，其余为 NESTED_HEADER。只关闭 header shape owner，不代表全部嵌套 schema 已完成。"
     },
     {
       "id": "SV-86b",
       "phase": "R/I/F/B/D",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "运行期对象严格使用 `NESTED_HEADER`；无 `version`；`header.id` 经 UVP-1R 投影进入 ContentMap",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#wire_check"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_all_runtime_references_are_unversioned_and_typed"
+      ],
+      "gap": "四类 RuntimeObjectHeader 使用嵌套 header，无 version，且 id 进入各自 ContentMap；运行期摘要与身份可独立对拍。"
     },
     {
       "id": "SV-86c",
       "phase": "R/I/F/B/D",
       "layer": "L1a",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "对象未在 header 外重复声明 `id`/`version`/`digest`；扁平 Profile 不得额外出现 `header`",
       "implementation": [
-        "tools/verification_profile/codec.py#template"
+        "tools/verification_profile/commitments.py#wire_check"
       ],
       "tests": [
-        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+        "tests/verification_profile/test_commitments.py#test_frozen_vectors"
       ],
-      "gap": "模板拒绝重复/扁平身份字段；其他对象未覆盖。"
+      "gap": "八类版本化与四类运行期治理对象拒绝 header 外重复身份/摘要字段；扁平 Profile 拒绝额外 header。"
     },
     {
       "id": "SV-87",
@@ -1473,11 +1526,15 @@
       "phase": "I/F/B/D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "四类运行期对象无伪 `Version`，且引用使用对应具体别名（REF-2）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#runtime_ref"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_all_runtime_references_are_unversioned_and_typed"
+      ],
+      "gap": "REF-2 的四类具体 runtime alias 检查 ID 命名域、digest 和无伪 version；不同 runtime 类型不能互换。"
     },
     {
       "id": "SV-96",
@@ -1722,22 +1779,30 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`MainnetAssuranceProfile.assurance_digest` 按 §17.4 重算；`human_summary` 不入摘要",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#check_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_versioned_identity_and_advisory_do_not_change_digest"
+      ],
+      "gap": "完整 MAP ContentMap 使用 MainnetAssuranceProfile/1，排除 human_summary 与 ID/Version；只关闭摘要 owner，不接受主网发布、签名或能力启用。"
     },
     {
       "id": "SV-114",
       "phase": "D",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`DecisionEvaluationRecord.input_digest` 对完整 `DecisionEvaluationInput` 按 §17.4 重算一致",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#decision_input_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_reference_only_method_input_is_rejected_even_if_rehashed"
+      ],
+      "gap": "DecisionEvaluationInput/1 覆盖完整七字段显式输入和内联 canonical_input 包装；不是 evaluator 重放或 SV-115/完整 Phase D 验收。"
     },
     {
       "id": "SV-115",
@@ -1755,11 +1820,15 @@
       "phase": "D",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`AssumptionEvaluationResult` 恰为 `COMPLETE(snapshot)` 或 `INVALIDATING(failure)`；两分支字段互斥且完备",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/commitments.py#check_states"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_invalidating_failure_needs_neither_snapshot_nor_digest"
+      ],
+      "gap": "COMPLETE(snapshot)/INVALIDATING(failure) 的封闭结构和可构造失败路径已有原始 CBOR 组件；tag/snapshot/failure 是本片规范化适配器，正式 sum wire/Phase D 接线仍待评审。"
     },
     {
       "id": "SV-117",
@@ -1845,7 +1914,7 @@
         "tests/verification_profile/test_profile_digest.py#test_all_frozen_fields_are_projected_and_digest_bound",
         "tests/verification_profile/test_profile_digest.py#test_legacy_digest_is_read_only_and_not_rewritten"
       ],
-      "gap": "Profile v2 正式 ContentMap 和域已实现，保留 v1 域只读复核。嵌套结构、导入和注册合法性由其他 SV 校验。"
+      "gap": "该条规则已在原始 CBOR Phase R 入口实现。完整 SchemaValid、registry/source 与其他 SV 独立验收。"
     },
     {
       "name": "`policy_digest`",
@@ -1864,14 +1933,14 @@
       "input": "`cbor(ContentMap_Template)`（§3.3.3）",
       "owner": "SV-70",
       "layer": "L2",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "implementation": [
         "tools/verification_profile/codec.py#template_digest"
       ],
       "tests": [
         "tests/verification_profile/test_codec.py#test_frozen_vectors"
       ],
-      "gap": "ClaimTemplate 候选 wire 表、非 ENUM 子集与摘要已对拍；完整模板类型/注册入口未完成。"
+      "gap": "完整 ContentMap_Template 与正式 tag 已重算；原生 value_type/ENUM 内容按原始 CBOR 保留，不猜 ENUM wire。L1a 类型语义和完整注册另验收，摘要 owner 不承担该职责。"
     },
     {
       "name": "`rendered_claim_digest`",
@@ -1879,14 +1948,14 @@
       "input": "`cbor([claim_template_ref, concrete_bindings])`",
       "owner": "SV-46",
       "layer": "L2",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "implementation": [
         "tools/verification_profile/codec.py#claim_digest"
       ],
       "tests": [
         "tests/verification_profile/test_codec.py#test_claim_transitive_binding"
       ],
-      "gap": "结构化二元组摘要与显式模板引用链已对拍；仅锁定本地测试 import，无完整 Phase D。"
+      "gap": "正式 RenderedClaim/1 对完整 [template_ref, concrete_bindings] 重算；支持已锁定的通用原生载荷与外部版本引用，不再限定 claim-test-bytes；不验证任务性质。"
     },
     {
       "name": "`assumption_state_digest`",
@@ -1894,10 +1963,10 @@
       "input": "`cbor([reducer_ref, AssumptionStateRows])`（§5.2.2）",
       "owner": "SV-54b",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "AssumptionState/1 精确覆盖 [reducer_ref, sorted(rows)]；不把 Receipt/id 混入该派生摘要。源码与字节向量独立对拍。"
     },
     {
       "name": "`snapshot_digest`（`AssumptionStateSnapshot`）",
@@ -1905,10 +1974,10 @@
       "input": "`cbor(ContentMap_AssumptionStateSnapshot)`（§3.3.3）",
       "owner": "SV-71",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "AssumptionStateSnapshot/1 覆盖 runtime id、Receipt、instant、reducer 和全部行；不同于仅 reducer/rows 的派生状态摘要。"
     },
     {
       "name": "`excluded_claims.digest`",
@@ -1919,7 +1988,7 @@
       "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "排除选择集/注册对象的正式 ContentMap、tag 和 owner 已实现并对拍；注册授权、全量对象/相位不由纯摘要通过授予。"
+      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
     },
     {
       "name": "`assumption_set_digest`",
@@ -1930,7 +1999,7 @@
       "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "正式静态假设集合 tag/排序二元行摘要已实现并对拍；不代替绑定证据版本与状态的运行期摘要或完整 ClaimBinding。"
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "name": "`manifest_digest`",
@@ -1963,7 +2032,7 @@
       "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "排除选择集/注册对象的正式 ContentMap、tag 和 owner 已实现并对拍；注册授权、全量对象/相位不由纯摘要通过授予。"
+      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
     },
     {
       "name": "`assurance_digest`（`MainnetAssuranceProfile`）",
@@ -1971,10 +2040,10 @@
       "input": "`cbor(ContentMap_MainnetAssuranceProfile)`（§3.3.3、§3.6）",
       "owner": "SV-113",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "完整 MAP ContentMap 使用 MainnetAssuranceProfile/1，排除 human_summary 与 ID/Version；只关闭摘要 owner，不接受主网发布、签名或能力启用。"
     },
     {
       "name": "`DecisionEvaluationRecord.input_digest`",
@@ -1982,10 +2051,10 @@
       "input": "`cbor(DecisionEvaluationInput)`（§11.1；完整显式输入）",
       "owner": "SV-114",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "DecisionEvaluationInput/1 覆盖完整七字段显式输入和内联 canonical_input 包装；不是 evaluator 重放或 SV-115/完整 Phase D 验收。"
     },
     {
       "name": "`context_digest`（`CreationValidationContext`）",
@@ -2007,7 +2076,7 @@
       "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "正式 ContentMap/tag/摘要重算已实现并有 Python/Rust 正负向量；其他相位完整接线与来源认证单独验收。"
+      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
     },
     {
       "name": "`phase_i_record_digest`",
@@ -2040,7 +2109,7 @@
       "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "正式 ContentMap/tag/摘要重算已实现并有 Python/Rust 正负向量；其他相位完整接线与来源认证单独验收。"
+      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
     }
   ],
   "slice_evidence": {

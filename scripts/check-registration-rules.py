@@ -179,7 +179,7 @@ def main():
         outputs=run(binary,rows)
     names=['scripts/check-registration-rules.py','scripts/check-profile-references.py','scripts/check-profile-registration.py','scripts/check-profile-digest.py',
       'tools/verification_profile/registration_rules.py','tools/verification_profile/references.py','tools/verification_profile/registration.py',
-      'tools/verification_profile/profile.py','tools/verification_profile/codec.py','tools/verification_profile/validator.py','tools/verification_profile/rust/audit_types.json','tools/verification_profile/rust/method_types.json','tools/verification_profile/rust/creation_types.json','tools/verification_profile/rust/selection_types.json',
+      'tools/verification_profile/profile.py','tools/verification_profile/codec.py','tools/verification_profile/validator.py','tools/verification_profile/rust/audit_types.json','tools/verification_profile/rust/method_types.json','tools/verification_profile/rust/creation_types.json','tools/verification_profile/rust/selection_types.json','tools/verification_profile/rust/binding_types.json',
       'tests/verification_profile/codec/registration-rules-vectors.json','tests/verification_profile/codec/profile-references-vectors.json',
       'tests/verification_profile/codec/profile-registration-vectors.json','tests/verification_profile/codec/profile-digest-vectors.json',
       'tests/verification_profile/test_registration_rules.py','schemas/verification-profile/coverage.json','schemas/verification-profile/inventory.json',

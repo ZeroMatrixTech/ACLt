@@ -25,7 +25,7 @@ fn assets(profiles:&V,snap:&V,t:&V,i:&Imports)->R<()>{
  snapshot(snap,t,i)?;let mut identities=BTreeSet::new();
  for p in arr(profiles)?{verify(p)?;let reference=pref(p)?;need(identities.insert(encode(&reference)?),"duplicate Profile asset")?;resolve(&reference,profiles,snap,t,i)?;}Ok(())
 }
-fn parameter_refs(p:&V)->R<()>{
+pub(super) fn parameter_refs(p:&V)->R<()>{
  if txt(get(p,"verification_method")?)?!="REEXEC_BOUNDED"{return Ok(());}
  for (block,key,class,role) in [("safety_parameters","support_capability_bound_ref","SUPPORT_CAPABILITY_BOUND","SAFETY_CRITICAL"),("liveness_parameters","calibration_ref","CALIBRATION","LIVENESS")]{
   let reference=get(get(p,block)?,key)?;let mut matches=vec![];

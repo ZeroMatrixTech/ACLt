@@ -47,6 +47,11 @@ fn identifier(value: &V, kind: &str) -> R<()> {
         "CLAIM_TEMPLATE" => "acl.ct.",
         "PROFILE_SELECTION_POLICY" => "acl.vps.",
         "MANIFEST" => "acl.cm.",
+        "CLAIM_SPEC" => "acl.cs.",
+        "ASSUMPTION_SNAPSHOT" => "acl.ass.",
+        "CLUSTER_MAPPING" => "acl.cmap.",
+        "SCHEMA" => "acl.schema.",
+        "BINDING_FUNCTION" => "acl.bind.",
         "WEAKENING_EDGE" => "acl.we.",
         "EXCLUDED_CLAIMS_REGISTRY" => "acl.ecr.",
         "MAINNET_ASSURANCE_PROFILE" => "acl.map.",
@@ -65,11 +70,12 @@ fn identifier(value: &V, kind: &str) -> R<()> {
     let valid = match kind {
         "PROFILE" | "VERIFICATION_PROFILE" => tail.split_once('.')
             .is_some_and(|(family, slug)| name(family) && name(slug)),
-        "REGISTRY_SNAPSHOT" | "FRONTIER" | "CREATION_CONTEXT" | "PHASE_I_RECORD" => ulid(tail),
-        "PREDICATE" | "VALIDATOR" => tail.split_once('@').is_some_and(|(id, version)| {
+        "REGISTRY_SNAPSHOT" | "FRONTIER" | "CREATION_CONTEXT" | "PHASE_I_RECORD" | "ASSUMPTION_SNAPSHOT" | "CLUSTER_MAPPING" => ulid(tail),
+        "PREDICATE" | "VALIDATOR" | "BINDING_FUNCTION" => tail.split_once('@').is_some_and(|(id, version)| {
             let parts: Vec<_> = version.split('.').collect();
             name(id) && parts.len() == 3 && parts.iter().all(|part| number(part) && part.parse::<u64>().is_ok())
         }),
+        "SCHEMA" => tail.split_once('@').is_some_and(|(id,version)| name(id)&&number(version)&&version.parse::<u64>().is_ok()),
         "EQUIVALENCE" | "ENCODING" => tail.split_once('@')
             .is_some_and(|(id, version)| name(id) && number(version)),
         _ => name(tail),
@@ -89,6 +95,14 @@ impl Imports {
     }
 
     pub(super) fn new_mode(lock: &V, documents: &V, pin: &[u8], references: bool) -> R<Self> {
+        Self::new_inner(lock, documents, pin, references, false)
+    }
+
+    pub(super) fn new_bindings(lock: &V, documents: &V, pin: &[u8]) -> R<Self> {
+        Self::new_inner(lock, documents, pin, true, true)
+    }
+
+    fn new_inner(lock: &V, documents: &V, pin: &[u8], references: bool, native: bool) -> R<Self> {
         need(pin.len() == 32 && sha256::hash(&encode(lock)?) == pin, "schema lock pin")?;
         fields(lock, &["version", "entries"])?;
         need(integer(get(lock, "version")?)? == 1, "schema lock version")?;
@@ -107,7 +121,8 @@ impl Imports {
             need(get(&document, "id")? == get(reference, "id")?
                 && get(&document, "version")? == get(reference, "version")?
                 && (txt(get(&document, "representation")?)? == "OPAQUE_BSTR"
-                    || (references && txt(get(&document, "representation")?)? == "VERSIONED_REF")), "schema document contract")?;
+                    || (references && txt(get(&document, "representation")?)? == "VERSIONED_REF")
+                    || (native && txt(get(&document, "representation")?)? == "NATIVE_CBOR")), "schema document contract")?;
             need(docs.insert(encode(reference)?, document).is_none(), "duplicate schema document")?;
         }
         let mut aliases = BTreeMap::new();
@@ -143,6 +158,12 @@ impl Imports {
                     need(alias == "ExternalVersionedObjectRef", "unsupported structured import alias")?;
                 }
             }
+            if native {
+                let representation=txt(get(doc,"representation")?)?;
+                if representation=="NATIVE_CBOR" {need(alias=="NativeValue"&&id=="acl.schema.r8-native-value@1","native schema namespace")?;}
+                let fixed=match alias {"NetworkID"=>Some("network-id"),"MaintenanceAuthorityRef"=>Some("maintenance-authority-ref"),"PrincipalRef"=>Some("principal-ref"),"LogicalObjectRef"=>Some("logical-object-ref"),_=>None};
+                if let Some(fixed)=fixed {need(id==format!("acl.schema.{fixed}@1")&&representation=="OPAQUE_BSTR","fixed imported alias")?;}
+            }
             let encoded = encode(&s(alias))?;
             if let Some(last) = previous {
                 need(last < encoded, "schema lock order")?;
@@ -175,11 +196,12 @@ impl Imports {
         match representation {
             "OPAQUE_BSTR" => { bytes(value)?; Ok(()) },
             "VERSIONED_REF" => versioned_ref(value),
+            "NATIVE_CBOR" => {encode(value)?;Ok(())},
             _ => Err("unsupported schema representation".into()),
         }
     }
 
-    fn external_object(&self, value: &V) -> R<()> {
+    pub(super) fn external_object(&self, value: &V) -> R<()> {
         need(self.references, "external object wire mode required")?;
         fields(value, &["schema_ref", "canonical_bytes", "object_digest"])?;
         let reference = get(value, "schema_ref")?;
@@ -610,7 +632,7 @@ fn rule_degradation(value: &V, types: &V, imports: &Imports) -> R<()> {
     Ok(())
 }
 
-fn assumption_set_digest(value: &V) -> R<Vec<u8>> {
+pub(super) fn assumption_set_digest(value: &V) -> R<Vec<u8>> {
     let mut rows = Vec::new();
     for row in arr(value)? {
         identifier(get(row, "assumption_id")?, "ASSUMPTION")?;

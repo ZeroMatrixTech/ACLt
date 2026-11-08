@@ -1,0 +1,47 @@
+{
+  "baseline": "9415fe4",
+  "completed_rules": [
+    "SV-05",
+    "SV-06",
+    "SV-09",
+    "SV-35",
+    "SV-36",
+    "SV-44",
+    "SV-46",
+    "SV-48",
+    "SV-49",
+    "SV-54b",
+    "SV-70",
+    "SV-71",
+    "SV-78",
+    "SV-86a",
+    "SV-86b",
+    "SV-86c",
+    "SV-95",
+    "SV-113",
+    "SV-114"
+  ],
+  "new_partial": [
+    "SV-116"
+  ],
+  "improved_partial": [
+    "SV-54a",
+    "SV-57",
+    "SV-12I",
+    "SV-14",
+    "SV-26",
+    "SV-29I",
+    "SV-43",
+    "SV-55",
+    "SV-58"
+  ],
+  "implemented_delta": 19,
+  "coverage": {
+    "implemented": 69,
+    "partial": 35,
+    "not_implemented": 15
+  },
+  "digest_owners_implemented": 18,
+  "normative_intent_upgrade": false,
+  "protocol_decision_emitted": false
+}

@@ -297,3 +297,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [R6：固定 audit I/F 测试接线、创建上下文与 Intent/记录摘要](testing/PROFILE-CREATION-R6-20261108.md)。
 
 - [R7：注册资产、选择/绑定规则集中实现与扩展项边界](testing/PROFILE-SELECTION-R7-20261108.md)。
+
+- [R8：Claim、假设快照与承诺集中实现，及候选输入胶囊](testing/PROFILE-COMMITMENTS-R8-20261108.md)。

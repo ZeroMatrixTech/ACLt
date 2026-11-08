@@ -239,3 +239,8 @@ test-creation-bindings:
 test: test-selection-assets
 test-selection-assets:
 	$(PYTHON) -B scripts/check-selection-assets.py --report artifacts/selection-assets/cross-language.json
+
+.PHONY: test-commitment-bindings
+test: test-commitment-bindings
+test-commitment-bindings:
+	$(PYTHON) -B scripts/check-commitment-bindings.py --report artifacts/commitment-bindings/cross-language.json
