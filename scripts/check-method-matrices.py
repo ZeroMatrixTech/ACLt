@@ -209,7 +209,7 @@ def main():
         outputs=run(binary,rows)
     names=['scripts/check-method-matrices.py','scripts/check-registration-rules.py','scripts/check-profile-references.py','scripts/check-profile-registration.py','scripts/check-profile-digest.py',
         'tools/verification_profile/method_rules.py','tools/verification_profile/registration_rules.py','tools/verification_profile/references.py','tools/verification_profile/registration.py','tools/verification_profile/profile.py','tools/verification_profile/codec.py','tools/verification_profile/validator.py',
-        'tools/verification_profile/rust/audit_types.json','tools/verification_profile/rust/method_types.json','tools/verification_profile/rust/creation_types.json','tests/verification_profile/test_method_matrices.py',
+        'tools/verification_profile/rust/audit_types.json','tools/verification_profile/rust/method_types.json','tools/verification_profile/rust/creation_types.json','tools/verification_profile/rust/selection_types.json','tests/verification_profile/test_method_matrices.py',
         'registries/verification-profile/excluded_claims.seed.json','schemas/verification-profile/coverage.json','schemas/verification-profile/inventory.json','docs/03-protocol/verification-profile-schema.md']
     names+=[p.relative_to(ROOT).as_posix() for p in (ROOT/'tools/verification_profile/rust').glob('*.rs')]
     names+=[str(Path('tests/verification_profile/codec')/name) for name in ('method-matrix-vectors.json','registration-rules-vectors.json','profile-references-vectors.json','profile-registration-vectors.json','profile-digest-vectors.json')]

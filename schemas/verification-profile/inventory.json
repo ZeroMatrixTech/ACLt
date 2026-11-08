@@ -174,22 +174,30 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`support_capability_bound_ref` 指向本 Profile 中 `assumption_class = SUPPORT_CAPABILITY_BOUND` 且 `role = SAFETY_CRITICAL` 的条目（AR-3）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_parameter_refs"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_assumption_refs_require_exact_class_and_role"
+      ],
+      "gap": "support_capability_bound_ref 唯一解析到本 Profile 的 SUPPORT_CAPABILITY_BOUND/SAFETY_CRITICAL；只检查引用，不证明假设为真。"
     },
     {
       "id": "SV-12I",
       "phase": "I",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "该假设在 `scope` 与 `validity_window` 内。**失败产生 `SUPPORT_CAPABILITY_BOUND_UNAVAILABLE` 触发条件，不是拒绝**",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#applicability"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_window_is_half_open_and_separate_from_scope"
+      ],
+      "gap": "已检查引用假设的六维包含与半开有效窗，失败作为测试判定结果，不拒绝 Profile；DeclaredScope 来自显式测试适配器，NormalizeDeclaredScope(Intent) 与正式触发原因 wire 未接。"
     },
     {
       "id": "SV-13",
@@ -212,11 +220,15 @@
       "phase": "I",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "\\(N_{required}\\le N_{max}\\)；失败产生 `POPULATION_TOO_SMALL`",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#applicability"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_population_and_invalid_sample_thresholds_are_distinct"
+      ],
+      "gap": "N_required≤N_max 的独立测试判定已对拍，N_max 为显式适配器输入；从正式 Intent/预算约束导出 N_max 和创建期触发接线仍缺。"
     },
     {
       "id": "SV-15",
@@ -319,11 +331,15 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`WeakeningEdge` 合法：`edge_class = AUTO_DECIDABLE`，源与目标 `ProfileDigest` 与实际 Profile 一致，满足 §6.5 四项",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_edge"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_edge_four_frozen_semantic_conditions"
+      ],
+      "gap": "显式 source/target 对象与快照解析；只接受 bounded→audit 的 AUTO_DECIDABLE，检查排除集包含、目标无 claim、task/constraints/equivalence 一致。无部署启用或 WeakeningEdge 来源认证。"
     },
     {
       "id": "SV-22",
@@ -346,11 +362,15 @@
       "phase": "I",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`DEGRADED` slot 仅当 `degradation_authorized = true` 时可被考虑",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#authorized_slot"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_authorization_cannot_be_coerced"
+      ],
+      "gap": "DEGRADED slot 只有显式 bool true 才可被考虑；PRIMARY 不依赖降级授权。该规则独立 helper 不代替完整选择算法。"
     },
     {
       "id": "SV-24",
@@ -383,11 +403,15 @@
       "phase": "I",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`allowed_effects` ⊇ Intent 的允许 effects",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#applicability"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_effects_direction_and_informational_exclusion"
+      ],
+      "gap": "已实现 Intent effects⊆Profile allowed_effects 的精确集合方向；Intent/ContractTuple 的实际 effects 取值链尚未冻结接入。"
     },
     {
       "id": "SV-27",
@@ -405,11 +429,15 @@
       "phase": "I",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "Profile 状态 ∈ {`REGISTERED`, `ACTIVE`}",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#profile_admissible"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_profile_lifecycle_is_not_registration_authorization"
+      ],
+      "gap": "完整 Profile 三元身份在显式 RegistrySnapshot 中解析；REGISTERED/ACTIVE 返回可考虑，DEPRECATED/REVOKED 返回不适用。来源认证和实际 Phase I 管线独立验收。"
     },
     {
       "id": "SV-29R",
@@ -432,11 +460,15 @@
       "phase": "I",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`max_invalid_samples ≤ N_max`（FM-2；依赖 Intent，故属 Phase I）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#applicability"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_population_and_invalid_sample_thresholds_are_distinct"
+      ],
+      "gap": "max_invalid_samples≤N_max 的独立测试判定已对拍；N_max 正式来源与 Phase I 接线仍缺。"
     },
     {
       "id": "SV-30",
@@ -613,11 +645,15 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`SelectionPolicy` 展开后 slot index 唯一、gate 按 slot 携带（**不含 `policy_digest`**，该职责归 SV-53b）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_policy"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_expansion_keeps_gate_per_candidate_and_adjacency"
+      ],
+      "gap": "slot index 唯一；gate 属于每次候选出现的 slot，不按 ProfileID 合并；同一 Profile 可重复出现并有不同 gate。"
     },
     {
       "id": "SV-42",
@@ -639,11 +675,15 @@
       "phase": "I",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`DEGRADED` slot 的 `failure_reasons[degraded_from] ⊆ enabling_triggers`（D-06）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#applicability"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_mixed_failure_reasons_cannot_enable_degradation"
+      ],
+      "gap": "测试原因标签的全集包含判定及混合非触发原因跳过已对拍；测试入口还要求非空失败事实。正式 FailureReason/触发投影、来源 slot 落选记录及 D-06 接线尚未完成。"
     },
     {
       "id": "SV-44",
@@ -661,11 +701,15 @@
       "phase": "F",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "选中 slot 的 `profile_digest` 与注册表中该 Profile 的实际 digest 一致",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_selected"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_selected_slot_binds_full_identity_and_actual_digest"
+      ],
+      "gap": "slot、实际 Profile 重算摘要和显式快照中的完整三元引用逐位一致，拒绝摘要单值或跨版本替换。"
     },
     {
       "id": "SV-46",
@@ -687,11 +731,15 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`calibration_ref` 指向本 Profile 中 `assumption_class = CALIBRATION` 且 `role = LIVENESS` 的条目（LP-5）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_parameter_refs"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_assumption_refs_require_exact_class_and_role"
+      ],
+      "gap": "calibration_ref 唯一解析到本 Profile 的 CALIBRATION/LIVENESS，未知引用与错误类/角色拒绝。"
     },
     {
       "id": "SV-48",
@@ -762,22 +810,30 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`expanded_slots == Expand(ordered_candidates)`（结构派生复算）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_policy"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_expansion_cannot_be_chosen_by_caller"
+      ],
+      "gap": "按 D-06 候选顺序逐位复算 primary 及紧邻 degraded slot，index 为从 0 开始的展开位置；已声明 gate 只复制到所属 primary slot，degraded_from 指向该来源位置。"
     },
     {
       "id": "SV-53b",
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`policy_digest` 按 §17.4 同时绑定 `ordered_candidates` 与 `expanded_slots`",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_asset"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection"
+      ],
+      "gap": "SelectionPolicy 的正式 tag/ContentMap 同时覆盖 ordered_candidates、expanded_slots 与 on_none_applicable；身份/版本不入摘要。"
     },
     {
       "id": "SV-54a",
@@ -811,11 +867,15 @@
       "phase": "I",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "每个 `SAFETY_CRITICAL`/`LIVENESS` 假设满足 `Intent ⊑ scope`（AR-4）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#scope_contains"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_scope_subset_direction_and_empty_dimensions"
+      ],
+      "gap": "纯 ScopeContains 已覆盖标量相等、半开版本区间和 Intent⊆Scope；仅检查 SAFETY_CRITICAL/LIVENESS，INFO 不影响结果。正式 Intent→DeclaredScope 投影仍缺。"
     },
     {
       "id": "SV-56",
@@ -848,11 +908,15 @@
       "phase": "I",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`NormalizeDeclaredScope(Intent)` 六维齐备，且 `fault_domains`、`geography` 非空（SC-1）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#applicability"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_scope_subset_direction_and_empty_dimensions"
+      ],
+      "gap": "显式 DeclaredScope 六维、类型与非空 fault_domains/geography 已对拍；当前冻结 ReceiptIntent 没有直接提供全部字段，不能从不透明 ContractTuple 猜内部结构，NormalizeDeclaredScope 接线未完成。"
     },
     {
       "id": "SV-59",
@@ -1076,11 +1140,15 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`manifest_digest` 按 §17.4 重算 `ContentMap_Manifest` 并逐位比较（owner；CM-2）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_asset"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection"
+      ],
+      "gap": "Manifest 正式 tag/完整 ContentMap 与摘要比较；仅检查已声明清单，不读取文件或给测试资产授予语义注册权。"
     },
     {
       "id": "SV-75a",
@@ -1229,11 +1297,15 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`ConformanceManifest.header` 提供唯一 `(id, version, digest)`，不得接受扁平重复字段；`file_digests` 的 path 使用正斜杠相对路径（CM-1、CM-5）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_manifest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_manifest_paths_are_portable_data_not_file_reads"
+      ],
+      "gap": "Manifest 唯一嵌套 header，拒绝扁平重复身份、绝对路径、反斜杠、drive 路径和 NUL；文件路径升序唯一。不进行文件系统读取，允许相对父路径作为清单数据。"
     },
     {
       "id": "SV-86a",
@@ -1281,22 +1353,30 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`ProfileSelectionPolicy.expanded_slots` 字段存在于对象结构且列入 `ContentMap_Policy`（§3.3.3）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_asset"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_frozen_vectors"
+      ],
+      "gap": "Policy 唯一嵌套 header wire，expanded_slots 字段必填且进入正式 ContentMap；缺字段/重复身份/未知字段拒绝。"
     },
     {
       "id": "SV-88",
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`edge_digest` 按 §17.4 重算 `ContentMap_WeakeningEdge`（owner）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_asset"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection"
+      ],
+      "gap": "WeakeningEdge 正式 tag/ContentMap 重算；source/target/class/可选 evidence_ref 均被摘要绑定。"
     },
     {
       "id": "SV-89",
@@ -1728,11 +1808,15 @@
       "phase": "R/I/F/B/D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`CausalEventRecord.event_kind -> subject_ref` 满足 EF-4a 封闭矩阵",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/selection.py#check_event_subject"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_event_subject_matrix_all_kinds"
+      ],
+      "gap": "完整十类 event kind→subject 封闭矩阵，subject 必填、类型正确且无未知字段；此 helper 不认证日志或替代 snapshot 版本检查。"
     },
     {
       "id": "SV-121",
@@ -1769,10 +1853,10 @@
       "input": "`cbor(ContentMap_Policy)`（§3.3.3；**含 `on_none_applicable`**）",
       "owner": "SV-53b",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "SelectionPolicy 的正式 tag/ContentMap 同时覆盖 ordered_candidates、expanded_slots 与 on_none_applicable；身份/版本不入摘要。"
     },
     {
       "name": "`template_digest`",
@@ -1854,10 +1938,10 @@
       "input": "`cbor(ContentMap_Manifest)`（§3.3.3、§3.4）",
       "owner": "SV-74",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "Manifest 正式 tag/完整 ContentMap 与摘要比较；仅检查已声明清单，不读取文件或给测试资产授予语义注册权。"
     },
     {
       "name": "`edge_digest`",
@@ -1865,10 +1949,10 @@
       "input": "`cbor(ContentMap_WeakeningEdge)`（§3.3.3、§6.5）",
       "owner": "SV-88",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "WeakeningEdge 正式 tag/ContentMap 重算；source/target/class/可选 evidence_ref 均被摘要绑定。"
     },
     {
       "name": "`registry_digest`（`ExcludedClaimsRegistry`）",

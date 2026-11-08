@@ -1,0 +1,171 @@
+{
+  "PolicyHeaderR7": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "PROFILE_SELECTION_POLICY"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "EdgeHeaderR7": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "WEAKENING_EDGE"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "ManifestHeaderR7": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "MANIFEST"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "CandidateR7": {
+    "fields": {
+      "profile_ref": "ProfileRef"
+    },
+    "optional": {
+      "gate": {
+        "import_": "DeploymentAdmissionGate"
+      }
+    }
+  },
+  "SlotR7": {
+    "fields": {
+      "index": "uint",
+      "profile_ref": "ProfileRef",
+      "kind": {
+        "enum": [
+          "PRIMARY",
+          "DEGRADED"
+        ]
+      },
+      "enabling_triggers": {
+        "set": {
+          "enum": [
+            "SUPPORT_CAPABILITY_BOUND_UNAVAILABLE",
+            "POPULATION_TOO_SMALL",
+            "CALIBRATION_OUT_OF_SCOPE"
+          ]
+        }
+      }
+    },
+    "optional": {
+      "gate": {
+        "import_": "DeploymentAdmissionGate"
+      },
+      "degraded_from": "uint"
+    }
+  },
+  "PolicyR7": {
+    "fields": {
+      "header": "PolicyHeaderR7",
+      "ordered_candidates": {
+        "array": "CandidateR7"
+      },
+      "expanded_slots": {
+        "array": "SlotR7"
+      },
+      "on_none_applicable": {
+        "enum": [
+          "REJECTED_AT_CREATE"
+        ]
+      }
+    },
+    "optional": {}
+  },
+  "EdgeR7": {
+    "fields": {
+      "header": "EdgeHeaderR7",
+      "source": "ProfileRef",
+      "target": "ProfileRef",
+      "edge_class": {
+        "enum": [
+          "AUTO_DECIDABLE",
+          "ATTESTED"
+        ]
+      }
+    },
+    "optional": {
+      "evidence_ref": {
+        "import_": "EvidenceRef"
+      }
+    }
+  },
+  "FileDigestR7": {
+    "fields": {
+      "path": "text",
+      "sha256": "digest"
+    },
+    "optional": {}
+  },
+  "ManifestR7": {
+    "fields": {
+      "header": "ManifestHeaderR7",
+      "profile_schema_id": "text",
+      "covers_schema_version": "uint",
+      "covers_profile_digests": {
+        "set": "digest"
+      },
+      "vector_sets": {
+        "array": {
+          "import_": "VectorSetRef"
+        }
+      },
+      "file_digests": {
+        "array": "FileDigestR7"
+      }
+    },
+    "optional": {}
+  },
+  "DeclaredScopeR7": {
+    "fields": {
+      "task_class": {
+        "identifier": "TASK"
+      },
+      "rir_version": "semver",
+      "rpr_version": "semver",
+      "environment_class": {
+        "import_": "EnvironmentClassID"
+      },
+      "fault_domains": {
+        "set": {
+          "import_": "FaultDomainID"
+        }
+      },
+      "geography": {
+        "set": {
+          "import_": "RegionID"
+        }
+      }
+    },
+    "optional": {}
+  }
+}

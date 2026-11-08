@@ -30,6 +30,7 @@
   "tools/verification_profile/rust/nfc.rs",
   "tools/verification_profile/rust/profile.rs",
   "tools/verification_profile/rust/registration.rs",
+  "tools/verification_profile/rust/selection_types.json",
   "tools/verification_profile/rust/sha256.rs",
   "tools/verification_profile/rust/unicode_data.rs",
   "tools/verification_profile/validator.py"

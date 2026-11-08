@@ -46,6 +46,7 @@ fn identifier(value: &V, kind: &str) -> R<()> {
         "PROFILE" | "VERIFICATION_PROFILE" => "acl.vp.",
         "CLAIM_TEMPLATE" => "acl.ct.",
         "PROFILE_SELECTION_POLICY" => "acl.vps.",
+        "MANIFEST" => "acl.cm.",
         "WEAKENING_EDGE" => "acl.we.",
         "EXCLUDED_CLAIMS_REGISTRY" => "acl.ecr.",
         "MAINNET_ASSURANCE_PROFILE" => "acl.map.",
@@ -158,7 +159,7 @@ impl Imports {
         Ok(Self { aliases, documents: docs, references })
     }
 
-    fn check(&self, alias: &str, value: &V) -> R<()> {
+    pub(super) fn check(&self, alias: &str, value: &V) -> R<()> {
         need(self.aliases.contains_key(alias), "unresolved import")?;
         if self.references {
             let reference = self.aliases.get(alias).ok_or("unresolved import")?;
@@ -284,7 +285,7 @@ fn registry_digest(registry: &V) -> R<Vec<u8>> {
     ]))?))
 }
 
-fn check_registry(registry: &V) -> R<()> {
+pub(super) fn check_registry(registry: &V) -> R<()> {
     need(integer(get(get(registry, "header")?, "schema_version")?)? == 1, "registry schema version")?;
     let mut previous: Option<Vec<u8>> = None;
     for row in arr(get(registry, "entries")?)? {
@@ -562,7 +563,7 @@ fn rule_method(profile: &V) -> R<&str> {
     Ok(method)
 }
 
-fn rule_assumptions(assumptions: &V, types: &V, imports: &Imports) -> R<()> {
+pub(super) fn rule_assumptions(assumptions: &V, types: &V, imports: &Imports) -> R<()> {
     let mut ids = BTreeSet::new();
     for row in arr(assumptions)? {
         object(row)?;

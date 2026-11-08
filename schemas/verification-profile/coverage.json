@@ -15,7 +15,9 @@
       "SV-19",
       "SV-29R",
       "SV-31",
-      "SV-51"
+      "SV-51",
+      "SV-85",
+      "SV-87"
     ],
     "L1b": [
       "SV-10",
@@ -32,7 +34,16 @@
       "SV-13",
       "SV-18",
       "SV-20",
-      "SV-101"
+      "SV-101",
+      "SV-12R",
+      "SV-21",
+      "SV-23",
+      "SV-28",
+      "SV-41",
+      "SV-45",
+      "SV-47",
+      "SV-53a",
+      "SV-120"
     ],
     "L2": [
       "SV-02",
@@ -43,7 +54,10 @@
       "SV-73",
       "SV-97",
       "SV-103",
-      "SV-104"
+      "SV-104",
+      "SV-53b",
+      "SV-74",
+      "SV-88"
     ]
   },
   "partial": {
@@ -75,7 +89,14 @@
       "SV-65",
       "SV-96",
       "SV-102",
-      "SV-110"
+      "SV-110",
+      "SV-12I",
+      "SV-14",
+      "SV-26",
+      "SV-29I",
+      "SV-43",
+      "SV-55",
+      "SV-58"
     ],
     "L2": [
       "SV-25",
@@ -89,7 +110,7 @@
   },
   "not_implemented": {
     "policy": "§13.2 Type A 中既不在 implemented 也不在 partial 的规则均为 NOT_IMPLEMENTED；生产模式保持 fail closed。",
-    "l2": "九个摘要 implemented，模板/claim 两个 partial，其余七项与完整五相位 L2 未实现。",
+    "l2": "十二个摘要 implemented，模板/claim 两个 partial，其余四项与完整五相位 L2 未完成。",
     "registries": "当前只有种子数据，不是官方 ACTIVE 主网注册表。",
     "cross_implementation": "Python/Rust 已对拍候选切片；尚非全量第二语言 conformance。"
   },
@@ -104,7 +125,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-08: R6 后 119 Type A = 36 implemented + 33 partial + 50 not implemented。新增三个 I/F 摘要 owner 和 CC-1 helper；固定 audit 测试接线保留 SV-96/98/102/110 partial。通用 ReplayPhaseI、正式 imports、Phase R/SchemaValid 与部署准入未完成。",
+  "review_note": "2026-11-08: R7 后 119 Type A = 50 implemented + 40 partial + 29 not implemented。约定 13 项基础规则完成，扩展 SV-23 完成，另外 7 项已有显式输入组件但保持 partial。12/18 摘要完成；正式 Intent 取值链、通用 ReplayPhaseI、完整五相位/来源认证/部署准入仍缺。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],

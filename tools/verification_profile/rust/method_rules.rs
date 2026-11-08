@@ -166,3 +166,12 @@ pub(super) fn project(input: &str) -> R<V> {
     else if exhausted {Some("EVIDENCE_EXHAUSTED")}else{None};
     Ok(if let Some(condition)=condition {map(vec![("condition_present",V::B(true)),("condition",s(condition))])}else{map(vec![("condition_present",V::B(false))])})
 }
+
+pub(super) fn asset_rules(profile:&V,snapshot:&V,imports:&Imports)->R<()> {
+ let types=catalogue()?;common_rules(profile,snapshot,&types,imports)?;check_matrix(profile,imports,&types,None)?;Ok(())
+}
+
+pub(super) fn asset_input(profile:&V,imports:&Imports)->R<()> {
+ let types=catalogue()?;super::registration::rule_assumptions(get(profile,"assumption_references")?,&types,imports)?;
+ check_matrix(profile,imports,&types,None)?;Ok(())
+}

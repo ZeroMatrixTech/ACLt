@@ -38,3 +38,12 @@ make test-creation-bindings
 ```
 
 Phase I 改用 `--creation-i-cbor`。外部调用者必须同时提供两个可信 pin；不得从待验输入现算 pin 来授权陌生数据。`test_contract` 位于测试适配器外层，不是协议对象字段。它仅为已绑定 Profile 的 opaque ContractTuple 精确相等谓词，既非通用 `ReplayPhaseI`，也不认证主网 assurance；`--production` 始终拒绝。规则覆盖 36/33/50，摘要 9 implemented / 2 partial / 7 not implemented。详见 [R6 报告](../../docs/testing/PROFILE-CREATION-R6-20261108.md)。
+
+R7 提供 `selection.py` / 独立 Rust `selection.rs` 的注册对象、D-06 展开、引用/状态/事件矩阵及显式输入适用性组件。
+
+```sh
+make test-selection-assets
+python3 -B -m tools.verification_profile.validator /path/asset.cbor --registration-assets-cbor --schema-lock-sha256 <trusted-lock-pin>
+```
+
+适配器入口有 `policy`、`edge`、`manifest`、`profile-refs`、`profile-lookup`、`events`、`applicability-test` 七个操作。测试 imports 由外部可信 schema lock pin 绑定；调用者不得从待验输入现算 pin 自授信。`applicability-test` 的 DeclaredScope/effects/N_max/原因标签是显式测试事实，不是新增协议字段，不读取不透明 ContractTuple 子字段。当前覆盖 50/40/29，摘要 12 implemented / 2 partial / 4 not implemented；参见 [R7 报告](../../docs/testing/PROFILE-SELECTION-R7-20261108.md)。
