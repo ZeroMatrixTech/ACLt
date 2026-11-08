@@ -48,6 +48,8 @@ def identifier(value, kind):
 
 
 class Imports:
+    representations = frozenset({'OPAQUE_BSTR'})
+
     def __init__(self, lock, documents, pin):
         c.digest_bytes(pin)
         c.need(hashlib.sha256(c.encode(lock)).digest()==pin,'schema lock pin mismatch')
@@ -71,7 +73,7 @@ class Imports:
             document = c.decode(row['content'])
             c.fields(document, ('alias','id','version','representation'))
             c.need(document['id']==ref['id'] and document['version']==ref['version'] and
-                   document['representation']=='OPAQUE_BSTR','unsupported import schema')
+                   document['representation'] in self.representations,'unsupported import schema')
             self.documents[key] = document
         aliases = []
         for row in lock['entries']:
@@ -116,6 +118,13 @@ def typed(value, schema, imports):
             c.project(value,c.SCHEMAS['rational'])
         elif schema == 'version-range':
             c.project(value,c.SCHEMAS['version-range'])
+        elif schema == 'external-object':
+            imports.external_object(value)
+        elif schema == 'wire-time-range':
+            c.need(type(value) is list and len(value)==2,'wire TimeRange must be [start,end]')
+            typed(value[0],'int',imports)
+            typed(value[1],'int',imports)
+            c.need(value[0]<value[1],'empty validity range')
         elif schema == 'time-range':
             c.fields(value,('start','end'))
             typed(value['start'],'int',imports)
@@ -226,8 +235,8 @@ def check_frontier(frontier, imports):
     c.need(len(frontier['log_binding']['event_inclusion_proofs'])==len(events),'proof/event cardinality')
 
 
-def check_bundle(bundle, imports):
-    typed(bundle,'Bundle',imports)
+def check_bundle(bundle, imports, kind='Bundle'):
+    typed(bundle,kind,imports)
     registry=bundle['registry_snapshot']
     check_registry(registry)
     ref=bundle['context']['registry_snapshot_ref']
@@ -248,8 +257,18 @@ def inspect(raw, lock_pin):
     envelope=value['envelope']
     c.fields(envelope,('phase','bundle','object'))
     c.need(envelope['phase']=='R','Phase R envelope')
-    typed(envelope['object'],'Profile',imports)
     profile=envelope['object']
+    check_profile(profile,imports)
+    check_bundle(envelope['bundle'],imports)
+    check_supersedes(profile,envelope['bundle']['registry_snapshot'])
+    return dict(profile_digest_hex=profile['profile_digest'].hex(),
+                registry_digest_hex=envelope['bundle']['registry_snapshot']['header']['digest'].hex(),
+                frontier_digest_hex=envelope['bundle']['event_frontier_snapshot']['header']['digest'].hex(),
+                schema_lock_sha256=lock_pin.hex(),full_schema_valid=False,source_authentication=False)
+
+
+def check_profile(profile, imports, kind='Profile'):
+    typed(profile,kind,imports)
     p.verify_digest(profile)
     p.audit_fields(profile)
     ids=[row['assumption_id'] for row in profile['assumption_references']]
@@ -258,13 +277,11 @@ def inspect(raw, lock_pin):
         if row['role']=='SAFETY_CRITICAL':
             c.need(row['revocation_mapping']==dict(before_verification='BLOCK_ADMISSION',
                 during_verification='VERIFICATION_INVALIDATING',after_terminal='QUALIFY_REVOKED'),'SV-37: safety revocation')
-    check_bundle(envelope['bundle'],imports)
+
+
+def check_supersedes(profile, registry):
     if 'supersedes' in profile:
         ref=profile['supersedes']
         c.need(any(row['object_kind']=='VERIFICATION_PROFILE' and
             all(row[key]==ref[key] for key in ('id','version','digest'))
-            for row in envelope['bundle']['registry_snapshot']['entries']),'SV-84: unresolved supersedes')
-    return dict(profile_digest_hex=profile['profile_digest'].hex(),
-                registry_digest_hex=envelope['bundle']['registry_snapshot']['header']['digest'].hex(),
-                frontier_digest_hex=envelope['bundle']['event_frontier_snapshot']['header']['digest'].hex(),
-                schema_lock_sha256=lock_pin.hex(),full_schema_valid=False,source_authentication=False)
+            for row in registry['entries']),'SV-84: unresolved supersedes')

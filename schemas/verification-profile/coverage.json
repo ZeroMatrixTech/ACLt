@@ -4,7 +4,13 @@
   "audit_baseline": "AUD-20260821-10",
   "implemented": {
     "L1a": [
-      "SV-63"
+      "SV-63",
+      "SV-03",
+      "SV-22",
+      "SV-32",
+      "SV-33",
+      "SV-37",
+      "SV-59"
     ],
     "L1b": [
       "SV-10",
@@ -13,12 +19,19 @@
       "SV-17",
       "SV-39",
       "SV-79",
-      "SV-90"
+      "SV-90",
+      "SV-07",
+      "SV-08",
+      "SV-38",
+      "SV-84"
     ],
     "L2": [
       "SV-02",
       "SV-75b",
-      "SV-108"
+      "SV-108",
+      "SV-72",
+      "SV-89",
+      "SV-73"
     ]
   },
   "partial": {
@@ -26,16 +39,11 @@
       "SV-01",
       "SV-30",
       "SV-31",
-      "SV-03",
-      "SV-32",
       "SV-80",
       "SV-86a",
       "SV-86c",
       "SV-93",
       "SV-19",
-      "SV-33",
-      "SV-37",
-      "SV-59",
       "SV-66",
       "SV-91"
     ],
@@ -52,7 +60,6 @@
       "SV-20",
       "SV-64",
       "SV-75a",
-      "SV-84",
       "SV-109"
     ],
     "L2": [
@@ -67,7 +74,7 @@
   },
   "not_implemented": {
     "policy": "§13.2 Type A 中既不在 implemented 也不在 partial 的规则均为 NOT_IMPLEMENTED；生产模式保持 fail closed。",
-    "l2": "Profile、RegistrySnapshot、EventFrontierSnapshot 摘要已实现；模板/claim 两项 partial，其余 13 项摘要及完整五相位 L2 未实现。",
+    "l2": "六个摘要 implemented（含 AssumptionSet），模板/claim 两个 partial，其余 10 项及完整五相位 L2 未实现。",
     "registries": "当前只有种子数据，不是官方 ACTIVE 主网注册表。",
     "cross_implementation": "Python/Rust 已对拍候选切片；尚非全量第二语言 conformance。"
   },
@@ -82,7 +89,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-07: R2 后，119 Type A = 11 implemented + 36 partial + 72 not implemented；三个摘要 implemented、两个 partial、13 个未实现。R2 新增四项规则级完成与八项 audit Phase R 局部接线；测试导入绑定和结构快照通过不构成完整 SchemaValid 或生产准入。",
+  "review_note": "2026-11-08: R4 后，119 Type A = 24 implemented + 30 partial + 65 not implemented；六个摘要 implemented、两个 partial、10 个未实现。九项共同注册规则完成（六项 partial 升级、三项新增）；audit 集成仍限固定 Profile，正式 imports、完整 ValidateR/SchemaValid 与生产准入未完成。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],

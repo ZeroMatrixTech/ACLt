@@ -476,5 +476,178 @@
       "object": "Profile"
     },
     "optional": {}
+  },
+  "ReferencesAssumption": {
+    "fields": {
+      "assumption_id": {
+        "identifier": "ASSUMPTION"
+      },
+      "assumption_class": {
+        "enum": [
+          "SUPPORT_CAPABILITY_BOUND",
+          "RANDOMNESS",
+          "SNAPSHOT",
+          "CORRECTNESS_BRIDGE",
+          "PREDICATE_SOUNDNESS",
+          "PROOF_SYSTEM",
+          "CALIBRATION",
+          "OTHER"
+        ]
+      },
+      "role": {
+        "enum": [
+          "SAFETY_CRITICAL",
+          "LIVENESS",
+          "INFORMATIONAL"
+        ]
+      },
+      "statement_digest": "digest",
+      "evidence_ref": {
+        "import_": "EvidenceRef"
+      },
+      "evidence_version": "semver",
+      "acceptance_basis": {
+        "enum": [
+          "ENGINEERING_AUDIT",
+          "CONFORMANCE_TEST",
+          "FAULT_INJECTION",
+          "FORMAL_ARGUMENT",
+          "CALIBRATION_DATA"
+        ]
+      },
+      "evidence_issuer_ref": {
+        "import_": "EvidenceIssuerRef"
+      },
+      "scope": "Scope",
+      "validity_window": "wire-time-range",
+      "revocation_channel": {
+        "import_": "ChannelRef"
+      },
+      "revocation_mapping": "Revocation"
+    },
+    "optional": {}
+  },
+  "ReferencesProfile": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "profile_id": {
+        "identifier": "PROFILE"
+      },
+      "profile_version": "semver",
+      "profile_digest": "digest",
+      "task_type": {
+        "identifier": "TASK"
+      },
+      "contract_tuple_constraints": "Constraints",
+      "admission_predicate": {
+        "identifier": "PREDICATE"
+      },
+      "excluded_claims": "ExcludedClaims",
+      "verification_method": {
+        "enum": [
+          "REEXEC_AUDIT_ONLY"
+        ]
+      },
+      "method_parameters": "AuditParams",
+      "result_equivalence": "Equivalence",
+      "cost_parameters": "Costs",
+      "documentation": {
+        "import_": "DocBlock"
+      },
+      "assumption_references": {
+        "array": "ReferencesAssumption"
+      },
+      "failure_mapping": {
+        "fields": {
+          "entries": {
+            "array": "FailureRow"
+          }
+        },
+        "optional": {}
+      },
+      "decision_mapping": "Decision"
+    },
+    "optional": {
+      "supersedes": "ProfileRef",
+      "degradation": "Degradation"
+    }
+  },
+  "ReferencesLogBinding": {
+    "fields": {
+      "backend_ref": {
+        "import_": "ExternalVersionedObjectRef"
+      },
+      "finalized_checkpoint": "external-object",
+      "event_inclusion_proofs": {
+        "array": "external-object"
+      }
+    },
+    "optional": {}
+  },
+  "ReferencesFrontier": {
+    "fields": {
+      "header": "RuntimeHeader",
+      "frontier_event_ref": {
+        "import_": "EventRef"
+      },
+      "event_records": {
+        "array": "Event"
+      },
+      "log_binding": "ReferencesLogBinding"
+    },
+    "optional": {}
+  },
+  "ReferencesBundle": {
+    "fields": {
+      "context": "Context",
+      "registry_snapshot": "Registry",
+      "event_frontier_snapshot": "ReferencesFrontier"
+    },
+    "optional": {}
+  },
+  "ExclusionRegistryHeader": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "EXCLUDED_CLAIMS_REGISTRY"
+      },
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "ExclusionEntry": {
+    "fields": {
+      "exclusion_id": {
+        "identifier": "EXCLUSION"
+      },
+      "statement": "text",
+      "category": {
+        "enum": [
+          "BASE",
+          "METHOD_SPECIFIC"
+        ]
+      }
+    },
+    "optional": {}
+  },
+  "ExclusionRegistry": {
+    "fields": {
+      "header": "ExclusionRegistryHeader",
+      "entries": {
+        "array": "ExclusionEntry"
+      }
+    },
+    "optional": {}
   }
 }

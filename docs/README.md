@@ -287,3 +287,7 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [2026-11-06 仓库维护记录](08-governance/audits/audit-20261106-01-repository-maintenance.md)与[开发者预览发行说明草案](releases/PREVIEW-20261106.md)：索引与入口同步、发布准备检查；预览尚未发布。
 
 - [P0-1B Profile 注册上下文第二片](testing/PROFILE-REGISTRATION-R2-20261107.md)：嵌套字段、显式 schema lock、注册/事件快照摘要与闭合 DAG；限定 audit Phase R。
+
+- [P0-1B Profile 排除声明与注册引用第三片](testing/PROFILE-REFERENCES-R3-20261108.md)：14 项基线、选择集/注册对象/快照绑定、正式摘要，以及 R3 TimeRange/ExternalTypedObject wire。
+
+- [P0-1B 共同注册规则第四片](testing/PROFILE-RULES-R4-20261108.md)：四种方法的假设/撤销/scope、必需类、supersedes/降级声明与静态 AssumptionSet 摘要；固定 audit 集成。
