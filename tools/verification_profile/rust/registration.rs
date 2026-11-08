@@ -51,8 +51,11 @@ fn identifier(value: &V, kind: &str) -> R<()> {
         "MAINNET_ASSURANCE_PROFILE" => "acl.map.",
         "REGISTRY_SNAPSHOT" => "acl.rs.",
         "FRONTIER" => "acl.efs.",
+        "CREATION_CONTEXT" => "acl.cctx.",
+        "PHASE_I_RECORD" => "acl.pir.",
         "TASK" => "acl.tt.",
         "PREDICATE" => "acl.pred.",
+        "VALIDATOR" => "acl.val.",
         "EQUIVALENCE" => "acl.eq.",
         "ENCODING" => "acl.enc.",
         _ => return Err("unknown identifier kind".into()),
@@ -61,10 +64,10 @@ fn identifier(value: &V, kind: &str) -> R<()> {
     let valid = match kind {
         "PROFILE" | "VERIFICATION_PROFILE" => tail.split_once('.')
             .is_some_and(|(family, slug)| name(family) && name(slug)),
-        "REGISTRY_SNAPSHOT" | "FRONTIER" => ulid(tail),
-        "PREDICATE" => tail.split_once('@').is_some_and(|(id, version)| {
+        "REGISTRY_SNAPSHOT" | "FRONTIER" | "CREATION_CONTEXT" | "PHASE_I_RECORD" => ulid(tail),
+        "PREDICATE" | "VALIDATOR" => tail.split_once('@').is_some_and(|(id, version)| {
             let parts: Vec<_> = version.split('.').collect();
-            name(id) && parts.len() == 3 && parts.iter().all(|part| number(part))
+            name(id) && parts.len() == 3 && parts.iter().all(|part| number(part) && part.parse::<u64>().is_ok())
         }),
         "EQUIVALENCE" | "ENCODING" => tail.split_once('@')
             .is_some_and(|(id, version)| name(id) && number(version)),
@@ -73,7 +76,7 @@ fn identifier(value: &V, kind: &str) -> R<()> {
     need(valid, "identifier syntax")
 }
 
-struct Imports {
+pub(super) struct Imports {
     aliases: BTreeMap<String, V>,
     documents: BTreeMap<Vec<u8>, V>,
     references: bool,
@@ -84,7 +87,7 @@ impl Imports {
         Self::new_mode(lock, documents, pin, false)
     }
 
-    fn new_mode(lock: &V, documents: &V, pin: &[u8], references: bool) -> R<Self> {
+    pub(super) fn new_mode(lock: &V, documents: &V, pin: &[u8], references: bool) -> R<Self> {
         need(pin.len() == 32 && sha256::hash(&encode(lock)?) == pin, "schema lock pin")?;
         fields(lock, &["version", "entries"])?;
         need(integer(get(lock, "version")?)? == 1, "schema lock version")?;
@@ -123,6 +126,7 @@ impl Imports {
                 "EvidenceIssuerRef" => Some("evidence-issuer-ref"),
                 "ChannelRef" => Some("channel-ref"),
                 "EventRef" => Some("event-ref"),
+                "DatasetRef" => Some("dataset-ref"),
                 "ExternalVersionedObjectRef" => Some("external-versioned-object-ref"),
                 "EnvironmentClassID" => Some("environment-class-id"),
                 "FaultDomainID" => Some("fault-domain-id"),
@@ -195,7 +199,7 @@ fn versioned_ref(value: &V) -> R<()> {
     dig(get(value, "digest")?)
 }
 
-fn typed(value: &V, schema: &V, types: &V, imports: &Imports) -> R<()> {
+pub(super) fn typed(value: &V, schema: &V, types: &V, imports: &Imports) -> R<()> {
     if let V::S(kind) = schema {
         if let Ok(named) = get(types, kind) {
             return typed(value, named, types, imports);
@@ -203,6 +207,7 @@ fn typed(value: &V, schema: &V, types: &V, imports: &Imports) -> R<()> {
         return match kind.as_str() {
             "native" => { encode(value)?; Ok(()) },
             "text" => { txt(value)?; Ok(()) },
+            "bool" => need(matches!(value, V::B(_)), "bool"),
             "uint" => uint(value),
             "int" => need((i64::MIN as i128..=i64::MAX as i128).contains(&integer(value)?), "int64"),
             "digest" => dig(value),
@@ -616,7 +621,7 @@ fn assumption_set_digest(value: &V) -> R<Vec<u8>> {
     Ok(domain("ACLt/P0-1/AssumptionSet/1", &encode(&V::A(rows.into_iter().map(|(_, pair)| pair).collect()))?))
 }
 
-fn common_rules(profile: &V, registry: &V, types: &V, imports: &Imports) -> R<V> {
+pub(super) fn common_rules(profile: &V, registry: &V, types: &V, imports: &Imports) -> R<V> {
     let method = rule_method(profile)?;
     profile::run("profile-digest", &hex(&encode(profile)?))?;
     let assumptions = get(profile, "assumption_references")?;

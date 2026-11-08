@@ -27,3 +27,14 @@
 2026-11-08 [R3](../../docs/testing/PROFILE-REFERENCES-R3-20261108.md)完成 SV-07/08/72/89，当前 **15 implemented / 36 partial / 68 not implemented**。新的 `--registration-references-cbor` 入口使用线上二元 TimeRange 与三字段 ExternalTypedObject，并要求显式 ExcludedClaimsRegistry 资产。`--registration-cbor` 保留 R2 历史限域行为，其 map TimeRange/opaque wrapper 不构成正式 wire conformance；官方 import 注册、完整 SchemaValid 和生产准入仍待完成。
 
 2026-11-08 [R4](../../docs/testing/PROFILE-RULES-R4-20261108.md)完成 SV-03/22/32/33/37/38/59/73/84；当前 **24 implemented / 30 partial / 65 not implemented**。规则专用入口 `--registration-rules-cbor` 可检查四种方法的上述规则，不能用来声明完整 ValidateR；`--registration-r4-cbor` 为固定 audit 集成。未检验参数/claim、正式 import、版本迁移、日志来源和完整相位仍待验收。
+
+2026-11-08 [R5](../../docs/testing/PROFILE-MATRICES-R5-20261108.md)完成 SV-13/16/18/19/20/29R/31/51；当前 **32 implemented / 29 partial / 58 not implemented**。新增 `--method-matrix-cbor` 与固定 audit `--registration-r5-cbor`；参数结构表在 `method_types.json`，现有旧源码部署清单加入其传递依赖。SV-04/09/64/65 仍 partial，不能将测试 import、非 audit adapter 终态预期值或冻结投影模型当成完整 SchemaValid/正式部署。
+
+R6 新增 `creation.py` / Rust `creation.rs` 的固定 audit I/F **测试**入口：
+
+```sh
+python3 -B -m tools.verification_profile.validator /path/phase-f.cbor --creation-f-cbor --schema-lock-sha256 <trusted-lock-pin> --test-contract-sha256 <trusted-test-contract-pin>
+make test-creation-bindings
+```
+
+Phase I 改用 `--creation-i-cbor`。外部调用者必须同时提供两个可信 pin；不得从待验输入现算 pin 来授权陌生数据。`test_contract` 位于测试适配器外层，不是协议对象字段。它仅为已绑定 Profile 的 opaque ContractTuple 精确相等谓词，既非通用 `ReplayPhaseI`，也不认证主网 assurance；`--production` 始终拒绝。规则覆盖 36/33/50，摘要 9 implemented / 2 partial / 7 not implemented。详见 [R6 报告](../../docs/testing/PROFILE-CREATION-R6-20261108.md)。

@@ -64,7 +64,7 @@ fn strings(value: &V) -> R<Vec<&str>> {
     arr(value)?.iter().map(txt).collect()
 }
 
-fn decision_fields(value: &V) -> R<()> {
+pub(super) fn decision_fields(value: &V) -> R<()> {
     let decision = get(value, "decision_mapping")?;
     fields(decision, &["rules", "default"])?;
     let rules = strings(get(decision, "rules")?)?;

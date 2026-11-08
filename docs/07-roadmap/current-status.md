@@ -17,9 +17,9 @@
 | FM-S3 规范对齐 | [第一项四片收尾](../testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)覆盖无 claim 编码、Phase B、接纳边界和非主网部署草案 | 正式信封和准入另行评审 |
 | FM-S3 终态与历史回归 | [组合双机结果](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md)通过入口、执行闭合、资金边界与结算恢复，并逐项对照 Work 2/3 的 38 个历史场景 | 候选证据与正式 FM-A 验收分开记录 |
 | FM 证据归档 | [第四项收尾](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md)归档五份公开包并重放 24 套快照，补齐原始审计、CI 记录和 12 项 FM-A 候选证据 | 正式 FM-A 仍逐项验收；本轮改动的 CI 随提交触发 |
-| P0-1B Profile 注册 | [R1 正式摘要与判决](../testing/PROFILE-DIGEST-R1-20261107.md)及 [R2 嵌套类型/导入与注册上下文](../testing/PROFILE-REGISTRATION-R2-20261107.md)：新增 RegistrySnapshot/事件快照摘要与六类注册条目检查，audit Phase R 显式接两个快照；[R3](../testing/PROFILE-REFERENCES-R3-20261108.md)补排除集/注册对象引用与两个摘要，并修正 TimeRange/ExternalTypedObject wire | [R4](../testing/PROFILE-RULES-R4-20261108.md)落实共同假设/撤销/scope/方法必需类与静态集合摘要；补剩余方法/版本/导入/来源规则，再接 I/F/B/D；完整 Phase R 尚未验收 |
+| P0-1B Profile 注册 | [R1 正式摘要与判决](../testing/PROFILE-DIGEST-R1-20261107.md)及 [R2 嵌套类型/导入与注册上下文](../testing/PROFILE-REGISTRATION-R2-20261107.md)：新增 RegistrySnapshot/事件快照摘要与六类注册条目检查，audit Phase R 显式接两个快照；[R3](../testing/PROFILE-REFERENCES-R3-20261108.md)补排除集/注册对象引用与两个摘要，并修正 TimeRange/ExternalTypedObject wire | [R4](../testing/PROFILE-RULES-R4-20261108.md)落实共同假设/撤销/scope/方法必需类与静态集合摘要；[R5](../testing/PROFILE-MATRICES-R5-20261108.md)补四方法参数/失败/条件矩阵；[R6](../testing/PROFILE-CREATION-R6-20261108.md)补固定 audit I/F 测试接线、三个摘要与 CC-1；下一步补正式准入 predicate/导入并替换测试 Replay。其他方法 wire 缺口独立追踪，完整 Phase R 尚未验收 |
 | 开发者预览 | [发行说明草案](../releases/PREVIEW-20261106.md)与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：源码包可重现、包内本地检查可运行 | 发布前在待打标签 commit 上重跑双机并确认 CI；预览不是 ProtocolVersion、ConformanceTarget 或部署启用 |
-| 验收边界 | P0-1B 为 24/30/65，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
+| 验收边界 | P0-1B 为 36/33/50，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
 当前依据：[ADR-0006 分层评审](../05-decisions/reviews/REVIEW-20261028-layered.md)、[三份机器摘要与校验](../testing/MIGRATION-EVIDENCE-20261028.md)、[FM-S3 audit 依赖](fm-s3-audit-dependencies.md)。以下带日期记录为历史，不覆盖本表优先级。
 

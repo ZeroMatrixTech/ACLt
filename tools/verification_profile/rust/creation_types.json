@@ -1,0 +1,209 @@
+{
+  "CreationHeader": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "CREATION_CONTEXT"
+      },
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "PhaseIHeader": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "id": {
+        "identifier": "PHASE_I_RECORD"
+      },
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "CreationRef": {
+    "fields": {
+      "id": {
+        "identifier": "CREATION_CONTEXT"
+      },
+      "digest": "digest"
+    },
+    "optional": {}
+  },
+  "CreationContext": {
+    "fields": {
+      "header": "CreationHeader",
+      "evaluation_instant": "int",
+      "registry_snapshot_ref": "RegistryRef"
+    },
+    "optional": {}
+  },
+  "PhaseIRecord": {
+    "fields": {
+      "header": "PhaseIHeader",
+      "creation_context_ref": "CreationRef",
+      "intent_digest": "digest",
+      "slot_index": "uint",
+      "outcome": {
+        "enum": [
+          "SELECTED",
+          "REJECTED"
+        ]
+      },
+      "failure_reasons": {
+        "array": {
+          "import_": "FailureReason"
+        }
+      },
+      "produced_by_event": {
+        "import_": "EventRef"
+      }
+    },
+    "optional": {}
+  },
+  "ReceiptIntent": {
+    "fields": {
+      "schema_version": "uint",
+      "encoding_profile_id": {
+        "enum": [
+          "acl.enc.p0-1@1"
+        ]
+      },
+      "network_id": {
+        "import_": "NetworkID"
+      },
+      "assurance_profile_ref": "VersionedRefIF",
+      "requester_ref": {
+        "import_": "PrincipalRef"
+      },
+      "contract_tuple": {
+        "import_": "ContractTuple"
+      },
+      "program_ref": {
+        "import_": "LogicalObjectRef"
+      },
+      "input_refs": {
+        "array": {
+          "import_": "LogicalObjectRef"
+        }
+      },
+      "output_spec": {
+        "import_": "OutputSpec"
+      },
+      "degradation_authorized": "bool"
+    },
+    "optional": {
+      "execution_policy_ref": "VersionedRefIF",
+      "funding_policy_ref": "VersionedRefIF",
+      "deadline": "int",
+      "profile_ref": "ProfileRef",
+      "selection_policy_ref": "VersionedRefIF"
+    }
+  },
+  "SelectionSlot": {
+    "fields": {
+      "index": "uint",
+      "profile_ref": "ProfileRef",
+      "kind": {
+        "enum": [
+          "PRIMARY",
+          "DEGRADED"
+        ]
+      },
+      "enabling_triggers": {
+        "array": "text"
+      }
+    },
+    "optional": {
+      "gate": {
+        "import_": "DeploymentAdmissionGate"
+      },
+      "degraded_from": "uint"
+    }
+  },
+  "PhaseIEnvelope": {
+    "fields": {
+      "phase": {
+        "enum": [
+          "I"
+        ]
+      },
+      "bundle": "ReferencesBundle",
+      "creation_context": "CreationContext",
+      "profile": "ReferencesProfile",
+      "assurance_profile": {
+        "import_": "MainnetAssuranceProfile"
+      },
+      "intent": "ReceiptIntent",
+      "slot": "SelectionSlot"
+    },
+    "optional": {}
+  },
+  "PhaseITranscript": {
+    "fields": {
+      "input": "PhaseIEnvelope",
+      "output": "PhaseIRecord"
+    },
+    "optional": {}
+  },
+  "PhaseFEnvelope": {
+    "fields": {
+      "phase": {
+        "enum": [
+          "F"
+        ]
+      },
+      "bundle": "ReferencesBundle",
+      "creation_context": "CreationContext",
+      "profile": "ReferencesProfile",
+      "assurance_profile": {
+        "import_": "MainnetAssuranceProfile"
+      },
+      "phase_i_transcript": "PhaseITranscript",
+      "phase_f_event_ref": {
+        "import_": "EventRef"
+      },
+      "selected_slot": "SelectionSlot",
+      "intent": "ReceiptIntent"
+    },
+    "optional": {}
+  },
+  "FixedAuditTestContract": {
+    "fields": {
+      "name": {
+        "enum": [
+          "fixed-audit-if-test-v1"
+        ]
+      },
+      "profile_ref": "ProfileRef",
+      "admission_predicate": "text",
+      "contract_tuple": {
+        "import_": "ContractTuple"
+      },
+      "network_id": {
+        "import_": "NetworkID"
+      },
+      "assurance_profile_ref": "VersionedRefIF",
+      "assurance_profile": {
+        "import_": "MainnetAssuranceProfile"
+      }
+    },
+    "optional": {}
+  },
+  "VersionedRefIF": {
+    "fields": {
+      "id": "text",
+      "version": "semver",
+      "digest": "digest"
+    },
+    "optional": {}
+  }
+}

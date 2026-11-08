@@ -10,7 +10,12 @@
       "SV-32",
       "SV-33",
       "SV-37",
-      "SV-59"
+      "SV-59",
+      "SV-16",
+      "SV-19",
+      "SV-29R",
+      "SV-31",
+      "SV-51"
     ],
     "L1b": [
       "SV-10",
@@ -23,7 +28,11 @@
       "SV-07",
       "SV-08",
       "SV-38",
-      "SV-84"
+      "SV-84",
+      "SV-13",
+      "SV-18",
+      "SV-20",
+      "SV-101"
     ],
     "L2": [
       "SV-02",
@@ -31,21 +40,24 @@
       "SV-108",
       "SV-72",
       "SV-89",
-      "SV-73"
+      "SV-73",
+      "SV-97",
+      "SV-103",
+      "SV-104"
     ]
   },
   "partial": {
     "L1a": [
       "SV-01",
       "SV-30",
-      "SV-31",
       "SV-80",
       "SV-86a",
       "SV-86c",
       "SV-93",
-      "SV-19",
       "SV-66",
-      "SV-91"
+      "SV-91",
+      "SV-04",
+      "SV-98"
     ],
     "L1b": [
       "SV-54a",
@@ -56,11 +68,14 @@
       "SV-105",
       "SV-112",
       "SV-117",
-      "SV-18",
-      "SV-20",
       "SV-64",
       "SV-75a",
-      "SV-109"
+      "SV-109",
+      "SV-09",
+      "SV-65",
+      "SV-96",
+      "SV-102",
+      "SV-110"
     ],
     "L2": [
       "SV-25",
@@ -74,7 +89,7 @@
   },
   "not_implemented": {
     "policy": "§13.2 Type A 中既不在 implemented 也不在 partial 的规则均为 NOT_IMPLEMENTED；生产模式保持 fail closed。",
-    "l2": "六个摘要 implemented（含 AssumptionSet），模板/claim 两个 partial，其余 10 项及完整五相位 L2 未实现。",
+    "l2": "九个摘要 implemented，模板/claim 两个 partial，其余七项与完整五相位 L2 未实现。",
     "registries": "当前只有种子数据，不是官方 ACTIVE 主网注册表。",
     "cross_implementation": "Python/Rust 已对拍候选切片；尚非全量第二语言 conformance。"
   },
@@ -89,7 +104,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-08: R4 后，119 Type A = 24 implemented + 30 partial + 65 not implemented；六个摘要 implemented、两个 partial、10 个未实现。九项共同注册规则完成（六项 partial 升级、三项新增）；audit 集成仍限固定 Profile，正式 imports、完整 ValidateR/SchemaValid 与生产准入未完成。",
+  "review_note": "2026-11-08: R6 后 119 Type A = 36 implemented + 33 partial + 50 not implemented。新增三个 I/F 摘要 owner 和 CC-1 helper；固定 audit 测试接线保留 SV-96/98/102/110 partial。通用 ReplayPhaseI、正式 imports、Phase R/SchemaValid 与部署准入未完成。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],
