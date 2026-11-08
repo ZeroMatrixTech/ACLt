@@ -175,7 +175,7 @@ def main():
             if not row['valid'] or python != rust or python != row['expected']:
                 raise ValueError('positive disagreement: '+row['id'])
     source_names = ['tools/verification_profile/profile.py','tools/verification_profile/codec.py',
-                    'tools/verification_profile/validator.py','tools/verification_profile/rust/audit_types.json','tools/verification_profile/rust/method_types.json','tools/verification_profile/rust/creation_types.json','scripts/check-profile-digest.py',
+                    'tools/verification_profile/validator.py','tools/verification_profile/rust/audit_types.json','tools/verification_profile/rust/method_types.json','tools/verification_profile/rust/creation_types.json','tools/verification_profile/rust/selection_types.json','scripts/check-profile-digest.py',
                     'tests/verification_profile/codec/profile-digest-vectors.json',
                     'tests/verification_profile/test_profile_digest.py',
                     'schemas/verification-profile/coverage.json','schemas/verification-profile/inventory.json',

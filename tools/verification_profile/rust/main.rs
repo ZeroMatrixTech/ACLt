@@ -8,6 +8,7 @@ mod profile;
 mod registration;
 mod method_rules;
 mod creation;
+mod selection;
 use std::io::{self,BufRead};
 pub(crate) type R<T> = Result<T,String>;
 const MAX:usize=1<<20;
@@ -142,6 +143,7 @@ fn run(line:&str)->R<V>{
  let (mode,input)=line.split_once('\t').ok_or("mode TAB input")?;
  if let Some(pins)=mode.strip_prefix("phase-i6:"){return creation::run(input,pins,"I");}
  if let Some(pins)=mode.strip_prefix("phase-f6:"){return creation::run(input,pins,"F");}
+ if let Some(pin)=mode.strip_prefix("registration-assets:"){return selection::run(input,pin);}
  if mode=="frozen-projection"{return method_rules::project(input);}
  if let Some(pin)=mode.strip_prefix("method-matrix:"){return method_rules::run(input,pin,false);}
  if let Some(pin)=mode.strip_prefix("phase-r5:"){return method_rules::run(input,pin,true);}

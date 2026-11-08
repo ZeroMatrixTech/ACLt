@@ -181,7 +181,7 @@ CI 配置只在 PR、main push 和手动触发时跑完整本地检查和打包�
 
 `scripts/fm-s3-dualhost.py --terminals` 在两套独立账本上组合验收入口、执行闭合、资金边界与结算恢复；`--historical-gaps` 补跑 Work 2/3 迁移后的故障边界。两种模式的场景对照与复跑命令见[历史矩阵](testing/FM-S3-HISTORICAL-MATRIX-20261106.md)。
 
-## Profile 规则 R1–R6
+## Profile 规则 R1–R7
 
 以下入口都在 `make test` 中，各自用独立的 Python 与 Rust 实现处理同一组固定向量，并比较结果流：
 
@@ -193,6 +193,7 @@ CI 配置只在 PR、main push 和手动触发时跑完整本地检查和打包�
 | `make test-registration-rules` | R4 共同注册规则 | [R4](testing/PROFILE-RULES-R4-20261108.md) |
 | `make test-method-matrices` | R5 四方法参数、失败与判决矩阵 | [R5](testing/PROFILE-MATRICES-R5-20261108.md) |
 | `make test-creation-bindings` | R6 固定 audit I/F 测试接线 | [R6](testing/PROFILE-CREATION-R6-20261108.md) |
+| `make test-selection-assets` | R7 注册资产、选择/绑定与显式输入组件 | [R7](testing/PROFILE-SELECTION-R7-20261108.md) |
 
 这些入口不是完整 ReplayPhaseI、CreateReceipt 或生产准入。每片的公开最小源码包在 `docs/testing/public-evidence/` 中，覆盖计数以 [coverage 登记](../schemas/verification-profile/coverage.json)为准。
 

@@ -20,7 +20,7 @@ FIXED_IMPORTS = {name:'acl.schema.'+identifier+'@1' for name,identifier in [
 PREFIXES = dict(VERIFICATION_PROFILE='acl.vp.',CLAIM_TEMPLATE='acl.ct.',
                 PROFILE_SELECTION_POLICY='acl.vps.',WEAKENING_EDGE='acl.we.',
                 EXCLUDED_CLAIMS_REGISTRY='acl.ecr.',MAINNET_ASSURANCE_PROFILE='acl.map.',
-                PROFILE='acl.vp.',REGISTRY_SNAPSHOT='acl.rs.',FRONTIER='acl.efs.',
+                MANIFEST='acl.cm.',PROFILE='acl.vp.',REGISTRY_SNAPSHOT='acl.rs.',FRONTIER='acl.efs.',
                 CREATION_CONTEXT='acl.cctx.',PHASE_I_RECORD='acl.pir.',TASK='acl.tt.',PREDICATE='acl.pred.',VALIDATOR='acl.val.',EQUIVALENCE='acl.eq.',ENCODING='acl.enc.')
 NAME = '[a-z][a-z0-9-]{0,62}'
 ULID = '[0-9A-HJKMNP-TV-Z]{26}'

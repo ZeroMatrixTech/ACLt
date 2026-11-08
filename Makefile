@@ -234,3 +234,8 @@ test-method-matrices:
 test: test-creation-bindings
 test-creation-bindings:
 	$(PYTHON) -B scripts/check-creation-bindings.py --report artifacts/creation-bindings/cross-language.json
+
+.PHONY: test-selection-assets
+test: test-selection-assets
+test-selection-assets:
+	$(PYTHON) -B scripts/check-selection-assets.py --report artifacts/selection-assets/cross-language.json

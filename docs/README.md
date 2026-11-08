@@ -295,3 +295,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [P0-1B 方法矩阵第五片](testing/PROFILE-MATRICES-R5-20261108.md)：四方法参数/失败/条件集合与冻结投影模型；明确 signature、非 audit reachable_terminals 和正式 import 的剩余缺口。
 
 - [R6：固定 audit I/F 测试接线、创建上下文与 Intent/记录摘要](testing/PROFILE-CREATION-R6-20261108.md)。
+
+- [R7：注册资产、选择/绑定规则集中实现与扩展项边界](testing/PROFILE-SELECTION-R7-20261108.md)。
