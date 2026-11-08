@@ -244,3 +244,8 @@ test-selection-assets:
 test: test-commitment-bindings
 test-commitment-bindings:
 	$(PYTHON) -B scripts/check-commitment-bindings.py --report artifacts/commitment-bindings/cross-language.json
+
+.PHONY: test-runtime-bindings
+test: test-runtime-bindings
+test-runtime-bindings:
+	$(PYTHON) -B scripts/check-runtime-bindings.py $(if $(RUNTIME_BINDINGS_REPORT),--report "$(RUNTIME_BINDINGS_REPORT)",)

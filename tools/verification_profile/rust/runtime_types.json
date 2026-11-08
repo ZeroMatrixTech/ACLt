@@ -1,0 +1,160 @@
+{
+  "FrozenStatsR9": {
+    "fields": {
+      "G": "uint",
+      "B": "uint",
+      "Q": "uint",
+      "delta_min": "rational",
+      "mixture_weights": {
+        "array": {
+          "fields": {
+            "m": "uint",
+            "weight": "rational"
+          },
+          "optional": {}
+        }
+      }
+    },
+    "optional": {}
+  },
+  "RoundStateR9": {
+    "fields": {
+      "round_stage": {
+        "enum": [
+          "PRE_FREEZE",
+          "FROZEN_PRE_DRAW",
+          "RUNNING",
+          "TERMINAL"
+        ]
+      },
+      "bound_profile_ref": "ProfileRef"
+    },
+    "optional": {
+      "frozen_parameters": "FrozenStatsR9",
+      "cluster_mapping_ref": "ClusterMappingRefR9",
+      "population_size": "uint"
+    }
+  },
+  "FreezeRecordR9": {
+    "fields": {
+      "candidate_units_pre_scope_filter": {
+        "set": {
+          "import_": "SamplingUnitID"
+        }
+      },
+      "excluded_by_scope": {
+        "set": {
+          "import_": "SamplingUnitID"
+        }
+      },
+      "frozen_units": {
+        "set": {
+          "import_": "SamplingUnitID"
+        }
+      },
+      "cluster_mapping_ref": "ClusterMappingRefR9",
+      "cluster_mapping_fixed_event": {
+        "import_": "EventRef"
+      },
+      "freeze_event": {
+        "import_": "EventRef"
+      }
+    },
+    "optional": {}
+  },
+  "TransitionR9": {
+    "fields": {
+      "prior_round_state": "RoundStateR9",
+      "proposed_round_state": "RoundStateR9"
+    },
+    "optional": {}
+  },
+  "FreezeTransitionR9": {
+    "fields": {
+      "prior_round_state": "RoundStateR9",
+      "proposed_round_state": "RoundStateR9",
+      "snapshot_freeze_record": "FreezeRecordR9"
+    },
+    "optional": {}
+  },
+  "SnapshotAdapterR9": {
+    "fields": {
+      "id": "text",
+      "receipt_id": "digest",
+      "population_definition_ref": {
+        "import_": "PopulationDefRef"
+      },
+      "snapshot_schema_ref": {
+        "import_": "SchemaRef"
+      },
+      "randomness_commitment": {
+        "fields": {
+          "scheme_id": "text",
+          "parameters": "native"
+        },
+        "optional": {}
+      },
+      "sampling_units": {
+        "array": {
+          "fields": {
+            "id": {
+              "import_": "SamplingUnitID"
+            },
+            "scope": "DeclaredScopeR7"
+          },
+          "optional": {}
+        }
+      },
+      "cluster_mapping_ref": "ClusterMappingRefR9"
+    },
+    "optional": {}
+  },
+  "RuntimeContractR9": {
+    "fields": {
+      "name": {
+        "enum": [
+          "r9-runtime-imports@1"
+        ]
+      },
+      "snapshot_schema_ref": {
+        "import_": "SchemaRef"
+      },
+      "population_definition_ref": {
+        "import_": "PopulationDefRef"
+      },
+      "randomness_rule_ref": {
+        "import_": "CommitmentSchemeRef"
+      },
+      "scheme_id": "text",
+      "allowed_randomness_parameters": {
+        "array": "native"
+      }
+    },
+    "optional": {}
+  },
+  "RuntimeEnvelopeR9": {
+    "fields": {
+      "phase": {
+        "enum": [
+          "B"
+        ]
+      },
+      "bundle": "ReferencesBundle",
+      "profile": "native",
+      "assurance_profile": "AssuranceR8",
+      "receipt_binding": "ReceiptBindingR8",
+      "bound_profile_ref": "ProfileRef",
+      "payload": "native"
+    },
+    "optional": {}
+  },
+  "ClusterMappingRefR9": {
+    "fields": {
+      "id": {
+        "identifier": "CLUSTER_MAPPING"
+      },
+      "digest": "digest"
+    },
+    "optional": {}
+  }
+}

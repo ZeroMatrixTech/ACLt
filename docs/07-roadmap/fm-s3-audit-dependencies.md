@@ -25,7 +25,7 @@ AuditFailureMapping 必须精确覆盖规范方法矩阵的 13 个事件；五�
 
 这里的 **84 个 Type A 依赖不等于新写 84 项实现**：公共基础需要复用、对象绑定要分阶段集成，部分还被官方接口阻塞。另有 35 个 Type A 由限定功能边界守卫拒绝，合计仍为原 119 项；守卫也要正负测试，不能标成已实现或全局 N/A。Type B 中 SV-56 属 bounded 抽样路径，限定 audit 入口必须证明不存在该路径，不能借此关闭其全局义务。
 
-未来新模块/向量位置、每个 SV 的主责包及守卫编号列在 JSON 中。所有验收仍是 PLANNED_NOT_RUN，全局覆盖登记现为 **69/35/15**。
+未来新模块/向量位置、每个 SV 的主责包及守卫编号列在 JSON 中。所有验收仍是 PLANNED_NOT_RUN，全局覆盖登记现为 **79/34/6**。
 
 ## 正式实现前必须明确的四个接口
 
@@ -53,3 +53,5 @@ R6 的固定 audit I/F 测试接线见[报告](../testing/PROFILE-CREATION-R6-20
 R7 集中实现与范围表见[报告](../testing/PROFILE-SELECTION-R7-20261108.md)：基础 13 项加 SV-23 完成，扩展 7 项仍为 partial。未把测试适配器输入或组件完成计为正式 FM-A 验收。
 
 [R8](../testing/PROFILE-COMMITMENTS-R8-20261108.md)补 Claim、假设快照与承诺绑定，18 个摘要 owner 完成公式/投影；组件不自动授予正式 FM-A 验收，7 项输入适用性仍为 partial。
+
+[R9](../testing/PROFILE-RUNTIME-R9-20261108.md)集中实现显式 Phase B 的结构/绑定/冻结与阶段守卫；使用 pinned TEST population/randomness imports，SV-69/81 保留 partial，真实 Lease/事件来源、正式 B conformance 和 FM-A 工作包验收不变。

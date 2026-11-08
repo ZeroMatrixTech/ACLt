@@ -1,6 +1,6 @@
 {
   "review_date": "2026-11-07",
-  "baseline_commit": "6750c18c391e3b44407fa86486eab48fb9d31673",
+  "baseline_commit": "d67effcd9aa789329cdc30ecdb602d90c38be5e3",
   "normative_source": "docs/03-protocol/verification-profile-schema.md",
   "scope": "覆盖盘点，不是独立 conformance 认证；实现状态以 coverage.json 为唯一登记。",
   "rules": [
@@ -1019,7 +1019,7 @@
         "tests/verification_profile/test_codec.py#test_claim_transitive_binding",
         "tests/verification_profile/test_references.py#test_external_payload_schema_and_hash_are_both_bound"
       ],
-      "gap": "模板及 audit R3 外部载荷的结构化版本引用已有局部绑定；其他运行对象、外部组件授权和官方 import 全集仍缺。"
+      "gap": "模板及 audit R3 外部载荷的结构化版本引用已有局部绑定；其他运行对象、外部组件授权和官方 import 全集仍缺。 R9 的 ClusterMappingRef 使用封闭 {id,digest} 与 ClusterMappingID，拒绝 Version 与跨 ID 域；其他引用全集仍未闭合。"
     },
     {
       "id": "SV-63",
@@ -1076,13 +1076,15 @@
       "status": "PARTIAL",
       "requirement": "相位输入是合法 discriminated union；Phase B payload 为 §13.0.4 七个封闭变体之一；Phase D 必带完整 `evaluation_input`。不重复检查 bundle 内部结构（归 SV-91）",
       "implementation": [
-        "tools/verification_profile/registration.py#inspect"
+        "tools/verification_profile/registration.py#inspect",
+        "tools/verification_profile/runtime_bindings.py#inspect"
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_validator_cli_and_fail_closed_production",
-        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_runtime_bindings.py#test_frozen_vectors"
       ],
-      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。 R9 新增完整显式 B bundle 绑定/闭合 DAG 检查，其他相位及正式 imports/部署接线仍未全部验收。"
     },
     {
       "id": "SV-67",
@@ -1100,22 +1102,30 @@
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "Lease 激活与 Snapshot 冻结时，对每个 `SAFETY_CRITICAL`/`LIVENESS` 假设检查 `ScopeContains(scope, ActualBoundScope)`（SB-1）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/runtime_bindings.py#guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_runtime_bindings.py#test_actual_scope_not_replaced_by_declared_or_information_only"
+      ],
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-69",
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`EligibilitySnapshot.population_definition` 的每个抽样单位落在 scope 内（SB-2）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/runtime_bindings.py#guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_runtime_bindings.py#test_scope_checks_every_population_unit"
+      ],
+      "gap": "R9 已逐单位比较显式快照适配器中的六维 scope；尚未冻结真实 population_definition imported schema，无法证明适配器列出的单位/属性与正式总体定义完整一致，保留 partial。"
     },
     {
       "id": "SV-70",
@@ -1203,13 +1213,15 @@
       "status": "PARTIAL",
       "requirement": "`registry_snapshot_ref` 可解析；`bundle.registry_snapshot` 的三元组与该引用逐位一致（CTX-6）",
       "implementation": [
-        "tools/verification_profile/registration.py#check_bundle"
+        "tools/verification_profile/registration.py#check_bundle",
+        "tools/verification_profile/runtime_bindings.py#inspect"
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_registry_content_hash_and_context_identity_are_separate",
-        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_runtime_bindings.py#test_frozen_vectors"
       ],
-      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。 R9 新增完整显式 B bundle 绑定/闭合 DAG 检查，其他相位及正式 imports/部署接线仍未全部验收。"
     },
     {
       "id": "SV-75b",
@@ -1247,11 +1259,15 @@
       "phase": "B",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`ActualBoundScope` 六维齐备，且 `fault_domains`、`geography` 非空（SC-1）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/runtime_bindings.py#shape"
+      ],
+      "tests": [
+        "tests/verification_profile/test_runtime_bindings.py#test_actual_scope_requires_all_six_dimensions_and_nonempty_sets"
+      ],
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-78",
@@ -1298,29 +1314,37 @@
         "tests/verification_profile/test_singlehost.py#test_required_unknown_and_identifier_fields",
         "tests/verification_profile/test_singlehost.py#test_assumption_rows_and_unique_ids"
       ],
-      "gap": "只有 ProfileID/TaskTypeID/AssumptionID 等局部检查；完整封闭 ID 类型和注册域缺失。 新切片补 ClaimTemplateID 语法；注册域仍未实现。"
+      "gap": "只有 ProfileID/TaskTypeID/AssumptionID 等局部检查；完整封闭 ID 类型和注册域缺失。 新切片补 ClaimTemplateID 语法；注册域仍未实现。 R9 补实际 ClusterMappingRef 的 ID 域检查；其他标识符全集/登记域仍待完成。"
     },
     {
       "id": "SV-81",
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`REEXEC_BOUNDED` 的 `EligibilitySnapshot` 满足 PB-1—PB-4 四条绑定等式（owner，§13.1B）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/runtime_bindings.py#guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_runtime_bindings.py#test_randomness_contract_and_parameters_require_external_pin"
+      ],
+      "gap": "R9 已实现 PB-1/2 引用比较、PB-4 基数与 pinned TEST commitment 方案/参数集合符合检查；当前参数引用及方案为 opaque TEST imports，正式版本化 population/schema/randomness 合约与具体 verifier 尚未冻结，保留 partial。"
     },
     {
       "id": "SV-82",
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`sampling_units` ID 唯一（PB-5）；`EligibilitySnapshot.cluster_mapping_ref` 存在（PB-5b）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/runtime_bindings.py#guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_runtime_bindings.py#test_duplicate_units_reject_without_silent_deduplication"
+      ],
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-84",
@@ -1472,54 +1496,60 @@
       "status": "PARTIAL",
       "requirement": "`bundle.context`、`registry_snapshot`、`event_frontier_snapshot` 均在场；两个快照字段缺一即拒绝",
       "implementation": [
-        "tools/verification_profile/registration.py#check_bundle"
+        "tools/verification_profile/registration.py#check_bundle",
+        "tools/verification_profile/runtime_bindings.py#inspect"
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_both_snapshots_and_context_required",
-        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_runtime_bindings.py#test_frozen_vectors"
       ],
-      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。 R9 新增完整显式 B bundle 绑定/闭合 DAG 检查，其他相位及正式 imports/部署接线仍未全部验收。"
     },
     {
       "id": "SV-92",
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "Receipt/Profile/MainnetAssurance 完整绑定链；RB-3 仅在 payload 携带快照时求值，network/assurance 引用逐位一致",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/runtime_bindings.py#guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_runtime_bindings.py#test_receipt_and_all_four_profile_links_are_exact"
+      ],
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-93",
       "phase": "B",
       "layer": "L1a",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`PhaseBEnvelope.payload` 恰为 §13.0.4 七个 tagged union 变体之一，字段集合精确匹配且 transition 必填",
       "implementation": [
-        "tools/verification_profile/phase_b.py#validate_no_snapshot_round"
+        "tools/verification_profile/runtime_bindings.py#shape"
       ],
       "tests": [
-        "tests/verification_profile/test_phase_b.py#test_snapshot_fields_old_tag_and_invalid_edges_reject"
+        "tests/verification_profile/test_runtime_bindings.py#test_all_seven_tags_have_positive_and_negative_vectors"
       ],
-      "gap": "局部 guard 已检查新 payload 形状，完整七变体与信封接线待验收。"
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-94",
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "状态转换约束 PB-6—PB-9、RG-1/RG-2 与 NS-1—NS-3，使用显式状态、方法、绑定和因果快照判定（owner，§13.1B.2A）",
       "implementation": [
-        "tools/verification_profile/phase_b.py#validate_no_snapshot_round"
+        "tools/verification_profile/runtime_bindings.py#guard"
       ],
       "tests": [
-        "tests/verification_profile/test_phase_b.py#test_terminal_requires_unique_commit_and_correct_start_order"
+        "tests/verification_profile/test_runtime_bindings.py#test_four_failure_consequences_do_not_mutate_input"
       ],
-      "gap": "已验证 NS-1—NS-3 的显式输入，bounded 路径、完整 RB 和 PB-9 调用接线待验收。"
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-95",
@@ -1586,11 +1616,15 @@
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "PB-5b 完整映射链：Snapshot、prior、proposed，以及冻结时的 freeze record 逐位相等",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/runtime_bindings.py#guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_runtime_bindings.py#test_snapshot_mapping_equals_both_states_and_freeze_record"
+      ],
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-100",
@@ -1668,37 +1702,45 @@
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`round_stage` 单调，且方法、payload 与阶段转换满足 RG-1/RG-2",
       "implementation": [
-        "tools/verification_profile/phase_b.py#validate_no_snapshot_round"
+        "tools/verification_profile/runtime_bindings.py#guard"
       ],
       "tests": [
-        "tests/verification_profile/test_phase_b.py#test_four_legal_edges_and_method_dispatch"
+        "tests/verification_profile/test_runtime_bindings.py#test_all_seven_tags_have_positive_and_negative_vectors"
       ],
-      "gap": "已验证无 Snapshot 四条边，完整旧变体矩阵接线待验收。"
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-106",
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "集群映射首次固定与不变性：CM-FIX-1—CM-FIX-3；`round_stage ⪰ FROZEN_PRE_DRAW` 后 `cluster_mapping_ref` 不变",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/runtime_bindings.py#guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_runtime_bindings.py#test_mapping_first_fix_is_unique_and_requires_matching_event"
+      ],
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-107",
       "phase": "B",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "PB-6 的两个事件在显式 `EventFrontierSnapshot` 中解析为正确 kind/subject，且按 EF-3 满足 `Precedes`",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/runtime_bindings.py#guard"
+      ],
+      "tests": [
+        "tests/verification_profile/test_runtime_bindings.py#test_freeze_events_need_strict_causality_not_array_order"
+      ],
+      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
     {
       "id": "SV-108",
@@ -1724,13 +1766,15 @@
       "status": "PARTIAL",
       "requirement": "EventFrontierSnapshot 身份与 context 引用一致；事件排序、唯一、闭合、无环，frontier 存在（EF-1—EF-4）",
       "implementation": [
-        "tools/verification_profile/registration.py#check_frontier"
+        "tools/verification_profile/registration.py#check_frontier",
+        "tools/verification_profile/runtime_bindings.py#inspect"
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_frozen_vectors",
-        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_runtime_bindings.py#test_frozen_vectors"
       ],
-      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
+      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。 R9 新增完整显式 B bundle 绑定/闭合 DAG 检查，其他相位及正式 imports/部署接线仍未全部验收。"
     },
     {
       "id": "SV-110",

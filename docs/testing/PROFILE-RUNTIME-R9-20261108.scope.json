@@ -1,0 +1,84 @@
+{
+  "schema": "aclt.profile-r9-scope@1",
+  "baseline_commit": "d67effcd9aa789329cdc30ecdb602d90c38be5e3",
+  "completed": [
+    {
+      "id": "SV-68",
+      "before": "NOT_IMPLEMENTED",
+      "after": "IMPLEMENTED"
+    },
+    {
+      "id": "SV-77",
+      "before": "NOT_IMPLEMENTED",
+      "after": "IMPLEMENTED"
+    },
+    {
+      "id": "SV-82",
+      "before": "NOT_IMPLEMENTED",
+      "after": "IMPLEMENTED"
+    },
+    {
+      "id": "SV-92",
+      "before": "NOT_IMPLEMENTED",
+      "after": "IMPLEMENTED"
+    },
+    {
+      "id": "SV-93",
+      "before": "PARTIAL",
+      "after": "IMPLEMENTED"
+    },
+    {
+      "id": "SV-94",
+      "before": "PARTIAL",
+      "after": "IMPLEMENTED"
+    },
+    {
+      "id": "SV-99",
+      "before": "NOT_IMPLEMENTED",
+      "after": "IMPLEMENTED"
+    },
+    {
+      "id": "SV-105",
+      "before": "PARTIAL",
+      "after": "IMPLEMENTED"
+    },
+    {
+      "id": "SV-106",
+      "before": "NOT_IMPLEMENTED",
+      "after": "IMPLEMENTED"
+    },
+    {
+      "id": "SV-107",
+      "before": "NOT_IMPLEMENTED",
+      "after": "IMPLEMENTED"
+    }
+  ],
+  "new_partial": [
+    {
+      "id": "SV-69",
+      "before": "NOT_IMPLEMENTED",
+      "after": "PARTIAL"
+    },
+    {
+      "id": "SV-81",
+      "before": "NOT_IMPLEMENTED",
+      "after": "PARTIAL"
+    }
+  ],
+  "type_a_before": {
+    "implemented": 69,
+    "partial": 35,
+    "not_implemented": 15
+  },
+  "type_a_after": {
+    "implemented": 79,
+    "partial": 34,
+    "not_implemented": 6
+  },
+  "digest_owners": 18,
+  "formal_phase_b_conformance": false,
+  "gate_changes": false,
+  "normative_changes": false,
+  "source_authentication": false,
+  "production_admission": false
+}

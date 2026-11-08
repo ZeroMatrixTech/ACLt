@@ -21,7 +21,9 @@
       "SV-05",
       "SV-86a",
       "SV-86b",
-      "SV-86c"
+      "SV-86c",
+      "SV-77",
+      "SV-93"
     ],
     "L1b": [
       "SV-10",
@@ -56,7 +58,15 @@
       "SV-48",
       "SV-49",
       "SV-78",
-      "SV-95"
+      "SV-95",
+      "SV-68",
+      "SV-82",
+      "SV-92",
+      "SV-94",
+      "SV-99",
+      "SV-105",
+      "SV-106",
+      "SV-107"
     ],
     "L2": [
       "SV-02",
@@ -84,7 +94,6 @@
       "SV-01",
       "SV-30",
       "SV-80",
-      "SV-93",
       "SV-66",
       "SV-91",
       "SV-04",
@@ -93,8 +102,6 @@
     ],
     "L1b": [
       "SV-62",
-      "SV-94",
-      "SV-105",
       "SV-112",
       "SV-117",
       "SV-64",
@@ -112,7 +119,9 @@
       "SV-55",
       "SV-58",
       "SV-54a",
-      "SV-57"
+      "SV-57",
+      "SV-69",
+      "SV-81"
     ],
     "L2": [
       "SV-25",
@@ -139,7 +148,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-08: R8 后 119 Type A = 69 implemented + 35 partial + 15 not implemented。19 项由未完成转为完成，新增 SV-116 partial；18/18 摘要 owner 完成现行公式/输入投影。七项适用性规则仍 partial，候选胶囊不是正式 Intent 升级；完整相位、evaluator/source/部署验收继续 OPEN。",
+  "review_note": "2026-11-08: R9 后 119 Type A = 79 implemented + 34 partial + 6 not implemented；10 项结构/运行期绑定守卫完成，SV-69/81 新增 partial。18/18 摘要公式/投影保持。TEST imports/纯检查不代表正式 Phase B、状态原子提交、I/F/D、来源认证或部署验收；Gate 不变。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],

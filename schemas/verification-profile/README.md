@@ -56,3 +56,5 @@ python3 -B -m tools.verification_profile.validator /path/input.cbor --commitment
 ```
 
 外部 schema pin 是带外信任输入，不能从待验输入现算后自授信。`NATIVE_CBOR` 仅限本片显式 `acl.schema.r8-native-value@1` 测试载荷；旧入口不扩展该表示。所有模式只验证组件，不产生协议 Decision，生产模式始终拒绝。候选胶囊使用 `ACLt/TEST/R8/AdmissionInput/1`，不改变 `ReceiptIntent/1` 或接受新的正式版本。覆盖 69/35/15，18 个摘要 owner 的公式/投影已实现；参见 [R8 报告](../../docs/testing/PROFILE-COMMITMENTS-R8-20261108.md)。
+
+R9 新增 `--runtime-bindings-cbor`，要求同时带外提供 `--schema-lock-sha256` 与 `--runtime-contract-sha256`。七种 Phase B payload 的绑定/阶段/冻结 guard 已双语言对拍；cluster mapping 只用 `{id,digest}` 运行期引用。覆盖 **79/34/6**；snapshot/population/randomness 使用显式 TEST imports，SV-69/81 继续 partial，正式 Phase B、真实状态写入和生产准入不随组件通过。详见 [R9 报告](../../docs/testing/PROFILE-RUNTIME-R9-20261108.md)。

@@ -111,7 +111,7 @@ fn in_range(v:&V,range:&V)->R<bool>{
  if semver_cmp(v,get_key(range,&V::N(0))?)?.is_lt(){return Ok(false);}
  if let Ok(end)=get_key(range,&V::N(1)){if !semver_cmp(v,end)?.is_lt(){return Ok(false);}}Ok(true)
 }
-fn scope(scope:&V,declared:&V,t:&V,i:&Imports)->R<bool>{
+pub(super) fn scope(scope:&V,declared:&V,t:&V,i:&Imports)->R<bool>{
  typed(scope,&s("Scope"),t,i)?;typed(declared,&s("DeclaredScopeR7"),t,i)?;
  for key in ["fault_domains","geography"]{need(!arr(get(declared,key)?)?.is_empty(),"SV-58: empty declared dimension")?;}
  let mut covered=same(get(scope,"task_class")?,get(declared,"task_class")?)?&&same(get(scope,"environment_class")?,get(declared,"environment_class")?)?;

@@ -1,0 +1,29 @@
+{
+  "schema": "aclt.profile.runtime-import-contract-candidate@1",
+  "status": "TEST_ONLY_NOT_NORMATIVE",
+  "entry": "tools/verification_profile/runtime_bindings.py#inspect",
+  "types": "tools/verification_profile/rust/runtime_types.json",
+  "external_pins": [
+    "schema_lock_sha256",
+    "runtime_contract_sha256"
+  ],
+  "snapshot_representation": "ExternalTypedObject with pinned R8 NativeValue test schema; fields closed by SnapshotAdapterR9",
+  "cluster_mapping_ref": "RuntimeObjectRef<ClusterMappingID> = {id,digest}; no Version",
+  "population_definition": "TEST sampling_units supply ID and explicit six-dimensional scope, not an authenticated population registry",
+  "randomness": "TEST pinned scheme_id and finite allowed native parameter values; exact CBOR equality; no commitment opening or entropy proof",
+  "consequences": {
+    "PRE_FREEZE": "REJECT_OPERATION",
+    "FROZEN_PRE_DRAW": "INVALIDATE_SNAPSHOT_NO_REFREEZE",
+    "RUNNING": "VERIFICATION_INVALIDATING",
+    "TERMINAL": "QUALIFICATION_ONLY"
+  },
+  "state_committed": false,
+  "production_admission": false,
+  "formal_phase_b_conformance": false,
+  "residual": [
+    "No normative EligibilitySnapshot or population/randomness imported schema frozen",
+    "No source/log/checkpoint authenticity or actual Lease/capability execution",
+    "No formal ReceiptIntent upgrade or full I/F/D replay",
+    "Caller must atomically enforce guard consequences; this pure component cannot persist revocation/no-refreeze"
+  ]
+}
