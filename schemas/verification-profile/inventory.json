@@ -39,15 +39,18 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`verification_method` ∈ 四元枚举",
       "implementation": [
-        "tools/verification_profile/validator.py#validate_l1a_bootstrap"
+        "tools/verification_profile/validator.py#validate_l1a_bootstrap",
+        "tools/verification_profile/registration_rules.py#check_method"
       ],
       "tests": [
-        "tests/verification_profile/test_singlehost.py#test_profile_shape_rejected_without_crash"
+        "tests/verification_profile/test_singlehost.py#test_profile_shape_rejected_without_crash",
+        "tests/verification_profile/test_registration_rules.py#test_method_enum_and_removed_field_have_specific_owners",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
       ],
-      "gap": "枚举检查已存在，但诊断使用 SV-31；缺少按 SV-03 归属的独立 conformance 向量。"
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "id": "SV-04",
@@ -87,22 +90,34 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`exclusion_ids` ⊇ 全部 `EXC-BASE-*`（14 项）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/references.py#check_excluded"
+      ],
+      "tests": [
+        "tests/verification_profile/test_references.py#test_all_fourteen_baseline_ids_match_specification",
+        "tests/verification_profile/test_references.py#test_frozen_vectors",
+        "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl"
+      ],
+      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
     },
     {
       "id": "SV-08",
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`exclusion_ids` 全部存在于 `registry_ref` 所指 `ExcludedClaimsRegistry` 的 `entries` 中，且该对象在 `RegistrySnapshot` 中可解析",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/references.py#check_excluded"
+      ],
+      "tests": [
+        "tests/verification_profile/test_references.py#test_membership_uses_explicit_registry_content",
+        "tests/verification_profile/test_references.py#test_frozen_vectors",
+        "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl"
+      ],
+      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
     },
     {
       "id": "SV-09",
@@ -288,11 +303,16 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`DegradationDecl.triggers` ⊆ §9.3 封闭集合",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的完整对象 Schema/相位结构检查及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration_rules.py#check_degradation"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration_rules.py#test_degradation_trigger_subset_does_not_impose_extra_array_order",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
+      ],
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "id": "SV-23",
@@ -423,31 +443,37 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "不含 `post_execution_predicate` 字段（迁移检查）",
       "implementation": [
-        "tools/verification_profile/validator.py#validate_l1a_bootstrap"
+        "tools/verification_profile/validator.py#validate_l1a_bootstrap",
+        "tools/verification_profile/registration_rules.py#check_method"
       ],
       "tests": [
-        "tests/verification_profile/test_singlehost.py#test_required_unknown_and_identifier_fields"
+        "tests/verification_profile/test_singlehost.py#test_required_unknown_and_identifier_fields",
+        "tests/verification_profile/test_registration_rules.py#test_method_enum_and_removed_field_have_specific_owners",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
       ],
-      "gap": "顶层白名单会拒绝旧字段；现有测试只用通用 unknown，缺少迁移字段专用负例与 SV-32 诊断。"
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "id": "SV-33",
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "每个 `AssumptionReference` 的 `revocation_mapping` 三阶段字段齐备",
       "implementation": [
-        "tools/verification_profile/registration.py#inspect"
+        "tools/verification_profile/registration.py#inspect",
+        "tools/verification_profile/registration_rules.py#check_assumptions"
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_revocation_shape_and_safety_values",
-        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_registration_rules.py#test_revocation_all_three_stages_and_safety_values",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
       ],
-      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "id": "SV-34",
@@ -491,27 +517,35 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`role = SAFETY_CRITICAL` ⇒ `revocation_mapping` 恰为 AR-1 的三元组，无 `PROCEED`/`NO_EFFECT`",
       "implementation": [
-        "tools/verification_profile/registration.py#inspect"
+        "tools/verification_profile/registration.py#inspect",
+        "tools/verification_profile/registration_rules.py#check_assumptions"
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_revocation_shape_and_safety_values",
-        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_registration_rules.py#test_revocation_all_three_stages_and_safety_values",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
       ],
-      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "id": "SV-38",
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "方法必需的 `assumption_class` 与 `role` 齐备（AR-2）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration_rules.py#check_required"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration_rules.py#test_required_classes_and_roles_match_ar2_specification",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
+      ],
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "id": "SV-39",
@@ -785,16 +819,19 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`ScopeSpec` 六维齐备，无可选维度（SC-1）",
       "implementation": [
-        "tools/verification_profile/registration.py#typed"
+        "tools/verification_profile/registration.py#typed",
+        "tools/verification_profile/registration_rules.py#check_assumptions"
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_nested_type_rejects_even_with_valid_profile_digest",
-        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_registration_rules.py#test_scope_requires_six_dimensions_but_not_nonempty_phase_i_sets",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
       ],
-      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "id": "SV-60",
@@ -830,12 +867,14 @@
       "status": "PARTIAL",
       "requirement": "引用类型正确：版本化 UVP 对象用 `VersionedObjectRef`；不版本化运行期产物用对应 `RuntimeObjectRef<IDType>` 具体别名；外部工程组件用 `ExternalVersionedObjectRef`，不得伪装成 `RegistryObjectKind`；任何引用不得只给 `Digest`（REF-1—REF-6）",
       "implementation": [
-        "tools/verification_profile/codec.py#ref"
+        "tools/verification_profile/codec.py#ref",
+        "tools/verification_profile/references.py#versioned_ref"
       ],
       "tests": [
-        "tests/verification_profile/test_codec.py#test_claim_transitive_binding"
+        "tests/verification_profile/test_codec.py#test_claim_transitive_binding",
+        "tests/verification_profile/test_references.py#test_external_payload_schema_and_hash_are_both_bound"
       ],
-      "gap": "只覆盖模板三元引用与本地外部 import；运行期对象及官方 import 未覆盖。"
+      "gap": "模板及 audit R3 外部载荷的结构化版本引用已有局部绑定；其他运行对象、外部组件授权和官方 import 全集仍缺。"
     },
     {
       "id": "SV-63",
@@ -958,22 +997,33 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`excluded_claims.digest` 按 §17.4 重算一致（owner）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/references.py#excluded_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_references.py#test_selection_digest_owner_after_other_bindings_are_valid",
+        "tests/verification_profile/test_references.py#test_frozen_vectors",
+        "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl"
+      ],
+      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
     },
     {
       "id": "SV-73",
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`assumption_set_digest` 按 §17.4 重算一致（owner）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/registration_rules.py#assumption_set_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration_rules.py#test_static_assumption_digest_matches_independent_preimage",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
+      ],
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "id": "SV-74",
@@ -1114,16 +1164,19 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`supersedes` 若存在，是完整三元组且所指对象在 `RegistrySnapshot` 中可解析（UVP-4）",
       "implementation": [
-        "tools/verification_profile/registration.py#inspect"
+        "tools/verification_profile/registration.py#inspect",
+        "tools/verification_profile/registration_rules.py#check_rules"
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_frozen_vectors",
-        "tests/verification_profile/test_registration.py#test_frozen_vectors"
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_registration_rules.py#test_supersedes_requires_complete_identity_in_profile_domain",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
       ],
-      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。"
+      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
       "id": "SV-85",
@@ -1204,11 +1257,17 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "requirement": "`ExcludedClaimsRegistry.registry_digest` 按 §17.4 重算（owner）",
-      "implementation": [],
-      "tests": [],
-      "gap": "无规范 CBOR/投影/摘要实现及字节级正负向量。"
+      "implementation": [
+        "tools/verification_profile/references.py#exclusion_registry_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_references.py#test_registry_statement_tamper_rejected_until_fully_rebound",
+        "tests/verification_profile/test_references.py#test_frozen_vectors",
+        "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl"
+      ],
+      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
     },
     {
       "id": "SV-90",
@@ -1695,10 +1754,10 @@
       "input": "`cbor([registry_ref, sorted(exclusion_ids)])`（派生摘要值）",
       "owner": "SV-72",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "排除选择集/注册对象的正式 ContentMap、tag 和 owner 已实现并对拍；注册授权、全量对象/相位不由纯摘要通过授予。"
     },
     {
       "name": "`assumption_set_digest`",
@@ -1706,10 +1765,10 @@
       "input": "`cbor(sorted([[assumption_id, statement_digest], ...]))`",
       "owner": "SV-73",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "正式静态假设集合 tag/排序二元行摘要已实现并对拍；不代替绑定证据版本与状态的运行期摘要或完整 ClaimBinding。"
     },
     {
       "name": "`manifest_digest`",
@@ -1739,10 +1798,10 @@
       "input": "`cbor(ContentMap_ExcludedClaimsRegistry)`（§3.3.3、§6.3）",
       "owner": "SV-89",
       "layer": "L2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "implementation": [],
       "tests": [],
-      "gap": "缺少规范 ContentMap/输入构造、域分离 CBOR 摘要实现及 golden/变异/跨语言向量。"
+      "gap": "排除选择集/注册对象的正式 ContentMap、tag 和 owner 已实现并对拍；注册授权、全量对象/相位不由纯摘要通过授予。"
     },
     {
       "name": "`assurance_digest`（`MainnetAssuranceProfile`）",
@@ -1866,5 +1925,36 @@
       "SV-91",
       "SV-109"
     ]
+  },
+  "profile_references_slice": {
+    "id": "PROFILE-R3",
+    "report": "docs/testing/PROFILE-REFERENCES-R3-20261108.md",
+    "completed_rules": [
+      "SV-07",
+      "SV-08",
+      "SV-72",
+      "SV-89"
+    ],
+    "wire_corrections": [
+      "TimeRange uses [start,end] in R3",
+      "ExternalTypedObject uses three explicit fields in R3"
+    ],
+    "historical_entry": "R2 remains a limited historical check, not full SchemaValid"
+  },
+  "common_registration_rules_slice": {
+    "id": "PROFILE-R4",
+    "report": "docs/testing/PROFILE-RULES-R4-20261108.md",
+    "completed_rules": [
+      "SV-03",
+      "SV-22",
+      "SV-32",
+      "SV-33",
+      "SV-37",
+      "SV-38",
+      "SV-59",
+      "SV-73",
+      "SV-84"
+    ],
+    "scope": "Selected common rules across four methods; fixed audit integration only; not full ValidateR"
   }
 }

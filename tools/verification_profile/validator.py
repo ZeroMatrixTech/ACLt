@@ -284,6 +284,33 @@ def validate_registration_cbor(raw: bytes, lock_pin: bytes) -> list[ValidationIs
     return []
 
 
+
+def validate_registration_references_cbor(raw: bytes, lock_pin: bytes) -> list[ValidationIssue]:
+    """Scoped audit wire/import checks plus explicit exclusion registry assets."""
+    from tools.verification_profile import codec, references
+    try:
+        references.inspect(raw, lock_pin)
+    except (codec.CodecError, KeyError, TypeError, RecursionError) as exc:
+        message = str(exc)
+        rule = message.split(':', 1)[0] if message.startswith('SV-') else 'REGISTRATION_INPUT'
+        return [_issue(rule, '$', message)]
+    return []
+
+
+
+def validate_registration_rules_cbor(raw: bytes, lock_pin: bytes, *, audit: bool = False) -> list[ValidationIssue]:
+    """R4 selected common rules or scoped audit integration; not full ValidateR."""
+    from tools.verification_profile import codec, registration_rules
+    try:
+        function = registration_rules.inspect_audit if audit else registration_rules.inspect
+        function(raw, lock_pin)
+    except (codec.CodecError, KeyError, TypeError, RecursionError) as exc:
+        message = str(exc)
+        rule = message.split(':', 1)[0] if message.startswith('SV-') else 'REGISTRATION_INPUT'
+        return [_issue(rule, '$', message)]
+    return []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the P0-1B bootstrap validator")
     parser.add_argument("profile", type=Path)
@@ -292,12 +319,17 @@ def main() -> int:
                         help='Profile v2 L2 digest and selected Phase R rules on raw CBOR')
     parser.add_argument('--registration-cbor', action='store_true',
                         help='nested audit types, pinned schema imports and Phase R bundle')
+    parser.add_argument('--registration-references-cbor', action='store_true',
+                        help='audit wire TimeRange/ExternalTypedObject and exclusion registry references')
+    parser.add_argument('--registration-rules-cbor', action='store_true', help='R4 selected common registration rules only')
+    parser.add_argument('--registration-r4-cbor', action='store_true', help='R4 fixed audit registration integration')
     parser.add_argument('--schema-lock-sha256',
                         help='caller-supplied trusted schema lock pin for --registration-cbor')
     args = parser.parse_args()
-    if args.registration_cbor == (args.schema_lock_sha256 is None):
-        parser.error('--registration-cbor requires --schema-lock-sha256')
-    if args.registration_cbor and args.profile_cbor:
+    registration_mode = any((args.registration_cbor,args.registration_references_cbor,args.registration_rules_cbor,args.registration_r4_cbor))
+    if registration_mode == (args.schema_lock_sha256 is None):
+        parser.error('registration CBOR entries require --schema-lock-sha256')
+    if sum((args.registration_cbor,args.registration_references_cbor,args.profile_cbor,args.registration_rules_cbor,args.registration_r4_cbor))>1:
         parser.error('choose one CBOR entry')
     def unique_object(pairs):
         result={}
@@ -308,7 +340,13 @@ def main() -> int:
     def invalid_constant(value):
         raise ValueError(f"invalid JSON constant: {value}")
     try:
-        if args.registration_cbor:
+        if args.registration_rules_cbor or args.registration_r4_cbor:
+            pin = bytes.fromhex(args.schema_lock_sha256)
+            issues = validate_registration_rules_cbor(args.profile.read_bytes(), pin, audit=args.registration_r4_cbor)
+        elif args.registration_references_cbor:
+            pin = bytes.fromhex(args.schema_lock_sha256)
+            issues = validate_registration_references_cbor(args.profile.read_bytes(), pin)
+        elif args.registration_cbor:
             pin = bytes.fromhex(args.schema_lock_sha256)
             issues = validate_registration_cbor(args.profile.read_bytes(), pin)
         elif args.profile_cbor:

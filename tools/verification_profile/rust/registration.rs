@@ -75,10 +75,16 @@ fn identifier(value: &V, kind: &str) -> R<()> {
 
 struct Imports {
     aliases: BTreeMap<String, V>,
+    documents: BTreeMap<Vec<u8>, V>,
+    references: bool,
 }
 
 impl Imports {
     fn new(lock: &V, documents: &V, pin: &[u8]) -> R<Self> {
+        Self::new_mode(lock, documents, pin, false)
+    }
+
+    fn new_mode(lock: &V, documents: &V, pin: &[u8], references: bool) -> R<Self> {
         need(pin.len() == 32 && sha256::hash(&encode(lock)?) == pin, "schema lock pin")?;
         fields(lock, &["version", "entries"])?;
         need(integer(get(lock, "version")?)? == 1, "schema lock version")?;
@@ -96,7 +102,8 @@ impl Imports {
             fields(&document, &["alias", "id", "version", "representation"])?;
             need(get(&document, "id")? == get(reference, "id")?
                 && get(&document, "version")? == get(reference, "version")?
-                && txt(get(&document, "representation")?)? == "OPAQUE_BSTR", "schema document contract")?;
+                && (txt(get(&document, "representation")?)? == "OPAQUE_BSTR"
+                    || (references && txt(get(&document, "representation")?)? == "VERSIONED_REF")), "schema document contract")?;
             need(docs.insert(encode(reference)?, document).is_none(), "duplicate schema document")?;
         }
         let mut aliases = BTreeMap::new();
@@ -125,6 +132,12 @@ impl Imports {
             if let Some(fixed) = fixed {
                 need(id == format!("acl.schema.{fixed}@1"), "normative import ID")?;
             }
+            if references {
+                need(alias != "ExternalTypedObject", "ExternalTypedObject is not an opaque import")?;
+                if txt(get(doc, "representation")?)? == "VERSIONED_REF" {
+                    need(alias == "ExternalVersionedObjectRef", "unsupported structured import alias")?;
+                }
+            }
             let encoded = encode(&s(alias))?;
             if let Some(last) = previous {
                 need(last < encoded, "schema lock order")?;
@@ -133,14 +146,53 @@ impl Imports {
             need(aliases.insert(alias.to_owned(), reference.clone()).is_none(), "duplicate import alias")?;
         }
         need(aliases.len() == docs.len(), "unused schema document")?;
-        Ok(Self { aliases })
+        if references {
+            let reference = aliases.get("ExternalVersionedObjectRef").ok_or("external reference schema required")?;
+            let document = docs.get(&encode(reference)?).ok_or("external reference schema required")?;
+            need(txt(get(document, "representation")?)? == "VERSIONED_REF", "structured reference schema required")?;
+        }
+        Ok(Self { aliases, documents: docs, references })
     }
 
     fn check(&self, alias: &str, value: &V) -> R<()> {
         need(self.aliases.contains_key(alias), "unresolved import")?;
-        bytes(value)?;
-        Ok(())
+        if self.references {
+            let reference = self.aliases.get(alias).ok_or("unresolved import")?;
+            let document = self.documents.get(&encode(reference)?).ok_or("unresolved schema document")?;
+            Self::payload(value, txt(get(document, "representation")?)?)
+        } else {
+            bytes(value)?;
+            Ok(())
+        }
     }
+
+    fn payload(value: &V, representation: &str) -> R<()> {
+        match representation {
+            "OPAQUE_BSTR" => { bytes(value)?; Ok(()) },
+            "VERSIONED_REF" => versioned_ref(value),
+            _ => Err("unsupported schema representation".into()),
+        }
+    }
+
+    fn external_object(&self, value: &V) -> R<()> {
+        need(self.references, "external object wire mode required")?;
+        fields(value, &["schema_ref", "canonical_bytes", "object_digest"])?;
+        let reference = get(value, "schema_ref")?;
+        self.check("ExternalVersionedObjectRef", reference)?;
+        let document = self.documents.get(&encode(reference)?).ok_or("external payload schema not in lock")?;
+        let raw = bytes(get(value, "canonical_bytes")?)?;
+        let payload = decode(raw)?;
+        Self::payload(&payload, txt(get(document, "representation")?)?)?;
+        dig(get(value, "object_digest")?)?;
+        need(bytes(get(value, "object_digest")?)? == sha256::hash(raw), "external payload digest mismatch")
+    }
+}
+
+fn versioned_ref(value: &V) -> R<()> {
+    fields(value, &["id", "version", "digest"])?;
+    need(!txt(get(value, "id")?)?.is_empty(), "empty external reference ID")?;
+    semver(get(value, "version")?)?;
+    dig(get(value, "digest")?)
 }
 
 fn typed(value: &V, schema: &V, types: &V, imports: &Imports) -> R<()> {
@@ -156,6 +208,14 @@ fn typed(value: &V, schema: &V, types: &V, imports: &Imports) -> R<()> {
             "digest" => dig(value),
             "semver" => semver(value),
             "rational" | "version-range" => { project(kind, value, false)?; Ok(()) },
+            "external-object" => imports.external_object(value),
+            "wire-time-range" => {
+                let a = arr(value)?;
+                need(a.len() == 2, "wire TimeRange tuple")?;
+                typed(&a[0], &s("int"), types, imports)?;
+                typed(&a[1], &s("int"), types, imports)?;
+                need(integer(&a[0])? < integer(&a[1])?, "validity range")
+            },
             "time-range" => {
                 fields(value, &["start", "end"])?;
                 typed(get(value, "start")?, &s("int"), types, imports)?;
@@ -321,18 +381,7 @@ pub(super) fn run(input: &str, pin: &str) -> R<V> {
     fields(envelope, &["phase", "bundle", "object"])?;
     need(txt(get(envelope, "phase")?)? == "R", "registration phase")?;
     let profile = get(envelope, "object")?;
-    typed(profile, &s("Profile"), &types, &imports)?;
-    profile::run("profile-digest", &hex(&encode(profile)?))?;
-    profile::audit_fields(profile)?;
-    let mut ids = BTreeSet::new();
-    for row in arr(get(profile, "assumption_references")?)? {
-        need(ids.insert(txt(get(row, "assumption_id")?)?), "duplicate assumption")?;
-        if txt(get(row, "role")?)? == "SAFETY_CRITICAL" {
-            let expected = map(vec![("before_verification", s("BLOCK_ADMISSION")),
-                ("during_verification", s("VERIFICATION_INVALIDATING")), ("after_terminal", s("QUALIFY_REVOKED"))]);
-            need(same(get(row, "revocation_mapping")?, &expected)?, "safety revocation")?;
-        }
-    }
+    check_profile(profile, &types, &imports, "Profile")?;
     let bundle = get(envelope, "bundle")?;
     typed(bundle, &s("Bundle"), &types, &imports)?;
     let registry = get(bundle, "registry_snapshot")?;
@@ -363,4 +412,262 @@ pub(super) fn run(input: &str, pin: &str) -> R<V> {
         ("schema_lock_sha256", s(pin)), ("full_schema_valid", V::B(false)),
         ("source_authentication", V::B(false)),
     ]))
+}
+
+fn check_profile(profile: &V, types: &V, imports: &Imports, kind: &str) -> R<()> {
+    typed(profile, &s(kind), types, imports)?;
+    profile::run("profile-digest", &hex(&encode(profile)?))?;
+    profile::audit_fields(profile)?;
+    let mut ids = BTreeSet::new();
+    for row in arr(get(profile, "assumption_references")?)? {
+        need(ids.insert(txt(get(row, "assumption_id")?)?), "duplicate assumption")?;
+        if txt(get(row, "role")?)? == "SAFETY_CRITICAL" {
+            let expected = map(vec![("before_verification", s("BLOCK_ADMISSION")),
+                ("during_verification", s("VERIFICATION_INVALIDATING")), ("after_terminal", s("QUALIFY_REVOKED"))]);
+            need(same(get(row, "revocation_mapping")?, &expected)?, "safety revocation")?;
+        }
+    }
+    Ok(())
+}
+
+const BASE_EXCLUSIONS: &[&str] = &[
+    "EXC-BASE-INTENT", "EXC-BASE-LOWERING", "EXC-BASE-RIR-SPEC", "EXC-BASE-RPR-SPEC",
+    "EXC-BASE-COMMON-MODE", "EXC-BASE-INDEPENDENCE", "EXC-BASE-SYBIL", "EXC-BASE-ABSOLUTE",
+    "EXC-BASE-FITNESS", "EXC-BASE-AVAILABILITY", "EXC-BASE-CONFIDENTIALITY", "EXC-BASE-TIMELINESS",
+    "EXC-BASE-LOG-BACKEND", "EXC-BASE-NETWORK-TRANSFER",
+];
+
+fn exclusion_registry_digest(registry: &V) -> R<Vec<u8>> {
+    let header = get(registry, "header")?;
+    Ok(domain("ACLt/P0-1/ExcludedClaimsRegistry/1", &encode(&map(vec![
+        ("schema_version", get(header, "schema_version")?.clone()),
+        ("encoding_profile_id", get(header, "encoding_profile_id")?.clone()),
+        ("entries", get(registry, "entries")?.clone()),
+    ]))?))
+}
+
+fn excluded_digest(selection: &V) -> R<Vec<u8>> {
+    let mut ids = arr(get(selection, "exclusion_ids")?)?.iter()
+        .map(|value| Ok((encode(value)?, value.clone()))).collect::<R<Vec<_>>>()?;
+    ids.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(domain("ACLt/P0-1/ExcludedClaims/1", &encode(&V::A(vec![
+        get(selection, "registry_ref")?.clone(), V::A(ids.into_iter().map(|(_, value)| value).collect())
+    ]))?))
+}
+
+fn check_excluded(selection: &V, registry: &V, snapshot: &V, types: &V, imports: &Imports) -> R<V> {
+    typed(selection, &s("ExcludedClaims"), types, imports)?;
+    typed(registry, &s("ExclusionRegistry"), types, imports)?;
+    typed(snapshot, &s("Registry"), types, imports)?;
+    check_registry(snapshot)?;
+    let header = get(registry, "header")?;
+    need(integer(get(header, "schema_version")?)? == 1, "exclusion registry schema version")?;
+    need(bytes(get(header, "digest")?)? == exclusion_registry_digest(registry)?, "SV-89: exclusion registry digest")?;
+    let reference = map(["id", "version", "digest"].iter()
+        .map(|key| Ok((*key, get(header, key)?.clone()))).collect::<R<_>>()?);
+    need(same(get(selection, "registry_ref")?, &reference)?, "SV-08: exclusion registry identity mismatch")?;
+    let mut found = false;
+    for row in arr(get(snapshot, "entries")?)? {
+        if txt(get(row, "object_kind")?)? == "EXCLUDED_CLAIMS_REGISTRY"
+            && ["id", "version", "digest"].iter().all(|key| get(row, key).ok() == get(header, key).ok()) {
+            found = true;
+        }
+    }
+    need(found, "SV-08: exclusion registry not resolved in snapshot")?;
+    let selected = arr(get(selection, "exclusion_ids")?)?.iter().map(txt).collect::<R<BTreeSet<_>>>()?;
+    need(BASE_EXCLUSIONS.iter().all(|id| selected.contains(id)), "SV-07: baseline exclusions missing")?;
+    let available = arr(get(registry, "entries")?)?.iter()
+        .map(|row| txt(get(row, "exclusion_id")?)).collect::<R<BTreeSet<_>>>()?;
+    need(selected.is_subset(&available), "SV-08: exclusion ID missing from registry")?;
+    need(bytes(get(selection, "digest")?)? == excluded_digest(selection)?, "SV-72: excluded selection digest")?;
+    Ok(map(vec![
+        ("excluded_digest_hex", s(&hex(bytes(get(selection, "digest")?)?))),
+        ("exclusion_registry_digest_hex", s(&hex(bytes(get(header, "digest")?)?))),
+        ("selected_ids", V::N(selected.len() as i128)),
+        ("baseline_ids", V::N(BASE_EXCLUSIONS.len() as i128)),
+    ]))
+}
+
+pub(super) fn run_excluded(input: &str) -> R<V> {
+    let value = decode(&unhex(input)?)?;
+    fields(&value, &["selection", "registry", "registry_snapshot"])?;
+    let types = parse_json(include_str!("audit_types.json"))?;
+    let imports = Imports { aliases: BTreeMap::new(), documents: BTreeMap::new(), references: false };
+    check_excluded(get(&value, "selection")?, get(&value, "registry")?, get(&value, "registry_snapshot")?, &types, &imports)
+}
+
+pub(super) fn run_references(input: &str, pin: &str) -> R<V> {
+    let value = decode(&unhex(input)?)?;
+    fields(&value, &["envelope", "schema_lock", "schema_documents", "registry_objects"])?;
+    let imports = Imports::new_mode(get(&value, "schema_lock")?, get(&value, "schema_documents")?, &unhex(pin)?, true)?;
+    let types = parse_json(include_str!("audit_types.json"))?;
+    let envelope = get(&value, "envelope")?;
+    fields(envelope, &["phase", "bundle", "object"])?;
+    need(txt(get(envelope, "phase")?)? == "R", "registration phase")?;
+    let profile = get(envelope, "object")?;
+    check_profile(profile, &types, &imports, "ReferencesProfile")?;
+    let bundle = get(envelope, "bundle")?;
+    typed(bundle, &s("ReferencesBundle"), &types, &imports)?;
+    let registry = get(bundle, "registry_snapshot")?;
+    check_registry(registry)?;
+    let context = get(bundle, "context")?;
+    let rh = get(registry, "header")?;
+    let registry_ref = map(["id", "version", "digest"].iter().map(|key| Ok((*key, get(rh, key)?.clone()))).collect::<R<_>>()?);
+    need(same(get(context, "registry_snapshot_ref")?, &registry_ref)?, "registry context binding")?;
+    let frontier = get(bundle, "event_frontier_snapshot")?;
+    check_frontier(frontier, &imports)?;
+    let fh = get(frontier, "header")?;
+    let frontier_ref = map(vec![("id", get(fh, "id")?.clone()), ("digest", get(fh, "digest")?.clone())]);
+    need(same(get(context, "event_frontier_ref")?, &frontier_ref)?, "frontier context binding")?;
+    if let Ok(reference) = get(profile, "supersedes") {
+        let mut found = false;
+        for row in arr(get(registry, "entries")?)? {
+            if txt(get(row, "object_kind")?)? == "VERIFICATION_PROFILE"
+                && ["id", "version", "digest"].iter().all(|key| get(row, key).ok() == get(reference, key).ok()) {
+                found = true;
+            }
+        }
+        need(found, "unresolved supersedes")?;
+    }
+    let assets = arr(get(&value, "registry_objects")?)?;
+    need(assets.len() == 1, "one explicit exclusion registry asset required")?;
+    fields(&assets[0], &["object_kind", "object"])?;
+    need(txt(get(&assets[0], "object_kind")?)? == "EXCLUDED_CLAIMS_REGISTRY", "unsupported registry asset kind")?;
+    let excluded = check_excluded(get(profile, "excluded_claims")?, get(&assets[0], "object")?, registry, &types, &imports)?;
+    let mut output = object(&excluded)?.to_vec();
+    for (key, value) in [
+        ("profile_digest_hex", s(&hex(bytes(get(profile, "profile_digest")?)?))),
+        ("registry_digest_hex", s(&hex(bytes(get(rh, "digest")?)?))),
+        ("frontier_digest_hex", s(&hex(bytes(get(fh, "digest")?)?))),
+        ("schema_lock_sha256", s(pin)),
+        ("full_schema_valid", V::B(false)), ("source_authentication", V::B(false)),
+    ] { output.push((s(key), value)); }
+    Ok(V::M(output))
+}
+
+fn rule_method(profile: &V) -> R<&str> {
+    object(profile)?;
+    need(get(profile, "post_execution_predicate").is_err(), "SV-32: removed post_execution_predicate")?;
+    let method = match get(profile, "verification_method").map_err(|_| "SV-03: verification method")? {
+        V::S(value) => value.as_str(),
+        _ => return Err("SV-03: verification method".into()),
+    };
+    need(["DIRECT_VERIFIED", "PROOF_VERIFIED", "REEXEC_BOUNDED", "REEXEC_AUDIT_ONLY"].contains(&method),
+         "SV-03: verification method")?;
+    Ok(method)
+}
+
+fn rule_assumptions(assumptions: &V, types: &V, imports: &Imports) -> R<()> {
+    let mut ids = BTreeSet::new();
+    for row in arr(assumptions)? {
+        object(row)?;
+        let mapping = get(row, "revocation_mapping").map_err(|_| "SV-33: missing revocation mapping")?;
+        fields(mapping, &["before_verification", "during_verification", "after_terminal"])
+            .map_err(|_| "SV-33: three closed revocation stages required")?;
+        fields(get(row, "scope").map_err(|_| "SV-59: missing scope")?,
+               &["task_class", "rir_profile_range", "rpr_version_range", "environment_class", "fault_domains", "geography"])
+            .map_err(|_| "SV-59: six closed scope dimensions required")?;
+        if get(row, "role").ok() == Some(&s("SAFETY_CRITICAL")) {
+            let expected = map(vec![("before_verification", s("BLOCK_ADMISSION")),
+                ("during_verification", s("VERIFICATION_INVALIDATING")), ("after_terminal", s("QUALIFY_REVOKED"))]);
+            need(same(mapping, &expected)?, "SV-37: safety-critical revocation mapping")?;
+        }
+        typed(row, &s("ReferencesAssumption"), types, imports)?;
+        need(ids.insert(txt(get(row, "assumption_id")?)?), "SV-76: duplicate assumption ID")?;
+    }
+    Ok(())
+}
+
+fn rule_required(method: &str, assumptions: &V) -> R<()> {
+    let required: &[(&str, &str)] = match method {
+        "DIRECT_VERIFIED" => &[("PREDICATE_SOUNDNESS", "SAFETY_CRITICAL")],
+        "PROOF_VERIFIED" => &[("PROOF_SYSTEM", "SAFETY_CRITICAL")],
+        "REEXEC_BOUNDED" => &[("SUPPORT_CAPABILITY_BOUND", "SAFETY_CRITICAL"),
+            ("RANDOMNESS", "SAFETY_CRITICAL"), ("SNAPSHOT", "SAFETY_CRITICAL"),
+            ("CORRECTNESS_BRIDGE", "SAFETY_CRITICAL"), ("CALIBRATION", "LIVENESS")],
+        "REEXEC_AUDIT_ONLY" => &[],
+        _ => return Err("SV-03: verification method".into()),
+    };
+    let present = arr(assumptions)?.iter().map(|row| Ok((txt(get(row, "assumption_class")?)?,
+        txt(get(row, "role")?)?))).collect::<R<BTreeSet<_>>>()?;
+    need(required.iter().all(|pair| present.contains(pair)), "SV-38: required assumption class/role missing")
+}
+
+fn rule_degradation(value: &V, types: &V, imports: &Imports) -> R<()> {
+    fields(value, &["target", "triggers"])?;
+    typed(get(value, "target")?, &s("ProfileRef"), types, imports)?;
+    for trigger in arr(get(value, "triggers")?)? {
+        let trigger = match trigger { V::S(value) => value.as_str(), _ => return Err("SV-22: degradation trigger".into()) };
+        need(["SUPPORT_CAPABILITY_BOUND_UNAVAILABLE", "POPULATION_TOO_SMALL", "CALIBRATION_OUT_OF_SCOPE"].contains(&trigger),
+             "SV-22: unknown degradation trigger")?;
+    }
+    Ok(())
+}
+
+fn assumption_set_digest(value: &V) -> R<Vec<u8>> {
+    let mut rows = Vec::new();
+    for row in arr(value)? {
+        identifier(get(row, "assumption_id")?, "ASSUMPTION")?;
+        dig(get(row, "statement_digest")?)?;
+        let pair = V::A(vec![get(row, "assumption_id")?.clone(), get(row, "statement_digest")?.clone()]);
+        rows.push((encode(&pair)?, pair));
+    }
+    rows.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(domain("ACLt/P0-1/AssumptionSet/1", &encode(&V::A(rows.into_iter().map(|(_, pair)| pair).collect()))?))
+}
+
+fn common_rules(profile: &V, registry: &V, types: &V, imports: &Imports) -> R<V> {
+    let method = rule_method(profile)?;
+    profile::run("profile-digest", &hex(&encode(profile)?))?;
+    let assumptions = get(profile, "assumption_references")?;
+    rule_assumptions(assumptions, types, imports)?;
+    rule_required(method, assumptions)?;
+    typed(registry, &s("Registry"), types, imports)?;
+    check_registry(registry)?;
+    if let Ok(reference) = get(profile, "supersedes") {
+        typed(reference, &s("ProfileRef"), types, imports)?;
+        let mut found = false;
+        for row in arr(get(registry, "entries")?)? {
+            if txt(get(row, "object_kind")?)? == "VERIFICATION_PROFILE"
+                && ["id", "version", "digest"].iter().all(|key| get(row, key).ok() == get(reference, key).ok()) { found = true; }
+        }
+        need(found, "SV-84: unresolved supersedes")?;
+    }
+    if let Ok(declaration) = get(profile, "degradation") { rule_degradation(declaration, types, imports)?; }
+    Ok(map(vec![
+        ("verification_method", s(method)), ("assumptions", V::N(arr(assumptions)?.len() as i128)),
+        ("assumption_set_digest_hex", s(&hex(&assumption_set_digest(assumptions)?))),
+        ("full_schema_valid", V::B(false)), ("source_authentication", V::B(false)),
+    ]))
+}
+
+pub(super) fn run_rules(input: &str, pin: &str, audit: bool) -> R<V> {
+    let value = decode(&unhex(input)?)?;
+    let types = parse_json(include_str!("audit_types.json"))?;
+    if audit {
+        fields(&value, &["envelope", "schema_lock", "schema_documents", "registry_objects"])?;
+    } else {
+        fields(&value, &["profile", "registry_snapshot", "schema_lock", "schema_documents", "assumption_set_digest"])?;
+    }
+    let imports = Imports::new_mode(get(&value, "schema_lock")?, get(&value, "schema_documents")?, &unhex(pin)?, true)?;
+    if audit {
+        let envelope = get(&value, "envelope")?;
+        fields(envelope, &["phase", "bundle", "object"])?;
+        need(txt(get(envelope, "phase")?)? == "R", "Phase R envelope")?;
+        fields(get(envelope, "bundle")?, &["context", "registry_snapshot", "event_frontier_snapshot"])?;
+        let profile = get(envelope, "object")?;
+        need(rule_method(profile)? == "REEXEC_AUDIT_ONLY", "audit-only integration scope")?;
+        let common = common_rules(profile, get(get(envelope, "bundle")?, "registry_snapshot")?, &types, &imports)?;
+        need(get(profile, "degradation").is_err(), "fixed audit integration excludes degradation")?;
+        let output = run_references(input, pin)?;
+        let mut rows = object(&output)?.to_vec();
+        rows.push((s("assumption_set_digest_hex"), get(&common, "assumption_set_digest_hex")?.clone()));
+        Ok(V::M(rows))
+    } else {
+        let output = common_rules(get(&value, "profile")?, get(&value, "registry_snapshot")?, &types, &imports)?;
+        dig(get(&value, "assumption_set_digest")?)?;
+        need(hex(bytes(get(&value, "assumption_set_digest")?)?) == txt(get(&output, "assumption_set_digest_hex")?)?,
+             "SV-73: assumption set digest mismatch")?;
+        Ok(output)
+    }
 }

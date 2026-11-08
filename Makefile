@@ -214,3 +214,13 @@ test-profile-digest:
 test: test-profile-registration
 test-profile-registration:
 	$(PYTHON) -B scripts/check-profile-registration.py --report artifacts/profile-registration/cross-language.json
+
+.PHONY: test-profile-references
+test: test-profile-references
+test-profile-references:
+	$(PYTHON) -B scripts/check-profile-references.py --report artifacts/profile-references/cross-language.json
+
+.PHONY: test-registration-rules
+test: test-registration-rules
+test-registration-rules:
+	$(PYTHON) -B scripts/check-registration-rules.py --report artifacts/registration-rules/cross-language.json

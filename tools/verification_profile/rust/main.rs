@@ -138,6 +138,10 @@ impl J<'_>{
 fn parse_json(input:&str)->R<V>{need(input.len()<=MAX*4,"JSON size")?;let mut j=J{b:input.as_bytes(),p:0,n:0};let v=j.value(0)?;j.ws();need(j.p==j.b.len(),"JSON trailing")?;Ok(v)}
 fn run(line:&str)->R<V>{
  let (mode,input)=line.split_once('\t').ok_or("mode TAB input")?;
+ if let Some(pin)=mode.strip_prefix("registration-rules:"){return registration::run_rules(input,pin,false);}
+ if let Some(pin)=mode.strip_prefix("phase-r4:"){return registration::run_rules(input,pin,true);}
+ if mode=="excluded-selection"{return registration::run_excluded(input);}
+ if let Some(pin)=mode.strip_prefix("phase-r3:"){return registration::run_references(input,pin);}
  if let Some(pin)=mode.strip_prefix("phase-r:"){return registration::run(input,pin);}
  if ["profile-digest","profile-decision","audit-profile"].contains(&mode){return profile::run(mode,input);}
  if mode=="sha256"{return Ok(s(&hex(&sha256::hash(&unhex(input)?))));}

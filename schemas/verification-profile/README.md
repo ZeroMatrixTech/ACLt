@@ -23,3 +23,7 @@
 2026-11-07 [Profile 摘要第一片](../../docs/testing/PROFILE-DIGEST-R1-20261107.md)实现正式 ContentMap/摘要及通用判决结构，登记为 7 implemented / 28 partial / 84 not implemented。Profile 摘要 implemented，模板/claim 摘要 partial，其余 15 项摘要未实现。原始 CBOR 入口见 `python3 -m tools.verification_profile.validator PROFILE --profile-cbor`。完整 SchemaValid、导入/注册与生产准入继续独立验收。
 
 2026-11-07 [Profile 注册第二片](../../docs/testing/PROFILE-REGISTRATION-R2-20261107.md)新增四项规则级完成与八项 partial，当前 **11 implemented / 36 partial / 72 not implemented**。RegistrySnapshot/事件快照摘要已实现，audit Phase R 接显式 bundle；导入内部结构采用调用方钉住的测试 opaque schema，尚非正式全量 SchemaValid。原 JSON bootstrap schema 文件维持原骨架，新增严格类型表位于 `tools/verification_profile/rust/audit_types.json`。
+
+2026-11-08 [R3](../../docs/testing/PROFILE-REFERENCES-R3-20261108.md)完成 SV-07/08/72/89，当前 **15 implemented / 36 partial / 68 not implemented**。新的 `--registration-references-cbor` 入口使用线上二元 TimeRange 与三字段 ExternalTypedObject，并要求显式 ExcludedClaimsRegistry 资产。`--registration-cbor` 保留 R2 历史限域行为，其 map TimeRange/opaque wrapper 不构成正式 wire conformance；官方 import 注册、完整 SchemaValid 和生产准入仍待完成。
+
+2026-11-08 [R4](../../docs/testing/PROFILE-RULES-R4-20261108.md)完成 SV-03/22/32/33/37/38/59/73/84；当前 **24 implemented / 30 partial / 65 not implemented**。规则专用入口 `--registration-rules-cbor` 可检查四种方法的上述规则，不能用来声明完整 ValidateR；`--registration-r4-cbor` 为固定 audit 集成。未检验参数/claim、正式 import、版本迁移、日志来源和完整相位仍待验收。
