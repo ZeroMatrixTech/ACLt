@@ -335,7 +335,7 @@ fn frontier_digest(frontier: &V) -> R<Vec<u8>> {
     Ok(domain("ACLt/P0-1/EventFrontierSnapshot/1", &encode(&content)?))
 }
 
-fn check_frontier(frontier: &V, imports: &Imports) -> R<()> {
+pub(super) fn check_frontier(frontier: &V, imports: &Imports) -> R<()> {
     let header = get(frontier, "header")?;
     let version = integer(get(header, "schema_version")?)?;
     need([1, 2].contains(&version), "frontier version")?;

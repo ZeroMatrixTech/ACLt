@@ -6,15 +6,15 @@ use std::collections::BTreeSet;
 const REDUCER_SOURCE:&[u8]=b"ACLt R8 reference: REVOKED > OUT_OF_SCOPE > WINDOW_EXPIRED > VALID; full cause set retained.";
 fn rows(v:&V)->R<&[(V,V)]>{if let V::M(a)=v{Ok(a)}else{Err("map".into())}}
 fn same(a:&V,b:&V)->R<bool>{Ok(encode(a)?==encode(b)?)}
-fn types()->R<V>{
+pub(super) fn types()->R<V>{
  let mut result=vec![];
  for data in [include_str!("audit_types.json"),include_str!("creation_types.json"),include_str!("selection_types.json"),include_str!("method_types.json"),include_str!("binding_types.json")]{
   let next=parse_json(data)?;for (k,v) in rows(&next)?{need(!result.iter().any(|(x,_)|x==k),"duplicate binding type")?;result.push((k.clone(),v.clone()));}
  }Ok(V::M(result))
 }
 fn verify(p:&V)->R<()>{profile::run("profile-digest",&hex(&encode(p)?))?;Ok(())}
-fn pref(p:&V)->R<V>{Ok(map(vec![("id",get(p,"profile_id")?.clone()),("version",get(p,"profile_version")?.clone()),("digest",get(p,"profile_digest")?.clone())]))}
-fn identity(v:&V)->R<V>{let h=get(v,"header")?;Ok(map(["id","version","digest"].iter().map(|k|Ok((*k,get(h,k)?.clone()))).collect::<R<_>>()?))}
+pub(super) fn pref(p:&V)->R<V>{Ok(map(vec![("id",get(p,"profile_id")?.clone()),("version",get(p,"profile_version")?.clone()),("digest",get(p,"profile_digest")?.clone())]))}
+pub(super) fn identity(v:&V)->R<V>{let h=get(v,"header")?;Ok(map(["id","version","digest"].iter().map(|k|Ok((*k,get(h,k)?.clone()))).collect::<R<_>>()?))}
 fn runtime_identity(v:&V)->R<V>{let h=get(v,"header")?;Ok(map(vec![("id",get(h,"id")?.clone()),("digest",get(h,"digest")?.clone())]))}
 fn sorted_rows(v:&V,key:&str)->R<()>{let mut prior=None;for row in arr(v)?{let code=encode(get(row,key)?)?;if let Some(last)=prior{need(last<code,"pair-array order/duplicate")?;}prior=Some(code);}Ok(())}
 fn keyset(v:&V,key:&str)->R<BTreeSet<Vec<u8>>>{arr(v)?.iter().map(|x|encode(get(x,key)?)).collect()}
@@ -27,7 +27,7 @@ fn projection(v:&V,kind:&str)->R<V>{
  if runtime{out.push((s("id"),get(h,"id")?.clone()));}
  for (k,x) in rows(v)?{if !["header","translations","human_summary"].contains(&txt(k)?){out.push((k.clone(),x.clone()));}}Ok(V::M(out))
 }
-fn digest_object(v:&V,kind:&str,t:&V,i:&Imports)->R<()>{
+pub(super) fn digest_object(v:&V,kind:&str,t:&V,i:&Imports)->R<()>{
  let schema=match kind{"ClaimTemplate"=>"TemplateR8","AssumptionStateSnapshot"=>"StateSnapshotR8","MainnetAssuranceProfile"=>"AssuranceR8",_=>return Err("object kind".into())};
  typed(v,&s(schema),t,i)?;let h=get(v,"header")?;need(integer(get(h,"schema_version")?)?==1,"object schema version")?;
  need(bytes(get(h,"digest")?)?==domain(&format!("ACLt/P0-1/{kind}/1"),&encode(&projection(v,kind)?)?),"object digest mismatch")

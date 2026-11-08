@@ -1,0 +1,168 @@
+{
+  "status": "PASS",
+  "baseline": "d67effcd9aa789329cdc30ecdb602d90c38be5e3",
+  "date": "2026-11-08",
+  "scope": "explicit Phase B structural/state guard components with pinned TEST snapshot/randomness imports; no formal B conformance or state commitment",
+  "cases_per_host": 367,
+  "positive_per_host": 33,
+  "negative_per_host": 334,
+  "structural_rejects_per_host": 135,
+  "results_sha256": "e22945feb8626a34508b6e817b7038fde1b2fdca4d03f4dbfbe2c5fed58139ae",
+  "source_sha256": {
+    "docs/03-protocol/verification-profile-schema.md": "2d05cca5fcdfcc111e1506a6ce78f2cea0248fa4641e776160937c2c32de3bc5",
+    "docs/testing/PROFILE-RUNTIME-R9-20261108.scope.json": "e44c4f17fb6aa25d7c934499b3e9ef1b0a961a7081975aceb5640d833ef7355b",
+    "registries/verification-profile/excluded_claims.seed.json": "0a9b1cef270692a5df3937656e268628063c1f7e9de83d7b785285bb284d134b",
+    "schemas/verification-profile/coverage.json": "ca2f6118510fe0d8fcc9a5f3f296256d14a5349800be6a250a7550ce09b7a82b",
+    "schemas/verification-profile/inventory.json": "255d1abf18ba0506e5e0c39734c14e6065d71803d654b7457fba3ee3f581dd7b",
+    "schemas/verification-profile/runtime-imports-candidate-r9.json": "6658860b85b5e56b2846208e9b849fee9f2e2207e9c75347665d6aaefaf8d1da",
+    "scripts/check-commitment-bindings.py": "d27db0943ae28698408550d1e4e34f3f0b2e319f63cb1db3aa40cfd85754a028",
+    "scripts/check-creation-bindings.py": "73b94bf197b2813a92103bf7114f93bedfbe635d522157a50197d09a0ba3f1fc",
+    "scripts/check-method-matrices.py": "0dbeab2125c6eccf94901b66f1250e29f54500acd8ba319c0f22319d30efe380",
+    "scripts/check-profile-digest.py": "f0193ac8d74c321dfe681548baf7cafb4bff5c0b173fdac2e755bcf32237fcb2",
+    "scripts/check-profile-references.py": "073208c6e8934b21280dab2a0472958914e27c99ac5285f31ea2ad5ecf387f10",
+    "scripts/check-profile-registration.py": "9712493453a7b103fdfeece7f5f037b62de084b75fe21bafed6650e260e7d7da",
+    "scripts/check-registration-rules.py": "65763a301264b854dcafb307c19736b09254629dedaa72cd32cf15e434ba314b",
+    "scripts/check-runtime-bindings.py": "ad7b9ceea599d576e97ca166f6f1b4aa13ee900baa96f7e84aea2ac55c51b41b",
+    "scripts/check-selection-assets.py": "f76776ed648ecca60cce5c319881b9195ab0894a2202c049c649a9173c9a75cf",
+    "scripts/creation-source-files.json": "f9d5c3b2dbbbcd51add28bfb11f26860027f8dfd5364eb95ec7ce199199d294c",
+    "tests/verification_profile/codec/method-matrix-vectors.json": "424ca65f5ccffa7405557eea48c11bbce8c615573a98a2c19b9cd679c79d4267",
+    "tests/verification_profile/codec/profile-digest-vectors.json": "89197f5ccb7bfe13ab17807669da4b1ed3d77497a1f2dc05b1b94888f7c2fe42",
+    "tests/verification_profile/codec/profile-references-vectors.json": "fc0f7259d247779b8c8864660c47d94604edb0a3903bc74b017c1214875537a0",
+    "tests/verification_profile/codec/profile-registration-vectors.json": "baa8e0596042399e255ed1f279384d2d4acfb7612818772e786b2de1843ac29c",
+    "tests/verification_profile/codec/registration-rules-vectors.json": "ed9c3f1d490f1481770e6f09c7e85fc653d3852a03752896d3179287776e3164",
+    "tests/verification_profile/codec/runtime-bindings-vectors.json": "03f101c9c6b440bbbb60f384d22d8019ac57ab52bca99e82e0ecc80041f4fe31",
+    "tests/verification_profile/test_method_matrices.py": "7ad717491e14323bd99445e6f5d6f3de1978992e9b25b4c478eec91787e68082",
+    "tests/verification_profile/test_runtime_bindings.py": "45672e8b2d2695dbdb741b99960fd896d7a6e5eea402584f7a34948e0ff2f4c6",
+    "tools/verification_profile/__init__.py": "e4c5f6c7769ea8841f123417674ff69bac96554c6ea5241bf87a89b5dd1cac9c",
+    "tools/verification_profile/admission.py": "a0a926e415c7fe2768efe1f0cad4ecbcaa05558834734945542d34a702762358",
+    "tools/verification_profile/codec.py": "6e645a5997b543d2211c50e6a85c3f0fb29c746a32da91238f2afe81b26a62ac",
+    "tools/verification_profile/commitments.py": "66159aa36618b1923329d08cc66e2cac7aa4e3e3382e902ca14d8c8e184fce19",
+    "tools/verification_profile/creation.py": "f7e7b41b0663150123258b9c368f8e985baff04a421f74a9aa47b888522f5b84",
+    "tools/verification_profile/deployment.py": "82215c40d27a849a1bbc8d08e7a802754e536582c2218ff921e235e770fac226",
+    "tools/verification_profile/event_frontier.py": "4d7bf439f9da2813ab64dcec045341c27883a2f6870b8a9243031d7f43252ffa",
+    "tools/verification_profile/method_rules.py": "53e6567f9f5d3203618d731dc4f94a7e671e2a7e43eb2099320c17b81aa989f3",
+    "tools/verification_profile/phase_b.py": "e37c307b50b26f3860db661bb6eea159722807b947f5b9175bb656275dbe0d21",
+    "tools/verification_profile/profile.py": "9385c949d65b166b4531f5f1c9f0f797a4cf21419c3f5e4b9d5c25e307f8fceb",
+    "tools/verification_profile/references.py": "4a4555ee9b781653a9f663b4e3d715cf492d948eaf9e2360bc855ab856ec22cc",
+    "tools/verification_profile/registration.py": "777a6ef3b9d340b8692404cf1417fe082eebc98e8202ab5dfb5d493b26880d66",
+    "tools/verification_profile/registration_rules.py": "26fd1226755638755352e7b98883e4db7e4fd80bf6c21cb87ad5a9d039da2235",
+    "tools/verification_profile/runtime_bindings.py": "c4b7c755ec242336f27f03cfcfa599de00ccbdca1aebe5a3532b4e8ccc2189c0",
+    "tools/verification_profile/rust/audit_types.json": "c3b6b453231201e53c56d1880c67b06078362ef02230a08b536fd5f686cf95c8",
+    "tools/verification_profile/rust/binding_types.json": "e4e2452b1344454ce248fa0bbeba309444f4e3de3b2e343000ddaf493c64ec80",
+    "tools/verification_profile/rust/commitments.rs": "770f313e1808f51e1c4f05545fe3b2617d85453556314ee9d94a87c11fc8156c",
+    "tools/verification_profile/rust/creation.rs": "a9d1a7e7e4873e8f036ad59ea25024db3be8f0d12389e058daa38b5b20583a50",
+    "tools/verification_profile/rust/creation_types.json": "d49411ae6ffae6097120cd8b2cb8004fefa54467fd02c3ac687d981cc66f4b87",
+    "tools/verification_profile/rust/fm.rs": "52c965336ae43ec746780ae9e10f69e47330795c0263f13811a58b12db3ffaeb",
+    "tools/verification_profile/rust/fm_policy.rs": "9be54d4a57754975e033cdf503ee788bcc7a56516418d5c4fb2dc36d6713d23e",
+    "tools/verification_profile/rust/main.rs": "e760932bfc9520f595eb81ed441a9bbf4b51b2d59b33c7a548de4bba1e1a0a6b",
+    "tools/verification_profile/rust/method_rules.rs": "51cbbc32e3e2f16bcbb41f0f975e3a610b22bf5bac1967061bbe1fa45fdbbbde",
+    "tools/verification_profile/rust/method_types.json": "007b19ab363e6f98fa3780d930b634665e70be1cd889e9b5f8f412e5904b52e4",
+    "tools/verification_profile/rust/nfc.rs": "fc58d928223065045ed037672359d4f7b9cabb1aa084c27b7c13846dd0e37fb7",
+    "tools/verification_profile/rust/profile.rs": "39c9e93311cd2e87374ccb13b95ee38df497a34e131fc2e58ebac5fb14644add",
+    "tools/verification_profile/rust/registration.rs": "d9acb42ba0ce1229eb3d8b3405a7adf7224b5923b322c7b55138d3823937d5c0",
+    "tools/verification_profile/rust/runtime_bindings.rs": "125f36662e8dccf44bfcdd45d5be307869aa44a938e06a6bda2b7cd175ec740b",
+    "tools/verification_profile/rust/runtime_types.json": "2cfbb8667407057ff2f28e879af7c19d0c357482f999d6bfb9850e641c320f49",
+    "tools/verification_profile/rust/selection.rs": "597e52b1511b45102ef33fb55fc37f150b13c6489b0c45ca7e45de7efb1c4ff6",
+    "tools/verification_profile/rust/selection_types.json": "c6214e778db0531fcde0d6a499b70d063feb0afed3b9be2d73539b2cd5319325",
+    "tools/verification_profile/rust/sha256.rs": "33e5e0eadf528c3dfe619cfce573b848e7d3fefc2094b32b515206737a7e69f5",
+    "tools/verification_profile/rust/unicode_data.rs": "2bd394e40860b93af02da790c0eddbc1d6730ee943f60010e6d10726a9059bb3",
+    "tools/verification_profile/selection.py": "12300e1782eeaf23c783f53df576e556375367ecc034bc611542caa81108d37b",
+    "tools/verification_profile/validator.py": "e3a8a9bc74dba89cb3696eb344931795fef08ac2c4b4c79a17a5f4810c57686f"
+  },
+  "hosts": [
+    {
+      "status": "PASS",
+      "cases": 367,
+      "positive": 33,
+      "negative": 334,
+      "structural_rejects": 135,
+      "results_sha256": "e22945feb8626a34508b6e817b7038fde1b2fdca4d03f4dbfbe2c5fed58139ae",
+      "hostname": "inpax-aki",
+      "python": "3.14.4",
+      "kernel": "7.0.0-43-generic",
+      "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11) (built from a source tarball)",
+      "full_schema_valid": false,
+      "formal_phase_b_conformance": false,
+      "source_authentication": false,
+      "production_admission": false,
+      "state_committed": false
+    },
+    {
+      "status": "PASS",
+      "cases": 367,
+      "positive": 33,
+      "negative": 334,
+      "structural_rejects": 135,
+      "results_sha256": "e22945feb8626a34508b6e817b7038fde1b2fdca4d03f4dbfbe2c5fed58139ae",
+      "hostname": "aki2",
+      "python": "3.14.4",
+      "kernel": "7.0.0-42-generic",
+      "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11) (built from a source tarball)",
+      "full_schema_valid": false,
+      "formal_phase_b_conformance": false,
+      "source_authentication": false,
+      "production_admission": false,
+      "state_committed": false
+    }
+  ],
+  "public_source": {
+    "path": "docs/testing/public-evidence/PROFILE-RUNTIME-R9-source.tar.gz",
+    "sha256": "13b022efdd42604e6ad618b778afd936052901f3e998709a16954289260ffe96",
+    "files": 62,
+    "replay_status": "PASS",
+    "cases": 367,
+    "results_sha256": "e22945feb8626a34508b6e817b7038fde1b2fdca4d03f4dbfbe2c5fed58139ae"
+  },
+  "local_regression": {
+    "command": "make test",
+    "exit_code": 0,
+    "python_tests": 665,
+    "python_suites": 24,
+    "sanitizer_runs": 20,
+    "legacy_results": [
+      {
+        "report": "PROFILE-COMMITMENTS-R8-20261108.summary.json",
+        "results_sha256": "bc7e439353cc6a0f377a81a159a3ef8840c65ef2e9dba2330f3df8eb6c2dedc6"
+      },
+      {
+        "report": "PROFILE-CREATION-R6-20261108.summary.json",
+        "results_sha256": "4671758536895ba099eb589db158815bf6cb99ffd75685b39363d538e263da13"
+      },
+      {
+        "report": "PROFILE-DIGEST-R1-20261107.summary.json",
+        "results_sha256": "e7c80d5b7d424dd2b60b0c7654c306ac6c3b12e71d607fc69d93c7553de24b1b"
+      },
+      {
+        "report": "PROFILE-MATRICES-R5-20261108.summary.json",
+        "results_sha256": "ef42c715fda6fb2c5d0831afb95acdd4fb121aff554db7ff0dcef189d61136b1"
+      },
+      {
+        "report": "PROFILE-REFERENCES-R3-20261108.summary.json",
+        "results_sha256": "b28d0d466f31dd1303ecb7e82906ce56e3e79acb37ce88212855a2b7d3fce169"
+      },
+      {
+        "report": "PROFILE-REGISTRATION-R2-20261107.summary.json",
+        "results_sha256": "52398f0836bba2891d959be13487855030ada910e12485b2d982c9dc381b8907"
+      },
+      {
+        "report": "PROFILE-RULES-R4-20261108.summary.json",
+        "results_sha256": "fd6fce4a40ec608cdfd44e9a97ed8a0ba0af795bdd4c2b420003d3b2e81161e4"
+      },
+      {
+        "report": "PROFILE-SELECTION-R7-20261108.summary.json",
+        "results_sha256": "6b5b871d0ecf2ba48a256a216457cf8bd602ac5d810a9eab5b5d2bffdf5ea818"
+      }
+    ]
+  },
+  "coverage": {
+    "implemented": 79,
+    "partial": 34,
+    "not_implemented": 6
+  },
+  "formal_phase_b_conformance": false,
+  "source_authentication": false,
+  "production_admission": false,
+  "state_committed": false,
+  "new_task_protocol_or_fault_runs": false,
+  "gate_changes": false
+}

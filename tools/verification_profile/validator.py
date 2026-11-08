@@ -355,6 +355,17 @@ def validate_commitment_bindings_cbor(raw: bytes, lock_pin: bytes) -> list[Valid
     return []
 
 
+def validate_runtime_bindings_cbor(raw: bytes, lock_pin: bytes, contract_pin: bytes) -> list[ValidationIssue]:
+    from tools.verification_profile import codec, runtime_bindings
+    try:
+        result=runtime_bindings.inspect(raw,lock_pin,contract_pin)
+        if not result['accepted']:
+            return [_issue(result['failure_rule'], '$', result['consequence'])]
+    except (codec.CodecError, KeyError, TypeError, RecursionError) as exc:
+        return [_issue('RUNTIME_INPUT', '$', str(exc))]
+    return []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the P0-1B bootstrap validator")
     parser.add_argument("profile", type=Path)
@@ -376,14 +387,18 @@ def main() -> int:
     parser.add_argument('--test-contract-sha256', help='external pin of the explicit test admission contract')
     parser.add_argument('--registration-assets-cbor', action='store_true', help='R7 registration/selection components and explicit TEST applicability input')
     parser.add_argument('--commitment-bindings-cbor', action='store_true', help='R8 frozen commitment/binding components and candidate admission capsule')
+    parser.add_argument('--runtime-bindings-cbor', action='store_true', help='R9 explicit Phase B components with pinned TEST imports')
+    parser.add_argument('--runtime-contract-sha256', help='external pin of the R9 TEST snapshot/randomness import contract')
     args = parser.parse_args()
+    if args.runtime_bindings_cbor == (args.runtime_contract_sha256 is None):
+        parser.error('runtime entry requires --runtime-contract-sha256; other entries forbid it')
     creation_mode = args.creation_i_cbor or args.creation_f_cbor
     if creation_mode == (args.test_contract_sha256 is None):
         parser.error('I/F test entries require --test-contract-sha256; other entries forbid it')
-    registration_mode = any((args.registration_cbor,args.registration_references_cbor,args.registration_rules_cbor,args.registration_r4_cbor,args.method_matrix_cbor,args.registration_r5_cbor,args.creation_i_cbor,args.creation_f_cbor,args.registration_assets_cbor,args.commitment_bindings_cbor))
+    registration_mode = any((args.registration_cbor,args.registration_references_cbor,args.registration_rules_cbor,args.registration_r4_cbor,args.method_matrix_cbor,args.registration_r5_cbor,args.creation_i_cbor,args.creation_f_cbor,args.registration_assets_cbor,args.commitment_bindings_cbor,args.runtime_bindings_cbor))
     if registration_mode == (args.schema_lock_sha256 is None):
         parser.error('registration CBOR entries require --schema-lock-sha256')
-    if sum((args.registration_cbor,args.registration_references_cbor,args.profile_cbor,args.registration_rules_cbor,args.registration_r4_cbor,args.method_matrix_cbor,args.registration_r5_cbor,args.creation_i_cbor,args.creation_f_cbor,args.registration_assets_cbor,args.commitment_bindings_cbor))>1:
+    if sum((args.registration_cbor,args.registration_references_cbor,args.profile_cbor,args.registration_rules_cbor,args.registration_r4_cbor,args.method_matrix_cbor,args.registration_r5_cbor,args.creation_i_cbor,args.creation_f_cbor,args.registration_assets_cbor,args.commitment_bindings_cbor,args.runtime_bindings_cbor))>1:
         parser.error('choose one CBOR entry')
     def unique_object(pairs):
         result={}
@@ -394,7 +409,9 @@ def main() -> int:
     def invalid_constant(value):
         raise ValueError(f"invalid JSON constant: {value}")
     try:
-        if args.commitment_bindings_cbor:
+        if args.runtime_bindings_cbor:
+            issues = validate_runtime_bindings_cbor(args.profile.read_bytes(), bytes.fromhex(args.schema_lock_sha256), bytes.fromhex(args.runtime_contract_sha256))
+        elif args.commitment_bindings_cbor:
             issues = validate_commitment_bindings_cbor(args.profile.read_bytes(), bytes.fromhex(args.schema_lock_sha256))
         elif args.registration_assets_cbor:
             issues = validate_selection_assets_cbor(args.profile.read_bytes(), bytes.fromhex(args.schema_lock_sha256))
