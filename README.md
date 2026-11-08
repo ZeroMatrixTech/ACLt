@@ -4,7 +4,7 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-11-06**
+> **最后更新：2026-11-08**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -125,7 +125,12 @@ make workflow    # 按指纹执行并收集各组证据
 
 ## 当前工程入口与证据
 
-当前进度与优先级以[当前状态](docs/07-roadmap/current-status.md)的“当前实施入口”表为准。截至 2026-11-06，工程主线是 [ADR-0007](docs/05-decisions/ADR-0007-formal-object-migration-foundation.md) 与 [ADR-0008](docs/05-decisions/ADR-0008-fm-s3-interface-decisions.md) 下的候选 FM-S3 audit-only 路径：[双机收尾](docs/testing/FM-S3-CLOSEOUT-20261106.md)与 [Task trap 切片](docs/testing/FM-S3-TASK-TRAP-20261106.md)各通过 8 个双物理机场景。正式接口与准入保持 `OPEN`；P0-1B 保持 `STARTED / NOT CLOSED`，Type A 为 3 implemented / 24 partial / 92 not implemented。开发者预览的范围、复现方式与已知限制见[发行说明草案](docs/releases/PREVIEW-20261106.md)。
+当前进度与优先级以[当前状态](docs/07-roadmap/current-status.md)的“当前实施入口”表为准。截至 2026-11-08 有两条工程主线：
+
+- [ADR-0007](docs/05-decisions/ADR-0007-formal-object-migration-foundation.md) 与 [ADR-0008](docs/05-decisions/ADR-0008-fm-s3-interface-decisions.md) 下的候选 FM-S3 audit-only 路径已覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态，双物理机证据见[收尾](docs/testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](docs/testing/FM-S3-TASK-TRAP-20261106.md)和[终态与历史矩阵](docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md)。24 套公开快照可只用仓库复核，见[证据归档收尾](docs/testing/FM-EVIDENCE-CLOSEOUT-20261107.md)。
+- P0-1B 的 Profile 规则按 R1–R6 切片实现，Type A 为 36 implemented / 33 partial / 50 not implemented，18 个摘要 owner 中 9 个已实现。
+
+正式接口、FM-A 正式验收与准入保持 `OPEN`；P0-1B 保持 `STARTED / NOT CLOSED`。开发者预览的范围、复现方式与已知限制见[发行说明草案](docs/releases/PREVIEW-20261106.md)。
 
 state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifier-state3/README.md)）。[2026-10-03 集成报告](docs/testing/INTEGRATION-FIX.md)记录 265 个实验场景、13 项模型测试、24 项验证配置测试及 22 项流程/集成测试通过；这是已保存的历史证据，不是本次全量重跑结果。
 
