@@ -13,7 +13,7 @@ from tools.verification_profile import codec as c, profile as p
 TYPES = json.loads((Path(__file__).parent/'rust/audit_types.json').read_text())
 FIXED_IMPORTS = {name:'acl.schema.'+identifier+'@1' for name,identifier in [
     ('EvidenceRef','evidence-ref'),('EvidenceIssuerRef','evidence-issuer-ref'),
-    ('ChannelRef','channel-ref'),('EventRef','event-ref'),
+    ('ChannelRef','channel-ref'),('EventRef','event-ref'),('DatasetRef','dataset-ref'),
     ('ExternalVersionedObjectRef','external-versioned-object-ref'),
     ('EnvironmentClassID','environment-class-id'),('FaultDomainID','fault-domain-id'),('RegionID','region-id'),
 ]}
@@ -21,7 +21,7 @@ PREFIXES = dict(VERIFICATION_PROFILE='acl.vp.',CLAIM_TEMPLATE='acl.ct.',
                 PROFILE_SELECTION_POLICY='acl.vps.',WEAKENING_EDGE='acl.we.',
                 EXCLUDED_CLAIMS_REGISTRY='acl.ecr.',MAINNET_ASSURANCE_PROFILE='acl.map.',
                 PROFILE='acl.vp.',REGISTRY_SNAPSHOT='acl.rs.',FRONTIER='acl.efs.',
-                TASK='acl.tt.',PREDICATE='acl.pred.',EQUIVALENCE='acl.eq.',ENCODING='acl.enc.')
+                CREATION_CONTEXT='acl.cctx.',PHASE_I_RECORD='acl.pir.',TASK='acl.tt.',PREDICATE='acl.pred.',VALIDATOR='acl.val.',EQUIVALENCE='acl.eq.',ENCODING='acl.enc.')
 NAME = '[a-z][a-z0-9-]{0,62}'
 ULID = '[0-9A-HJKMNP-TV-Z]{26}'
 
@@ -36,14 +36,18 @@ def identifier(value, kind):
         suffix = NAME
         if kind in ('PROFILE','VERIFICATION_PROFILE'):
             suffix += r'\.'+NAME
-        elif kind in ('REGISTRY_SNAPSHOT','FRONTIER'):
+        elif kind in ('REGISTRY_SNAPSHOT','FRONTIER','CREATION_CONTEXT','PHASE_I_RECORD'):
             suffix = ULID
-        elif kind == 'PREDICATE':
+        elif kind in ('PREDICATE','VALIDATOR'):
             suffix += r'@(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)'
         elif kind in ('EQUIVALENCE','ENCODING'):
             suffix += r'@(0|[1-9][0-9]*)'
         pattern = re.escape(PREFIXES[kind])+suffix
     c.need(re.fullmatch(pattern,value) is not None,'SV-80: identifier')
+    if kind in ('PREDICATE','VALIDATOR'):
+        parts=value.rsplit('@',1)[1].split('.')
+        c.need(all(len(part)<=20 for part in parts),'reference SemVer overflow')
+        c.semver([int(part) for part in parts])
     return value
 
 
@@ -98,14 +102,17 @@ class Imports:
         c.need(type(value) is bytes,'opaque import must be canonical bstr')
 
 
-def typed(value, schema, imports):
+def typed(value, schema, imports, catalog=None):
+    catalog=TYPES if catalog is None else catalog
     if isinstance(schema,str):
-        if schema in TYPES:
-            return typed(value,TYPES[schema],imports)
+        if schema in catalog:
+            return typed(value,catalog[schema],imports,catalog)
         if schema == 'native':
             c.encode(value)
         elif schema == 'text':
             c.text(value)
+        elif schema == 'bool':
+            c.need(type(value) is bool,'bool')
         elif schema == 'uint':
             c.uint(value)
         elif schema == 'int':
@@ -122,13 +129,13 @@ def typed(value, schema, imports):
             imports.external_object(value)
         elif schema == 'wire-time-range':
             c.need(type(value) is list and len(value)==2,'wire TimeRange must be [start,end]')
-            typed(value[0],'int',imports)
-            typed(value[1],'int',imports)
+            typed(value[0],'int',imports,catalog)
+            typed(value[1],'int',imports,catalog)
             c.need(value[0]<value[1],'empty validity range')
         elif schema == 'time-range':
             c.fields(value,('start','end'))
-            typed(value['start'],'int',imports)
-            typed(value['end'],'int',imports)
+            typed(value['start'],'int',imports,catalog)
+            typed(value['end'],'int',imports,catalog)
             c.need(value['start']<value['end'],'empty validity range')
         else:
             raise c.CodecError('unknown type')
@@ -136,7 +143,7 @@ def typed(value, schema, imports):
         c.fields(value,schema['fields'],schema['optional'])
         for key,child in (schema['fields']|schema['optional']).items():
             if key in value:
-                typed(value[key],child,imports)
+                typed(value[key],child,imports,catalog)
     elif 'enum' in schema:
         c.need(type(value) is str and value in schema['enum'],'unknown ENUM')
     elif 'identifier' in schema:
@@ -147,7 +154,7 @@ def typed(value, schema, imports):
         c.need(type(value) is list,'array')
         child = schema.get('array',schema.get('set'))
         for item in value:
-            typed(item,child,imports)
+            typed(item,child,imports,catalog)
         if 'set' in schema:
             encoded = [c.encode(item) for item in value]
             c.need(encoded==sorted(set(encoded)),'set order or duplicate')

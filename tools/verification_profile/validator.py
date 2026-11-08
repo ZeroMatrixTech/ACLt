@@ -311,6 +311,30 @@ def validate_registration_rules_cbor(raw: bytes, lock_pin: bytes, *, audit: bool
     return []
 
 
+
+def validate_method_matrix_cbor(raw: bytes, lock_pin: bytes, *, audit: bool = False) -> list[ValidationIssue]:
+    """R5 frozen matrices only; unresolved imports/wire slots are not approved."""
+    from tools.verification_profile import codec, method_rules
+    try:
+        function = method_rules.inspect_audit if audit else method_rules.inspect
+        function(raw, lock_pin)
+    except (codec.CodecError, KeyError, TypeError, RecursionError) as exc:
+        message = str(exc)
+        rule = message.split(':', 1)[0] if message.startswith('SV-') else 'METHOD_INPUT'
+        return [_issue(rule, '$', message)]
+    return []
+
+
+def validate_creation_cbor(raw: bytes, lock_pin: bytes, contract_pin: bytes, *, phase: str) -> list[ValidationIssue]:
+    from tools.verification_profile import codec, creation
+    try:
+        creation.inspect(raw, lock_pin, contract_pin, phase=phase)
+    except (codec.CodecError, KeyError, TypeError, RecursionError) as exc:
+        message = str(exc)
+        return [_issue(message.split(':',1)[0] if message.startswith('SV-') else 'CREATION_TEST_INPUT', '$', message)]
+    return []
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the P0-1B bootstrap validator")
     parser.add_argument("profile", type=Path)
@@ -323,13 +347,21 @@ def main() -> int:
                         help='audit wire TimeRange/ExternalTypedObject and exclusion registry references')
     parser.add_argument('--registration-rules-cbor', action='store_true', help='R4 selected common registration rules only')
     parser.add_argument('--registration-r4-cbor', action='store_true', help='R4 fixed audit registration integration')
+    parser.add_argument('--method-matrix-cbor', action='store_true', help='R5 selected method parameter and outcome matrices')
+    parser.add_argument('--registration-r5-cbor', action='store_true', help='R5 fixed audit integration')
     parser.add_argument('--schema-lock-sha256',
                         help='caller-supplied trusted schema lock pin for --registration-cbor')
+    parser.add_argument('--creation-i-cbor', action='store_true', help='R6 fixed audit TEST Phase I transcript')
+    parser.add_argument('--creation-f-cbor', action='store_true', help='R6 fixed audit TEST Phase F envelope')
+    parser.add_argument('--test-contract-sha256', help='external pin of the explicit test admission contract')
     args = parser.parse_args()
-    registration_mode = any((args.registration_cbor,args.registration_references_cbor,args.registration_rules_cbor,args.registration_r4_cbor))
+    creation_mode = args.creation_i_cbor or args.creation_f_cbor
+    if creation_mode == (args.test_contract_sha256 is None):
+        parser.error('I/F test entries require --test-contract-sha256; other entries forbid it')
+    registration_mode = any((args.registration_cbor,args.registration_references_cbor,args.registration_rules_cbor,args.registration_r4_cbor,args.method_matrix_cbor,args.registration_r5_cbor,args.creation_i_cbor,args.creation_f_cbor))
     if registration_mode == (args.schema_lock_sha256 is None):
         parser.error('registration CBOR entries require --schema-lock-sha256')
-    if sum((args.registration_cbor,args.registration_references_cbor,args.profile_cbor,args.registration_rules_cbor,args.registration_r4_cbor))>1:
+    if sum((args.registration_cbor,args.registration_references_cbor,args.profile_cbor,args.registration_rules_cbor,args.registration_r4_cbor,args.method_matrix_cbor,args.registration_r5_cbor,args.creation_i_cbor,args.creation_f_cbor))>1:
         parser.error('choose one CBOR entry')
     def unique_object(pairs):
         result={}
@@ -340,7 +372,13 @@ def main() -> int:
     def invalid_constant(value):
         raise ValueError(f"invalid JSON constant: {value}")
     try:
-        if args.registration_rules_cbor or args.registration_r4_cbor:
+        if creation_mode:
+            issues = validate_creation_cbor(args.profile.read_bytes(), bytes.fromhex(args.schema_lock_sha256),
+                bytes.fromhex(args.test_contract_sha256), phase='I' if args.creation_i_cbor else 'F')
+        elif args.method_matrix_cbor or args.registration_r5_cbor:
+            pin = bytes.fromhex(args.schema_lock_sha256)
+            issues = validate_method_matrix_cbor(args.profile.read_bytes(), pin, audit=args.registration_r5_cbor)
+        elif args.registration_rules_cbor or args.registration_r4_cbor:
             pin = bytes.fromhex(args.schema_lock_sha256)
             issues = validate_registration_rules_cbor(args.profile.read_bytes(), pin, audit=args.registration_r4_cbor)
         elif args.registration_references_cbor:

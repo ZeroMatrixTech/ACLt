@@ -1,0 +1,167 @@
+{
+  "DirectParamsR5": {
+    "fields": {
+      "predicate_ref": {
+        "identifier": "PREDICATE"
+      },
+      "validator_ref": {
+        "identifier": "VALIDATOR"
+      },
+      "predicate_signature": {
+        "import_": "PredicateSignature"
+      },
+      "soundness_class": {
+        "enum": [
+          "SOUND",
+          "SOUND_AND_COMPLETE"
+        ]
+      },
+      "certificate_required": "bool",
+      "certificate_producer": {
+        "enum": [
+          "PROVIDER",
+          "VERIFIER",
+          "NONE"
+        ]
+      },
+      "determinism": {
+        "enum": [
+          "DETERMINISTIC"
+        ]
+      },
+      "effects": {
+        "array": {
+          "import_": "EffectID"
+        }
+      },
+      "resource_bound": {
+        "import_": "ResourceBounds"
+      },
+      "verifier_replication_min": "uint",
+      "reject_attribution": {
+        "enum": [
+          "PROVIDER_FAULT",
+          "NO_ATTRIBUTION"
+        ]
+      }
+    },
+    "optional": {}
+  },
+  "ProofParamsR5": {
+    "fields": {
+      "proof_system_ref": {
+        "import_": "SystemRef"
+      },
+      "public_params_ref": {
+        "import_": "ParamsRef"
+      },
+      "statement_binding_rule": {
+        "import_": "BindingRuleRef"
+      },
+      "verifier_ref": {
+        "import_": "VerifierRef"
+      },
+      "soundness_assumptions": {
+        "array": {
+          "identifier": "ASSUMPTION"
+        }
+      },
+      "setup_kind": {
+        "enum": [
+          "TRANSPARENT",
+          "TRUSTED_SETUP"
+        ]
+      },
+      "verification_cost_bound": {
+        "import_": "ResourceBounds"
+      }
+    },
+    "optional": {}
+  },
+  "BoundedParamsR5": {
+    "fields": {
+      "sampling_unit": {
+        "enum": [
+          "CORRELATION_CLUSTER"
+        ]
+      },
+      "population_definition": {
+        "import_": "PopulationDefRef"
+      },
+      "snapshot_schema_ref": {
+        "import_": "SchemaRef"
+      },
+      "randomness_commitment": {
+        "import_": "CommitmentSchemeRef"
+      },
+      "algorithm_id": {
+        "enum": [
+          "finite-population-boundary-lr-v1"
+        ]
+      },
+      "arithmetic": {
+        "enum": [
+          "exact-rational"
+        ]
+      },
+      "mixture_weights": {
+        "array": {
+          "fields": {
+            "m": "uint",
+            "weight": "rational"
+          },
+          "optional": {}
+        }
+      },
+      "threshold_comparison": {
+        "enum": [
+          ">="
+        ]
+      }
+    },
+    "optional": {}
+  },
+  "SafetyR5": {
+    "fields": {
+      "epsilon_f": "rational",
+      "G": "uint",
+      "B": "uint",
+      "delta_min": "rational",
+      "support_capability_bound_ref": {
+        "identifier": "ASSUMPTION"
+      }
+    },
+    "optional": {}
+  },
+  "LivenessR5": {
+    "fields": {
+      "Q": "uint",
+      "delta_q": "rational",
+      "delta_l": "rational",
+      "q_source": {
+        "enum": [
+          "ANCHORED_IN_CLASS",
+          "FAULT_INJECTED_IN_CLASS"
+        ]
+      },
+      "calibration_dataset_ref": {
+        "import_": "DatasetRef"
+      },
+      "calibration_task_class": {
+        "identifier": "TASK"
+      },
+      "calibration_rir_profile": "version-range",
+      "calibration_rpr_version": "version-range",
+      "calibration_environment": {
+        "import_": "EnvironmentClassID"
+      },
+      "calibration_sample_period": "wire-time-range",
+      "calibration_ref": {
+        "identifier": "ASSUMPTION"
+      },
+      "n_required": "uint",
+      "n_policy": "uint"
+    },
+    "optional": {}
+  }
+}

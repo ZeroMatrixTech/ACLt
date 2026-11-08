@@ -224,3 +224,13 @@ test-profile-references:
 test: test-registration-rules
 test-registration-rules:
 	$(PYTHON) -B scripts/check-registration-rules.py --report artifacts/registration-rules/cross-language.json
+
+.PHONY: test-method-matrices
+test: test-method-matrices
+test-method-matrices:
+	$(PYTHON) -B scripts/check-method-matrices.py --report artifacts/method-matrices/cross-language.json
+
+.PHONY: test-creation-bindings
+test: test-creation-bindings
+test-creation-bindings:
+	$(PYTHON) -B scripts/check-creation-bindings.py --report artifacts/creation-bindings/cross-language.json
