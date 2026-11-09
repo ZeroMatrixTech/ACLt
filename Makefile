@@ -254,3 +254,8 @@ test-runtime-bindings:
 test: test-decision-replay
 test-decision-replay:
 	$(PYTHON) -B scripts/check-decision-replay.py $(if $(DECISION_REPLAY_REPORT),--report "$(DECISION_REPLAY_REPORT)",)
+
+.PHONY: test-fm-decision-replay
+test: test-fm-decision-replay
+test-fm-decision-replay:
+	$(PYTHON) -B scripts/check-fm-decision-replay.py $(if $(FM_DECISION_REPLAY_REPORT),--report "$(FM_DECISION_REPLAY_REPORT)",)

@@ -197,6 +197,7 @@ CI 配置只在 PR、main push 和手动触发时跑完整本地检查和打包�
 | `make test-commitment-bindings` | R8 Claim/快照/承诺与候选输入胶囊 | [R8](testing/PROFILE-COMMITMENTS-R8-20261108.md) |
 | `make test-runtime-bindings` | R9 显式运行期绑定与 pinned TEST snapshot imports | [R9](testing/PROFILE-RUNTIME-R9-20261108.md) |
 | `make test-decision-replay` | R10 Phase D audit-only 测试重放 | [R10](testing/PROFILE-DECISION-R10-20261109.md) |
+| `make test-fm-decision-replay` | R11 FM-S3 签名日志、Phase D 和结算复核 | [R11](testing/PROFILE-AUTHORITY-R11-20261109.md) |
 
 这些入口不是完整 ReplayPhaseI、CreateReceipt 或生产准入。每片的公开最小源码包在 `docs/testing/public-evidence/` 中，覆盖计数以 [coverage 登记](../schemas/verification-profile/coverage.json)为准。
 

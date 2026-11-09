@@ -96,6 +96,20 @@ def audit_evaluate(canonical_input, deadline, cap, instant):
                           discordant=outcomes.count('DISCORDANT'), committed_cost=committed)
 
 
+def audit_conditions(invalidating, execution, boundary, admitted, minimum):
+    """Apply audit Phase D conditions in the fixed rule vocabulary."""
+    c.need(type(minimum) is int and minimum > 0, 'audit TEST minimum must be positive')
+    conditions = {
+        admission.INVALIDATING: invalidating or execution == admission.INVALIDATING
+                                or boundary == admission.INVALIDATING,
+        'EXECUTION_FAILED': execution == 'EXECUTION_FAILED',
+        admission.FUNDING: boundary == admission.FUNDING,
+        admission.DEADLINE: boundary == admission.DEADLINE,
+    }
+    conditions['EVIDENCE_EXHAUSTED'] = not any(conditions.values()) and admitted >= minimum
+    return conditions
+
+
 def replay(value, schema_pin, contract_pin):
     c.fields(value, ('envelope', 'schema_lock', 'schema_documents', 'decision_contract'))
     imports = binding.Imports(value['schema_lock'], value['schema_documents'], schema_pin)
@@ -183,16 +197,8 @@ def replay(value, schema_pin, contract_pin):
         visible = ancestors(events, c.encode(frontier['frontier_event_ref']))
         execution = execution_condition(data['execution_observation'], receipt_id, events,
                                         visible, aggregate['admitted'])
-    invalidating |= execution == admission.INVALIDATING
     minimum = profile['method_parameters']['min_reexecutions']
-    c.need(minimum > 0, 'audit TEST minimum must be positive')
-    conditions = {
-        admission.INVALIDATING: invalidating,
-        'EXECUTION_FAILED': execution == 'EXECUTION_FAILED',
-        admission.FUNDING: boundary == admission.FUNDING,
-        admission.DEADLINE: boundary == admission.DEADLINE,
-    }
-    conditions['EVIDENCE_EXHAUSTED'] = not any(conditions.values()) and aggregate['admitted'] >= minimum
+    conditions = audit_conditions(invalidating, execution, boundary, aggregate['admitted'], minimum)
     vector = []
     for condition in profile['decision_mapping']['rules']:
         active = conditions[condition]
