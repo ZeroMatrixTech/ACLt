@@ -303,3 +303,5 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [R9：运行期绑定、冻结状态与七种 Phase B 载荷组件](testing/PROFILE-RUNTIME-R9-20261108.md)。
 
 - [R10：Phase D 审计重放与终态投影](testing/PROFILE-DECISION-R10-20261109.md)。
+
+- [R11：FM-S3 权威证据、Phase D 与结算复核](testing/PROFILE-AUTHORITY-R11-20261109.md)。

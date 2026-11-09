@@ -7,7 +7,7 @@ import unittest
 from unittest import mock
 
 from tools.formal_migration import foundation as f, policy as p, s2, s2_evidence, s2_fixture
-from tools.formal_migration import s2_worker, s3_authority as s3, s3_closure, s3_terminals as t
+from tools.formal_migration import s2_worker, s3_decision_replay, s3_authority as s3, s3_closure, s3_terminals as t
 from tools.verification_profile import codec as c
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -119,6 +119,32 @@ class TerminalTests(unittest.TestCase):
     def replay_public(self):
         snapshot = s2_evidence.export(self.ledger)
         self.assertEqual(s3.verify_snapshot(self.cfg, snapshot, snapshot['checkpoint'])['status'], 'PASS')
+
+    def test_decision_replay_rejects_older_valid_signed_snapshot(self):
+        self.create()
+        self.consume('EXECUTOR')
+        start = self.entry('EXECUTOR')
+        self.hostfault('EXECUTOR', start)
+        self.close(start)
+        self.finalize()
+        self.settle()
+        receipt = self.rid
+        old = s2_evidence.export(self.ledger)
+        self.use(1)
+        self.create()
+        new = s2_evidence.export(self.ledger)
+        anchor = old['checkpoint']
+        expected = new['checkpoint']
+        self.assertLess(anchor['seq'], expected['seq'])
+        self.assertEqual(anchor['genesis'], expected['genesis'])
+        self.assertEqual(s3_decision_replay.verify(self.cfg, old, anchor, anchor, [receipt])
+                         ['receipts'][0]['terminal'], 'FAILED')
+        current = s3_decision_replay.verify(self.cfg, new, anchor, expected, [receipt])
+        self.assertEqual(current['receipts'][0]['terminal'], 'FAILED')
+        with self.assertRaisesRegex(c.CodecError, 'expected checkpoint mismatch'):
+            s3_decision_replay.verify(self.cfg, old, anchor, expected, [receipt])
+        with self.assertRaisesRegex(c.CodecError, 'anchor consistency'):
+            s3_decision_replay.verify(self.cfg, old, expected, anchor, [receipt])
 
     def test_existing_contract_bytes_are_unchanged_and_options_are_explicit(self):
         for flags, digest in ((dict(), OLD_PROFILE_DIGESTS['OK_ONLY']),

@@ -123,7 +123,8 @@
       "SV-69",
       "SV-81",
       "SV-115",
-      "SV-121"
+      "SV-121",
+      "SV-119"
     ],
     "L2": [
       "SV-25",
@@ -150,7 +151,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-09: R10 后 119 Type A = 80 implemented + 35 partial + 4 not implemented。SV-112 完成显式边界投影，SV-115/121 为 audit-only 测试重放与闭合组件的 partial。18/18 摘要公式/投影保持。",
+  "review_note": "2026-11-09: R11 后 119 Type A = 80 implemented + 36 partial + 3 not implemented。FM-S3 权威证据接入为 SV-119 新增 partial，为 SV-115/121 补充候选真实来源与结算对照证据。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],

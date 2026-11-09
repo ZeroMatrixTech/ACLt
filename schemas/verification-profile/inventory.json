@@ -1858,12 +1858,14 @@
       "status": "PARTIAL",
       "requirement": "重放 method evaluator；重算 condition vector、`FirstTrue`、`CanonicalTerminal`，并要求与 Decision.terminal_state 逐位一致（DE-1—DE-3）",
       "implementation": [
-        "tools/verification_profile/decision_replay.py#inspect"
+        "tools/verification_profile/decision_replay.py#inspect",
+        "tools/formal_migration/s3_decision_replay.py#project_decision"
       ],
       "tests": [
-        "tests/verification_profile/test_decision_replay.py#test_vectors"
+        "tests/verification_profile/test_decision_replay.py#test_vectors",
+        "scripts/check-fm-decision-replay.py#run"
       ],
-      "gap": "固定 audit-only 测试求值器从内联规范结果字节重算聚合、条件与终态。其他方法、完整正式导入和 Phase D 验收仍待完成。"
+      "gap": "固定 audit-only 测试求值器从内联规范结果字节重算聚合、条件与终态。其他方法、完整正式导入和 Phase D 验收仍待完成。 R11 从已验证的 FM-S3 前缀导出 audit-only 接纳记录，复算并核对权威判决与结算。"
     },
     {
       "id": "SV-116",
@@ -1916,11 +1918,16 @@
       "phase": "R/I/F/B/D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "按 `log_backend_ref` 验证 checkpoint finality、EventRecord inclusion/consistency，并与 MainnetAssuranceProfile 逐位绑定（EF-6/EF-7）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/formal_migration/s3_decision_replay.py#verify"
+      ],
+      "tests": [
+        "scripts/check-fm-decision-replay.py#run",
+        "tests/formal_migration/test_s3_terminals.py#test_decision_replay_rejects_older_valid_signed_snapshot"
+      ],
+      "gap": "FM-S3 测试后端已校验签名 checkpoint、事件前缀包含和外部 anchor 一致性。正式 MAP 日志后端绑定、finality 及全相位集成仍待验收。"
     },
     {
       "id": "SV-120",
@@ -1945,12 +1952,14 @@
       "status": "PARTIAL",
       "requirement": "`ExecutionObservation` 投影：合法 closure 且零有效提交才产生 `EXECUTION_FAILED`；source unavailable/malformed 产生 invalidating",
       "implementation": [
-        "tools/verification_profile/decision_replay.py#execution_condition"
+        "tools/verification_profile/decision_replay.py#execution_condition",
+        "tools/formal_migration/s3_decision_replay.py#project_decision"
       ],
       "tests": [
-        "tests/verification_profile/test_decision_replay.py#test_vectors"
+        "tests/verification_profile/test_decision_replay.py#test_vectors",
+        "scripts/check-fm-decision-replay.py#run"
       ],
-      "gap": "测试闭合摘要与固定来源引用支持零提交判定和失效投影。正式闭合摘要合同及权威来源验收仍待完成。"
+      "gap": "测试闭合摘要与固定来源引用支持零提交判定和失效投影。正式闭合摘要合同及权威来源验收仍待完成。 R11 已接入 FM-S3 观察方签名闭合及日志事件，作为候选来源验收证据。"
     }
   ],
   "digests": [
