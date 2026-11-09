@@ -66,7 +66,8 @@
       "SV-99",
       "SV-105",
       "SV-106",
-      "SV-107"
+      "SV-107",
+      "SV-112"
     ],
     "L2": [
       "SV-02",
@@ -102,7 +103,6 @@
     ],
     "L1b": [
       "SV-62",
-      "SV-112",
       "SV-117",
       "SV-64",
       "SV-75a",
@@ -121,7 +121,9 @@
       "SV-54a",
       "SV-57",
       "SV-69",
-      "SV-81"
+      "SV-81",
+      "SV-115",
+      "SV-121"
     ],
     "L2": [
       "SV-25",
@@ -148,7 +150,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-08: R9 后 119 Type A = 79 implemented + 34 partial + 6 not implemented；10 项结构/运行期绑定守卫完成，SV-69/81 新增 partial。18/18 摘要公式/投影保持。TEST imports/纯检查不代表正式 Phase B、状态原子提交、I/F/D、来源认证或部署验收；Gate 不变。",
+  "review_note": "2026-11-09: R10 后 119 Type A = 80 implemented + 35 partial + 4 not implemented。SV-112 完成显式边界投影，SV-115/121 为 audit-only 测试重放与闭合组件的 partial。18/18 摘要公式/投影保持。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],

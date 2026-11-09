@@ -5,7 +5,7 @@ use super::registration::{Imports,typed};
 use std::collections::BTreeSet;
 const REDUCER_SOURCE:&[u8]=b"ACLt R8 reference: REVOKED > OUT_OF_SCOPE > WINDOW_EXPIRED > VALID; full cause set retained.";
 fn rows(v:&V)->R<&[(V,V)]>{if let V::M(a)=v{Ok(a)}else{Err("map".into())}}
-fn same(a:&V,b:&V)->R<bool>{Ok(encode(a)?==encode(b)?)}
+pub(super) fn same(a:&V,b:&V)->R<bool>{Ok(encode(a)?==encode(b)?)}
 pub(super) fn types()->R<V>{
  let mut result=vec![];
  for data in [include_str!("audit_types.json"),include_str!("creation_types.json"),include_str!("selection_types.json"),include_str!("method_types.json"),include_str!("binding_types.json")]{
@@ -37,7 +37,7 @@ fn state_hash(v:&V)->R<Vec<u8>>{
  Ok(domain("ACLt/P0-1/AssumptionState/1",&encode(&V::A(vec![get(v,"reducer_ref")?.clone(),V::A(rows)]))?))
 }
 fn claim_hash(reference:&V,bindings:&V)->R<Vec<u8>>{Ok(domain("ACLt/P0-1/RenderedClaim/1",&encode(&V::A(vec![reference.clone(),bindings.clone()]))?))}
-fn decision_hash(v:&V,t:&V,i:&Imports)->R<Vec<u8>>{typed(v,&s("DecisionInputR8"),t,i)?;Ok(domain("ACLt/P0-1/DecisionEvaluationInput/1",&encode(v)?))}
+pub(super) fn decision_hash(v:&V,t:&V,i:&Imports)->R<Vec<u8>>{typed(v,&s("DecisionInputR8"),t,i)?;Ok(domain("ACLt/P0-1/DecisionEvaluationInput/1",&encode(v)?))}
 fn method_exclusions(p:&V)->R<()>{
  let method=txt(get(p,"verification_method")?)?;let ids=arr(get(get(p,"excluded_claims")?,"exclusion_ids")?)?;
  let required:&[&str]=match method{"DIRECT_VERIFIED"=>&["EXC-SPEC-PREDICATE-FIT","EXC-IMPL-VALIDATOR"],"PROOF_VERIFIED"=>&["EXC-IMPL-VALIDATOR","EXC-PROOF-SYSTEM","EXC-PROOF-STATEMENT-FIT"],"REEXEC_BOUNDED"=>&["EXC-STAT-BOUND-SOURCE","EXC-STAT-CALIBRATION"],"REEXEC_AUDIT_ONLY"=>&[],_=>return Err("method".into())};
@@ -91,7 +91,7 @@ fn concrete(p:&V,template:&V,registry:&V,bindings:&V,t:&V,i:&Imports)->R<()>{
   need(same(get(actual,"value")?,get(row,"value")?)?,"SV-35: STATIC concrete changed")?;
  }Ok(())
 }
-fn states<'a>(p:&V,result:&'a V,t:&V,i:&Imports)->R<Option<&'a V>>{
+pub(super) fn states<'a>(p:&V,result:&'a V,t:&V,i:&Imports)->R<Option<&'a V>>{
  verify(p)?;let tag=txt(get(result,"tag")?)?;
  if tag=="INVALIDATING"{fields(result,&["tag","failure"])?;typed(get(result,"failure")?,&s("AssumptionFailureR8"),t,i)?;return Ok(None);}
  need(tag=="COMPLETE","SV-116: result tag")?;fields(result,&["tag","snapshot"])?;let snapshot=get(result,"snapshot")?;digest_object(snapshot,"AssumptionStateSnapshot",t,i)?;

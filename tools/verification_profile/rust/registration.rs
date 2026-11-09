@@ -201,6 +201,10 @@ impl Imports {
         }
     }
 
+    pub(super) fn native_schema(&self) -> Option<&V> {
+        self.aliases.get("NativeValue")
+    }
+
     pub(super) fn external_object(&self, value: &V) -> R<()> {
         need(self.references, "external object wire mode required")?;
         fields(value, &["schema_ref", "canonical_bytes", "object_digest"])?;
@@ -322,7 +326,7 @@ pub(super) fn check_registry(registry: &V) -> R<()> {
     need(bytes(get(get(registry, "header")?, "digest")?)? == registry_digest(registry)?, "registry digest")
 }
 
-fn frontier_digest(frontier: &V) -> R<Vec<u8>> {
+pub(super) fn frontier_digest(frontier: &V) -> R<Vec<u8>> {
     let header = get(frontier, "header")?;
     let content = map(vec![
         ("schema_version", get(header, "schema_version")?.clone()),

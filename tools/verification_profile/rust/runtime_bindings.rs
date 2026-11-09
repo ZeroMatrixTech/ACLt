@@ -7,8 +7,8 @@ const STAGES:[&str;4]=["PRE_FREEZE","FROZEN_PRE_DRAW","RUNNING","TERMINAL"];
 fn same(a:&V,b:&V)->R<bool>{Ok(encode(a)?==encode(b)?)}
 fn same_optional(a:Option<&V>,b:Option<&V>)->R<bool>{match(a,b){(Some(x),Some(y))=>same(x,y),(None,None)=>Ok(true),_=>Ok(false)}}
 fn types()->R<V>{let mut all=match commitments::types()?{V::M(v)=>v,_=>return Err("types".into())};let extra=parse_json(include_str!("runtime_types.json"))?;if let V::M(v)=extra{for (k,v) in v{need(!all.iter().any(|(a,_)|a==&k),"duplicate runtime type")?;all.push((k,v));}}Ok(V::M(all))}
-fn ancestors(events:&BTreeMap<Vec<u8>,V>,root:&[u8])->R<BTreeSet<Vec<u8>>>{let mut seen=BTreeSet::new();let mut pending=vec![root.to_vec()];while let Some(k)=pending.pop(){if seen.insert(k.clone()){let event=events.get(&k).ok_or("missing event")?;for p in arr(get(event,"parent_refs")?)?{pending.push(encode(p)?);}}}Ok(seen)}
-fn event_is(events:&BTreeMap<Vec<u8>,V>,visible:&BTreeSet<Vec<u8>>,reference:&V,kind:&str,tag:&str,id:&V)->R<bool>{let code=encode(reference)?;let Some(row)=events.get(&code)else{return Ok(false);};Ok(visible.contains(&code)&&txt(get(row,"event_kind")?)?==kind&&same(get(row,"subject_ref")?,&map(vec![("tag",s(tag)),("id",id.clone())]))?)}
+pub(super) fn ancestors(events:&BTreeMap<Vec<u8>,V>,root:&[u8])->R<BTreeSet<Vec<u8>>>{let mut seen=BTreeSet::new();let mut pending=vec![root.to_vec()];while let Some(k)=pending.pop(){if seen.insert(k.clone()){let event=events.get(&k).ok_or("missing event")?;for p in arr(get(event,"parent_refs")?)?{pending.push(encode(p)?);}}}Ok(seen)}
+pub(super) fn event_is(events:&BTreeMap<Vec<u8>,V>,visible:&BTreeSet<Vec<u8>>,reference:&V,kind:&str,tag:&str,id:&V)->R<bool>{let code=encode(reference)?;let Some(row)=events.get(&code)else{return Ok(false);};Ok(visible.contains(&code)&&txt(get(row,"event_kind")?)?==kind&&same(get(row,"subject_ref")?,&map(vec![("tag",s(tag)),("id",id.clone())]))?)}
 fn shape<'a>(e:&'a V,t:&V,i:&Imports)->R<Option<V>>{
  typed(e,&s("RuntimeEnvelopeR9"),t,i)?;let payload=get(e,"payload")?;let tag=txt(get(payload,"tag")?)?;
  let keys:Vec<&str>=match tag{
