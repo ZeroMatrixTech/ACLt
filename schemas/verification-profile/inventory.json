@@ -1807,16 +1807,18 @@
       "phase": "D",
       "layer": "L1b",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "从 `BoundaryObservation` 的显式 funding/deadline refs 与事件 DAG 调用 `ResolveBoundary`；事件缺失、kind/subject 错误先产生 invalidating",
       "implementation": [
-        "tools/verification_profile/admission.py#resolve_boundary"
+        "tools/verification_profile/admission.py#resolve_boundary",
+        "tools/verification_profile/decision_replay.py#replay"
       ],
       "tests": [
         "tests/verification_profile/test_admission.py#test_boundary_order_and_concurrency",
-        "tests/verification_profile/test_admission.py#test_invalid_boundary_facts_are_not_concurrent"
+        "tests/verification_profile/test_admission.py#test_invalid_boundary_facts_are_not_concurrent",
+        "tests/verification_profile/test_decision_replay.py#test_vectors"
       ],
-      "gap": "已验证显式边界引用和 DAG 的局部投影；完整 Phase D、快照认证及权威边界来源接线待验收。"
+      "gap": "Phase D 审计候选入口与双语向量覆盖显式边界、因果顺序和无效事件。权威来源和日志认证另行验收。"
     },
     {
       "id": "SV-113",
@@ -1853,11 +1855,15 @@
       "phase": "D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "重放 method evaluator；重算 condition vector、`FirstTrue`、`CanonicalTerminal`，并要求与 Decision.terminal_state 逐位一致（DE-1—DE-3）",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/decision_replay.py#inspect"
+      ],
+      "tests": [
+        "tests/verification_profile/test_decision_replay.py#test_vectors"
+      ],
+      "gap": "固定 audit-only 测试求值器从内联规范结果字节重算聚合、条件与终态。其他方法、完整正式导入和 Phase D 验收仍待完成。"
     },
     {
       "id": "SV-116",
@@ -1936,11 +1942,15 @@
       "phase": "D",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
+      "status": "PARTIAL",
       "requirement": "`ExecutionObservation` 投影：合法 closure 且零有效提交才产生 `EXECUTION_FAILED`；source unavailable/malformed 产生 invalidating",
-      "implementation": [],
-      "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "implementation": [
+        "tools/verification_profile/decision_replay.py#execution_condition"
+      ],
+      "tests": [
+        "tests/verification_profile/test_decision_replay.py#test_vectors"
+      ],
+      "gap": "测试闭合摘要与固定来源引用支持零提交判定和失效投影。正式闭合摘要合同及权威来源验收仍待完成。"
     }
   ],
   "digests": [

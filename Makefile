@@ -249,3 +249,8 @@ test-commitment-bindings:
 test: test-runtime-bindings
 test-runtime-bindings:
 	$(PYTHON) -B scripts/check-runtime-bindings.py $(if $(RUNTIME_BINDINGS_REPORT),--report "$(RUNTIME_BINDINGS_REPORT)",)
+
+.PHONY: test-decision-replay
+test: test-decision-replay
+test-decision-replay:
+	$(PYTHON) -B scripts/check-decision-replay.py $(if $(DECISION_REPLAY_REPORT),--report "$(DECISION_REPLAY_REPORT)",)
