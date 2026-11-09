@@ -305,3 +305,4 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [R10：Phase D 审计重放与终态投影](testing/PROFILE-DECISION-R10-20261109.md)。
 
 - [R11：FM-S3 权威证据、Phase D 与结算复核](testing/PROFILE-AUTHORITY-R11-20261109.md)。
+- [R12：Phase D 候选编码、R11 兼容与 FM-A08 预验收](testing/PROFILE-PHASE-D-R12-20261109.md)。

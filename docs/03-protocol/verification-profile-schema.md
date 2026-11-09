@@ -1936,6 +1936,88 @@ ResolveBoundary(BoundaryObservation, EventFrontierSnapshot, ReceiptID) -> Decisi
 - **DM-3**：`REJECT_COMPLETE` 仍映射到 `UNRESOLVED`。区别只体现在 `AttributionClass` 进而体现在 `SettlementPolicy`。引入「结果被证否」终态需要修改 INV-04 的终态集合，属独立 ADR。
 - **DM-4**：单个 mixture 分量 `COMPONENT_LIVENESS_INVALIDATED` 不是任何 `DecisionCondition`：该分量资本置零，验证继续。
 
+#### 11.3.7 Phase D 候选编码 1（R12，供接口评审）
+
+本节收敛 [ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) 的首轮
+`REEXEC_AUDIT_ONLY` 接口。它定义一套可重放的候选字节与来源约束。当前 §11.1 的
+`DecisionEvaluationInput`、§17.4 的既有域和各相位信封继续按各自版本解释。候选 1
+尚未接入 Phase D 正式信封或注册表。其他验证方法不采用本节。
+
+**部署与来源绑定。** 求值方须从调用方之外的信任配置取得预期 DeploymentBinding、
+Profile 和来源 contract。非主网候选以 §9.2.2 的部署分支隔离，禁用 ACCEPT、
+TRUSTED、claim 和 EligibilitySnapshot。实现必须验证同一部署、日志世代、Receipt
+及 Profile 的关系，再验证固定日志前缀与状态承诺。来源层必须区分账本包含证明、
+时钟观测和执行闭合授权。测试配置摘要及签名快照可以用来评审候选字节。正式部署
+还需冻结来源注册、时钟和日志终局性合约（OQ-04/OQ-05、SV-119）。仅比较哈希
+无法建立来源授权、观测可信性或最新性。
+
+**闭合、期限及预算。** 执行闭合必须引用前缀内唯一的、同 Receipt 的已认证耗尽
+事件，来源 contract 必须允许该角色为该 Receipt 作此声明。尝试数和有效候选数按
+相同前缀重放。只有验证尚未开始且有效候选数为零的已授权闭合才满足
+`EXECUTION_FAILED`。缺失、越界、错对象、未知来源或摘要错误按 §11.3.5 失效。
+期限从 Receipt 冻结值与同一次权威求值观测导出，`evaluated_at >= deadline`
+时必须存在观测引用，之前必须省略。该引用绑定前缀及时间，不增加日志序号或
+制造一条已提交事件。它不能替代结果的权威接纳时间，结果仍须严格早于期限。
+资金边界必须引用同 Receipt 前缀内已认证的冻结政策对应事件。R12 只从历史
+`ACTIVATE` 来源重放资金耗尽，持续预算与其他事件来源留待单独冻结。
+已消费 Lease 缺少合法入口时视为来源不明，按失效条件求值。已签入口证明该
+contract 下观察到了入口，并不足以证明任务实际执行完成。
+
+**字节约定。** 采用 §17 的确定性 CBOR。下列记录是字符串键的闭合集合；
+`?` 表示省略键，不接受 null。整数为 uint64，摘要为 32 字节 bstr，时间为
+部署配置固定的同一整数时间单位。条件名用 §11.3 的原拼写，值为 CBOR bool。
+`H(kind, x) = SHA-256(len(tag) 的 1 字节 || ASCII(tag) || CBOR(x))`，
+其中 `tag = "ACLt/PhaseD/Candidate/1/" + kind`。
+
+```text
+Context = {
+  deployment_digest, receipt_id, profile_digest, log_id,
+  cutoff_seq, cutoff_head, cutoff_state_digest
+}
+ClosureBody = {
+  context, source_contract, attempts_observed, valid_submission_count,
+  recovery_exhausted_event
+}
+closure_digest = H("ExecutionClosure", ClosureBody)
+deadline_observation_ref = H("DeadlineObservation", [Context, deadline, evaluated_at])
+EvaluationInput = {
+  context, evaluated_at, deadline, funding_cap, method_input,
+  minimum_accepted_results, invalidating_causes,
+  funding_event_ref?, deadline_observation_ref?, execution_closure?
+}
+input_digest = H("EvaluationInput", EvaluationInput)
+reason_digest = H("DecisionReason", [input_digest, condition, value])
+CandidateRecord = {
+  version, evaluation_input, input_digest,
+  condition_vector, selected_condition, derived_terminal
+}
+```
+
+`log_id` 是来源日志的 genesis，`deployment_digest` 是已固定部署配置 CBOR 的
+SHA-256。cutoff 是求值前已验证的日志头（序号、事件摘要、状态摘要），不含判决
+自身或其后任何事件。`source_contract` 是显式版本化的来源标识。闭合对象为
+`ClosureBody` 加 `closure_digest`，摘要不包含自身。`method_input` 包含
+`expected_result`（bstr）和按已认证接纳事件顺序排列的 `evidence`；每行固定
+`attempt_id, received_at, cost, validation_passed, result`，结果为 bstr。
+来源必须把每行绑定到冻结 Assignment 与已接受结果。候选 1 的门槛
+`minimum_accepted_results` 固定为 2，`invalidating_causes` 由来源检查按固定顺序
+生成（`TEST_SOURCE_REVOKED`、`START_UNDETERMINED`、`BOUNDARY_UNRESOLVED`）。
+这三个标识只用于首轮有限来源。`version` 固定为 `ACLt/PhaseD/Candidate/1`。
+
+必须从同一已认证输入重放方法与各 predicate。按 Profile 冻结顺序重算
+`condition_vector`（每项恰含 `condition, value, reason_digest`），从首个真值
+派生唯一终态。首轮只编码已经闭合的求值。任一引用、输入、布尔值、原因摘要
+或终态不一致须拒绝整个候选记录，不能接受调用方选择的终态。
+`reason_digest` 承诺哪份输入支持哪个条件的真假；来源证明须随求值证据复核。
+
+**R10/R11 兼容。** 旧 TEST 域与历史归档按原版校验。R11 转投影时先验证独立固定
+的配置、anchor、checkpoint、签名日志与既有结算，再从判决前前缀生成候选记录。
+时间使用已认证 `S3_FINALIZE` 的 `now`，仍继承操作者时钟假设；闭合使用
+`ACLt/PhaseD/Candidate/1/FM-S3Observer` 适配已验证的测试 observer 事件。
+期限在新域重新派生，旧引用不当作新编码。投影不改写、补签或重新提交既有判决、
+事件与结算。候选记录逐字节与认证重放比较。FM-A08 正式验收仍需正式 Profile、
+完整 Phase B/D 来源与信封，以及独立实现的字节与拒绝对拍。
+
 ### 11.4 终态之后的假设撤销
 
 ```text

@@ -7,6 +7,7 @@ if not __debug__:
 import ast
 import collections
 import json
+import re
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
@@ -43,4 +44,20 @@ for d, c in zip(inv['digests'], expected):
     assert [d['name'], d['tag'], d['input'], d['owner'], d['layer']] == [c[0], c[1].strip('`'), c[2], c[3].replace('*',''), c[4]]
     owner = next(r for r in inv['rules'] if r['id'] == d['owner'])
     assert owner['kind'] == 'A' and owner['layer'] == 'L2' and owner['status'] == d['status'] and d['gap']
+implemented, partial = (sum(len(ids) for ids in cov[group].values())
+                        for group in ('implemented', 'partial'))
+counts = (implemented, partial, 119 - implemented - partial)
+compact = '/'.join(map(str, counts))
+entries = {
+    'README.md': (r'Type A 为 (\d+ implemented / \d+ partial / \d+ not implemented)',
+                  '{} implemented / {} partial / {} not implemented'.format(*counts)),
+    'docs/07-roadmap/current-status.md': (r'P0-1B 为 (\d+/\d+/\d+)', compact),
+    'docs/07-roadmap/formal-migration-plan.md': (r'P0-1B (\d+/\d+/\d+)（', compact),
+    'docs/07-roadmap/fm-s3-audit-dependencies.md': (r'全局覆盖登记现为 \*\*(\d+/\d+/\d+)\*\*', compact),
+}
+for name, (pattern, wanted) in entries.items():
+    found = re.findall(pattern, (root / name).read_text())
+    if found != [wanted]:
+        raise SystemExit(f'{name}: expected one current P0-1B count {wanted!r}, found {found!r}')
+
 print(json.dumps(dict(rules=127, type_a=dict(collections.Counter(r['status'] for r in inv['rules'] if r['kind']=='A')), digests=18)))
