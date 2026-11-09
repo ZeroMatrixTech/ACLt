@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 """Independent Phase B guards over explicit TEST snapshot/randomness imports."""
+from functools import lru_cache
 import argparse,copy,hashlib,json,os,platform,runpy,socket,subprocess,sys,tempfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from tools.verification_profile import codec as c,profile as p,registration as reg,runtime_bindings as r,commitments as b
 PREVIOUS=runpy.run_path(str(ROOT/'scripts/check-commitment-bindings.py'))
-VECTOR=ROOT/'tests/verification_profile/codec/runtime-bindings-vectors.json'
+VECTOR_PIN=ROOT/'tests/verification_profile/codec/runtime-bindings-vectors.pin.json'
 
 def pin(v):return hashlib.sha256(c.encode(v)).digest()
 
@@ -158,16 +159,38 @@ def run(binary,rows):
     return answers
 
 def source_names():
-    names=set(json.loads((ROOT/'scripts/creation-source-files.json').read_text()))|{'scripts/check-runtime-bindings.py','scripts/check-commitment-bindings.py','scripts/check-creation-bindings.py','scripts/check-selection-assets.py','tests/verification_profile/test_runtime_bindings.py','tests/verification_profile/codec/runtime-bindings-vectors.json','schemas/verification-profile/runtime-imports-candidate-r9.json','docs/testing/PROFILE-RUNTIME-R9-20261108.scope.json'}
+    names=set(json.loads((ROOT/'scripts/creation-source-files.json').read_text()))|{'scripts/check-runtime-bindings.py','scripts/check-commitment-bindings.py','scripts/check-creation-bindings.py','scripts/check-selection-assets.py','tests/verification_profile/test_runtime_bindings.py','tests/verification_profile/codec/runtime-bindings-vectors.pin.json','schemas/verification-profile/runtime-imports-candidate-r9.json','docs/testing/PROFILE-RUNTIME-R9-20261108.scope.json'}
     for directory,pattern in [('tools/verification_profile','*.py'),('tools/verification_profile/rust','*.rs'),('tools/verification_profile/rust','*.json')]:names.update(x.relative_to(ROOT).as_posix() for x in (ROOT/directory).glob(pattern))
     return sorted(names)
 
+@lru_cache(maxsize=1)
+def pinned_vectors():
+    rows = vectors()
+    data = dict(
+        scope='explicit runtime guards with pinned TEST snapshot/randomness imports; not formal Phase B conformance',
+        vectors=rows,
+    )
+    raw = (json.dumps(data, indent=2) + '\n').encode('utf-8')
+    expected = json.loads(VECTOR_PIN.read_text())
+    actual = dict(schema='aclt.r9-vector-pin@1', cases=len(rows), bytes=len(raw),
+                  sha256=hashlib.sha256(raw).hexdigest())
+    c.need(actual == expected, 'R9 generated vector bytes differ from historical pin')
+    return rows, raw
+
+
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--freeze-vectors',action='store_true');parser.add_argument('--report',type=Path);args=parser.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--freeze-vectors', type=Path, metavar='OUTPUT',
+                        help='export exact historical vector bytes without running the compilers')
+    parser.add_argument('--report', type=Path)
+    args = parser.parse_args()
+    if args.freeze_vectors and args.report:
+        parser.error('--freeze-vectors and --report are mutually exclusive')
+    rows, raw = pinned_vectors()
     if args.freeze_vectors:
-        data=vectors()
-        with VECTOR.open('x') as f:json.dump(dict(scope='explicit runtime guards with pinned TEST snapshot/randomness imports; not formal Phase B conformance',vectors=data),f,indent=2);f.write('\n')
-    rows=json.loads(VECTOR.read_text())['vectors']
+        with args.freeze_vectors.open('xb') as stream:
+            stream.write(raw)
+        return
     with tempfile.TemporaryDirectory(prefix='aclt-runtime-bindings-') as tmp:
         binary=Path(tmp)/'codec';subprocess.run([os.environ.get('RUSTC','rustc'),'--edition=2021','-D','warnings',str(ROOT/'tools/verification_profile/rust/main.rs'),'-o',str(binary)],check=True,timeout=120);answers=run(binary,rows)
     report=dict(status='PASS',cases=len(rows),positive=sum(x['accepted'] for x in rows),negative=sum(not x['accepted'] for x in rows),structural_rejects=sum(x['error'] for x in rows),results_sha256=hashlib.sha256(json.dumps(answers,sort_keys=True,separators=(',',':')).encode()).hexdigest(),hostname=socket.gethostname(),python=sys.version.split()[0],kernel=platform.release(),rustc=subprocess.check_output([os.environ.get('RUSTC','rustc'),'--version'],text=True).strip(),source_sha256={n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest() for n in source_names()},full_schema_valid=False,formal_phase_b_conformance=False,source_authentication=False,production_admission=False,state_committed=False)

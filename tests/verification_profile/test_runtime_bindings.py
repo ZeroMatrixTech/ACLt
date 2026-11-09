@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-import copy,json,runpy,subprocess,sys,tempfile,unittest
+import copy,runpy,subprocess,sys,tempfile,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 from tools.verification_profile import codec as c,runtime_bindings as r,validator
@@ -15,14 +15,14 @@ class RuntimeBindingTests(unittest.TestCase):
         if consequence:self.assertEqual(out['consequence'],consequence)
         self.assertFalse(out['production_admission']);self.assertFalse(out['state_committed']);return out
     def test_frozen_vectors(self):
-        rows=json.loads(D['VECTOR'].read_text())['vectors'];self.assertEqual(rows,D['vectors']())
+        rows, _ = D['pinned_vectors']()
         for row in rows:
             with self.subTest(id=row['id']):
                 if row['error']:
                     with self.assertRaises(c.CodecError):r.inspect(bytes.fromhex(row['cbor_hex']),bytes.fromhex(row['lock_pin']),bytes.fromhex(row['contract_pin']))
                 else:self.assertEqual(r.inspect(bytes.fromhex(row['cbor_hex']),bytes.fromhex(row['lock_pin']),bytes.fromhex(row['contract_pin'])),row['expected'])
     def test_all_seven_tags_have_positive_and_negative_vectors(self):
-        rows=json.loads(D['VECTOR'].read_text())['vectors']
+        rows, _ = D['pinned_vectors']()
         for tag in r.SHAPES:
             self.assertTrue(any(x['id']=='valid-'+tag and x['accepted'] for x in rows))
             self.assertTrue(any(tag in x['id'] and not x['accepted'] for x in rows))

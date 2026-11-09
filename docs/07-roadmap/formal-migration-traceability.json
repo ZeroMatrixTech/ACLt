@@ -519,12 +519,13 @@
       "status": "PARTIAL_CANDIDATE_EVIDENCE",
       "reports": [
         "docs/testing/FM-S3-CLOSEOUT-20261106.md",
-        "docs/testing/FM-S3-TERMINALS-20261106.md"
+        "docs/testing/FM-S3-TERMINALS-20261106.md",
+        "docs/testing/PROFILE-PHASE-D-R12-20261109.md"
       ],
       "test_file": "tests/formal_migration/test_s3_results.py",
       "test_method": "test_profile_rejects_bounded_claim_null_and_reordered_rules",
-      "covered": "audit-only 配对产生 CONCORDANT/UNRESOLVED，无 claim 与 EligibilitySnapshot 依赖。",
-      "formal_gap": "官方 Profile、正式证据/求值对象与完整 Phase B/D。"
+      "covered": "audit-only 无 claim、ACCEPT/TRUSTED 与 EligibilitySnapshot。R12 用 17 条已认证历史 Receipt 核对候选 Phase D 编码与原终态。",
+      "formal_gap": "正式注册的 Profile/来源、完整 Phase B/D 信封和独立实现对拍。"
     },
     "FM-A09": {
       "status": "PARTIAL_CANDIDATE_EVIDENCE",

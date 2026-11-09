@@ -4,7 +4,7 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-11-08**
+> **最后更新：2026-11-09**
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -125,7 +125,7 @@ make workflow    # 按指纹执行并收集各组证据
 
 ## 当前工程入口与证据
 
-当前进度与优先级以[当前状态](docs/07-roadmap/current-status.md)的“当前实施入口”表为准。截至 2026-11-08 有两条工程主线：
+当前进度与优先级以[当前状态](docs/07-roadmap/current-status.md)的“当前实施入口”表为准。截至 2026-11-09 有两条工程主线：
 
 - [ADR-0007](docs/05-decisions/ADR-0007-formal-object-migration-foundation.md) 与 [ADR-0008](docs/05-decisions/ADR-0008-fm-s3-interface-decisions.md) 下的候选 FM-S3 audit-only 路径已覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态，双物理机证据见[收尾](docs/testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](docs/testing/FM-S3-TASK-TRAP-20261106.md)和[终态与历史矩阵](docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md)。24 套公开快照可只用仓库复核，见[证据归档收尾](docs/testing/FM-EVIDENCE-CLOSEOUT-20261107.md)。
 - P0-1B 的 Profile 规则按 R1–R11 切片实现，Type A 为 80 implemented / 36 partial / 3 not implemented；[R8](docs/testing/PROFILE-COMMITMENTS-R8-20261108.md)补 Claim/快照/承诺绑定，18 个摘要 owner 的现行公式与投影已实现。[R9](docs/testing/PROFILE-RUNTIME-R9-20261108.md)补运行期绑定/冻结与阶段守卫；TEST imports、7 项适用性和完整阶段/来源验收仍有缺口。[R10](docs/testing/PROFILE-DECISION-R10-20261109.md)实现 audit-only Phase D 测试重放。[R11](docs/testing/PROFILE-AUTHORITY-R11-20261109.md)从已验证的 FM-S3 日志前缀复算判决并核对结算。

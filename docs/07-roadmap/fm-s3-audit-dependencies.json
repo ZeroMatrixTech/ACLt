@@ -6,7 +6,7 @@
   "inventory": "schemas/verification-profile/inventory.json",
   "coverage": "schemas/verification-profile/coverage.json",
   "source_sha256": {
-    "docs/03-protocol/verification-profile-schema.md": "2d05cca5fcdfcc111e1506a6ce78f2cea0248fa4641e776160937c2c32de3bc5",
+    "docs/03-protocol/verification-profile-schema.md": "edab977989725b8f5129629d77fe3ddcffc403e36f746d3382dde594f086636a",
     "schemas/verification-profile/inventory.json": "76e8e01565c81aa4b478bf80fae2d671e94211bb496296f2bbe1271b019182be",
     "schemas/verification-profile/coverage.json": "5f4bf8e9ce3dd03e1558d93c30296819f0c1050a8c44473459ab965432a443e2"
   },
