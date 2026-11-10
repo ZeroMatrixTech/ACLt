@@ -22,7 +22,7 @@ fn contract_ref(identifier: &str) -> V {
     ])
 }
 
-fn resolve_boundary(observation: &V, events: &Events, visible: &BTreeSet<Vec<u8>>, receipt: &V)
+pub(super) fn resolve_boundary(observation: &V, events: &Events, visible: &BTreeSet<Vec<u8>>, receipt: &V)
     -> R<Option<&'static str>>
 {
     let funding = get(observation, "funding_event_ref").ok();
@@ -46,7 +46,7 @@ fn resolve_boundary(observation: &V, events: &Events, visible: &BTreeSet<Vec<u8>
     }
 }
 
-fn execution_condition(observation: &V, receipt: &V, events: &Events,
+pub(super) fn execution_condition(observation: &V, receipt: &V, events: &Events,
                        visible: &BTreeSet<Vec<u8>>, admitted: i128) -> R<Option<&'static str>> {
     match txt(get(observation, "tag")?)? {
         "NOT_APPLICABLE" => {
@@ -99,7 +99,7 @@ fn aggregate(outcomes: &[V], concordant: i128, cost: i128) -> V {
     ])
 }
 
-fn audit_evaluate(input: &V, deadline: i128, cap: i128, instant: i128) -> R<(Vec<V>, V)> {
+pub(super) fn audit_evaluate(input: &V, deadline: i128, cap: i128, instant: i128) -> R<(Vec<V>, V)> {
     fields(input, &["expected_result", "evidence"])?;
     let expected = bytes(get(input, "expected_result")?)?;
     decode(expected)?;

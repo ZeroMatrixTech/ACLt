@@ -19,7 +19,7 @@ LEGACY = ROOT / 'docs/testing/PROFILE-AUTHORITY-R11-20261109.summary.json'
 VECTORS = ROOT / 'tests/verification_profile/codec/phase-d-contract-vectors.json'
 
 
-def check_mutations(fixtures):
+def mutation_cases(fixtures):
     deadline = next(item for item in fixtures if 'deadline_observation_ref' in item[2]['evaluation_input'])
     closure = next(item for item in fixtures if 'execution_closure' in item[2]['evaluation_input'])
     before = next(item for item in fixtures if 'deadline_observation_ref' not in item[2]['evaluation_input'])
@@ -42,43 +42,55 @@ def check_mutations(fixtures):
         for key in path[:-1]:
             parent = parent[key]
         parent[path[-1]] = value
+        yield name, pin, row, c.encode(changed)
+
+
+def check_mutations(fixtures):
+    checked = []
+    for name, pin, row, changed in mutation_cases(fixtures):
         try:
-            contract.verify(c.encode(changed), pin, row)
+            contract.verify(changed, pin, row)
         except c.CodecError as exc:
             c.need(str(exc) == 'candidate bytes differ from authenticated replay', name)
         else:
             raise ValueError(f'{name} accepted')
-    return [name for name, *_ in cases]
+        checked.append(name)
+    return checked
 
 
-def run():
+def replayed_fixtures():
     legacy = R11['run']()
     expected = json.loads(LEGACY.read_text())
     c.need(legacy['results_sha256'] == expected['results_sha256'], 'R11 historical replay drift')
     configs = {ident: hashlib.sha256(c.encode(config)).digest()
                for ident, config, *_ in R11['fixtures']()}
-    fixtures, vectors = [], []
-    for report in legacy['reports']:
-        pin = configs[report['id']]
-        for row in report['receipts']:
-            result = contract.project(pin, row)
-            raw = c.encode(result)
-            contract.verify(raw, pin, row)
-            data = result['evaluation_input']
-            vectors.append(dict(
-                snapshot=report['id'], receipt=row['receipt'],
-                legacy_source_digest=row['phase_d_source_digest'],
-                candidate_sha256=hashlib.sha256(raw).hexdigest(),
-                input_digest=result['input_digest'].hex(),
-                deadline_observation_ref=data.get('deadline_observation_ref', b'').hex() or None,
-                closure_digest=data.get('execution_closure', {}).get('closure_digest', b'').hex() or None,
-                selected_reason_digest=next(item['reason_digest'].hex() for item in result['condition_vector']
-                                            if item['condition'] == result['selected_condition']),
-                condition=result['selected_condition'], terminal=result['derived_terminal'],
-            ))
-            fixtures.append((pin, row, result))
-    return dict(schema='aclt.phase-d-contract-vectors@1', legacy_results_sha256=legacy['results_sha256'],
-                negatives=check_mutations(fixtures), vectors=vectors)
+    fixtures = [
+        (report['id'], configs[report['id']], row, contract.project(configs[report['id']], row))
+        for report in legacy['reports'] for row in report['receipts']
+    ]
+    return legacy['results_sha256'], fixtures
+
+
+def run():
+    legacy_digest, fixtures = replayed_fixtures()
+    vectors = []
+    for snapshot, pin, row, result in fixtures:
+        raw = c.encode(result)
+        contract.verify(raw, pin, row)
+        data = result['evaluation_input']
+        vectors.append(dict(
+            snapshot=snapshot, receipt=row['receipt'],
+            legacy_source_digest=row['phase_d_source_digest'],
+            candidate_sha256=hashlib.sha256(raw).hexdigest(),
+            input_digest=result['input_digest'].hex(),
+            deadline_observation_ref=data.get('deadline_observation_ref', b'').hex() or None,
+            closure_digest=data.get('execution_closure', {}).get('closure_digest', b'').hex() or None,
+            selected_reason_digest=next(item['reason_digest'].hex() for item in result['condition_vector']
+                                        if item['condition'] == result['selected_condition']),
+            condition=result['selected_condition'], terminal=result['derived_terminal'],
+        ))
+    return dict(schema='aclt.phase-d-contract-vectors@1', legacy_results_sha256=legacy_digest,
+                negatives=check_mutations([row[1:] for row in fixtures]), vectors=vectors)
 
 
 def source_names():

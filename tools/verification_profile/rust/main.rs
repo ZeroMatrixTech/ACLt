@@ -12,6 +12,7 @@ mod selection;
 mod commitments;
 mod runtime_bindings;
 mod decision_replay;
+mod phase_d_contract;
 use std::io::{self,BufRead};
 pub(crate) type R<T> = Result<T,String>;
 const MAX:usize=1<<20;
@@ -147,6 +148,7 @@ fn run(line:&str)->R<V>{
  if let Some(pins)=mode.strip_prefix("phase-i6:"){return creation::run(input,pins,"I");}
  if let Some(pins)=mode.strip_prefix("phase-f6:"){return creation::run(input,pins,"F");}
  if let Some(pin)=mode.strip_prefix("registration-assets:"){return selection::run(input,pin);}
+ if let Some(pins)=mode.strip_prefix("phase-d-candidate:"){return phase_d_contract::run(input,pins);}
  if let Some(pins)=mode.strip_prefix("decision-replay:"){let (lock,contract)=pins.split_once(':').ok_or("two decision pins required")?;return decision_replay::run(input,lock,contract);}
  if let Some(pins)=mode.strip_prefix("runtime-bindings:"){let (lock,contract)=pins.split_once(':').ok_or("two runtime pins required")?;return runtime_bindings::run(input,lock,contract);}
  if let Some(pin)=mode.strip_prefix("commitments:"){return commitments::run(input,pin);}
