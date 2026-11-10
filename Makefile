@@ -263,3 +263,8 @@ test-fm-decision-replay:
 .PHONY: check-phase-d-contract
 check-phase-d-contract:
 	$(PYTHON) -B scripts/check-phase-d-contract.py
+
+.PHONY: test-phase-d-crosscheck
+test: test-phase-d-crosscheck
+test-phase-d-crosscheck:
+	$(PYTHON) -B scripts/check-phase-d-crosscheck.py $(if $(PHASE_D_CROSSCHECK_REPORT),--report "$(PHASE_D_CROSSCHECK_REPORT)",)
