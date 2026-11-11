@@ -2,7 +2,7 @@
 
 > 文档状态：Living index and governance  
 > 当前语义基线：v0.5  
-> 最后更新：2026-11-08
+> 最后更新：2026-11-11
 
 本目录是 ACLt Protocol 的权威文档中心。文档不是一次性说明材料，而是随反例、证明、仿真、实现、攻击测试和工程试点持续修订的规格系统。
 
@@ -37,13 +37,14 @@
 8. [`05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md`](05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md)（`PROPOSED` 草案）
 9. [`05-decisions/ADR-0007-formal-object-migration-foundation.md`](05-decisions/ADR-0007-formal-object-migration-foundation.md)（D-1～D-6 首轮迁移路线已接受；字段/实现未验收）
 10. [ADR-0008 FM-S3 首轮接口决定](05-decisions/ADR-0008-fm-s3-interface-decisions.md)（候选 S3b/S3c 路线）；选项分析见[接口备忘](05-decisions/reviews/MEMO-20261105-fm-s3-interfaces.md)
-11. [`06-research/verification-round-mathematical-model.md`](06-research/verification-round-mathematical-model.md)
-12. [`06-research/last-two-problem-trees.md`](06-research/last-two-problem-trees.md)
-13. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
-14. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
-15. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
-16. [`07-roadmap/formal-object-migration.md`](07-roadmap/formal-object-migration.md)（工程规划草案，非规范）
-17. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
+11. [ADR-0009 以推导证书验证计算陈述](05-decisions/ADR-0009-proof-verified-computation-statements.md)（`PROPOSED` 草案；`PROOF_VERIFIED` 候选实例）
+12. [`06-research/verification-round-mathematical-model.md`](06-research/verification-round-mathematical-model.md)
+13. [`06-research/last-two-problem-trees.md`](06-research/last-two-problem-trees.md)
+14. [`06-research/claims-and-sources.md`](06-research/claims-and-sources.md)
+15. [`07-roadmap/current-status.md`](07-roadmap/current-status.md)
+16. [`07-roadmap/open-questions.md`](07-roadmap/open-questions.md)
+17. [`07-roadmap/formal-object-migration.md`](07-roadmap/formal-object-migration.md)（工程规划草案，非规范）
+18. [`08-governance/audit-procedure.md`](08-governance/audit-procedure.md)
 
 ### 工程证据与维护
 
@@ -213,7 +214,7 @@ Decision / evidence
 | `02-architecture` | 当前候选分层与生命周期 | G0 draft |
 | `03-protocol` | 当前规范性协议骨架与 V1 VersionDisposition Profile | G0 draft |
 | `04-analysis` | 鲁棒性和行政成本证据账本 | 进行中 |
-| `05-decisions` | 架构决定与评审备忘 | ADR-0001—0008 已建立；ADR-0006 为 `PROPOSED` |
+| `05-decisions` | 架构决定与评审备忘 | ADR-0001—0009 已建立；ADR-0006、ADR-0009 为 `PROPOSED` |
 | `06-research` | 论断—来源—边界 | 持续核查 |
 | `07-roadmap` | 状态和未决问题 | 持续更新 |
 | `08-governance` | 审计程序、模板和审计记录 | 程序已接受；报告持续追加 |
