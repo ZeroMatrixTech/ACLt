@@ -278,3 +278,8 @@ test-phase-d-envelope:
 test: test-bound-creation
 test-bound-creation:
 	$(PYTHON) -B scripts/check-bound-creation.py $(if $(BOUND_CREATION_REPORT),--report "$(BOUND_CREATION_REPORT)",)
+
+.PHONY: test-deployment-revocation
+test: test-deployment-revocation
+test-deployment-revocation:
+	$(PYTHON) -B scripts/check-deployment-revocation.py $(if $(DEPLOYMENT_REVOCATION_REPORT),--report "$(DEPLOYMENT_REVOCATION_REPORT)",)
