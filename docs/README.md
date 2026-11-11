@@ -308,3 +308,4 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [R12：Phase D 候选编码、R11 兼容与 FM-A08 预验收](testing/PROFILE-PHASE-D-R12-20261109.md)。
 - [R13：Phase D 候选判决的 Rust 独立重放](testing/PROFILE-PHASE-D-R13-20261110.md)。
 - [R14：非主网注册与 Phase B/D 信封重放](testing/PROFILE-PHASE-D-R14-20261111.md)。
+- [R15：创建时冻结非主网部署绑定](testing/PROFILE-PHASE-D-R15-20261111.md)。

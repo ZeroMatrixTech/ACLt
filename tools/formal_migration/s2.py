@@ -22,6 +22,8 @@ ROLES=('EXECUTOR','AUDITOR')
 ACTIONS={'CREATE':{'bundle','receipt_signature'},'ACTIVATE':{'receipt','assignment','epoch'},
          'CONSUME':{'receipt','assignment','epoch','capability','intent'},
          'QUERY':{'receipt'},'FENCE':{'receipt'}}
+BOUND_CREATION = 'ACLt/TEST/FM-S3/BoundCreation/1'
+BOUND_CREATE_ACTIONS = dict(ACTIONS, CREATE_BOUND={'bundle', 'creation', 'receipt_signature'})
 REQUEST={'schema','genesis','actor','nonce','issued_at','expires_at','op','body','signature'}
 
 def h(v):return c.domain_hash(SCHEMA,c.encode(v))
@@ -43,7 +45,8 @@ def request(config,private,actor,op,body,now,nonce=None):
     return dict(v,signature=sign(private,'REQUEST',v))
 
 def config_check(cfg):
-    fields(cfg,{'schema','network','deployment','requester','providers','issuer_der','allowed_receipts','runtime_sha256','artifact','balance','caps','valid_from','valid_until','scope'})
+    c.fields(cfg,{'schema','network','deployment','requester','providers','issuer_der','allowed_receipts','runtime_sha256','artifact','balance','caps','valid_from','valid_until','scope'}, ('creation_version',))
+    c.need('creation_version' not in cfg or cfg['creation_version'] == BOUND_CREATION, 'creation contract version')
     c.need(cfg['schema']==SCHEMA and cfg['scope']=='TEST_ONLY_NO_OFFICIAL_ADMISSION','S2 scope')
     for k in ('network','deployment','runtime_sha256'):pin(cfg[k])
     f.principal(cfg['requester']);c.need(cfg['requester']['role']=='REQUESTER','requester role')
@@ -113,10 +116,14 @@ def check_funding_conservation(cfg, state):
 def task_view(t):
     return dict(receipt=t['rid'],funding_held=t['funding_held'],fenced=t['fenced'],leases=t['leases'],terminal='NOT_IMPLEMENTED_FM_S3',settlement='DISABLED')
 
-def reduce(cfg,state,req,now):
+def reduce(cfg,state,req,now,*,create_bound=None):
     """Raises before caller COMMIT; rejected requests never change business state."""
-    record=verify_request(cfg,req,now);c.need(now>=state['last_time'],'authority clock rollback')
+    actions = BOUND_CREATE_ACTIONS if create_bound is not None else ACTIONS
+    record=verify_request(cfg,req,now,actions);c.need(now>=state['last_time'],'authority clock rollback')
     op=req['op'];b=req['body'];actor=req['actor'];requester=f.principal_digest(cfg['requester'])
+    if op in ('CREATE', 'CREATE_BOUND'):
+        expected = 'CREATE_BOUND' if 'creation_version' in cfg else 'CREATE'
+        c.need(op == expected, 'deployment creation contract')
     nonce=actor.hex()+':'+req['nonce'].hex();old=state['nonces'].get(nonce)
     if old is not None:
         c.need(old['request']==h(req),'idempotency conflict')
@@ -132,11 +139,14 @@ def reduce(cfg,state,req,now):
         used=t['queries'].get(actor.hex(),0);c.need(used<t['bundle']['receipt']['execution']['recovery_queries'],'query budget exhausted')
         t['queries'][actor.hex()]=used+1
         result=dict(task=copy.deepcopy(task_view(t)),free=nxt['free'],held=nxt['held'],exposure=exposure(cfg,nxt))
-    elif op=='CREATE':
+    elif op in ('CREATE', 'CREATE_BOUND'):
         c.need(actor==requester and record['role']=='REQUESTER','create role')
         bundle=b['bundle'];rid=p.bundle(bundle);c.need(rid in cfg['allowed_receipts'],'receipt not allowlisted')
         r=bundle['receipt'];c.need(r['network_id']==cfg['network'] and r['deployment_id']==cfg['deployment'],'receipt context')
-        p.verify(dict(bundle=bundle,record=record,signature=b['receipt_signature'],expected_receipt=rid,expected_requester=requester,now=now))
+        if op == 'CREATE_BOUND':
+            rid = create_bound(cfg, bundle, b['creation'], b['receipt_signature'], req['issued_at'], now)
+        else:
+            p.verify(dict(bundle=bundle,record=record,signature=b['receipt_signature'],expected_receipt=rid,expected_requester=requester,now=now))
         c.need(rid.hex() not in nxt['tasks'],'receipt already created')
         c.need(not any(t['bundle']['receipt']['scope']['nonce']==r['scope']['nonce'] for t in nxt['tasks'].values()),'requester nonce reused')
         # A finite allowlist binds the exact reviewed input/policies/component bytes.
@@ -144,6 +154,8 @@ def reduce(cfg,state,req,now):
         e=r['execution'];c.need(e['memory_bytes']==131072 and e['fuel']==50000000 and e['output_bytes_limit']==4096,'fixed core limits')
         leases={role:dict(proposal=proposal(cfg,rid,role,bundle),state='PROPOSED',intent=ZERO) for role in ROLES}
         t=dict(rid=rid,bundle=bundle,funding_held=0,leases=leases,fenced=False,queries={})
+        if op == 'CREATE_BOUND':
+            t['creation_receipt'] = b['creation']['receipt']
         nxt['tasks'][rid.hex()]=t;result=task_view(t)
     else:
         pin(b['receipt']);t=nxt['tasks'].get(b['receipt'].hex());c.need(t is not None,'unknown receipt')

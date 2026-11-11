@@ -7,6 +7,7 @@ from tools.formal_migration import s2, s3_decision_replay as bridge, s3_results
 from tools.verification_profile import codec as c, phase_d_contract as candidate
 
 VERSION = 'ACLt/TEST/FM-S3/ReplayEnvelope/1'
+BOUND_VERSION = 'ACLt/TEST/FM-S3/ReplayEnvelope/2'
 DECLARATION_DOMAIN = 'ACLt/P0-1/NonMainnetDeployment/1'
 SOURCE_DOMAIN = 'ACLt/TEST/FM-S3/ReplaySource/1'
 SOURCE_CONTRACTS = {
@@ -43,6 +44,16 @@ def deployment(config):
                 funding_cap=config['balance'], state_effect='TEST_COMMIT_CHECKPOINT')
 
 
+def deployment_binding(declaration):
+    ref = reference(declaration['id'], DECLARATION_DOMAIN, declaration)
+    return dict(network_id=declaration['network_id'], genesis=declaration['genesis'],
+                deployment_ref=dict(tag='NONMAINNET_TEST', ref=ref))
+
+
+def wire_version(config):
+    return BOUND_VERSION if config.get('creation_version') == s2.BOUND_CREATION else VERSION
+
+
 def registry_entry(config, anchor, checkpoint, profile_digests):
     declaration = deployment(config)
     return dict(deployment=declaration, config_sha256=hashlib.sha256(c.encode(config)).digest(),
@@ -69,7 +80,7 @@ def _select(registry_raw, registry_pin, config):
     return entry, config_pin
 
 
-def _phase_b(task, events, binding, declaration, profile):
+def _phase_b(task, events, binding, declaration, profile, version):
     receipt_id = task['rid']
     bundle = task['bundle']
     receipt = bundle['receipt']
@@ -78,8 +89,9 @@ def _phase_b(task, events, binding, declaration, profile):
     c.need(funding['asset'] == declaration['asset'] and
            held <= min(funding['total_limit'], declaration['funding_cap']), 'deployment asset or funding cap')
     prefix = [c.decode(raw) for raw in events]
-    creates = [s2.h(event) for event in prefix
-               if event['request']['op'] == 'CREATE' and event['request']['body']['bundle'] == bundle]
+    create_op = 'CREATE_BOUND' if version == BOUND_VERSION else 'CREATE'
+    creates = [event for event in prefix if event['request']['op'] == create_op
+               and event['request']['body']['bundle'] == bundle]
     c.need(len(creates) == 1, 'one authenticated CREATE event required')
     leases = []
     for role in s2.ROLES:
@@ -97,30 +109,37 @@ def _phase_b(task, events, binding, declaration, profile):
             row['consume_event'] = s3_results.consumed_event(
                 {'events': events}, prop['assignment'], lease['intent'])
         leases.append(row)
-    return dict(version=VERSION, phase='B', deployment_binding=binding, receipt_id=receipt_id,
-                profile_digest=profile, create_event=creates[0], deadline=receipt['execution']['deadline'],
-                funding_ref=receipt['funding_ref'], funding_limit=funding['total_limit'],
-                funding_held=held, leases=leases)
+    result = dict(version=version, phase='B', deployment_binding=binding, receipt_id=receipt_id,
+                  profile_digest=profile, create_event=s2.h(creates[0]), deadline=receipt['execution']['deadline'],
+                  funding_ref=receipt['funding_ref'], funding_limit=funding['total_limit'],
+                  funding_held=held, leases=leases)
+    if version == BOUND_VERSION:
+        from tools.formal_migration import deployment_creation
+        created = creates[0]['request']['body']['creation']['receipt']
+        c.need(created == task['creation_receipt'] and created['deployment_binding'] == binding
+               and created['profile_digest'] == profile
+               and deployment_creation.receipt_id(created) == receipt_id, 'frozen Receipt binding')
+        result['creation_receipt'] = created
+    return result
 
 
 def replay(registry_raw, registry_pin, config, snapshot, receipts):
     """Authenticate the source and derive the exact envelope pair per requested Receipt."""
     entry, config_pin = _select(registry_raw, registry_pin, config)
     declaration = entry['deployment']
-    binding = dict(network_id=declaration['network_id'], genesis=declaration['genesis'],
-                   deployment_ref=dict(tag='NONMAINNET_TEST', ref=reference(
-                       declaration['id'], DECLARATION_DOMAIN, declaration)))
+    binding = deployment_binding(declaration)
+    version = wire_version(config)
     records = []
 
     def observe(row, task, prefix):
         profile = bytes.fromhex(row['profile'])
         c.need(profile in entry['profiles'], 'unregistered Profile')
-        phase_b = _phase_b(task, prefix, binding, declaration, profile)
+        phase_b = _phase_b(task, prefix, binding, declaration, profile, version)
         record = candidate.project(config_pin, row)
         when = record['evaluation_input']['evaluated_at']
         c.need(declaration['valid_from'] <= when < declaration['valid_until'], 'deployment validity window')
-        phase_d = dict(version=VERSION, phase='D', deployment_binding=binding,
-                       phase_b_digest=digest(VERSION + '/PhaseB', phase_b),
+        phase_d = dict(version=version, phase='D', deployment_binding=binding,
+                       phase_b_digest=digest(version + '/PhaseB', phase_b),
                        source_digest=bytes.fromhex(row['phase_d_source_digest']),
                        candidate_record=c.encode(record))
         records.append(dict(phase_b=c.encode(phase_b), phase_d=c.encode(phase_d)))
@@ -133,7 +152,7 @@ def verify(raw, registry_raw, registry_pin, receipts):
     """Verify canonical wire against caller-pinned registry and Receipt selection."""
     value = c.decode(raw)
     c.fields(value, ('version', 'config', 'snapshot', 'records'))
-    c.need(value['version'] == VERSION, 'envelope version')
+    c.need(type(value['config']) is dict and value['version'] == wire_version(value['config']), 'envelope version')
     c.need(type(value['records']) is list and len(value['records']) == len(receipts), 'envelope receipt count')
     records, report = replay(registry_raw, registry_pin, value['config'], value['snapshot'], receipts)
     c.need(value['records'] == records, 'B/D envelope does not match authenticated replay')

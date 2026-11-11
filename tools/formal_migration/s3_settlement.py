@@ -44,7 +44,13 @@ def settle(cfg, state, task, events, requester):
     quote = p.quote(dict(bundle=bundle, terminal=decision['terminal'],
                          executor=statuses['EXECUTOR'], auditor=statuses['AUDITOR'],
                          storage='MISSING'))
-    c.need(quote['receipt_digest_hex'] == task['rid'].hex(), 'S3c frozen receipt')
+    policy_receipt = task['rid']
+    if 'creation_receipt' in task:
+        from tools.formal_migration import deployment_creation
+        bound = task['creation_receipt']
+        c.need(deployment_creation.receipt_id(bound) == task['rid'], 'S3c bound ReceiptID')
+        policy_receipt = bound['base_receipt_digest']
+    c.need(quote['receipt_digest_hex'] == policy_receipt.hex(), 'S3c frozen receipt')
     held = task['funding_held']
     fees = {kind: int(value) for kind, value in quote['amounts'].items()}
     c.need(fees['storage_fee'] == 0, 'S3c storage disabled')
