@@ -12,7 +12,7 @@
 
 | 工作 | 当前事实 | 下一动作 |
 |---|---|---|
-| 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案 | 锁定 `stats-int-v1` 的 RIR 子集与手算向量，复用独立执行器完成问、答、验闭环；阶段 1 本地入口见[实验说明](../../experiments/aclt-minimal-verifier-baseline/README.md) |
+| 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 逐项验证诚实环境的边界场景 |
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
 | 已有 FM-S3 与 P0-1B 路线 | 候选 FM-S3 audit-only 链路覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态：[8 场景收尾](../testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](../testing/FM-S3-TASK-TRAP-20261106.md)与[终态和历史矩阵](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md)；P0-1B 按 Profile R1–R11 切片推进 | 正式接口保持 OPEN。正式启动来源、Phase B/D、信封和准入证据列为后续工作；[终态报告](../testing/FM-S3-TERMINALS-20261106.md#留给规范修订的事项)中的 4 项与非主网部署联合类型评审待规范修订 |
