@@ -1,6 +1,6 @@
 # ACLt 最简验证机
 
-[立项与首轮规格](../../docs/07-roadmap/minimal-verifier-baseline.md)下的本地实验。判题规则 `aclt.exp.rir-stats-exact@1` 固定[候选 RIR stats-core](../aclt-rir-stats-probe/INDEPENDENT-CORE.md)的精确结果语义。
+[立项与首轮规格](../../docs/07-roadmap/minimal-verifier-baseline.md)下的切片验证实验。判题规则 `aclt.exp.rir-stats-exact@1` 固定[候选 RIR stats-core](../aclt-rir-stats-probe/INDEPENDENT-CORE.md)的精确结果语义。
 
 - `ask(artifact, data, limits)` 验证工件和上限，生成规范 CBOR 的 `Question`。题目绑定规则版本、RIR 工件摘要、输入摘要，以及 gas、输出、调用深度和内存页上限。题目和输入使用各自的实验摘要域；工件沿用既有 RIR 摘要域。
 - `solve(question, artifact, data)` 用现有 Python 求值器产生 `Answer`，包含题目摘要与规范 `Outcome` 字节。
@@ -13,3 +13,5 @@ make test-minimal-verifier
 ```
 
 该命令也纳入 `make test`。测试在临时目录构建 Rust 执行器，以冻结的 `stats-int-v1` 向量检验正常输出、同题的正确与错误提交、不同 gas 上限下的跨题提交，以及已有除零 trap。另有工件与输入绑定、未知规则和执行器错误的用例。阶段 2 增加手算输出、相邻 gas 上限、结果字段负例及单侧计量偏差注入，详见[语义验收](SEMANTICS.md)。这些判决与证据仅适用于本地实验。
+
+[双机作业切片](DISTRIBUTED.md)说明拆分、跨机交叉验证、归并、资源边界和验收命令。
