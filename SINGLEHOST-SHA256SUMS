@@ -36,6 +36,7 @@ ddf77511f75e16cba0a9fb2b9c5948be321c3777f4dc3c541ef3e7f673c165fb  docs/05-decisi
 241271253fa8bc493d21754526334422b6bdbdc47d118834298b1de0879e0150  docs/05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md
 98b6ec728ced6ba95f652ea5d507b755c749e9db8722a447c4076dd8a8004652  docs/05-decisions/ADR-0007-formal-object-migration-foundation.md
 79ab336a7a7b5c5cb360a5120fe9b846d74c82662388697ad5a444f307ad4737  docs/05-decisions/ADR-0008-fm-s3-interface-decisions.md
+abed8cb8712285080a9e93b0a1f89cdc324a9d7f1534143f97d3ec1e14ce59ef  docs/05-decisions/ADR-0009-proof-verified-computation-statements.md
 b921272591d2592309bc0cda383ded6e2c90af81a37b3ff4c7c00d8f71cb75e8  docs/05-decisions/reviews/MEMO-20261105-fm-s3-interfaces.md
 6ab243094ff71258150d680a808972743ff75d41917b1f1804a2a1f6b0a195de  docs/05-decisions/reviews/REVIEW-20261028-layered.md
 c01cdb5efaceb08cd75a88ad4a3ce900aec5d7f03a69126da9b06e7268771d31  docs/06-research/bq-boundaries-slice1.md
@@ -50,7 +51,7 @@ bff9595d5fc7778dd8582e071b9c04896e221d907a560ebd1bf2874ec908d843  docs/07-roadma
 e174e8fca0fc984eec7e4687e3f670a79bd67b95f919f52328280ed41144b9db  docs/07-roadmap/formal-migration-plan.md
 b026e5300f57bc62c338b1f1a90a55b8d17874e4348cbd9f4a44f40e1e43ad36  docs/07-roadmap/formal-migration-traceability.json
 c9680e8ecc6e0cd5082118462288b42e31c8625e7ac4c9c9faf6447dd75e6e74  docs/07-roadmap/formal-object-migration.md
-77163911839691fb09a6669df0f668f5fbb682f69609c3c4ced7479a2785b045  docs/07-roadmap/open-questions.md
+2a99be6ca805b273a57d1007a12bd16e5c9b9bead825d53863b71fd2079324de  docs/07-roadmap/open-questions.md
 65064032e60fd4e6e0bb492b975b60c15923933fd547a1bd5c722e6fcccccd8c  docs/08-governance/audit-procedure.md
 aa87a1e6b1371fca14b35b5101dc8dc8fba123eb751d301f6dd410940918d45b  docs/08-governance/audit-report-template.md
 9a2b1d17a5bb98cefa1baddb281e5a97d7fef843f3b8d327e30a253b7ebb8438  docs/08-governance/audits/README.md

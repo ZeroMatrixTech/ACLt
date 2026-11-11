@@ -479,3 +479,7 @@ OQ-01 发布条件 <─> OQ-13 Maintenance
 ## 2026-10-28 FM-S2 前置收口
 
 [ADR-0006 分层评审](../05-decisions/reviews/REVIEW-20261028-layered.md)没有新增规则接受；[audit 依赖](fm-s3-audit-dependencies.md)明确 ⊥ wire、audit Phase B、非主网 assurance 与权威观察来源四个待审接口，不能靠删字段或伪造 Snapshot/MAP 绕过。FM-S2 先做限定测试集成，正式准入、P0-1B 与现有 OQ/Gate 保持原状态。
+
+## 2026-11-11 PROOF_VERIFIED 候选路线补记（不变更状态）
+
+[ADR-0009](../05-decisions/ADR-0009-proof-verified-computation-statements.md) 以 `PROPOSED` 草案提出 OQ-06 第 3 类"证明验证"的首个候选实例：Provider 提交计算陈述与推导证书，验证分为陈述绑定、推导检查和语义充分性三层。对有界确定性计算，\(\vdash_L F\) 与 F 为真逻辑等价，收益来自证据形式而非更弱的命题。该路线不依赖 \(B\)/\(Q\)，但依赖 OQ-05 中尚未建立的 RIR-0 形式语义。OQ-05、OQ-06 状态与 V1 处置不变。
