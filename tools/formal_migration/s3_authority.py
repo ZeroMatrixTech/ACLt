@@ -3,7 +3,7 @@
 import copy
 
 from tools.formal_migration import foundation as f, policy as p, s2, s2_evidence, s3_closure, s3_results, s3_settlement
-from tools.formal_migration import s3_terminals
+from tools.formal_migration import s3_revocation, s3_terminals
 from tools.verification_profile import admission, codec as c
 
 SCHEMA = 'ACLt/FM/S3b/1'
@@ -143,6 +143,8 @@ class Ledger(s2.Ledger):
         s2.fields(req, s2.REQUEST)
         op = req['op']
         c.need(type(op) is str, 'S3b operation')
+        if op == s3_revocation.OPERATION:
+            return s3_revocation.transition(cfg, state, req, now, clock)
         if op not in ACTIONS:
             c.need(op != 'FENCE', 'use S3_FINALIZE for S3b')
             if op in ('ACTIVATE', 'CONSUME'):

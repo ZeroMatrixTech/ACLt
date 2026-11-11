@@ -23,6 +23,7 @@ ACTIONS={'CREATE':{'bundle','receipt_signature'},'ACTIVATE':{'receipt','assignme
          'CONSUME':{'receipt','assignment','epoch','capability','intent'},
          'QUERY':{'receipt'},'FENCE':{'receipt'}}
 BOUND_CREATION = 'ACLt/TEST/FM-S3/BoundCreation/1'
+DEPLOYMENT_REVOCATION = 'ACLt/TEST/FM-S3/DeploymentRevocation/1'
 BOUND_CREATE_ACTIONS = dict(ACTIONS, CREATE_BOUND={'bundle', 'creation', 'receipt_signature'})
 REQUEST={'schema','genesis','actor','nonce','issued_at','expires_at','op','body','signature'}
 
@@ -45,8 +46,11 @@ def request(config,private,actor,op,body,now,nonce=None):
     return dict(v,signature=sign(private,'REQUEST',v))
 
 def config_check(cfg):
-    c.fields(cfg,{'schema','network','deployment','requester','providers','issuer_der','allowed_receipts','runtime_sha256','artifact','balance','caps','valid_from','valid_until','scope'}, ('creation_version',))
+    c.fields(cfg,{'schema','network','deployment','requester','providers','issuer_der','allowed_receipts','runtime_sha256','artifact','balance','caps','valid_from','valid_until','scope'}, ('creation_version', 'revocation_version'))
     c.need('creation_version' not in cfg or cfg['creation_version'] == BOUND_CREATION, 'creation contract version')
+    c.need('revocation_version' not in cfg or
+           (cfg['revocation_version'] == DEPLOYMENT_REVOCATION and cfg.get('creation_version') == BOUND_CREATION),
+           'deployment revocation contract')
     c.need(cfg['schema']==SCHEMA and cfg['scope']=='TEST_ONLY_NO_OFFICIAL_ADMISSION','S2 scope')
     for k in ('network','deployment','runtime_sha256'):pin(cfg[k])
     f.principal(cfg['requester']);c.need(cfg['requester']['role']=='REQUESTER','requester role')
@@ -133,6 +137,8 @@ def reduce(cfg,state,req,now,*,create_bound=None):
             t=state['tasks'][b['receipt'].hex()]
             return state,dict(task=task_view(t),free=state['free'],held=state['held'],exposure=exposure(cfg,state))
         return state,old['result']
+    if op == 'CREATE_BOUND':
+        c.need('deployment_revocation' not in state, 'deployment revoked')
     nxt=copy.deepcopy(state)
     if op=='QUERY':
         pin(b['receipt']);t=nxt['tasks'].get(b['receipt'].hex());c.need(t is not None,'unknown receipt')

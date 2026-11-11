@@ -523,12 +523,13 @@
         "docs/testing/PROFILE-PHASE-D-R12-20261109.md",
         "docs/testing/PROFILE-PHASE-D-R13-20261110.md",
         "docs/testing/PROFILE-PHASE-D-R14-20261111.md",
-        "docs/testing/PROFILE-PHASE-D-R15-20261111.md"
+        "docs/testing/PROFILE-PHASE-D-R15-20261111.md",
+        "docs/testing/PROFILE-PHASE-D-R16-20261111.md"
       ],
       "test_file": "tests/formal_migration/test_s3_results.py",
       "test_method": "test_profile_rejects_bounded_claim_null_and_reordered_rules",
-      "covered": "audit-only 无 claim、ACCEPT/TRUSTED 与 EligibilitySnapshot。R14 复核 17 条历史 Receipt。R15 验证新版 I/F 创建、B/D 信封与结算，内层判决由 Python 与 Rust 对拍。",
-      "formal_gap": "正式 Profile/来源审批、正式撤销机制和正式部署的端到端验收。"
+      "covered": "audit-only 无 claim、ACCEPT/TRUSTED 与 EligibilitySnapshot。R14 复核 17 条历史 Receipt。R15 验证新版 I/F 创建、B/D 信封与结算，内层判决由 Python 与 Rust 对拍。R16 核对部署撤销后的授权、判决及结算。",
+      "formal_gap": "正式 Profile/来源审批、撤销传播与新鲜性、正式部署的端到端验收。"
     },
     "FM-A09": {
       "status": "PARTIAL_CANDIDATE_EVIDENCE",
