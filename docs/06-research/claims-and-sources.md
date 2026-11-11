@@ -52,6 +52,8 @@
 | CLM-116 | Wasm 官方规范（含其确定性 profile）仍允许非最短 LEB128、`memory.grow` 非确定失败、NaN payload 非确定和实现自定的栈限制，不能原样作为 RIR | `DECIDED` | `DERIVED` | SOURCE_ESTABLISHED | — | — | S14、S15 | 只陈述 Wasm 规范行为；不说明 ACLt 规则足以消除全部分歧 |
 | CLM-117 | 以 `wasm32v1-none` 产出、再由 ACLt 子集规则、规范编码与计量收窄的 Wasm 1.0 整数子集，可以作为 RIR-0 主体并支撑 Rust Profile lowering | `CANDIDATE` | `HYPOTHESIS` | ENGINEERING_HYPOTHESIS | — | — | S16、ADR-0006 草案 | 不证明 rustc 产物稳定落在子集内、成本表合理或 RPR 正确；需要 ADR-0006 §13 的双实现对拍与向量 |
 
+CLM-117 的局部工程证据见[最简验证机阶段 2](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)。证据限于固定工件、手算向量、逐字节对拍和一处计量偏差，保留该论断的候选状态。
+
 ## 3. 来源登记与边界
 
 ### S01 — BOINC 系统架构
