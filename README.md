@@ -125,7 +125,7 @@ make workflow    # 按指纹执行并收集各组证据
 
 ## 当前工程入口与证据
 
-当前开发重心是 [ACLt 最简验证机](docs/07-roadmap/minimal-verifier-baseline.md)。首轮验证独立的问、答、验闭环；进度与优先级见[当前状态](docs/07-roadmap/current-status.md)。
+当前开发重心是 [ACLt 最简验证机](docs/07-roadmap/minimal-verifier-baseline.md)。以问、答、验为切片内核，验收可信双物理机上的拆分、派发、交叉验证与归并。进度与优先级见[当前状态](docs/07-roadmap/current-status.md)。
 
 截至 2026-11-09，已有两条工程路线的候选实现和证据：
 

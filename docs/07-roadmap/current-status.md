@@ -8,6 +8,8 @@
 
 ## 当前实施入口（2026-11-11）
 
+最简验证机的乌托邦基线以[可信双机作业验收](minimal-verifier-baseline.md#可信双机验收)为终点。下一条实现切片优先打通拆分、跨机派发、交叉验证与归并。表中的本地验收项用于切片内核回归。
+
 | 工作 | 当前事实 | 下一动作 |
 |---|---|---|
 | 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 逐项验证诚实环境的边界场景 |

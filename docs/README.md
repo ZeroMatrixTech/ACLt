@@ -48,7 +48,7 @@
 
 ### 工程证据与维护
 
-- [ACLt 最简验证机](07-roadmap/minimal-verifier-baseline.md)：当前开发重心与首轮问、答、验实验验收。
+- [ACLt 最简验证机](07-roadmap/minimal-verifier-baseline.md)：当前开发重心、切片验证内核与可信双机作业验收。
 
 - [2026-10-14 工程维护记录](08-governance/audits/audit-20261014-01-repository-maintenance.md)：统一入口、交付完整性及连续重跑修复。
 
