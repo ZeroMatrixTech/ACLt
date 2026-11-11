@@ -20,6 +20,8 @@
 - **Solve** 接收冻结的问题及相应字节，提交 `Answer`。首轮用现有 Python 求值器生成结果，提交者可自行选择求解方式。
 - **Verify** 接收冻结的问题、工件和输入字节及一份答案。先核对问题绑定与字节摘要，再由独立 Rust 入口从题目数据求出规范结果，精确比较 `Outcome` 的规范编码。每份提交独立判定。正确的确定性 trap 也可得到 `ACCEPT`。
 
+阶段 1 实验入口见[最简验证机实验](../../experiments/aclt-minimal-verifier-baseline/README.md)，本地复查使用 `make test-minimal-verifier`。
+
 ## 首轮验收
 
 1. **闭环与对拍。** `stats-int-v1` 和小程序走完 `Ask → Solve → Verify`。Python 与 Rust 对同一组向量产出的规范结果字节一致。
