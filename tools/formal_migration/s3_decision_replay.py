@@ -114,11 +114,12 @@ def project_decision(task, raw_prefix, events, instant):
     return evidence, winner, profile.TERMINALS[winner]
 
 
-def verify(cfg, pack, anchor, checkpoint, receipts):
+def verify(cfg, pack, anchor, checkpoint, receipts, *, observe=None):
     """Verify an exact checkpoint and replay requested settled decisions.
 
     Config, anchor and expected checkpoint must be supplied from outside the
     package. The expected checkpoint is an exact pin, not a freshness oracle.
+    An optional observer receives each checked row and its pre-decision task.
     """
     c.need(type(receipts) is list and 1 <= len(receipts) <= 16, 'receipt selection')
     for receipt in receipts:
@@ -187,6 +188,8 @@ def verify(cfg, pack, anchor, checkpoint, receipts):
                          admitted=evidence['aggregate']['admitted'], accepted_cost=evidence['aggregate']['committed_cost'],
                          paid=settlement['paid'], refund=settlement['refund'],
                          entitlements=len(settlement['entitlements'])))
+        if observe is not None:
+            observe(rows[-1], task, prefix)
     return dict(status='PASS', genesis=checkpoint['genesis'].hex(), checkpoint_seq=checkpoint['seq'],
                 checkpoint_head=verified['head'], official_admission=False, receipts=rows)
 

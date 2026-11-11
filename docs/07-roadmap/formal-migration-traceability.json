@@ -521,12 +521,13 @@
         "docs/testing/FM-S3-CLOSEOUT-20261106.md",
         "docs/testing/FM-S3-TERMINALS-20261106.md",
         "docs/testing/PROFILE-PHASE-D-R12-20261109.md",
-        "docs/testing/PROFILE-PHASE-D-R13-20261110.md"
+        "docs/testing/PROFILE-PHASE-D-R13-20261110.md",
+        "docs/testing/PROFILE-PHASE-D-R14-20261111.md"
       ],
       "test_file": "tests/formal_migration/test_s3_results.py",
       "test_method": "test_profile_rejects_bounded_claim_null_and_reordered_rules",
-      "covered": "audit-only 无 claim、ACCEPT/TRUSTED 与 EligibilitySnapshot。R13 在 17 条已认证历史 Receipt 上用 Python 和 Rust 独立核对候选 Phase D 求值和编码。",
-      "formal_gap": "正式注册的 Profile/来源、完整 Phase B/D 信封和正式接口的端到端验证。"
+      "covered": "audit-only 无 claim、ACCEPT/TRUSTED 与 EligibilitySnapshot。R14 在 17 条已认证历史 Receipt 上复核测试注册与 B/D 信封，内层判决由 Python 与 Rust 对拍。",
+      "formal_gap": "正式 Profile/来源审批、新版 Intent/Receipt 冻结部署绑定、正式 B/D 信封的端到端验证。"
     },
     "FM-A09": {
       "status": "PARTIAL_CANDIDATE_EVIDENCE",
