@@ -1,0 +1,188 @@
+{
+  "version": "ACLt/TEST/FM-S3/ReplayEnvelope/1",
+  "registry_sha256": "15249f7d1d955c8c762d1ce298a8c6cfb842a7b1e42e854731bb4fc7f77ef069",
+  "snapshots": [
+    {
+      "snapshot": "FM-S3-CLOSEOUT",
+      "envelope_sha256": "d0f44da1c756613d58ec80a834ce5ed95772fc78a4f0cf10d23629be186bff6f",
+      "receipts": [
+        {
+          "receipt": "72d5a611a925f0170642b0e0c60dfe7a44ddc75b50a7a71e3d8eb2ebef8801ba",
+          "terminal": "UNRESOLVED",
+          "phase_b_sha256": "19cd65fb414ba8033e3ac0599d1afb9dd3064e8927b8aa38db4d07f79935664f",
+          "phase_d_sha256": "367c577e8baebd61240e200521bfb203dec5425e54931f46ab60025e44640a50",
+          "candidate_sha256": "436e6cfdaae9ad53087bdafec54ecb953cbb62298193c9d5ff09695d95f8c008"
+        },
+        {
+          "receipt": "7e98adc8130c564441c6a826ea19eef8e57441728b79e38533fc45a54157d694",
+          "terminal": "EXPIRED",
+          "phase_b_sha256": "c02be60a7c179bd6aa69b14990b98e566cae3ae162903b30feda84ee1153ee59",
+          "phase_d_sha256": "c5073bae832e0ce237be364a9873ae12dcae66e6a6e8f545967ee05171641d17",
+          "candidate_sha256": "a5f2d5dfe8a28b553805a85aa941f4a007f658ce5885d7675fd6f7a5b79752e5"
+        },
+        {
+          "receipt": "984552e0a9205ea5ff5b17df90f36a4417856db3a85a527b44c2f55fef0a8909",
+          "terminal": "UNRESOLVED",
+          "phase_b_sha256": "ff7b21c6911100bd81bb04b669f7e42fd5b857b18d3a1d979209f9f51701617e",
+          "phase_d_sha256": "2111c88455b7a2ecdca6f732a663592b61c7909559deb0fe6687743ddecca98f",
+          "candidate_sha256": "1880b7153c526e0b5d08a4736e8bec09472d1b2adfb0fafb697914066c13bce0"
+        }
+      ]
+    },
+    {
+      "snapshot": "FM-S3-TASK-TRAP",
+      "envelope_sha256": "fe7216ca17cce7272c71e8bc72b57d565da6138333464996dbd775153f53cd06",
+      "receipts": [
+        {
+          "receipt": "3f1b6c98c2c626981e344b6ecdf69546900e64ab8e7b89d8bbb088995f127704",
+          "terminal": "EXPIRED",
+          "phase_b_sha256": "ec1e4e765b9515ae52875d8b2401dbe2d7b4ba9a86f832c555881c76419adeac",
+          "phase_d_sha256": "de65c1986882c9b5ae0bc079e43df8a42bdd5973f99ac5f077ed2601010a3e5b",
+          "candidate_sha256": "5311b6f44169c558e64370cf2ae96ce8a577a49f4999439b18fdaa120d10c40a"
+        },
+        {
+          "receipt": "8e964e541b59bccd45aa2d46ebf96758e8c2b28d6373c1c8b3973c0374e9e012",
+          "terminal": "UNRESOLVED",
+          "phase_b_sha256": "dc943cb6705ff62ba03b1caf9e3178dd64f0b9ca318cbcf79e1ae5a1c7075f42",
+          "phase_d_sha256": "fe9672e4a741327e0841092e40ed8b5db65ddeab9245b56509f4d315900e25fe",
+          "candidate_sha256": "8e9b248381245587c2c607a16127a656f32fba401ef2c1e8d1cc00febec5b248"
+        },
+        {
+          "receipt": "f4a86d1862a511cceedd6f0d4862dd6e59e0fea4b35118b63394f86926268f88",
+          "terminal": "UNRESOLVED",
+          "phase_b_sha256": "89fb803d540b230c1a9b5b0ffed5d6ff338688108bdc2b91653c77e4b17ed8da",
+          "phase_d_sha256": "33436ea848a471a31daa9760e2c32d4e4cf6980f099abb0efb86af3de0675a9d",
+          "candidate_sha256": "816b819abfc3f811be736d6e83dcc12e2d1091dcb73b55fc7cc3f4f2af9a3ed7"
+        }
+      ]
+    },
+    {
+      "snapshot": "FM-S3-EXECUTION-CLOSURE",
+      "envelope_sha256": "aa9fc9558b5a391f4064731cdd6ca9743382fd0a2007f5f008f1411e71107568",
+      "receipts": [
+        {
+          "receipt": "a65d509a65369baaea4e7c57eb55719525b1814e2af022ff7d9be06406297bb5",
+          "terminal": "FAILED",
+          "phase_b_sha256": "a3867a1e6bec5840f15c57e27d092f1dc53588a39d73efc122f6b2ce9aca6075",
+          "phase_d_sha256": "78ea6a25ff3d8e5557fff6032fc6db629b6f39e641c18a5607fd333b07216703",
+          "candidate_sha256": "479653a3591636909f9a5df1439cf183a8b4175b960e5e79e345033b59af7edd"
+        }
+      ]
+    },
+    {
+      "snapshot": "terminals-primary",
+      "envelope_sha256": "a0413e2a5099ff3a0623c7fcf26dbbdf9dca03c1b00f3f45bc4272061e1df97f",
+      "receipts": [
+        {
+          "receipt": "29430538ec8e331c6c3eb90a2bf0547c19c4fcfd9780191f35b823d60fa1b33b",
+          "terminal": "UNRESOLVED",
+          "phase_b_sha256": "cdb3517603f4c81f9eb636e06813fb0014f358e98b11bfb3a1e68a0b07069ea2",
+          "phase_d_sha256": "7dd5f2a89193a583372a0255efbdeb5f19afc47bcca2dbc8b0d94b0d761013bd",
+          "candidate_sha256": "02572fd1d6423d63be0d6fa0ffc55549d018a8a44dde2664675dd79bb7469fdc"
+        },
+        {
+          "receipt": "3145fe7f3acff547a56e367dcd303e5c5a9d0a683f04585af880470b1e688003",
+          "terminal": "UNRESOLVED",
+          "phase_b_sha256": "ee92194c42d513e2cba83ba73b11e43d0193537c51e44062f21458433ea9d26a",
+          "phase_d_sha256": "9f3e8a17d6b12e84a6946f75dfd997e5d82cbfa05ea1eea100985dc2526fda83",
+          "candidate_sha256": "91fa014573a97c3d7029c24160c630f6644c94c3e5f875f920f66254bfeb6d6d"
+        },
+        {
+          "receipt": "9cd04cbd8032809882bfe70fe53929e62ba619fb4658eb864ee239c950fe0b4d",
+          "terminal": "FAILED",
+          "phase_b_sha256": "1bbc78e2362ec9197e08701cb24b93817432ce43bb61ab307717bce3efc13238",
+          "phase_d_sha256": "deeebbd064365cf5c1210fccda59615da211d61e3444b3f1bd7a8529e4e00a3a",
+          "candidate_sha256": "438218ad83f3377df7b567064e2a5c7a196c8ee51b1629d0c5a2c3be2d9d00f9"
+        }
+      ]
+    },
+    {
+      "snapshot": "terminals-secondary",
+      "envelope_sha256": "749880e4d4406e50797b25f209c32263e560584261958dea60a803f42aaf04ef",
+      "receipts": [
+        {
+          "receipt": "88f6512e240fc14994cdba8c94d10a467208e7836d2b4dc09279d8eb954029a5",
+          "terminal": "FUNDING_EXHAUSTED",
+          "phase_b_sha256": "9536a7ed3be74995a2283fdad4b799529c6d96d71ba137c9449f81d192e7d296",
+          "phase_d_sha256": "d2aaf756eb800569062fd00ffe62610f5847685d2513799d4ee28ce56db4168e",
+          "candidate_sha256": "658cba7fcc2642ba3f97a32cd280a68473f1588eeae52838b5c71ceb673b0bb6"
+        },
+        {
+          "receipt": "fe9e312635fff6edfe22a389694bde2e05c6e11cbdd18e46870e067d8451cb4a",
+          "terminal": "EXPIRED",
+          "phase_b_sha256": "59f7f975b240dd1a43d98d52e00c0a37f86e3dbfbb314028b66d542ae6542581",
+          "phase_d_sha256": "2904016935dd482226016c53de4dc5b75b098cd7f51497f674d63c2a1ac01c29",
+          "candidate_sha256": "a47f9445960eb77db44f1291653814fcacec18a02f079a65ac093a80d8c28674"
+        }
+      ]
+    },
+    {
+      "snapshot": "historical-gaps-primary",
+      "envelope_sha256": "c8e7a00d8e71e413900a1b830271392448176061b213bc27fde0bef1e707b4a8",
+      "receipts": [
+        {
+          "receipt": "1df8c9d68d8499ec79c805d20e215699477a9714b9d782b37e066d906fe6e649",
+          "terminal": "UNRESOLVED",
+          "phase_b_sha256": "4a7c4fd0784f236e0f5f64b22526409176f57e87009dc040fc636d4765746e7d",
+          "phase_d_sha256": "260118c33cd4daeb444e03f8f024a259b36b128b3d9e2b3ee42b1a141e2f2c53",
+          "candidate_sha256": "e8171518b7173714b022123b406ff2b7690a68eb2cbae54ac8fb41995a6f6e08"
+        },
+        {
+          "receipt": "c7e8429c6bb61dc52375c008fabfb355dad1033bee0a65e9bbfb1a641173c6d5",
+          "terminal": "UNRESOLVED",
+          "phase_b_sha256": "aab7a4f48470c792764e56f4bbad2031da8e08219dfd24713967f1f87b3aee70",
+          "phase_d_sha256": "f342d3f05edcd7c07d8272b34f62efcf9214cc9c164052027b7e9b04b7bc3cf4",
+          "candidate_sha256": "fa72670a24e3aa85779a380481fa9912b825f3a62fcf0108bbcae2e618b283b0"
+        }
+      ]
+    },
+    {
+      "snapshot": "historical-gaps-secondary",
+      "envelope_sha256": "d93c006bd1705167a759db722d4ba70405e617f5cda02922f9832ab0989ea441",
+      "receipts": [
+        {
+          "receipt": "16b59b41b026585c868b2fc4c33a994f68319d8be8e82ebb52e0c63e620d6f9f",
+          "terminal": "EXPIRED",
+          "phase_b_sha256": "12a4669df70f1ac15fb04271fe4165db64c35eae1de2041f178aa826d4c2b5cb",
+          "phase_d_sha256": "5818ba3c5e68f4555e0e374edd93fcd3071c44458517fad88ed4adec6068c3b4",
+          "candidate_sha256": "767a3d7b32abc941124968905a4459d8ac72a3f064e3fcb6b26c9916d0b65d87"
+        },
+        {
+          "receipt": "bb39263e6841ba57855ed4e679df7e7f1dcff632b23e8f2d2ffaf8a92ec85b6d",
+          "terminal": "EXPIRED",
+          "phase_b_sha256": "f7004dd144684f32db4e6b8f96a5e8b3c5f3eefca946caf0ff427de5885ab0b5",
+          "phase_d_sha256": "b8fe82d6cd4a9612e3893979accc07a2bee72623d5fbe33fcd848905e39f134a",
+          "candidate_sha256": "a3f9fb220497d300e91e6c912fe5a5d2718da9899409903c883d05018b2366fe"
+        },
+        {
+          "receipt": "e70fbf560bf50ed314edd682a1afd34d579753d2d7bfa8e60a17a8d6c5a171de",
+          "terminal": "EXPIRED",
+          "phase_b_sha256": "8dc109a26b45531ad070c7d9a3cb1bc957971e90f66019c8eeacb0b0c2320929",
+          "phase_d_sha256": "288a3d2324822328eb0438a0bab14d5f0fc7f990d00a7686b1c4efca173887e2",
+          "candidate_sha256": "cf0c33671af0b13abfa10261c1e8535e53328280eb8a3a65586210fffb608bc0"
+        }
+      ]
+    }
+  ],
+  "negatives": [
+    "external-registry-pin",
+    "cross-version",
+    "missing-receipt",
+    "duplicate-receipt",
+    "foreign-receipt",
+    "unregistered-deployment",
+    "checkpoint-replacement",
+    "checkpoint-signature",
+    "configuration-under-test-pin",
+    "anchor-under-test-pin",
+    "source-contract-under-test-pin",
+    "profile-under-test-pin",
+    "phase_b-deployment_binding",
+    "phase_b-funding_held",
+    "phase_b-leases",
+    "phase_d-phase_b_digest",
+    "phase_d-source_digest",
+    "phase_d-candidate_record",
+    "changed-phase-b-with-matching-link"
+  ]
+}

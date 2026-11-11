@@ -268,3 +268,8 @@ check-phase-d-contract:
 test: test-phase-d-crosscheck
 test-phase-d-crosscheck:
 	$(PYTHON) -B scripts/check-phase-d-crosscheck.py $(if $(PHASE_D_CROSSCHECK_REPORT),--report "$(PHASE_D_CROSSCHECK_REPORT)",)
+
+.PHONY: test-phase-d-envelope
+test: test-phase-d-envelope
+test-phase-d-envelope:
+	$(PYTHON) -B scripts/check-phase-d-envelope.py $(if $(PHASE_D_ENVELOPE_REPORT),--report "$(PHASE_D_ENVELOPE_REPORT)",)
