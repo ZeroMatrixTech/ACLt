@@ -1,4 +1,4 @@
-# ACLt 最简验证机 · 阶段 1
+# ACLt 最简验证机
 
 [立项与首轮规格](../../docs/07-roadmap/minimal-verifier-baseline.md)下的本地实验。判题规则 `aclt.exp.rir-stats-exact@1` 固定[候选 RIR stats-core](../aclt-rir-stats-probe/INDEPENDENT-CORE.md)的精确结果语义。
 
@@ -12,4 +12,4 @@
 make test-minimal-verifier
 ```
 
-该命令也纳入 `make test`。测试在临时目录构建 Rust 执行器，以冻结的 `stats-int-v1` 向量检验正常输出、同题的正确与错误提交、不同 gas 上限下的跨题提交，以及已有除零 trap。另有工件与输入绑定、未知规则和执行器错误的用例。新手算计量边界与语义偏差注入属于下一阶段；此处的判决与证据仅适用于本地实验。
+该命令也纳入 `make test`。测试在临时目录构建 Rust 执行器，以冻结的 `stats-int-v1` 向量检验正常输出、同题的正确与错误提交、不同 gas 上限下的跨题提交，以及已有除零 trap。另有工件与输入绑定、未知规则和执行器错误的用例。阶段 2 增加手算输出、相邻 gas 上限、结果字段负例及单侧计量偏差注入，详见[语义验收](SEMANTICS.md)。这些判决与证据仅适用于本地实验。
