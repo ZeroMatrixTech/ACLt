@@ -4,6 +4,7 @@
 
 | 实验 | 范围 | 运行入口 |
 |---|---|---|
+| [ACLt 最简验证机](aclt-minimal-verifier-baseline/README.md) | 冻结题目、独立重执行与提交判定 | `make test-minimal-verifier` |
 | [state3](aclt-minimal-verifier-state3/README.md) | 当前单机实现，运行记录 ACLT-STATE-3 | 仓库根目录执行 `bash scripts/run-singlehost.sh` |
 | [多节点 admission](aclt-multinode-admission/README.md) | 预登记模拟身份、持久接收器、重复消息与顺序检查 | 见下方独立命令 |
 
