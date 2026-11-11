@@ -273,3 +273,8 @@ test-phase-d-crosscheck:
 test: test-phase-d-envelope
 test-phase-d-envelope:
 	$(PYTHON) -B scripts/check-phase-d-envelope.py $(if $(PHASE_D_ENVELOPE_REPORT),--report "$(PHASE_D_ENVELOPE_REPORT)",)
+
+.PHONY: test-bound-creation
+test: test-bound-creation
+test-bound-creation:
+	$(PYTHON) -B scripts/check-bound-creation.py $(if $(BOUND_CREATION_REPORT),--report "$(BOUND_CREATION_REPORT)",)

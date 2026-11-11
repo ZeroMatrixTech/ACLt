@@ -158,8 +158,12 @@ class Ledger(s2.Ledger):
                         if handled is not None:
                             return handled
                     c.need('funding_boundary' not in task['audit'], 'S3 funding boundary recorded')
-            nxt, result = s2.reduce(cfg, state, req, now)
-            if op == 'CREATE' and nxt is not state:
+            if op == 'CREATE_BOUND':
+                from tools.formal_migration import deployment_creation
+                nxt, result = s2.reduce(cfg, state, req, now, create_bound=deployment_creation.verify)
+            else:
+                nxt, result = s2.reduce(cfg, state, req, now)
+            if op in ('CREATE', 'CREATE_BOUND') and nxt is not state:
                 contract = check_bundle(req['body']['bundle'])
                 if 'closure_observer_der' in contract:
                     s3_closure.check_observer_key(cfg, contract['closure_observer_der'])
