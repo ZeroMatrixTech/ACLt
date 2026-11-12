@@ -345,7 +345,8 @@ def run(args: argparse.Namespace) -> dict:
     write_cpio(runtime, runtime_archive)
     guest_archive = pack_guest(work, commit, pins, executor)
     initramfs = output / "guest.cpio.gz"
-    with gzip.open(initramfs, "wb", compresslevel=1) as stream:
+    with initramfs.open("wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=1,
+                                                    mtime=0) as stream:
         stream.write(runtime_archive.read_bytes())
         stream.write(guest_archive.read_bytes())
     accel = args.accel
