@@ -19,7 +19,7 @@ import tarfile
 import unicodedata
 
 from baseline import LIMITS, PROBE, ROOT
-from job import HEADER, VALUE
+from job import HEADER, VALUE, prepare_job
 from lan import TIMEOUT, run_job, serve
 
 HERE = Path(__file__).resolve().parent
@@ -70,7 +70,9 @@ def fixture() -> tuple[bytes, bytes, dict]:
     return bytes.fromhex(stats["artifact_hex"]), data, {key: stats["limits"][key] for key in LIMITS}
 
 
-def run(peer: str, address: str, remote_root: str, output: Path) -> None:
+def run(peer: str, address: str, remote_root: str, output: Path, *, solve_budget: int | None = None) -> None:
+    job = fixture()
+    prepare_job(*job, allocate_gas=True, solve_budget=solve_budget)
     output = output.resolve()
     output.mkdir(mode=0o700)
     commit, archive, pins = snapshot()
@@ -126,7 +128,7 @@ def run(peer: str, address: str, remote_root: str, output: Path) -> None:
                 if peer_ip != address or local_ip == peer_ip or IPv4Address(local_ip).is_loopback:
                     raise RuntimeError("expected an actual LAN connection between A and B")
                 connection.settimeout(TIMEOUT)
-                summary = run_job(connection, *fixture(), executor, a_wire)
+                summary = run_job(connection, *job, executor, a_wire, solve_budget=solve_budget)
             if worker.wait(timeout=15):
                 raise RuntimeError("B worker failed; see B-serve.log")
         finally:
@@ -168,6 +170,7 @@ def main() -> None:
     driver.add_argument("--peer", required=True, help="B SSH destination user@IPv4")
     driver.add_argument("--remote-root", required=True, help="new B directory /tmp/aclt-verifier-*")
     driver.add_argument("--output", required=True, type=Path)
+    driver.add_argument("--solve-budget", type=int, help="optional total gas cap for the two shard solves")
     worker = commands.add_parser("serve")
     worker.add_argument("address")
     worker.add_argument("executor", type=Path)
@@ -190,7 +193,7 @@ def main() -> None:
         parser.error("--peer must name B's LAN address")
     if not re.fullmatch(r"/tmp/aclt-verifier-[A-Za-z0-9_.-]+", args.remote_root):
         parser.error("--remote-root must be a new /tmp/aclt-verifier-* directory")
-    run(args.peer, str(address), args.remote_root, args.output)
+    run(args.peer, str(address), args.remote_root, args.output, solve_budget=args.solve_budget)
 
 
 if __name__ == "__main__":
