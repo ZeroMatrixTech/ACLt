@@ -170,6 +170,11 @@ class ArchiveTests(unittest.TestCase):
                                      capture_output=True, text=True).stdout.split()
             self.assertEqual(listing[1:], ["bin", "bin/busybox", "bin/sh", "init"])
 
+    def test_init_runs_the_packed_entry_point(self):
+        entry = "experiments/aclt-minimal-verifier-baseline/guest_multivm.py"
+        self.assertIn(f"python3 /repo/{entry}", multivm.INIT)
+        self.assertTrue((multivm.ROOT / entry).is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

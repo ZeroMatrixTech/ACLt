@@ -56,7 +56,7 @@ mount -t ext4 /dev/vda /evidence || { echo EVIDENCE_MOUNT_FAILED; poweroff -f; }
 busybox ip link set eth0 up || { echo NIC_LINK_FAILED; poweroff -f; }
 busybox ip addr add "$IP" dev eth0 || { echo NIC_ADDR_FAILED; poweroff -f; }
 echo "GUEST_START ip=$IP kernel=$(cat /proc/version)"
-python3 /repo/guest_multivm.py
+python3 /repo/experiments/aclt-minimal-verifier-baseline/guest_multivm.py
 echo "GUEST_EXIT=$?"
 sync
 poweroff -f
