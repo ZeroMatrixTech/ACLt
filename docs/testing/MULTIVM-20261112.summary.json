@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "id": "MULTIVM",
+  "recorded_on": "2026-11-12",
+  "evidence_action": "local_two_guest_qemu_run_no_physical_host_separation",
+  "source_revision": "15df3fc1fa1ae8837c0963a4b3f0936a47ee6480",
+  "executor_sha256": "ceaa565fe3f564c15360f916ab2f02fe49d83a8b0b6cc4895a4ca9eebbae3a72",
+  "initramfs_sha256": "826d802a343b5be9eaca84c83621d2f958ae2333c090bce17d4f4c072e09f179",
+  "kernel_sha256": "0ad39b13e289e1a5cf806d14541ac8f221eefe849017f5915e0846917ed67785",
+  "runtime_entries": 726,
+  "environment": {
+    "host": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+    "python": "3.14.4",
+    "qemu": "QEMU emulator version 10.2.1 (Debian 1:10.2.1+ds-1ubuntu3.3)",
+    "accel": "kvm"
+  },
+  "host": {
+    "cpus": 12,
+    "memory_gib": 30,
+    "device": "/dev/kvm"
+  },
+  "runs": {
+    "flat": {
+      "status": "PASS",
+      "parameters": {
+        "solve_budget": null,
+        "recursive": false
+      },
+      "planned_leaves": 2,
+      "job_id": "4218a10571b9712d1ef67bfcc331b7e177ba57f44e536be3aa2ef7d4bcc913b9",
+      "output_sha256": "1216b67718f016f305a97cc465db4f34fb268c348fde0f1e75befbf49a347d56",
+      "reference_gas_used": 9425,
+      "allocated_solve_gas": 17737,
+      "used_solve_gas": 17737,
+      "seconds": 2.12,
+      "lan_transcript_equal": true,
+      "guests": {
+        "A": {
+          "boot_id": "16f63316-2835-4028-b152-aa0d33c62a51",
+          "ip": "10.0.3.1",
+          "peer": "10.0.3.2",
+          "local_socket_ip": "10.0.3.1",
+          "peer_socket_ip": "10.0.3.2",
+          "python": "3.14.4",
+          "kernel": "Linux version 7.0.0-30-generic (buildd@lcy02-amd64-048) (x86_64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, GNU ld (GNU Binutils for Ubuntu) 2.46) #30-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 18:22:54 UTC 2026"
+        },
+        "B": {
+          "boot_id": "e696a4be-0de1-4c90-8de4-56b34b05b497",
+          "ip": "10.0.3.2",
+          "peer": "10.0.3.1",
+          "local_socket_ip": "10.0.3.2",
+          "peer_socket_ip": "10.0.3.1",
+          "python": "3.14.4",
+          "kernel": "Linux version 7.0.0-30-generic (buildd@lcy02-amd64-048) (x86_64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, GNU ld (GNU Binutils for Ubuntu) 2.46) #30-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 18:22:54 UTC 2026"
+        }
+      },
+      "slices": [
+        {
+          "start": 0,
+          "stop": 2,
+          "execution_host": "A",
+          "verification_host": "B",
+          "status": "ACCEPT",
+          "gas_limit": 8719,
+          "gas_used": 8719
+        },
+        {
+          "start": 2,
+          "stop": 5,
+          "execution_host": "B",
+          "verification_host": "A",
+          "status": "ACCEPT",
+          "gas_limit": 9018,
+          "gas_used": 9018
+        }
+      ]
+    },
+    "flat-explicit-budget": {
+      "status": "PASS",
+      "parameters": {
+        "solve_budget": 17737,
+        "recursive": false
+      },
+      "planned_leaves": 2,
+      "job_id": "d8cbd9759225a25a6479799b9749fbab269cffc47b824cf0830556a7a58d86e5",
+      "output_sha256": "1216b67718f016f305a97cc465db4f34fb268c348fde0f1e75befbf49a347d56",
+      "reference_gas_used": 9425,
+      "allocated_solve_gas": 17737,
+      "used_solve_gas": 17737,
+      "seconds": 2.12,
+      "lan_transcript_equal": true,
+      "guests": {
+        "A": {
+          "boot_id": "a6a806fb-1f47-4219-9fa9-f49ce96d027c",
+          "ip": "10.0.3.1",
+          "peer": "10.0.3.2",
+          "local_socket_ip": "10.0.3.1",
+          "peer_socket_ip": "10.0.3.2",
+          "python": "3.14.4",
+          "kernel": "Linux version 7.0.0-30-generic (buildd@lcy02-amd64-048) (x86_64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, GNU ld (GNU Binutils for Ubuntu) 2.46) #30-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 18:22:54 UTC 2026"
+        },
+        "B": {
+          "boot_id": "59a269b3-28d7-4501-97fe-11a8adff2a0c",
+          "ip": "10.0.3.2",
+          "peer": "10.0.3.1",
+          "local_socket_ip": "10.0.3.2",
+          "peer_socket_ip": "10.0.3.1",
+          "python": "3.14.4",
+          "kernel": "Linux version 7.0.0-30-generic (buildd@lcy02-amd64-048) (x86_64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, GNU ld (GNU Binutils for Ubuntu) 2.46) #30-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 18:22:54 UTC 2026"
+        }
+      },
+      "slices": [
+        {
+          "start": 0,
+          "stop": 2,
+          "execution_host": "A",
+          "verification_host": "B",
+          "status": "ACCEPT",
+          "gas_limit": 8719,
+          "gas_used": 8719
+        },
+        {
+          "start": 2,
+          "stop": 5,
+          "execution_host": "B",
+          "verification_host": "A",
+          "status": "ACCEPT",
+          "gas_limit": 9018,
+          "gas_used": 9018
+        }
+      ]
+    },
+    "tree": {
+      "status": "PASS",
+      "parameters": {
+        "solve_budget": null,
+        "recursive": true
+      },
+      "planned_leaves": 3,
+      "job_id": "ca69223f2598b93b9cca19626e0243edba54513662f1d435f71590992ad34830",
+      "output_sha256": "1216b67718f016f305a97cc465db4f34fb268c348fde0f1e75befbf49a347d56",
+      "reference_gas_used": 9425,
+      "allocated_solve_gas": 26049,
+      "used_solve_gas": 26049,
+      "seconds": 2.17,
+      "lan_transcript_equal": true,
+      "guests": {
+        "A": {
+          "boot_id": "2356a68f-e19d-4be9-bdd7-e45ba2488a1d",
+          "ip": "10.0.3.1",
+          "peer": "10.0.3.2",
+          "local_socket_ip": "10.0.3.1",
+          "peer_socket_ip": "10.0.3.2",
+          "python": "3.14.4",
+          "kernel": "Linux version 7.0.0-30-generic (buildd@lcy02-amd64-048) (x86_64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, GNU ld (GNU Binutils for Ubuntu) 2.46) #30-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 18:22:54 UTC 2026"
+        },
+        "B": {
+          "boot_id": "b64299de-e95b-4489-a679-b74278c04368",
+          "ip": "10.0.3.2",
+          "peer": "10.0.3.1",
+          "local_socket_ip": "10.0.3.2",
+          "peer_socket_ip": "10.0.3.1",
+          "python": "3.14.4",
+          "kernel": "Linux version 7.0.0-30-generic (buildd@lcy02-amd64-048) (x86_64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0, GNU ld (GNU Binutils for Ubuntu) 2.46) #30-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 18:22:54 UTC 2026"
+        }
+      },
+      "slices": [
+        {
+          "start": 0,
+          "stop": 2,
+          "execution_host": "A",
+          "verification_host": "B",
+          "status": "ACCEPT",
+          "gas_limit": 8719,
+          "gas_used": 8719
+        },
+        {
+          "start": 2,
+          "stop": 4,
+          "execution_host": "B",
+          "verification_host": "A",
+          "status": "ACCEPT",
+          "gas_limit": 8719,
+          "gas_used": 8719
+        },
+        {
+          "start": 4,
+          "stop": 5,
+          "execution_host": "A",
+          "verification_host": "B",
+          "status": "ACCEPT",
+          "gas_limit": 8611,
+          "gas_used": 8611
+        }
+      ]
+    }
+  },
+  "claim": "two guests, one physical host: guest-level protocol and role split only; not physical host separation, not statistical independence",
+  "document": "docs/testing/MULTIVM-20261112.md",
+  "public_evidence": {
+    "path": "docs/testing/public-evidence/MULTIVM-20261112-public-evidence.tar.gz",
+    "sha256": "7219e251b4d09d3696ed9b447b651de12f2edd0d0efc408900db379afe1e475e",
+    "files": 75
+  },
+  "not_closed": [
+    "single-host phase",
+    "P0-1B",
+    "G2",
+    "G3",
+    "DUALHOST-SSH-1"
+  ]
+}

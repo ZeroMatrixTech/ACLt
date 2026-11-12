@@ -15,3 +15,17 @@ make test-minimal-verifier
 该命令也纳入 `make test`。测试在临时目录构建 Rust 执行器，以冻结的 `stats-int-v1` 向量检验正常输出、同题的正确与错误提交、不同 gas 上限下的跨题提交，以及已有除零 trap。另有工件与输入绑定、未知规则和执行器错误的用例。阶段 2 增加手算输出、相邻 gas 上限、结果字段负例及单侧计量偏差注入，详见[语义验收](SEMANTICS.md)。这些判决与证据仅适用于本地实验。
 
 [双机作业切片](DISTRIBUTED.md)说明拆分、跨机交叉验证、归并、资源边界和验收命令。
+
+## 本地双来宾运行
+
+物理双机暂停期间，用同一物理宿主上的两个 QEMU 来宾分别承担 A、B。两端有独立内核、根文件系统、证据磁盘和 TCP 栈，作业帧走来宾间的 QEMU socket 链路；宿主之外的网络不参与。这是来宾级证据，不是物理双机证据，也不是统计独立性证据。
+
+```sh
+make test-minimal-verifier-multivm \
+  MULTIVM_KERNEL=/path/to/vmlinuz \
+  MULTIVM_OUTPUT=/tmp/aclt-multivm-1
+```
+
+需要 QEMU、`cpio`、`mkfs.ext4`、`debugfs`、静态 `busybox`、宿主 CPython，以及可读的 guest 内核镜像。来宾根文件系统由 `multivm.py` 用宿主 `busybox` 与 CPython 现场组装，也可用 `--runtime-root` 指定已有目录（需含 `bin/busybox` 与 `usr/bin/python3`）。Rust 执行器在宿主用 `-C target-feature=+crt-static` 静态编译后放入两个来宾，来宾内不编译。
+
+证据目录保存两端串口日志、来宾报告 `guest.json`、两侧原始帧、`plan.cbor` 与归并结果、源码/内核/initramfs/执行器摘要，以及汇总的 `result.json`。可选参数：`MULTIVM_SOLVE_BUDGET`（每片 gas 预算）、`MULTIVM_RECURSIVE=1`（递归归并）、`MULTIVM_ACCEL=kvm|tcg`；`--memory`、`--runtime-root`、`--keep-work` 直接传给 `multivm.py run`。不带 `MULTIVM_RECURSIVE` 时目标只跑平坦计划，静默忽略该变量会让人误以为测了树归并。运行要求实验源码已提交且工作区干净，与双机驱动相同。

@@ -104,13 +104,14 @@ def handle_request(raw: bytes, expected_action: str, executor: Path, *, prior_pl
     return plan, codec.encode(reply)
 
 
-def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2) -> None:
+def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port: int = 0) -> dict:
     output.mkdir(mode=0o700)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
-        listener.bind((bind, 0))
+        listener.bind((bind, port))
         listener.listen(1)
         listener.settimeout(TIMEOUT)
-        print(json.dumps({"port": listener.getsockname()[1]}), flush=True)
+        local_port = listener.getsockname()[1]
+        print(json.dumps({"port": local_port}), flush=True)
         connection, peer = listener.accept()
         with connection:
             codec.need(peer[0] != bind and not peer[0].startswith("127."), "expected a distinct LAN peer")
@@ -123,6 +124,7 @@ def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2) -> No
                                                 leaf_index=index, leaf_count=leaf_count)
                 (output / f"{label}-response.cbor").write_bytes(response)
                 send(connection, response)
+    return {"port": local_port, "local_ip": bind, "peer_ip": peer[0]}
 
 
 def run_job(connection: socket.socket, artifact: bytes, data: bytes, limits: dict,

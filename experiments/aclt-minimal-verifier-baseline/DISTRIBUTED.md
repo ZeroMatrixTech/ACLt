@@ -30,3 +30,17 @@ python3 -B experiments/aclt-minimal-verifier-baseline/dualhost.py run \
 驱动分别构建 A 与 B 的 Rust 执行器，通过真实 LAN 交换两次请求和回复，回收 B 的原始帧并和 A 逐字节核对。输出目录记录源码提交与摘要、工具版本、双方消息、裁决、归并输出及参考输出。两端的日志和物理拓扑由受信实验操作者复核。成功结果记录在 `result.json`。整题参考运行属于验收步骤，使用既有 Python 求值器。
 
 [广度优先拆分与递归归并](TREE.md)扩展同一双机入口，比较相同叶子下的平铺与递归结果。
+
+## 本地双来宾入口
+
+物理双机暂停期间，同一入口可在单宿主上用两个 QEMU 来宾承担 A、B：两端各有独立内核、根文件系统、证据盘和 TCP 栈，作业帧经 QEMU socket 链路传输，不走宿主外部网络，也不需要 root、tap 或 bridge。
+
+```sh
+make test-minimal-verifier-multivm \
+  MULTIVM_KERNEL=/path/to/vmlinuz \
+  MULTIVM_OUTPUT=/tmp/aclt-multivm-flat
+```
+
+驱动在启动前用与双机入口相同的 `prepare_job` / `prepare_tree` 算出叶子数并写入两端内核命令行，来宾因此能在第一条请求上校验计划形态。验收比对两端 `boot_id`、角色、socket 地址方向、源码提交、执行器摘要、逐片执行/验证角色交替、gas 守恒、输出摘要与长度，以及两端请求/响应帧的逐字节相等。
+
+结果见[本地双来宾验证第 1 轮](../../docs/testing/MULTIVM-20261112.md)：平坦两片、显式预算两片和树归并三片全部通过，归并输出与单机参照一致。这是来宾级证据，不替代物理主机分离、宿主级故障或统计独立性结论，也不改变 [DUALHOST-SSH-1](../../docs/08-governance/dualhost-ssh-validation.md) 的物理双机要求。

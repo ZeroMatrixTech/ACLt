@@ -3,16 +3,24 @@
 > 文档状态：Living engineering policy（本次建立的工程协作约定）  
 > 当前语义基线：v0.5；ConformanceTarget：V1  
 > 环境规范版本：ENV-1  
-> 最后更新：2026-11-11
-> 适用范围：Linux 本地回归、候选 FM 集成与双物理机 SSH 验证
+> 最后更新：2026-11-12
+> 适用范围：Linux 本地回归、本地多虚拟机与双物理机 SSH 验证
 
 ## 1. 范围与权威边界
 
 本规范统一开发、测试和交接的环境记录，不定义协议执行语义，不改变 SemanticStatus、V1 VersionDisposition、ADR 或 Gate。协议与贡献要求沿用 [文档中心](../README.md)、[贡献指南](../../CONTRIBUTING.md)和[审计程序](audit-procedure.md)。
 
-开发优先级见[当前状态](../07-roadmap/current-status.md)。本规范继续适用于候选 FM-S3 audit-only 双机集成及 P0-1B Profile 规则的 Python/Rust 回归；state3 保留为本地历史阶段的当前回归入口。Python 标准库 SQLite、系统 OpenSSL、Rust/C++ 及 SSH 用于相应测试，无新增第三方 Python/Cargo 包。默认本地检查不要求 Docker/VM、GPU、链节点或真实付款；显式双机集成按 DUALHOST-SSH-1 运行。软件安装可能联网，本地构建与检查可离线。
+开发优先级见[当前状态](../07-roadmap/current-status.md)。本规范继续适用于候选 FM-S3 audit-only 双机集成及 P0-1B Profile 规则的 Python/Rust 回归；state3 保留为本地历史阶段的当前回归入口。Python 标准库 SQLite、系统 OpenSSL、Rust/C++ 及 SSH 用于相应测试，无新增第三方 Python/Cargo 包。默认本地检查不要求 Docker/VM、GPU、链节点或真实付款；物理双机集成约定见 DUALHOST-SSH-1，当前采用下述临时验证路径。软件安装可能联网，本地构建与检查可离线。
 
 本文件是环境协作约定的唯一入口；其他说明链接本文件。新增依赖时必须同步本文件、依赖锁定文件、安装步骤与测试证据。
+
+### 本地多虚拟机验证（2026-11-12）
+
+维护者因远端算力不足，暂时挂起新增双物理机运行，授权以同一物理宿主上的多个虚拟机继续验证。最简验证机的下一次集成优先使用两个来宾分别承担 A、B，使用独立运行目录和虚拟磁盘。作业消息走来宾间的虚拟网络。测试报告记录共同宿主、来宾版本、QEMU 加速方式、网络拓扑、源码摘要和两端原始结果。
+
+VM 结果支持来宾间协议、角色分工和来宾级故障场景。物理主机分离、宿主级故障与物理 LAN 结论继续由相应物理证据支持。保留此前双机证据及其适用范围。默认本地回归和 CI 沿用各自入口，多 VM 运行采用显式入口。
+
+现有 [QEMU 外置权威账本实验](../../experiments/aclt-authority-admission/README.md#services-and-vm-reproduction)可参考来宾构建、网络和证据回收。最简验证机应使用当前提交的源码和新的来宾运行目录；首次运行前核对来宾内的 Python、Rust 和网络连通性。
 
 ## 2. 目录与代码基线
 
@@ -160,7 +168,7 @@ VM 复查另需 QEMU、cpio、ext4 工具、匹配的内核/驱动与 Python 最
 
 本轮实际可用 CPython 3.14.4、Unicode 数据库 16.0.0 与 rustc 1.93.1；上文“本机缺项”是此前快照，不再适用于本轮检查。新切片固定 Unicode 16.0.0，版本不同显式拒绝，避免跨实现规范化漂移。Rust 直接由 rustc 构建，无新增 Cargo/Python 下载依赖；SHA 对拍另用现有 OpenSSL。固定 Unicode 数据来源、生成器与许可证见 [Rust README](../../tools/verification_profile/rust/README.md)。本轮不重新认证完整 state3 环境或所有平台。
 
-## 2026-10-23 后续验证环境切换（DUALHOST-SSH-1）
+## 2026-10-23 后续验证环境切换（历史记录，DUALHOST-SSH-1）
 
 用户已撤销单机/同宿主 VM 替代真实双机验证的实验许可；后续集成、网络与故障验证采用两台物理机，通过 SSH 控制。新接受的独立主机假设仅限本轮实验，不扩张为统计/身份独立或主网保证。本地回归继续保留，历史记录不改写，P0-1B/G2 不关闭。连接事实、撤销条件、预检缺项及下一轮验收见 [双机 SSH 验证约定](dualhost-ssh-validation.md)。前文 VM 命令保留供历史审计，不作为后续默认执行许可。
 
