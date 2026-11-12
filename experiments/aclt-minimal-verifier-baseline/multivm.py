@@ -383,8 +383,14 @@ def run(args: argparse.Namespace) -> dict:
     (output / "init").write_text(INIT, encoding="utf-8")
     roots = {}
     for role in ("A", "B"):
-        roots[role] = output / role
-        extract(disks[role], roots[role])
+        # the guest mounts its evidence disk at /evidence and writes /evidence/<role>
+        disk_root = output / role
+        extract(disks[role], disk_root)
+        roots[role] = disk_root / role
+    for role, names in (("A", ("guest.json", "result.json")), ("B", ("guest.json",))):
+        for name in names:
+            if not (roots[role] / name).is_file():
+                raise RunError(f"guest {role} left no {name} on its evidence disk")
     guests = {role: json.loads((roots[role] / "guest.json").read_text(encoding="utf-8"))
               for role in ("A", "B")}
     check_guests(guests["A"], guests["B"])
