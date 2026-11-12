@@ -5,6 +5,7 @@ from collections.abc import Callable
 import hashlib
 import json
 from pathlib import Path
+import time
 
 from baseline import ask, solve
 from dualhost import fixture
@@ -53,7 +54,9 @@ def label(action: str, index: int) -> str:
     return f"{action}-{index}"
 
 
-def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Exchange, *, solve_budget: int | None) -> dict:
+def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Exchange, *,
+             solve_budget: int | None, elapsed_ns: dict[str, int] | None = None) -> dict:
+    started = time.monotonic_ns()
     artifact, data, limits = job_fixture(leaf_count)
     plan, leaves = prepare_tree(artifact, data, limits, solve_budget=solve_budget)
     job_id = codec.domain_hash(JOB_TAG, plan)
@@ -91,9 +94,13 @@ def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Ex
                             execution_host=worker, verification_host=verifier, status=receipt["status"],
                             gas_limit=gas_limit, gas_used=outcome["gas_used"]))
 
+    merge_started = time.monotonic_ns()
     tree = merge_tree(plan, artifact, data, limits, submissions, solve_budget=solve_budget)
+    merge_ns = time.monotonic_ns() - merge_started
     reverse = merge_tree(plan, artifact, data, limits, submissions[::-1], solve_budget=solve_budget)
+    reference_started = time.monotonic_ns()
     reference = codec.decode(solve(ask(artifact, data, limits), artifact, data).outcome)
+    reference_ns = time.monotonic_ns() - reference_started
     codec.need(reference["outcome"] == "OK"
                and tree.output == reverse.output == tree.flat_output == reverse.flat_output == reference["output"],
                "composition differs from the successful whole-task reference")
@@ -105,6 +112,8 @@ def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Ex
                    reference_gas_used=reference["gas_used"], leaf_solve_gas_used=tree.leaf_gas_used,
                    lan_payload_bytes=wire_bytes, tree_merge_order=[list(pair) for pair in tree.merge_order])
     (output / "result.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    if elapsed_ns is not None:
+        elapsed_ns.update(merge_ns=merge_ns, reference_ns=reference_ns, job_ns=time.monotonic_ns() - started)
     return summary
 
 

@@ -15,7 +15,7 @@ sys.path[:0] = ["/repo", "/repo/experiments/aclt-minimal-verifier-baseline"]
 
 from dualhost import fixture
 from lan import TIMEOUT, handle_request, run_job, serve
-from multivm_job import guest_ip, guest_roles, peer_operations, run_many
+from multivm_job import guest_ip, guest_roles, label, peer_operations, run_many
 from tools.formal_migration.s2_transport import receive, send
 
 EVIDENCE = Path("/evidence")
@@ -70,9 +70,12 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
     roles = guest_roles(int(pairs["aclt_guests"]))
     output = EVIDENCE / role
     coordinator = roles[0]
+    operations_ns = {}
+    elapsed_ns = {}
     if role != coordinator:
         bounds = serve(guest_ip(role), EXECUTOR, output, leaf_count=leaves, port=port,
-                       schedule=peer_operations(roles, leaves, role), expected_peer=guest_ip(coordinator))
+                       schedule=peer_operations(roles, leaves, role), expected_peer=guest_ip(coordinator),
+                       elapsed_ns=operations_ns)
         report.update(local_socket_ip=bounds["local_ip"], peer_socket_ip=bounds["peer_ip"])
     else:
         output.mkdir(mode=0o700)
@@ -89,15 +92,19 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
             def exchange(owner, action, index, raw):
                 nonlocal local_plan
                 if owner == coordinator:
+                    started = time.monotonic_ns()
                     local_plan, result = handle_request(raw, action, EXECUTOR, prior_plan=local_plan,
                                                         leaf_index=index, leaf_count=leaves)
+                    operations_ns[label(action, index)] = time.monotonic_ns() - started
                     return result
                 connection = connections[owner]
                 send(connection, raw)
                 return receive(connection)
 
-            summary = run_many(roles, leaves, output, exchange, solve_budget=budget)
+            summary = run_many(roles, leaves, output, exchange, solve_budget=budget, elapsed_ns=elapsed_ns)
             print(f"GUEST_RESULT slices={len(summary['slices'])}", flush=True)
+    (output / "timings.json").write_text(json.dumps(dict(operations_ns=operations_ns, **elapsed_ns), indent=2)
+                                         + "\n", encoding="utf-8")
     (output / "guest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
 

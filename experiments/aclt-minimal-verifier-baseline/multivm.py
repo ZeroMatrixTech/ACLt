@@ -29,7 +29,7 @@ from baseline import ROOT, ask, solve
 from dualhost import fixture, snapshot
 from job import JOB_TAG, merge_job, prepare_job
 from lan import decode_answer, operations, request
-from multivm_job import MAX_LEAVES, guest_ip, guest_roles, job_fixture, replay_many
+from multivm_job import MAX_LEAVES, guest_ip, guest_roles, job_fixture, peer_operations, replay_many
 from tools.verification_profile import codec
 from tree import merge_tree, prepare_tree
 
@@ -421,6 +421,23 @@ def check_topology(guests: dict, record: dict) -> None:
         raise RunError("coordinator reported unexpected TCP addresses")
 
 
+def read_timings(roots: dict[str, Path], leaves: int) -> dict:
+    roles = tuple(roots)
+    timings = {}
+    for role, root in roots.items():
+        report = json.loads((root / "timings.json").read_text(encoding="utf-8"))
+        required = ("operations_ns", "merge_ns", "reference_ns", "job_ns") if role == "A" else ("operations_ns",)
+        codec.fields(report, required)
+        operations_ns = report["operations_ns"]
+        codec.fields(operations_ns, tuple(name for _, _, name in peer_operations(roles, leaves, role)))
+        for duration in operations_ns.values():
+            codec.uint(duration)
+        for name in required[1:]:
+            codec.uint(report[name])
+        timings[role] = report
+    return timings
+
+
 def guest_links(roles: tuple[str, ...]) -> dict[str, int]:
     # Hold all reservations until the list is complete to prevent duplicate ports.
     with ExitStack() as stack:
@@ -531,6 +548,7 @@ def run(args: argparse.Namespace) -> dict:
     guests = {role: json.loads((roots[role] / "guest.json").read_text(encoding="utf-8")) for role in roles}
     if many:
         check_topology(guests, record)
+        record["timings"] = read_timings(roots, leaves)
         with TemporaryDirectory(prefix="replay-", dir=work) as replay:
             record.update(replay_many(roots, leaves, executor, Path(replay), solve_budget=args.solve_budget))
     else:

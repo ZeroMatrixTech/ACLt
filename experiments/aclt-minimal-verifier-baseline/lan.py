@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import socket
+import time
 
 from baseline import ARTIFACT_TAG, LIMITS, QUESTION_TAG, Answer, ask, solve, verify
 from job import (
@@ -105,7 +106,8 @@ def handle_request(raw: bytes, expected_action: str, executor: Path, *, prior_pl
 
 
 def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port: int = 0,
-          schedule: list[tuple[str, int, str]] | None = None, expected_peer: str | None = None) -> dict:
+          schedule: list[tuple[str, int, str]] | None = None, expected_peer: str | None = None,
+          elapsed_ns: dict[str, int] | None = None) -> dict:
     output.mkdir(mode=0o700)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.bind((bind, port))
@@ -122,8 +124,11 @@ def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port:
             for action, index, label in operations(leaf_count) if schedule is None else schedule:
                 raw = receive(connection)
                 (output / f"{label}-request.cbor").write_bytes(raw)
+                started = time.monotonic_ns()
                 plan, response = handle_request(raw, action, executor, prior_plan=plan,
                                                 leaf_index=index, leaf_count=leaf_count)
+                if elapsed_ns is not None:
+                    elapsed_ns[label] = time.monotonic_ns() - started
                 (output / f"{label}-response.cbor").write_bytes(response)
                 send(connection, response)
     return {"port": local_port, "local_ip": bind, "peer_ip": peer[0]}
