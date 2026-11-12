@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 from dataclasses import replace
+from itertools import permutations
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
@@ -12,7 +13,8 @@ from dualhost import fixture
 from job import (
     BOUNDED_RULE, HEADER, ROW, VALUE, merge_job, prepare_job, record_verdict, stats_gas_bound,
 )
-from lan import decode_answer, handle_request, request, run_job
+from lan import decode_answer, handle_request, operations, request, run_job
+from tree import TREE_RULE, merge_tree, prepare_tree, tree_slots
 from independent import validate
 from test_baseline import build_executor
 from tools.verification_profile import codec
@@ -203,3 +205,66 @@ class JobTests(unittest.TestCase):
         message = request("SOLVE", codec.encode(insufficient), self.artifact, shard)
         with self.assertRaisesRegex(codec.CodecError, "insufficient LAN shard solve budget"):
             handle_request(message, "SOLVE", self.executor)
+
+    def test_breadth_first_tree_composes_same_leaves_in_any_arrival_order(self):
+        plan, slices = prepare_tree(self.artifact, self.data, self.limits, solve_budget=26049)
+        meta = codec.decode(plan)
+        self.assertEqual(meta["rule"], TREE_RULE)
+        self.assertEqual(
+            [(node["start"], node["stop"], node.get("children")) for node in meta["nodes"]],
+            [(0, 5, [1, 2]), (0, 2, None), (2, 5, [3, 4]), (2, 4, None), (4, 5, None)],
+        )
+        self.assertEqual([slot["start"] for slot in tree_slots(meta)], [0, 2, 4])
+        submissions = [self.accepted(plan, shard) for shard in slices]
+        reference = solve(ask(self.artifact, self.data, self.limits), self.artifact, self.data)
+        outcome = codec.decode(reference.outcome)
+        for ordering in permutations(submissions):
+            result = merge_tree(plan, self.artifact, self.data, self.limits, list(ordering), solve_budget=26049)
+            self.assertEqual(result.output, outcome["output"])
+            self.assertEqual(result.output, result.flat_output)
+            self.assertEqual(result.leaf_gas_used, outcome["gas_used"] + 2 * 8312)
+            self.assertEqual(result.leaf_gas_used, result.flat_gas_used)
+            self.assertEqual([index for index, _ in result.merge_order], [2, 0])
+        ready_right = merge_tree(plan, self.artifact, self.data, self.limits,
+                                 submissions[1:] + submissions[:1], solve_budget=26049)
+        self.assertEqual(ready_right.merge_order, ((2, 4), (0, 0)))
+
+    def test_tree_rejects_missing_duplicate_and_malformed_children(self):
+        plan, slices = prepare_tree(self.artifact, self.data, self.limits)
+        submissions = [self.accepted(plan, shard) for shard in slices]
+        for bad, error in ((submissions[:-1], "missing"), (submissions + submissions[:1], "duplicate")):
+            with self.assertRaisesRegex(codec.CodecError, error):
+                merge_tree(plan, self.artifact, self.data, self.limits, bad)
+        meta = codec.decode(plan)
+        meta["nodes"][2]["children"] = [3, 3]
+        with self.assertRaisesRegex(codec.CodecError, "invalid BFS node shape"):
+            handle_request(request("SOLVE", codec.encode(meta), self.artifact, slices[1]),
+                           "SOLVE", self.executor, leaf_count=3)
+
+    def test_tree_lan_coordinator_and_budget(self):
+        plan = None
+        reply = b""
+        schedule = iter(operations(3))
+
+        def local_message_handler(_connection, raw):
+            nonlocal reply, plan
+            action, index, _ = next(schedule)
+            plan, reply = handle_request(raw, action, self.executor, prior_plan=plan,
+                                         leaf_index=index, leaf_count=3)
+
+        with TemporaryDirectory() as directory:
+            output = Path(directory)
+            with patch("lan.send", side_effect=local_message_handler) as send, patch("lan.receive", side_effect=lambda _: reply):
+                with self.assertRaisesRegex(codec.CodecError, "insufficient leaf solve budget"):
+                    run_job(None, self.artifact, self.data, self.limits, self.executor, output,
+                            solve_budget=26048, recursive=True)
+                send.assert_not_called()
+                self.assertEqual(list(output.iterdir()), [])
+                summary = run_job(None, self.artifact, self.data, self.limits, self.executor, output,
+                                  solve_budget=26049, recursive=True)
+            self.assertEqual(summary["leaf_solve_gas_used"], 26049)
+            self.assertEqual(summary["flat_leaf_solve_gas_used"], 26049)
+            self.assertTrue(summary["flat_output_equal"])
+            self.assertEqual(summary["tree_merge_order"], ((2, 4), (0, 4)))
+            self.assertEqual([part["execution_host"] for part in summary["slices"]], ["A", "B", "A"])
+            self.assertTrue((output / "VERIFY-2-response.cbor").is_file())

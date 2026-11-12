@@ -20,7 +20,8 @@ import unicodedata
 
 from baseline import LIMITS, PROBE, ROOT
 from job import HEADER, VALUE, prepare_job
-from lan import TIMEOUT, run_job, serve
+from lan import TIMEOUT, operations, run_job, serve
+from tree import prepare_tree
 
 HERE = Path(__file__).resolve().parent
 SOURCE_PATHS = (
@@ -29,8 +30,6 @@ SOURCE_PATHS = (
 )
 COMPILE = ["rustc", "--edition=2021", "-D", "warnings", "-C", "overflow-checks=yes", "-O",
            str((PROBE / "src/independent_executor.rs").relative_to(ROOT)), "-o"]
-TRANSCRIPT = tuple(f"{action}-{direction}.cbor" for action in ("SOLVE", "VERIFY")
-                   for direction in ("request", "response"))
 
 
 def environment() -> dict:
@@ -70,9 +69,16 @@ def fixture() -> tuple[bytes, bytes, dict]:
     return bytes.fromhex(stats["artifact_hex"]), data, {key: stats["limits"][key] for key in LIMITS}
 
 
-def run(peer: str, address: str, remote_root: str, output: Path, *, solve_budget: int | None = None) -> None:
+def run(peer: str, address: str, remote_root: str, output: Path, *, solve_budget: int | None = None,
+        recursive: bool = False) -> None:
     job = fixture()
-    prepare_job(*job, allocate_gas=True, solve_budget=solve_budget)
+    if recursive:
+        _, slices = prepare_tree(*job, solve_budget=solve_budget)
+    else:
+        _, slices = prepare_job(*job, allocate_gas=True, solve_budget=solve_budget)
+    leaf_count = len(slices)
+    transcript_names = tuple(f"{label}-{direction}.cbor" for _, _, label in operations(leaf_count)
+                             for direction in ("request", "response"))
     output = output.resolve()
     output.mkdir(mode=0o700)
     commit, archive, pins = snapshot()
@@ -110,7 +116,7 @@ def run(peer: str, address: str, remote_root: str, output: Path, *, solve_budget
     b_binary_sha = capture(remote(["sha256sum", "executor"]), "B-executor-sha256").decode().split()[0]
     a_wire = output / "A"
     a_wire.mkdir()
-    args = ["python3", "-B", entry, "serve", address, "executor", "B"]
+    args = ["python3", "-B", entry, "serve", address, "executor", "B", "--leaf-count", str(leaf_count)]
     with (output / "B-serve.log").open("wb") as error_log:
         worker = subprocess.Popen(remote(args), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=error_log)
         try:
@@ -128,7 +134,7 @@ def run(peer: str, address: str, remote_root: str, output: Path, *, solve_budget
                 if peer_ip != address or local_ip == peer_ip or IPv4Address(local_ip).is_loopback:
                     raise RuntimeError("expected an actual LAN connection between A and B")
                 connection.settimeout(TIMEOUT)
-                summary = run_job(connection, *job, executor, a_wire, solve_budget=solve_budget)
+                summary = run_job(connection, *job, executor, a_wire, solve_budget=solve_budget, recursive=recursive)
             if worker.wait(timeout=15):
                 raise RuntimeError("B worker failed; see B-serve.log")
         finally:
@@ -141,13 +147,13 @@ def run(peer: str, address: str, remote_root: str, output: Path, *, solve_budget
                     worker.wait(timeout=5)
             worker.stdout.close()
 
-    archive = capture(remote(["tar", "-cf", "-", "-C", "B", *TRANSCRIPT]), "B-transcript.tar")
+    archive = capture(remote(["tar", "-cf", "-", "-C", "B", *transcript_names]), "B-transcript.tar")
     b_wire = output / "B"
     b_wire.mkdir()
     with tarfile.open(fileobj=io.BytesIO(archive), mode="r:") as transcript:
-        if transcript.getnames() != list(TRANSCRIPT):
+        if transcript.getnames() != list(transcript_names):
             raise RuntimeError("unexpected B transcript inventory")
-        for name in TRANSCRIPT:
+        for name in transcript_names:
             file = transcript.extractfile(name)
             if file is None or not transcript.getmember(name).isfile():
                 raise RuntimeError("invalid B transcript member")
@@ -170,18 +176,20 @@ def main() -> None:
     driver.add_argument("--peer", required=True, help="B SSH destination user@IPv4")
     driver.add_argument("--remote-root", required=True, help="new B directory /tmp/aclt-verifier-*")
     driver.add_argument("--output", required=True, type=Path)
-    driver.add_argument("--solve-budget", type=int, help="optional total gas cap for the two shard solves")
+    driver.add_argument("--solve-budget", type=int, help="optional total gas cap for the leaf solves")
+    driver.add_argument("--recursive", action="store_true", help="use the BFS tree with one leaf per block")
     worker = commands.add_parser("serve")
     worker.add_argument("address")
     worker.add_argument("executor", type=Path)
     worker.add_argument("output", type=Path)
+    worker.add_argument("--leaf-count", type=int, default=2)
     commands.add_parser("environment")
     args = parser.parse_args()
     if args.command == "environment":
         print(json.dumps(environment()))
         return
     if args.command == "serve":
-        serve(args.address, args.executor, args.output)
+        serve(args.address, args.executor, args.output, leaf_count=args.leaf_count)
         return
     if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]*@[0-9.]+", args.peer):
         parser.error("--peer must be user@IPv4")
@@ -193,7 +201,8 @@ def main() -> None:
         parser.error("--peer must name B's LAN address")
     if not re.fullmatch(r"/tmp/aclt-verifier-[A-Za-z0-9_.-]+", args.remote_root):
         parser.error("--remote-root must be a new /tmp/aclt-verifier-* directory")
-    run(args.peer, str(address), args.remote_root, args.output, solve_budget=args.solve_budget)
+    run(args.peer, str(address), args.remote_root, args.output, solve_budget=args.solve_budget,
+        recursive=args.recursive)
 
 
 if __name__ == "__main__":

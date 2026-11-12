@@ -28,3 +28,5 @@ python3 -B experiments/aclt-minimal-verifier-baseline/dualhost.py run \
 ```
 
 驱动分别构建 A 与 B 的 Rust 执行器，通过真实 LAN 交换两次请求和回复，回收 B 的原始帧并和 A 逐字节核对。输出目录记录源码提交与摘要、工具版本、双方消息、裁决、归并输出及参考输出。两端的日志和物理拓扑由受信实验操作者复核。成功结果记录在 `result.json`。整题参考运行属于验收步骤，使用既有 Python 求值器。
+
+[广度优先拆分与递归归并](TREE.md)扩展同一双机入口，比较相同叶子下的平铺与递归结果。

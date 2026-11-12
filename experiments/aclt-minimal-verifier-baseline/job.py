@@ -37,9 +37,7 @@ def stats_gas_bound(count: int, chunk: int) -> int:
     return 8312 + 108 * count + 191 * blocks
 
 
-def prepare_job(artifact: bytes, data: bytes, limits: dict, *, allocate_gas: bool = False,
-                solve_budget: int | None = None) -> tuple[bytes, tuple[Slice, Slice]]:
-    """Bind a validated stats input to exactly two chunk-aligned positions."""
+def stats_input(artifact: bytes, data: bytes) -> tuple[int, int, memoryview]:
     codec.need(type(artifact) is bytes and codec.domain_hash(ARTIFACT_TAG, artifact) == STATS_RIR_ID,
                "unsupported stats artifact")
     codec.need(type(data) is bytes and len(data) >= HEADER.size, "invalid stats header")
@@ -49,6 +47,20 @@ def prepare_job(artifact: bytes, data: bytes, limits: dict, *, allocate_gas: boo
     values = memoryview(data)[HEADER.size:]
     codec.need(all(-10**9 <= value <= 10**9 for (value,) in VALUE.iter_unpack(values)),
                "invalid stats value")
+    return chunk, count, values
+
+
+def freeze_slice(artifact: bytes, values: memoryview, chunk: int, start: int, stop: int,
+                 limits: dict, *, allocate_gas: bool) -> Slice:
+    raw = HEADER.pack(chunk, stop - start) + values[start * VALUE.size:stop * VALUE.size].tobytes()
+    shard_limits = dict(limits, gas_limit=stats_gas_bound(stop - start, chunk)) if allocate_gas else limits
+    return Slice(start, stop, raw, ask(artifact, raw, shard_limits))
+
+
+def prepare_job(artifact: bytes, data: bytes, limits: dict, *, allocate_gas: bool = False,
+                solve_budget: int | None = None) -> tuple[bytes, tuple[Slice, Slice]]:
+    """Bind a validated stats input to exactly two chunk-aligned positions."""
+    chunk, count, values = stats_input(artifact, data)
     block_count = (count + chunk - 1) // chunk
     codec.need(block_count >= 2, "job needs at least two stats blocks")
     cut = (block_count // 2) * chunk
@@ -60,12 +72,10 @@ def prepare_job(artifact: bytes, data: bytes, limits: dict, *, allocate_gas: boo
         required = stats_gas_bound(cut, chunk) + stats_gas_bound(count - cut, chunk)
         codec.need(codec.uint(solve_budget) >= required, "insufficient shard solve budget")
 
-    def freeze(start: int, stop: int) -> Slice:
-        raw = HEADER.pack(chunk, stop - start) + values[start * VALUE.size:stop * VALUE.size].tobytes()
-        shard_limits = dict(limits, gas_limit=stats_gas_bound(stop - start, chunk)) if bounded else limits
-        return Slice(start, stop, raw, ask(artifact, raw, shard_limits))
-
-    slices = (freeze(0, cut), freeze(cut, count))
+    slices = (
+        freeze_slice(artifact, values, chunk, 0, cut, limits, allocate_gas=bounded),
+        freeze_slice(artifact, values, chunk, cut, count, limits, allocate_gas=bounded),
+    )
     plan = {
         "rule": BOUNDED_RULE if bounded else RULE,
         "artifact_digest": STATS_RIR_ID,
@@ -105,6 +115,13 @@ def merge_job(plan: bytes, artifact: bytes, data: bytes, limits: dict,
     expected_plan, slices = prepare_job(artifact, data, limits, allocate_gas=allocate_gas,
                                         solve_budget=solve_budget)
     codec.need(plan == expected_plan, "plan does not match original input and limits")
+    chunk, count = HEADER.unpack_from(data)
+    accepted = accepted_outputs(plan, slices, submissions)
+    return compose_rows(0, count, chunk, [(shard.start, shard.stop, accepted[shard.start][0]) for shard in slices])
+
+
+def accepted_outputs(plan: bytes, slices: tuple[Slice, ...],
+                     submissions: list[tuple[Answer, dict]]) -> dict[int, tuple[bytes, int]]:
     expected = {s.start: s for s in slices}
     accepted = {}
     for answer, receipt in submissions:
@@ -118,19 +135,31 @@ def merge_job(plan: bytes, artifact: bytes, data: bytes, limits: dict,
         accepted[start] = codec.decode(answer.outcome)
     codec.need(accepted.keys() == expected.keys(), "missing slice position")
 
-    chunk, _ = HEADER.unpack_from(data)
-    output = bytearray()
-    for start, shard in expected.items():
-        result = accepted[start]
+    outputs = {}
+    for start, result in accepted.items():
         codec.need(type(result) is dict and result.get("outcome") == "OK", "slice needs OK output")
         codec.fields(result, ("outcome", "gas_used", "output"))
         codec.uint(result["gas_used"])
         codec.need(type(result["output"]) is bytes, "invalid slice output bytes")
-        count = shard.stop - start
-        codec.need(len(result["output"]) == ROW.size * ((count + chunk - 1) // chunk),
-                   "unexpected slice row count")
-        for index, (row, offset, size, total, low, high) in enumerate(ROW.iter_unpack(result["output"])):
+        outputs[start] = (result["output"], result["gas_used"])
+    return outputs
+
+
+def compose_rows(parent_start: int, parent_stop: int, chunk: int,
+                 children: list[tuple[int, int, bytes]]) -> bytes:
+    """Compose child-local rows into coordinates relative to their parent."""
+    output = bytearray()
+    cursor = parent_start
+    for start, stop, raw in children:
+        delta = start - parent_start
+        codec.need(start == cursor and delta % chunk == 0 and start < stop <= parent_stop,
+                   "invalid child coverage")
+        count = stop - start
+        codec.need(len(raw) == ROW.size * ((count + chunk - 1) // chunk), "unexpected slice row count")
+        for index, (row, offset, size, total, low, high) in enumerate(ROW.iter_unpack(raw)):
             codec.need(row == index and offset == index * chunk and size == min(chunk, count - offset),
                        "invalid slice row coordinates")
-            output.extend(ROW.pack(row + start // chunk, offset + start, size, total, low, high))
+            output.extend(ROW.pack(row + delta // chunk, offset + delta, size, total, low, high))
+        cursor = stop
+    codec.need(cursor == parent_stop, "incomplete child coverage")
     return bytes(output)
