@@ -7,10 +7,13 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from baseline import PROBE, Verdict, ask, solve, verify
+from baseline import PROBE, QUESTION_TAG, Verdict, ask, solve, verify
 from dualhost import fixture
-from job import HEADER, ROW, VALUE, merge_job, prepare_job, record_verdict
+from job import (
+    BOUNDED_RULE, HEADER, ROW, VALUE, merge_job, prepare_job, record_verdict, stats_gas_bound,
+)
 from lan import decode_answer, handle_request, request, run_job
+from independent import validate
 from test_baseline import build_executor
 from tools.verification_profile import codec
 
@@ -69,10 +72,12 @@ class JobTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             output = Path(directory)
             with patch("lan.send", side_effect=local_message_handler), patch("lan.receive", side_effect=lambda _: reply):
-                summary = run_job(None, self.artifact, self.data, self.limits, self.executor, output)
+                summary = run_job(None, self.artifact, self.data, self.limits, self.executor, output, solve_budget=17737)
             self.assertEqual((output / "merged-output.bin").read_bytes(), (output / "reference-output.bin").read_bytes())
             self.assertEqual(summary["output_bytes"], 144)
             self.assertEqual([item["gas_used"] for item in summary["slices"]], [8719, 9018])
+            self.assertEqual([item["gas_limit"] for item in summary["slices"]], [8719, 9018])
+            self.assertEqual(summary["allocated_solve_gas"], 17737)
             self.assertEqual(summary["reference_gas_used"], 9425)
 
     def test_incomplete_duplicate_and_wrongly_bound_results(self):
@@ -126,3 +131,75 @@ class JobTests(unittest.TestCase):
         whole = solve(ask(self.artifact, self.data, limits), self.artifact, self.data)
         self.assertEqual(codec.decode(whole.outcome), {"outcome": "TRAP_GAS_EXHAUSTED", "gas_used": 9016})
         self.assertEqual(len(merge_job(plan, self.artifact, self.data, limits, submissions)), 144)
+
+    def test_static_metering_coefficients_from_pinned_wasm_paths(self):
+        module = validate(self.artifact, self.limits)
+
+        def preorder(nodes):
+            for node in nodes:
+                yield node
+                yield from preorder(node.get("body", ()))
+                yield from preorder(node.get("else", ()))
+
+        nodes = list(preorder(module.code[module.run - len(module.imports)][1]))
+
+        def span_cost(start, stop):
+            costs = {0x29: 2, 0x37: 2}
+            host = {0: 4, 1: 4, 2: 17, 3: 17}
+            return sum(host[n["args"][0]] if n["op"] == 0x10 else costs.get(n["op"], 1)
+                       for n in nodes[start - 1:stop])
+
+        fixed = 8192 + span_cost(1, 69) + span_cost(103, 106) + span_cost(245, 249)
+        validate_value = span_cost(70, 88) + span_cost(92, 102)
+        accumulate_value = span_cost(144, 185)
+        block = span_cost(107, 122) + span_cost(130, 143) + span_cost(186, 244)
+        self.assertEqual((fixed, validate_value, accumulate_value, block), (8312, 48, 60, 191))
+
+    def test_exact_bound_varies_by_elements_and_blocks_on_both_executors(self):
+        for chunk, count in ((1, 1), (1, 8), (2, 3), (3, 6), (7, 15), (100000, 11)):
+            for values in ((-10**9, 0, 10**9), (10**9, -10**9, -10**9)):
+                with self.subTest(chunk=chunk, count=count, values=values):
+                    data = HEADER.pack(chunk, count) + b"".join(VALUE.pack(values[i % 3]) for i in range(count))
+                    gas = stats_gas_bound(count, chunk)
+                    question = ask(self.artifact, data, dict(self.limits, gas_limit=gas))
+                    answer = solve(question, self.artifact, data)
+                    outcome = codec.decode(answer.outcome)
+                    self.assertEqual((outcome["outcome"], outcome["gas_used"]), ("OK", gas))
+                    self.assertEqual(verify(question, self.artifact, data, answer, executor=self.executor),
+                                     Verdict("ACCEPT"))
+                    short = ask(self.artifact, data, dict(self.limits, gas_limit=gas - 1))
+                    answer = solve(short, self.artifact, data)
+                    self.assertEqual(codec.decode(answer.outcome)["outcome"], "TRAP_GAS_EXHAUSTED")
+                    self.assertEqual(verify(short, self.artifact, data, answer, executor=self.executor),
+                                     Verdict("ACCEPT"))
+        self.assertEqual(stats_gas_bound(100000, 1), 29908312)
+
+    def test_solve_budget_rejects_before_dispatch_and_binds_plan(self):
+        with TemporaryDirectory() as directory, patch("lan.send") as send:
+            output = Path(directory)
+            with self.assertRaisesRegex(codec.CodecError, "insufficient shard solve budget"):
+                run_job(None, self.artifact, self.data, self.limits, self.executor, output, solve_budget=17736)
+            send.assert_not_called()
+            self.assertEqual(list(output.iterdir()), [])
+        plan, slices = prepare_job(self.artifact, self.data, self.limits, solve_budget=17737)
+        decoded = codec.decode(plan)
+        self.assertEqual(decoded["rule"], BOUNDED_RULE)
+        self.assertEqual(decoded["solve_budget"], 17737)
+        submissions = [self.accepted(plan, s) for s in slices]
+        with self.assertRaisesRegex(codec.CodecError, "plan does not match"):
+            merge_job(plan, self.artifact, self.data, self.limits, submissions, solve_budget=17738)
+
+    def test_peer_rejects_self_consistent_question_with_wrong_gas_cap(self):
+        plan, (_, shard) = prepare_job(self.artifact, self.data, self.limits, allocate_gas=True)
+        wrong = ask(self.artifact, shard.data, dict(self.limits, gas_limit=9019))
+        record = codec.decode(plan)
+        record["slices"][1]["question_id"] = codec.domain_hash(QUESTION_TAG, wrong)
+        message = request("SOLVE", codec.encode(record), self.artifact, replace(shard, question=wrong))
+        with self.assertRaisesRegex(codec.CodecError, "LAN gas allocation mismatch"):
+            handle_request(message, "SOLVE", self.executor)
+
+        insufficient = codec.decode(plan)
+        insufficient["solve_budget"] = 17736
+        message = request("SOLVE", codec.encode(insufficient), self.artifact, shard)
+        with self.assertRaisesRegex(codec.CodecError, "insufficient LAN shard solve budget"):
+            handle_request(message, "SOLVE", self.executor)

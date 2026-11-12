@@ -4,10 +4,11 @@
 from dataclasses import dataclass
 from struct import Struct
 
-from baseline import ARTIFACT_TAG, INPUT_TAG, QUESTION_TAG, Answer, Verdict, ask
+from baseline import ARTIFACT_TAG, INPUT_TAG, LIMITS, QUESTION_TAG, Answer, Verdict, ask
 from tools.verification_profile import codec
 
 RULE = "aclt.exp.stats-chunk-merge@1"
+BOUNDED_RULE = "aclt.exp.stats-chunk-merge@2"
 JOB_TAG = "ACLt/Experiment/MinimalVerifier/Job/1"
 ANSWER_TAG = "ACLt/Experiment/MinimalVerifier/Answer/1"
 STATS_RIR_ID = bytes.fromhex("7077c1ac21677dc89040c65a95a3008c43b0292c9e3763a67a4e44055c8a2879")
@@ -28,7 +29,16 @@ class Slice:
         return codec.domain_hash(QUESTION_TAG, self.question)
 
 
-def prepare_job(artifact: bytes, data: bytes, limits: dict) -> tuple[bytes, tuple[Slice, Slice]]:
+def stats_gas_bound(count: int, chunk: int) -> int:
+    """Metered cost of the pinned stats artifact's valid-input OK path."""
+    codec.need(1 <= codec.uint(count) <= 100000 and 1 <= codec.uint(chunk) <= 100000,
+               "invalid stats count or chunk")
+    blocks = (count + chunk - 1) // chunk
+    return 8312 + 108 * count + 191 * blocks
+
+
+def prepare_job(artifact: bytes, data: bytes, limits: dict, *, allocate_gas: bool = False,
+                solve_budget: int | None = None) -> tuple[bytes, tuple[Slice, Slice]]:
     """Bind a validated stats input to exactly two chunk-aligned positions."""
     codec.need(type(artifact) is bytes and codec.domain_hash(ARTIFACT_TAG, artifact) == STATS_RIR_ID,
                "unsupported stats artifact")
@@ -42,20 +52,30 @@ def prepare_job(artifact: bytes, data: bytes, limits: dict) -> tuple[bytes, tupl
     block_count = (count + chunk - 1) // chunk
     codec.need(block_count >= 2, "job needs at least two stats blocks")
     cut = (block_count // 2) * chunk
+    bounded = allocate_gas or solve_budget is not None
+    codec.fields(limits, LIMITS)
+    for limit in limits.values():
+        codec.uint(limit)
+    if solve_budget is not None:
+        required = stats_gas_bound(cut, chunk) + stats_gas_bound(count - cut, chunk)
+        codec.need(codec.uint(solve_budget) >= required, "insufficient shard solve budget")
 
     def freeze(start: int, stop: int) -> Slice:
         raw = HEADER.pack(chunk, stop - start) + values[start * VALUE.size:stop * VALUE.size].tobytes()
-        return Slice(start, stop, raw, ask(artifact, raw, limits))
+        shard_limits = dict(limits, gas_limit=stats_gas_bound(stop - start, chunk)) if bounded else limits
+        return Slice(start, stop, raw, ask(artifact, raw, shard_limits))
 
     slices = (freeze(0, cut), freeze(cut, count))
-    plan = codec.encode({
-        "rule": RULE,
+    plan = {
+        "rule": BOUNDED_RULE if bounded else RULE,
         "artifact_digest": STATS_RIR_ID,
         "input_digest": codec.domain_hash(INPUT_TAG, data),
         "chunk": chunk,
         "slices": [{"start": s.start, "stop": s.stop, "question_id": s.question_id} for s in slices],
-    })
-    return plan, slices
+    }
+    if solve_budget is not None:
+        plan["solve_budget"] = solve_budget
+    return codec.encode(plan), slices
 
 
 def answer_digest(answer: Answer) -> bytes:
@@ -79,9 +99,11 @@ def record_verdict(plan: bytes, start: int, answer: Answer, verdict: Verdict) ->
 
 
 def merge_job(plan: bytes, artifact: bytes, data: bytes, limits: dict,
-              submissions: list[tuple[Answer, dict]]) -> bytes:
+              submissions: list[tuple[Answer, dict]], *, allocate_gas: bool = False,
+              solve_budget: int | None = None) -> bytes:
     """Validate plan and receipt bindings, then compose accepted OK results."""
-    expected_plan, slices = prepare_job(artifact, data, limits)
+    expected_plan, slices = prepare_job(artifact, data, limits, allocate_gas=allocate_gas,
+                                        solve_budget=solve_budget)
     codec.need(plan == expected_plan, "plan does not match original input and limits")
     expected = {s.start: s for s in slices}
     accepted = {}

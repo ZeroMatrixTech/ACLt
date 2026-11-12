@@ -40,7 +40,7 @@
 3. **交叉验证。** 每份提交由另一台机器用独立 Rust 执行器 `Verify`。验证者获得冻结的题目及对应的工件和输入。题目、提交与裁决在两台机器之间经 LAN 传递，A 汇总裁决。
 4. **归并。** A 核对切片区间覆盖、题目绑定和每片裁决。只有所有预定切片各有一份被接受的 `OK` 结果时，才按计划顺序归并。用切片的原始元素偏移与起始行号恢复统计行的全局坐标。每片的 `gas_used` 随本片结果保留，归并产物是全局输出字节。缺片、重复计入、跨片错绑或未通过的切片都不能生成完整输出。
 
-实验入口与资源语义的反例见[双机作业切片](../../experiments/aclt-minimal-verifier-baseline/DISTRIBUTED.md)。
+实验入口与整题资源语义的反例见[双机作业切片](../../experiments/aclt-minimal-verifier-baseline/DISTRIBUTED.md)。[分片 gas 分配](../../experiments/aclt-minimal-verifier-baseline/GAS-ALLOCATION.md)记录正常执行路径的成本推导与派发前检查。
 
 ### 完成条件
 

@@ -6,8 +6,11 @@ import json
 from pathlib import Path
 import socket
 
-from baseline import ARTIFACT_TAG, QUESTION_TAG, Answer, ask, solve, verify
-from job import HEADER, JOB_TAG, RULE, STATS_RIR_ID, VALUE, Slice, merge_job, prepare_job, record_verdict
+from baseline import ARTIFACT_TAG, LIMITS, QUESTION_TAG, Answer, ask, solve, verify
+from job import (
+    BOUNDED_RULE, HEADER, JOB_TAG, RULE, STATS_RIR_ID, VALUE, Slice, merge_job, prepare_job,
+    record_verdict, stats_gas_bound,
+)
 from tools.formal_migration.s2_transport import receive, send
 from tools.verification_profile import codec
 
@@ -44,12 +47,15 @@ def handle_request(raw: bytes, expected_action: str, executor: Path, *, prior_pl
     plan = message["plan"]
     codec.need(prior_plan is None or plan == prior_plan, "LAN operation changed the plan")
     meta = codec.decode(plan)
-    codec.fields(meta, ("rule", "artifact_digest", "input_digest", "chunk", "slices"))
-    codec.need(meta["rule"] == RULE and meta["artifact_digest"] == STATS_RIR_ID, "unsupported LAN plan")
+    codec.fields(meta, ("rule", "artifact_digest", "input_digest", "chunk", "slices"), ("solve_budget",))
+    codec.need(meta["rule"] in (RULE, BOUNDED_RULE) and meta["artifact_digest"] == STATS_RIR_ID,
+               "unsupported LAN plan")
+    codec.need(meta["rule"] == BOUNDED_RULE or "solve_budget" not in meta, "unexpected legacy solve budget")
     codec.digest_bytes(meta["input_digest"])
     codec.need(type(meta["slices"]) is list and len(meta["slices"]) == 2, "expected two planned positions")
+    for planned in meta["slices"]:
+        codec.fields(planned, ("start", "stop", "question_id"))
     slot = meta["slices"][1 if expected_action == "SOLVE" else 0]
-    codec.fields(slot, ("start", "stop", "question_id"))
     start = codec.uint(message["start"])
     codec.need(start == codec.uint(slot["start"]), "LAN slice position mismatch")
     count = codec.uint(slot["stop"]) - start
@@ -58,8 +64,19 @@ def handle_request(raw: bytes, expected_action: str, executor: Path, *, prior_pl
                "LAN artifact mismatch")
     codec.need(type(question) is bytes and codec.domain_hash(QUESTION_TAG, question) == slot["question_id"],
                "LAN question mismatch")
+    chunk = codec.uint(meta["chunk"])
     codec.need(type(data) is bytes and count > 0 and len(data) == HEADER.size + count * VALUE.size
-               and HEADER.unpack_from(data) == (codec.uint(meta["chunk"]), count), "LAN slice shape mismatch")
+               and HEADER.unpack_from(data) == (chunk, count), "LAN slice shape mismatch")
+    if meta["rule"] == BOUNDED_RULE:
+        frozen = codec.decode(question)
+        codec.fields(frozen, ("rule", "artifact_digest", "input_digest", "limits"))
+        codec.fields(frozen["limits"], LIMITS)
+        codec.need(codec.uint(frozen["limits"]["gas_limit"]) == stats_gas_bound(count, chunk),
+                   "LAN gas allocation mismatch")
+        if "solve_budget" in meta:
+            required = sum(stats_gas_bound(codec.uint(s["stop"]) - codec.uint(s["start"]), chunk)
+                           for s in meta["slices"])
+            codec.need(codec.uint(meta["solve_budget"]) >= required, "insufficient LAN shard solve budget")
     if expected_action == "SOLVE":
         answer = solve(question, artifact, data)
         reply = {"job_id": codec.domain_hash(JOB_TAG, plan), "start": start, "answer": encode_answer(answer)}
@@ -90,8 +107,9 @@ def serve(bind: str, executor: Path, output: Path) -> None:
 
 
 def run_job(connection: socket.socket, artifact: bytes, data: bytes, limits: dict,
-            executor: Path, output: Path) -> dict:
-    plan, (a_slice, b_slice) = prepare_job(artifact, data, limits)
+            executor: Path, output: Path, *, solve_budget: int | None = None) -> dict:
+    plan, (a_slice, b_slice) = prepare_job(artifact, data, limits, allocate_gas=True, solve_budget=solve_budget)
+    reference_question = ask(artifact, data, limits)
     job_id = codec.domain_hash(JOB_TAG, plan)
     (output / "plan.cbor").write_bytes(plan)
     (output / "original-input.bin").write_bytes(data)
@@ -116,11 +134,13 @@ def run_job(connection: socket.socket, artifact: bytes, data: bytes, limits: dic
     )
     (output / "A-verdict.cbor").write_bytes(codec.encode(b_receipt))
     submissions = [(a_answer, a_receipt), (b_answer, b_receipt)]
-    combined = merge_job(plan, artifact, data, limits, submissions)
+    combined = merge_job(plan, artifact, data, limits, submissions, allocate_gas=True,
+                         solve_budget=solve_budget)
 
     # Acceptance reference runs only after composition from the verified slices.
-    reversed_output = merge_job(plan, artifact, data, limits, submissions[::-1])
-    reference = solve(ask(artifact, data, limits), artifact, data)
+    reversed_output = merge_job(plan, artifact, data, limits, submissions[::-1], allocate_gas=True,
+                                solve_budget=solve_budget)
+    reference = solve(reference_question, artifact, data)
     reference_outcome = codec.decode(reference.outcome)
     codec.need(reference_outcome["outcome"] == "OK", "reference execution did not return OK")
     (output / "reference-output.bin").write_bytes(reference_outcome["output"])
@@ -132,12 +152,16 @@ def run_job(connection: socket.socket, artifact: bytes, data: bytes, limits: dic
         "output_sha256": hashlib.sha256(combined).hexdigest(),
         "output_bytes": len(combined),
         "reference_gas_used": reference_outcome["gas_used"],
+        "solve_budget": solve_budget,
+        "allocated_solve_gas": sum(codec.decode(shard.question)["limits"]["gas_limit"]
+                                   for shard in (a_slice, b_slice)),
         "reverse_order_equal": True,
         "slices": [
             {"start": shard.start, "stop": shard.stop, "question_id": shard.question_id.hex(),
              "answer_digest": receipt["answer_digest"].hex(),
              "execution_host": worker, "verification_host": validator,
-             "status": receipt["status"], "gas_used": codec.decode(answer.outcome)["gas_used"]}
+             "status": receipt["status"], "gas_limit": codec.decode(shard.question)["limits"]["gas_limit"],
+             "gas_used": codec.decode(answer.outcome)["gas_used"]}
             for shard, (answer, receipt), worker, validator in zip(
                 (a_slice, b_slice), submissions, ("A", "B"), ("B", "A"), strict=True)
         ],
