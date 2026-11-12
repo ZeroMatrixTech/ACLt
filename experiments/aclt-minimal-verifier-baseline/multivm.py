@@ -9,6 +9,7 @@ physical machine, so host-level faults, memory, and the kernel image are shared.
 import argparse
 import gzip
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -19,17 +20,19 @@ import stat
 import subprocess
 import sysconfig
 import sys
+import tarfile
 import time
 
-from baseline import ROOT
-from dualhost import SOURCE_PATHS, fixture, snapshot
-from job import JOB_TAG
-from lan import operations, prepare_job, prepare_tree
+from baseline import ROOT, ask, solve
+from dualhost import fixture, snapshot
+from job import JOB_TAG, merge_job, prepare_job
+from lan import decode_answer, operations, request
 from tools.verification_profile import codec
+from tree import merge_tree, prepare_tree
 
 HERE = Path(__file__).resolve().parent
 PROBE = ROOT / "experiments/aclt-rir-stats-probe"
-EXECUTOR_SOURCE = PROBE / "src/independent_executor.rs"
+EXECUTOR_SOURCE = (PROBE / "src/independent_executor.rs").relative_to(ROOT)
 COMPILE = ["rustc", "--edition=2021", "-D", "warnings", "-C", "overflow-checks=yes", "-O",
            "-C", "target-feature=+crt-static", str(EXECUTOR_SOURCE), "-o"]
 GUEST_A = "10.0.3.1"
@@ -143,10 +146,10 @@ def write_cpio(root: Path, destination: Path) -> None:
     entries = [root, *sorted(root.rglob("*"), key=lambda item: item.relative_to(root).as_posix())]
     with destination.open("wb") as stream:
         for entry in entries:
-            name = entry.relative_to(root).as_posix()
+            name = os.fsencode(entry.relative_to(root).as_posix())
             info = entry.lstat()
             if stat.S_ISLNK(info.st_mode):
-                mode, body = stat.S_IFLNK | 0o777, os.readlink(entry).encode()
+                mode, body = stat.S_IFLNK | 0o777, os.fsencode(os.readlink(entry))
             elif stat.S_ISDIR(info.st_mode):
                 mode, body = stat.S_IFDIR | (info.st_mode & 0o777), b""
             else:
@@ -155,7 +158,7 @@ def write_cpio(root: Path, destination: Path) -> None:
             fields = (0, mode, 0, 0, 2 if stat.S_ISDIR(info.st_mode) else 1, 0,
                       len(body), 0, 0, 0, 0, len(name) + 1, 0)
             stream.write(b"070701" + "".join(f"{value:08x}" for value in fields).encode())
-            stream.write(name.encode() + b"\0")
+            stream.write(name + b"\0")
             pad(stream, 110 + len(name) + 1)
             stream.write(body)
             pad(stream, len(body))
@@ -165,13 +168,22 @@ def write_cpio(root: Path, destination: Path) -> None:
         pad(stream, 110 + len("TRAILER!!!") + 1)
 
 
-def pack_guest(work: Path, commit: str, pins: dict, executor: Path) -> Path:
-    staging = work / "guest"
-    (staging / "repo").mkdir(parents=True)
-    for name in pins:
-        target = staging / "repo" / name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(ROOT / name, target)
+def stage_sources(destination: Path, commit: str, archive: bytes, pins: dict) -> str:
+    destination.mkdir(parents=True)
+    with tarfile.open(fileobj=io.BytesIO(archive), mode="r:") as bundle:
+        bundle.extractall(destination, filter="data")
+    manifest = destination / "SOURCE-SHA256SUMS"
+    expected = "".join(f"{digest}  {name}\n" for name, digest in pins.items()).encode()
+    if manifest.read_bytes() != expected:
+        raise RunError("source manifest does not match the host pins")
+    for name, digest in pins.items():
+        committed = subprocess.check_output(["git", "show", f"{commit}:{name}"], cwd=ROOT)
+        if sha256(destination / name) != digest or hashlib.sha256(committed).hexdigest() != digest:
+            raise RunError(f"frozen source does not match {commit}: {name}")
+    return sha256(manifest)
+
+
+def pack_guest(staging: Path, executor: Path) -> Path:
     for name, mode in (("tmp", 0o1777), ("evidence", 0o700), ("proc", 0o755), ("sys", 0o755),
                        ("dev", 0o755)):
         directory = staging / name
@@ -181,7 +193,7 @@ def pack_guest(work: Path, commit: str, pins: dict, executor: Path) -> Path:
     (staging / "executor").chmod(0o755)
     (staging / "init").write_text(INIT, encoding="utf-8")
     (staging / "init").chmod(0o755)
-    archive = work / "guest.cpio"
+    archive = staging.parent / "guest.cpio"
     write_cpio(staging, archive)
     return archive
 
@@ -253,67 +265,117 @@ def extract(image: Path, destination: Path) -> None:
 
 
 def transcript(root: Path, leaf_count: int) -> dict[str, bytes]:
-    return {f"{label}-{direction}.cbor": (root / f"{label}-{direction}.cbor").read_bytes()
-            for _, _, label in operations(leaf_count)
-            for direction in ("request", "response")}
+    expected = {f"{label}-{direction}.cbor" for _, _, label in operations(leaf_count)
+                for direction in ("request", "response")}
+    files = {path.name for pattern in ("*-request.cbor", "*-response.cbor") for path in root.glob(pattern)}
+    if files != expected:
+        raise RunError("unexpected guest transcript inventory")
+    return {name: (root / name).read_bytes() for name in sorted(expected)}
 
 
-def check_guests(a: dict, b: dict) -> None:
+def check_guests(a: dict, b: dict, *, commit: str, executor_sha256: str, source_manifest_sha256: str) -> None:
     if a["boot_id"] == b["boot_id"]:
         raise RunError("both guests report the same boot id")
-    if a["role"] != "A" or b["role"] != "B":
-        raise RunError("guest roles are not A and B")
-    for report, expected_local, expected_peer in ((a, GUEST_A, GUEST_B), (b, GUEST_B, GUEST_A)):
-        if report["local_socket_ip"] != expected_local or report["peer_socket_ip"] != expected_peer:
-            raise RunError(f"role {report['role']} did not use its own address over TCP")
-    if a["source_commit"] != b["source_commit"]:
-        raise RunError("guests disagree on the source commit")
-    if a["executor_sha256"] != b["executor_sha256"]:
-        raise RunError("guests ran different executor binaries")
+    for report, role, local, peer in ((a, "A", GUEST_A, GUEST_B), (b, "B", GUEST_B, GUEST_A)):
+        if report["role"] != role or report["local_socket_ip"] != local or report["peer_socket_ip"] != peer:
+            raise RunError(f"guest {role} did not use its assigned role and TCP addresses")
+        for field, expected in (("source_commit", commit), ("executor_sha256", executor_sha256),
+                                ("source_manifest_sha256", source_manifest_sha256)):
+            if report.get(field) != expected:
+                raise RunError(f"guest {role} {field} differs from the host snapshot")
 
 
-def check_summary(summary: dict, root: Path) -> None:
-    required = ("job_id", "output_sha256", "output_bytes", "reference_gas_used", "solve_budget",
-                "allocated_solve_gas", "reverse_order_equal", "slices")
-    missing = [key for key in required if key not in summary]
-    if missing:
-        raise RunError(f"summary is missing {missing}")
-    plan = (root / "plan.cbor").read_bytes()
-    if summary["job_id"] != codec.domain_hash(JOB_TAG, plan).hex():
-        raise RunError("summary job id does not match the recorded plan")
-    merged = (root / "merged-output.bin").read_bytes()
-    if summary["output_sha256"] != hashlib.sha256(merged).hexdigest():
-        raise RunError("summary output digest does not match the merged output")
-    if summary["output_bytes"] != len(merged):
-        raise RunError("summary output length does not match the merged output")
-    if summary["reverse_order_equal"] is not True:
-        raise RunError("reverse-order composition did not agree")
-    if summary["allocated_solve_gas"] != sum(slice_["gas_limit"] for slice_ in summary["slices"]):
-        raise RunError("allocated gas is not the sum of the shard limits")
-    for index, entry in enumerate(summary["slices"]):
-        worker, validator = ("B", "A") if index % 2 else ("A", "B")
-        if entry["execution_host"] != worker or entry["verification_host"] != validator:
-            raise RunError("slice did not use the expected compute/verify split")
-        if entry["status"] != "ACCEPT":
-            raise RunError(f"slice {entry['start']} was not accepted")
-
-
-def check_run(a_root: Path, b_root: Path, *, leaf_count: int, recursive: bool) -> dict:
+def check_run(a_root: Path, b_root: Path, *, leaf_count: int, recursive: bool,
+              solve_budget: int | None = None) -> dict:
     frames = transcript(a_root, leaf_count)
     peer_frames = transcript(b_root, leaf_count)
-    if sorted(frames) != sorted(peer_frames):
-        raise RunError("the two guests captured different transcript inventories")
     for name, raw in frames.items():
         if raw != peer_frames[name]:
             raise RunError(f"A/B transcript mismatch for {name}")
+
+    artifact, data, limits = fixture()
+    if recursive:
+        plan, shards = prepare_tree(artifact, data, limits, solve_budget=solve_budget)
+    else:
+        plan, shards = prepare_job(artifact, data, limits, allocate_gas=True, solve_budget=solve_budget)
+    if (len(shards) != leaf_count or (a_root / "plan.cbor").read_bytes() != plan
+            or (a_root / "artifact.cbor").read_bytes() != artifact
+            or (a_root / "original-input.bin").read_bytes() != data):
+        raise RunError("guest input or plan differs from the host plan")
+    job_id = codec.domain_hash(JOB_TAG, plan)
+    submissions = []
+    slices = {}
+    for action, index, label in operations(leaf_count):
+        shard = shards[index]
+        request_bytes = frames[f"{label}-request.cbor"]
+        response = codec.decode(frames[f"{label}-response.cbor"])
+        if action == "SOLVE":
+            codec.fields(response, ("job_id", "start", "answer"))
+            if response["job_id"] != job_id or codec.uint(response["start"]) != shard.start:
+                raise RunError("SOLVE response is for a different job or position")
+            answer = decode_answer(response["answer"])
+            name = "A-verdict" if index == 1 else f"A-verdict-{index}"
+            receipt = codec.decode((a_root / f"{name}.cbor").read_bytes())
+            expected_request = request(action, plan, artifact, shard)
+            worker, verifier = "B", "A"
+        else:
+            answer = decode_answer(codec.decode(request_bytes)["answer"])
+            receipt = response
+            expected_request = request(action, plan, artifact, shard, answer)
+            worker, verifier = "A", "B"
+        if request_bytes != expected_request:
+            raise RunError(f"{label} request differs from its frozen shard")
+        submissions.append((answer, receipt))
+        outcome = codec.decode(answer.outcome)
+        gas_limit = codec.decode(shard.question)["limits"]["gas_limit"]
+        if codec.uint(outcome["gas_used"]) != gas_limit:
+            raise RunError(f"{label} metered gas differs from the planned cost")
+        slices[index] = {
+            "start": shard.start, "stop": shard.stop, "question_id": shard.question_id.hex(),
+            "answer_digest": receipt["answer_digest"].hex(), "execution_host": worker,
+            "verification_host": verifier, "status": receipt["status"], "gas_limit": gas_limit,
+            "gas_used": outcome["gas_used"],
+        }
+
+    ordered = [slices[i] for i in range(leaf_count)]
+    reference = codec.decode(solve(ask(artifact, data, limits), artifact, data).outcome)
+    expected = {
+        "job_id": job_id.hex(), "solve_budget": solve_budget, "slices": ordered,
+        "reference_gas_used": reference["gas_used"],
+        "allocated_solve_gas": sum(entry["gas_limit"] for entry in ordered),
+        "reverse_order_equal": True,
+    }
+    if recursive:
+        tree = merge_tree(plan, artifact, data, limits, submissions, solve_budget=solve_budget)
+        reverse = merge_tree(plan, artifact, data, limits, submissions[::-1], solve_budget=solve_budget)
+        output, reversed_output = tree.output, reverse.output
+        if (tree.flat_output != output or reverse.flat_output != output
+                or (a_root / "flat-output.bin").read_bytes() != output):
+            raise RunError("flat output differs from the replayed tree output")
+        merge_order = [list(pair) for pair in tree.merge_order]
+        if json.loads((a_root / "tree-merge-order.json").read_text()) != merge_order:
+            raise RunError("guest merge order differs from the replay")
+        expected.update(flat_output_equal=True, tree_merge_order=merge_order,
+                        leaf_solve_gas_used=tree.leaf_gas_used, flat_leaf_solve_gas_used=tree.flat_gas_used)
+    else:
+        output = merge_job(plan, artifact, data, limits, submissions, solve_budget=solve_budget, allocate_gas=True)
+        reversed_output = merge_job(plan, artifact, data, limits, submissions[::-1],
+                                    solve_budget=solve_budget, allocate_gas=True)
+    if (reference["outcome"] != "OK" or output != reversed_output or output != reference["output"]
+            or output != (a_root / "merged-output.bin").read_bytes()
+            or output != (a_root / "reference-output.bin").read_bytes()):
+        raise RunError("guest outputs differ from the host replay or reference")
+    expected.update(output_sha256=hashlib.sha256(output).hexdigest(), output_bytes=len(output))
     summary = json.loads((a_root / "result.json").read_text(encoding="utf-8"))
-    check_summary(summary, a_root)
-    report = {"lan_transcript_equal": True, "slices": len(summary["slices"]),
-              "job_id": summary["job_id"], "output_sha256": summary["output_sha256"],
-              "reference_gas_used": summary["reference_gas_used"],
-              "allocated_solve_gas": summary["allocated_solve_gas"],
-              "recursive": recursive}
-    return report
+    for key, value in expected.items():
+        if key not in summary or summary[key] != value:
+            raise RunError(f"guest summary {key} differs from the host replay")
+    return {
+        "lan_transcript_equal": True, "slices": leaf_count, "job_id": expected["job_id"],
+        "output_sha256": expected["output_sha256"], "reference_gas_used": expected["reference_gas_used"],
+        "allocated_solve_gas": expected["allocated_solve_gas"],
+        "leaf_solve_gas_used": sum(entry["gas_used"] for entry in ordered), "recursive": recursive,
+    }
 
 
 def environment(accel: str) -> dict:
@@ -324,11 +386,12 @@ def environment(accel: str) -> dict:
 
 
 def run(args: argparse.Namespace) -> dict:
+    leaves = planned_leaf_count(args.solve_budget, args.recursive)
     output = args.output.resolve()
     if output.exists():
         raise RunError(f"output directory already exists: {output}")
     output.mkdir(mode=0o700)
-    commit, _, pins = snapshot()
+    commit, archive, pins = snapshot()
     (output / "commit.txt").write_text(commit + "\n", encoding="utf-8")
     (output / "source-sha256.json").write_text(json.dumps(pins, indent=2) + "\n", encoding="utf-8")
     work = output / "work"
@@ -336,14 +399,16 @@ def run(args: argparse.Namespace) -> dict:
     kernel = args.kernel.resolve()
     if not kernel.is_file():
         raise RunError(f"kernel image not found: {kernel}")
+    staging = work / "guest"
+    source_manifest_sha256 = stage_sources(staging / "repo", commit, archive, pins)
     executor = output / "executor"
-    subprocess.run(COMPILE + [str(executor)], check=True, capture_output=True)
+    subprocess.run(COMPILE + [str(executor)], cwd=staging / "repo", check=True, capture_output=True)
     executor.chmod(0o755)
     runtime = (args.runtime_root.resolve() if args.runtime_root
                else build_runtime(work / "runtime"))
     runtime_archive = work / "runtime.cpio"
     write_cpio(runtime, runtime_archive)
-    guest_archive = pack_guest(work, commit, pins, executor)
+    guest_archive = pack_guest(staging, executor)
     initramfs = output / "guest.cpio.gz"
     with initramfs.open("wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=1,
                                                     mtime=0) as stream:
@@ -354,12 +419,12 @@ def run(args: argparse.Namespace) -> dict:
         accel = "tcg"
     record = {"commit": commit, "kernel": str(kernel), "kernel_sha256": sha256(kernel),
               "initramfs_sha256": sha256(initramfs), "executor_sha256": sha256(executor),
+              "source_manifest_sha256": source_manifest_sha256,
               "runtime_root": None if args.runtime_root else "host build",
               "runtime_files": sum(1 for _ in runtime.rglob("*")),
               "environment": environment(accel), "solve_budget": args.solve_budget,
               "recursive": args.recursive}
     link = free_port()
-    leaves = planned_leaf_count(args.solve_budget, args.recursive)
     record["planned_leaves"] = leaves
     logs = {"A": output / "A-serial.log", "B": output / "B-serial.log"}
     disks = {"A": work / "A.img", "B": work / "B.img"}
@@ -406,11 +471,10 @@ def run(args: argparse.Namespace) -> dict:
                 raise RunError(f"guest {role} left no {name} on its evidence disk")
     guests = {role: json.loads((roots[role] / "guest.json").read_text(encoding="utf-8"))
               for role in ("A", "B")}
-    check_guests(guests["A"], guests["B"])
-    leaf_count = len(json.loads((roots["A"] / "result.json").read_text())["slices"])
-    if leaf_count != leaves:
-        raise RunError(f"guest A ran {leaf_count} leaves but the boot planned {leaves}")
-    record.update(check_run(roots["A"], roots["B"], leaf_count=leaf_count, recursive=args.recursive))
+    check_guests(guests["A"], guests["B"], commit=commit, executor_sha256=record["executor_sha256"],
+                 source_manifest_sha256=source_manifest_sha256)
+    record.update(check_run(roots["A"], roots["B"], leaf_count=leaves, recursive=args.recursive,
+                            solve_budget=args.solve_budget))
     record["guests"] = guests
     record["status"] = "PASS"
     record["claim"] = ("two guests, one physical host: guest-level protocol and role split only; "
@@ -437,7 +501,7 @@ def main() -> None:
     args = parser.parse_args()
     try:
         record = run(args)
-    except (RunError, RuntimeError, subprocess.CalledProcessError) as error:
+    except (RuntimeError, OSError, codec.CodecError, subprocess.CalledProcessError) as error:
         print(json.dumps({"status": "FAIL", "error": str(error)}, indent=2))
         raise SystemExit(1)
     print(json.dumps({key: record[key] for key in ("status", "seconds", "slices", "job_id",

@@ -30,6 +30,12 @@ def options() -> dict:
 
 
 def identity(role: str, pairs: dict) -> dict:
+    root = Path("/repo")
+    manifest = (root / "SOURCE-SHA256SUMS").read_bytes()
+    for line in manifest.decode("utf-8").splitlines():
+        digest, name = line.split("  ", 1)
+        if hashlib.sha256((root / name).read_bytes()).hexdigest() != digest:
+            raise RuntimeError(f"guest source hash mismatch: {name}")
     report = {
         "role": role,
         "kernel": Path("/proc/version").read_text(encoding="utf-8").strip(),
@@ -38,6 +44,7 @@ def identity(role: str, pairs: dict) -> dict:
         "ip": pairs["aclt_ip"].split("/")[0],
         "peer": pairs["aclt_peer"],
         "source_commit": pairs["aclt_commit"],
+        "source_manifest_sha256": hashlib.sha256(manifest).hexdigest(),
         "executor_sha256": hashlib.sha256(EXECUTOR.read_bytes()).hexdigest(),
         "local_socket_ip": None,
         "peer_socket_ip": None,
@@ -64,17 +71,16 @@ def main() -> int:
     recursive = pairs.get("aclt_recursive") == "1"
     leaves = int(pairs.get("aclt_leaves", "2"))
     print(f"GUEST_CONF role={role} port={port} leaves={leaves}", flush=True)
+    report = identity(role, pairs)
     if role == "B":
         bounds = serve(pairs["aclt_ip"].split("/")[0], EXECUTOR, EVIDENCE / "B", leaf_count=leaves,
                        port=port)
-        report = identity(role, pairs)
         report.update(local_socket_ip=bounds["local_ip"], peer_socket_ip=bounds["peer_ip"])
     else:
         artifact, data, limits = fixture()
         with connect(pairs["aclt_peer"], port) as connection:
             output = EVIDENCE / "A"
             output.mkdir(mode=0o700)
-            report = identity(role, pairs)
             report.update(local_socket_ip=connection.getsockname()[0],
                           peer_socket_ip=connection.getpeername()[0])
             (output / "guest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
