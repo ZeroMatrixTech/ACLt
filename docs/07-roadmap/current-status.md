@@ -14,6 +14,7 @@
 |---|---|---|
 | 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 逐项验证诚实环境的边界场景 |
 | 本地双来宾验证 | [第 1 轮报告](../testing/MULTIVM-20261112.md)：同一作业在单宿主两个 QEMU 来宾上跑平坦两片、显式预算两片与树归并三片，两端角色切分、逐片交叉验证和归并输出均通过校验 | 只算来宾级证据；[DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md) 的物理双机条件与 G2/G3、P0-1B 仍未关闭 |
+| 本地可配置多来宾验证 | [n VM 验收](../testing/MULTIVM-N-20261112.md)：三来宾三片、四来宾六片均通过角色轮换、原始帧重放与成功输出等价验收 | 后续验证并行调度和来宾故障；整题资源语义、经济性与原 Gate 各自待验收 |
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
 | 已有 FM-S3 与 P0-1B 路线 | 候选 FM-S3 audit-only 链路覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态：[8 场景收尾](../testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](../testing/FM-S3-TASK-TRAP-20261106.md)与[终态和历史矩阵](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md)；P0-1B 按 Profile R1–R11 切片推进 | 正式接口保持 OPEN。正式启动来源、Phase B/D、信封和准入证据列为后续工作；[终态报告](../testing/FM-S3-TERMINALS-20261106.md#留给规范修订的事项)中的 4 项与非主网部署联合类型评审待规范修订 |
