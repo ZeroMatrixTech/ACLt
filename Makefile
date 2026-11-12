@@ -163,6 +163,7 @@ test-minimal-verifier-multivm:
 	$(PYTHON) -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
 		--kernel "$(MULTIVM_KERNEL)" --output "$(MULTIVM_OUTPUT)" \
 		$(if $(MULTIVM_SOLVE_BUDGET),--solve-budget "$(MULTIVM_SOLVE_BUDGET)",) \
+		$(if $(MULTIVM_RECURSIVE),--recursive,) \
 		$(if $(MULTIVM_ACCEL),--accel "$(MULTIVM_ACCEL)",)
 
 .PHONY: test-rir-independent
