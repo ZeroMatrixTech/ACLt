@@ -198,7 +198,7 @@ def free_port() -> int:
         return probe.getsockname()[1]
 
 
-def leaf_count(budget: int | None, recursive: bool) -> int:
+def planned_leaf_count(budget: int | None, recursive: bool) -> int:
     """Plan the job on the host so both guests agree on its shape before boot."""
     if recursive:
         _, slices = prepare_tree(*fixture(), solve_budget=budget)
@@ -358,7 +358,7 @@ def run(args: argparse.Namespace) -> dict:
               "environment": environment(accel), "solve_budget": args.solve_budget,
               "recursive": args.recursive}
     link = free_port()
-    leaves = leaf_count(args.solve_budget, args.recursive)
+    leaves = planned_leaf_count(args.solve_budget, args.recursive)
     record["planned_leaves"] = leaves
     logs = {"A": output / "A-serial.log", "B": output / "B-serial.log"}
     disks = {"A": work / "A.img", "B": work / "B.img"}

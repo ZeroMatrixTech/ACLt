@@ -160,8 +160,8 @@ class BootArgumentTests(unittest.TestCase):
             self.assertIn("aclt_leaves=4", append)
 
     def test_flat_and_tree_plans_agree_on_their_shape(self):
-        self.assertEqual(multivm.leaf_count(None, False), 2)
-        self.assertGreater(multivm.leaf_count(None, True), 1)
+        self.assertEqual(multivm.planned_leaf_count(None, False), 2)
+        self.assertGreater(multivm.planned_leaf_count(None, True), 1)
 
 
 @unittest.skipUnless(shutil.which("cpio"), "cpio is needed to inspect the archive")
