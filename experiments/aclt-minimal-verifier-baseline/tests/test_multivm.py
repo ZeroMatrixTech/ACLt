@@ -133,9 +133,9 @@ class TranscriptTests(unittest.TestCase):
 
 
 class BootArgumentTests(unittest.TestCase):
-    def arguments(self, role, budget=None):
+    def arguments(self, role, budget=None, leaves=2):
         return multivm.boot_arguments(role, Path("/k"), Path("/i"), Path("/d"), Path("/l"),
-                                      "kvm", 1024, 5555, "c0ffee", budget, False)
+                                      "kvm", 1024, 5555, "c0ffee", budget, False, leaves)
 
     def test_guests_join_opposite_link_ends(self):
         b, a = self.arguments("B"), self.arguments("A")
@@ -153,6 +153,15 @@ class BootArgumentTests(unittest.TestCase):
     def test_budget_is_forwarded_when_given(self):
         append = self.arguments("B", 17737)[self.arguments("B", 17737).index("-append") + 1]
         self.assertIn("aclt_budget=17737", append)
+
+    def test_planned_leaf_count_reaches_both_guests(self):
+        for role in ("A", "B"):
+            append = self.arguments(role, leaves=4)[self.arguments(role, leaves=4).index("-append") + 1]
+            self.assertIn("aclt_leaves=4", append)
+
+    def test_flat_and_tree_plans_agree_on_their_shape(self):
+        self.assertEqual(multivm.leaf_count(None, False), 2)
+        self.assertGreater(multivm.leaf_count(None, True), 1)
 
 
 @unittest.skipUnless(shutil.which("cpio"), "cpio is needed to inspect the archive")

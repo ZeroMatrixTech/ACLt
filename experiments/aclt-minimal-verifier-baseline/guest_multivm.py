@@ -62,9 +62,11 @@ def main() -> int:
     port = int(pairs["aclt_port"])
     budget = int(pairs["aclt_budget"]) if "aclt_budget" in pairs else None
     recursive = pairs.get("aclt_recursive") == "1"
-    print(f"GUEST_CONF role={role} port={port}", flush=True)
+    leaves = int(pairs.get("aclt_leaves", "2"))
+    print(f"GUEST_CONF role={role} port={port} leaves={leaves}", flush=True)
     if role == "B":
-        bounds = serve(pairs["aclt_ip"].split("/")[0], EXECUTOR, EVIDENCE / "B", port=port)
+        bounds = serve(pairs["aclt_ip"].split("/")[0], EXECUTOR, EVIDENCE / "B", leaf_count=leaves,
+                       port=port)
         report = identity(role, pairs)
         report.update(local_socket_ip=bounds["local_ip"], peer_socket_ip=bounds["peer_ip"])
     else:

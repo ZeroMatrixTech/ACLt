@@ -24,7 +24,7 @@ import time
 from baseline import ROOT
 from dualhost import SOURCE_PATHS, fixture, snapshot
 from job import JOB_TAG
-from lan import operations
+from lan import operations, prepare_job, prepare_tree
 from tools.verification_profile import codec
 
 HERE = Path(__file__).resolve().parent
@@ -198,13 +198,23 @@ def free_port() -> int:
         return probe.getsockname()[1]
 
 
+def leaf_count(budget: int | None, recursive: bool) -> int:
+    """Plan the job on the host so both guests agree on its shape before boot."""
+    if recursive:
+        _, slices = prepare_tree(*fixture(), solve_budget=budget)
+    else:
+        _, slices = prepare_job(*fixture(), allocate_gas=True, solve_budget=budget)
+    return len(slices)
+
+
 def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Path,
                    accel: str, memory: int, link: int, commit: str, budget: int | None,
-                   recursive: bool) -> list[str]:
+                   recursive: bool, leaves: int) -> list[str]:
     ip = GUEST_A if role == "A" else GUEST_B
     peer = GUEST_B if role == "A" else GUEST_A
     options = ["console=ttyS0", "panic=1", f"aclt_role={role}", f"aclt_ip={ip}/24",
-               f"aclt_peer={peer}", f"aclt_port={JOB_PORT}", f"aclt_commit={commit}"]
+               f"aclt_peer={peer}", f"aclt_port={JOB_PORT}", f"aclt_commit={commit}",
+               f"aclt_leaves={leaves}"]
     if budget is not None:
         options.append(f"aclt_budget={budget}")
     if recursive:
@@ -348,6 +358,8 @@ def run(args: argparse.Namespace) -> dict:
               "environment": environment(accel), "solve_budget": args.solve_budget,
               "recursive": args.recursive}
     link = free_port()
+    leaves = leaf_count(args.solve_budget, args.recursive)
+    record["planned_leaves"] = leaves
     logs = {"A": output / "A-serial.log", "B": output / "B-serial.log"}
     disks = {"A": work / "A.img", "B": work / "B.img"}
     for role in ("A", "B"):
@@ -357,11 +369,11 @@ def run(args: argparse.Namespace) -> dict:
     try:
         processes["B"] = launch(boot_arguments("B", kernel, initramfs, disks["B"], logs["B"],
                                                accel, args.memory, link, commit,
-                                               args.solve_budget, args.recursive))
+                                               args.solve_budget, args.recursive, leaves))
         time.sleep(1)
         processes["A"] = launch(boot_arguments("A", kernel, initramfs, disks["A"], logs["A"],
                                                accel, args.memory, link, commit,
-                                               args.solve_budget, args.recursive))
+                                               args.solve_budget, args.recursive, leaves))
         for role, process in processes.items():
             try:
                 process.wait(timeout=BOOT_TIMEOUT)
@@ -395,6 +407,8 @@ def run(args: argparse.Namespace) -> dict:
               for role in ("A", "B")}
     check_guests(guests["A"], guests["B"])
     leaf_count = len(json.loads((roots["A"] / "result.json").read_text())["slices"])
+    if leaf_count != leaves:
+        raise RunError(f"guest A ran {leaf_count} leaves but the boot planned {leaves}")
     record.update(check_run(roots["A"], roots["B"], leaf_count=leaf_count, recursive=args.recursive))
     record["guests"] = guests
     record["status"] = "PASS"
