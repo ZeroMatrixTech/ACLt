@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Guest entry for the two-VM minimal-verifier run; reads its role from the kernel command line."""
+"""Guest entry for the minimal-verifier VM run; reads its role from the kernel command line."""
 
+from contextlib import ExitStack
 import hashlib
 import json
 from pathlib import Path
@@ -13,7 +14,9 @@ import time
 sys.path[:0] = ["/repo", "/repo/experiments/aclt-minimal-verifier-baseline"]
 
 from dualhost import fixture
-from lan import run_job, serve
+from lan import TIMEOUT, handle_request, run_job, serve
+from multivm_job import guest_ip, guest_roles, peer_operations, run_many
+from tools.formal_migration.s2_transport import receive, send
 
 EVIDENCE = Path("/evidence")
 EXECUTOR = Path("/executor")
@@ -63,6 +66,41 @@ def connect(peer: str, port: int) -> socket.socket:
             time.sleep(0.2)
 
 
+def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: int, report: dict) -> None:
+    roles = guest_roles(int(pairs["aclt_guests"]))
+    output = EVIDENCE / role
+    coordinator = roles[0]
+    if role != coordinator:
+        bounds = serve(guest_ip(role), EXECUTOR, output, leaf_count=leaves, port=port,
+                       schedule=peer_operations(roles, leaves, role), expected_peer=guest_ip(coordinator))
+        report.update(local_socket_ip=bounds["local_ip"], peer_socket_ip=bounds["peer_ip"])
+    else:
+        output.mkdir(mode=0o700)
+        with ExitStack() as stack:
+            connections = {peer: stack.enter_context(connect(guest_ip(peer), port)) for peer in roles[1:]}
+            for connection in connections.values():
+                connection.settimeout(TIMEOUT)
+            report["connections"] = {
+                peer: dict(local_ip=connection.getsockname()[0], peer_ip=connection.getpeername()[0])
+                for peer, connection in connections.items()
+            }
+            local_plan = None
+
+            def exchange(owner, action, index, raw):
+                nonlocal local_plan
+                if owner == coordinator:
+                    local_plan, result = handle_request(raw, action, EXECUTOR, prior_plan=local_plan,
+                                                        leaf_index=index, leaf_count=leaves)
+                    return result
+                connection = connections[owner]
+                send(connection, raw)
+                return receive(connection)
+
+            summary = run_many(roles, leaves, output, exchange, solve_budget=budget)
+            print(f"GUEST_RESULT slices={len(summary['slices'])}", flush=True)
+    (output / "guest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     pairs = options()
     role = pairs["aclt_role"]
@@ -72,6 +110,9 @@ def main() -> int:
     leaves = int(pairs.get("aclt_leaves", "2"))
     print(f"GUEST_CONF role={role} port={port} leaves={leaves}", flush=True)
     report = identity(role, pairs)
+    if "aclt_guests" in pairs:
+        run_topology(role, pairs, port, budget, leaves, report)
+        return 0
     if role == "B":
         bounds = serve(pairs["aclt_ip"].split("/")[0], EXECUTOR, EVIDENCE / "B", leaf_count=leaves,
                        port=port)

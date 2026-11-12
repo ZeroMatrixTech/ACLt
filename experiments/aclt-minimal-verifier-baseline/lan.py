@@ -104,7 +104,8 @@ def handle_request(raw: bytes, expected_action: str, executor: Path, *, prior_pl
     return plan, codec.encode(reply)
 
 
-def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port: int = 0) -> dict:
+def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port: int = 0,
+          schedule: list[tuple[str, int, str]] | None = None, expected_peer: str | None = None) -> dict:
     output.mkdir(mode=0o700)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.bind((bind, port))
@@ -115,9 +116,10 @@ def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port:
         connection, peer = listener.accept()
         with connection:
             codec.need(peer[0] != bind and not peer[0].startswith("127."), "expected a distinct LAN peer")
+            codec.need(expected_peer is None or peer[0] == expected_peer, "unexpected LAN peer")
             connection.settimeout(TIMEOUT)
             plan = None
-            for action, index, label in operations(leaf_count):
+            for action, index, label in operations(leaf_count) if schedule is None else schedule:
                 raw = receive(connection)
                 (output / f"{label}-request.cbor").write_bytes(raw)
                 plan, response = handle_request(raw, action, executor, prior_plan=plan,
