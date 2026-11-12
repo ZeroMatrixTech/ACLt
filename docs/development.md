@@ -1,6 +1,6 @@
 # 开发与维护入口
 
-> 更新：2026-11-08。工程操作指南；不改变协议语义、Gate 或历史证据。
+> 更新：2026-11-12。工程操作指南；不改变协议语义、Gate 或历史证据。
 
 ## 统一入口
 
@@ -59,11 +59,11 @@
 
 `make test-authority` 使用临时回环网络、OpenSSL 与现有 C++ worker 检查接纳端回滚和复制边界，报告在 `artifacts/authority/`。`make test` 与流程已接入；QEMU 验证单独运行，外部运行时与证据不随源代码包分发。详见[实验说明](../experiments/aclt-authority-admission/README.md)。
 
-## 当前后续验证环境：双物理机 SSH
+## 当前后续验证环境：本地多虚拟机
 
-自 2026-10-23 起遵循 [DUALHOST-SSH-1](08-governance/dualhost-ssh-validation.md)。本地入口继续提供各自范围的回归，部署/网络/故障结论须来自真实双机运行；不再默认运行 VM 矩阵。下一轮优先为外置权威账本 v2 建立跨机驱动和证据核对，不将 SSH 连通当作分布式实验通过。
+2026-11-12 起暂时使用 [ENV-1 本地多虚拟机路径](08-governance/environment-standard.md#本地多虚拟机验证2026-11-12)。最简验证机先核对两台来宾的运行时与虚拟网络，再用当前作业执行入口检查分片、交叉验证和归并。默认 `make test` 继续用于本地回归，来宾运行单独记录。
 
-双机第 1 轮已完成，见 [环境与双机实测报告](testing/DUALHOST-SSH-20261023.md)。当前驱动为保存在工作区产物中的一次性适配器，尚未新增通用 make 双机目标；下一轮先做角色互换与 worker 中断，再整理参数化入口。
+既有物理双机结果按 [DUALHOST-SSH-1](08-governance/dualhost-ssh-validation.md)解释，首轮记录见[环境与双机实测报告](testing/DUALHOST-SSH-20261023.md)。
 
 ## RIR 构建切片 1 的维护入口
 
