@@ -29,3 +29,9 @@ make test-minimal-verifier-multivm \
 需要 QEMU、`cpio`、`mkfs.ext4`、`debugfs`、静态 `busybox`、宿主 CPython，以及可读的 guest 内核镜像。来宾根文件系统由 `multivm.py` 用宿主 `busybox` 与 CPython 现场组装，也可用 `--runtime-root` 指定已有目录（需含 `bin/busybox` 与 `usr/bin/python3`）。Rust 执行器在宿主用 `-C target-feature=+crt-static` 静态编译后放入两个来宾，来宾内不编译。
 
 证据目录保存两端串口日志、来宾报告 `guest.json`、两侧原始帧、`plan.cbor` 与归并结果、源码/内核/initramfs/执行器摘要，以及汇总的 `result.json`。可选参数：`MULTIVM_SOLVE_BUDGET`（每片 gas 预算）、`MULTIVM_RECURSIVE=1`（递归归并）、`MULTIVM_ACCEL=kvm|tcg`；`--memory`、`--runtime-root`、`--keep-work` 直接传给 `multivm.py run`。不带 `MULTIVM_RECURSIVE` 时目标只跑平坦计划，静默忽略该变量会让人误以为测了树归并。运行要求实验源码已提交且工作区干净，与双机驱动相同。
+
+### 可配置来宾数
+
+默认双来宾入口保留。设置 `MULTIVM_GUESTS=3` 至 `16` 会启用树作业，默认每台来宾对应一个统计块；可用 `MULTIVM_LEAVES` 显式指定叶子数，范围为来宾数至 32。A 按叶子序号轮换指定求解方与下一台验证方，逐次执行交换，所有来宾均保存自己的证据。详见[三与四来宾验收](../../docs/testing/MULTIVM-N-20261112.md)。
+
+多来宾入口可用 `--interrupt MODE OPERATION` 在远端保存指定请求后注入工作进程退出或 TCP 关闭。两种验收及退出码见[作业中断报告](../../docs/testing/MULTIVM-N-FAULTS-20261113.md)。

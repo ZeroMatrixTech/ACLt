@@ -1,10 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 """Job messages over the existing length-prefixed LAN transport."""
 
+from collections.abc import Callable
 import hashlib
 import json
 from pathlib import Path
 import socket
+import time
 
 from baseline import ARTIFACT_TAG, LIMITS, QUESTION_TAG, Answer, ask, solve, verify
 from job import (
@@ -104,7 +106,10 @@ def handle_request(raw: bytes, expected_action: str, executor: Path, *, prior_pl
     return plan, codec.encode(reply)
 
 
-def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port: int = 0) -> dict:
+def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port: int = 0,
+          schedule: list[tuple[str, int, str]] | None = None, expected_peer: str | None = None,
+          elapsed_ns: dict[str, int] | None = None,
+          on_request: Callable[[str, socket.socket], None] | None = None) -> dict:
     output.mkdir(mode=0o700)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.bind((bind, port))
@@ -115,13 +120,19 @@ def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port:
         connection, peer = listener.accept()
         with connection:
             codec.need(peer[0] != bind and not peer[0].startswith("127."), "expected a distinct LAN peer")
+            codec.need(expected_peer is None or peer[0] == expected_peer, "unexpected LAN peer")
             connection.settimeout(TIMEOUT)
             plan = None
-            for action, index, label in operations(leaf_count):
+            for action, index, label in operations(leaf_count) if schedule is None else schedule:
                 raw = receive(connection)
                 (output / f"{label}-request.cbor").write_bytes(raw)
+                if on_request is not None:
+                    on_request(label, connection)
+                started = time.monotonic_ns()
                 plan, response = handle_request(raw, action, executor, prior_plan=plan,
                                                 leaf_index=index, leaf_count=leaf_count)
+                if elapsed_ns is not None:
+                    elapsed_ns[label] = time.monotonic_ns() - started
                 (output / f"{label}-response.cbor").write_bytes(response)
                 send(connection, response)
     return {"port": local_port, "local_ip": bind, "peer_ip": peer[0]}

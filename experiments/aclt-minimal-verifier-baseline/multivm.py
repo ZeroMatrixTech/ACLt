@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Run the minimal-verifier job between two QEMU guests on one physical host.
+"""Run the minimal-verifier job between QEMU guests on one physical host.
 
 The guests have separate kernels, disks, and TCP stacks. They are still the same
 physical machine, so host-level faults, memory, and the kernel image are shared.
 """
 
 import argparse
+from contextlib import ExitStack
 import gzip
 import hashlib
 import io
@@ -21,12 +22,14 @@ import subprocess
 import sysconfig
 import sys
 import tarfile
+from tempfile import TemporaryDirectory
 import time
 
 from baseline import ROOT, ask, solve
 from dualhost import fixture, snapshot
 from job import JOB_TAG, merge_job, prepare_job
 from lan import decode_answer, operations, request
+from multivm_job import MAX_LEAVES, fault_target, guest_ip, guest_roles, job_fixture, peer_operations, replay_many
 from tools.verification_profile import codec
 from tree import merge_tree, prepare_tree
 
@@ -67,7 +70,7 @@ poweroff -f
 
 
 class RunError(RuntimeError):
-    """The two-guest run did not produce comparable evidence."""
+    """The guest run did not produce comparable evidence."""
 
 
 def sha256(path: Path) -> str:
@@ -204,12 +207,6 @@ def make_disk(path: Path) -> None:
     subprocess.run(["mkfs.ext4", "-q", "-F", "-L", "evidence", str(path)], check=True)
 
 
-def free_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        probe.bind(("127.0.0.1", 0))
-        return probe.getsockname()[1]
-
-
 def planned_leaf_count(budget: int | None, recursive: bool) -> int:
     """Plan the job on the host so both guests agree on its shape before boot."""
     if recursive:
@@ -221,12 +218,20 @@ def planned_leaf_count(budget: int | None, recursive: bool) -> int:
 
 def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Path,
                    accel: str, memory: int, link: int, commit: str, budget: int | None,
-                   recursive: bool, leaves: int) -> list[str]:
+                   recursive: bool, leaves: int, links: dict[str, int] | None = None,
+                   interrupt: tuple[str, str] | None = None) -> list[str]:
     ip = GUEST_A if role == "A" else GUEST_B
     peer = GUEST_B if role == "A" else GUEST_A
+    if links is not None:
+        ip = guest_ip(role)
     options = ["console=ttyS0", "panic=1", f"aclt_role={role}", f"aclt_ip={ip}/24",
                f"aclt_peer={peer}", f"aclt_port={JOB_PORT}", f"aclt_commit={commit}",
                f"aclt_leaves={leaves}"]
+    if links is not None:
+        options.append(f"aclt_guests={len(links) + 1}")
+    if interrupt is not None:
+        mode, operation = interrupt
+        options.extend((f"aclt_interrupt={operation}", f"aclt_interrupt_mode={mode}"))
     if budget is not None:
         options.append(f"aclt_budget={budget}")
     if recursive:
@@ -238,9 +243,18 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
     commands += ["-m", str(memory), "-smp", "2", "-display", "none", "-monitor", "none",
                  "-serial", f"file:{log}", "-no-reboot",
                  "-kernel", str(kernel), "-initrd", str(initramfs), "-append", " ".join(options),
-                 "-drive", f"file={disk},format=raw,if=virtio",
-                 "-netdev", netdev, "-device", "virtio-net-pci,netdev=n0"]
-    return commands
+                 "-drive", f"file={disk},format=raw,if=virtio"]
+    device = "virtio-net-pci,netdev=n0"
+    if links is not None:
+        device += f",mac=52:54:00:ac:17:{ord(role):02x}"
+        if role == "A":
+            netdev = "hubport,id=n0,hubid=0"
+            for peer_role, port in links.items():
+                commands.extend(["-netdev", f"socket,id=link{peer_role},connect=127.0.0.1:{port}",
+                                 "-netdev", f"hubport,id=hub{peer_role},hubid=0,netdev=link{peer_role}"])
+        else:
+            netdev = f"socket,id=n0,listen=127.0.0.1:{links[role]}"
+    return commands + ["-netdev", netdev, "-device", device]
 
 
 def terminate(process: subprocess.Popen) -> None:
@@ -385,8 +399,92 @@ def environment(accel: str) -> dict:
             "accel": accel}
 
 
+def check_topology(guests: dict, record: dict) -> None:
+    roles = guest_roles(len(guests))
+    if set(guests) != set(roles):
+        raise RunError("unexpected guest identity inventory")
+    boot_ids = set()
+    for role in roles:
+        guest = guests[role]
+        if guest["role"] != role or guest["ip"] != guest_ip(role):
+            raise RunError(f"guest {role} identity differs from the topology")
+        if not guest["boot_id"] or guest["boot_id"] in boot_ids:
+            raise RunError(f"guest {role} did not report a distinct boot id")
+        boot_ids.add(guest["boot_id"])
+        for field, expected in (("source_commit", record["commit"]),
+                                ("executor_sha256", record["executor_sha256"]),
+                                ("source_manifest_sha256", record["source_manifest_sha256"])):
+            if guest[field] != expected:
+                raise RunError(f"guest {role} {field} differs from the host snapshot")
+    for peer in roles[1:]:
+        guest = guests[peer]
+        if (guest["local_socket_ip"], guest["peer_socket_ip"]) != (guest_ip(peer), guest_ip("A")):
+            raise RunError(f"guest {peer} reported unexpected TCP addresses")
+    expected = {peer: dict(local_ip=guest_ip("A"), peer_ip=guest_ip(peer)) for peer in roles[1:]}
+    if guests["A"]["connections"] != expected:
+        raise RunError("coordinator reported unexpected TCP addresses")
+
+
+def read_timings(roots: dict[str, Path], leaves: int) -> dict:
+    roles = tuple(roots)
+    timings = {}
+    for role, root in roots.items():
+        report = json.loads((root / "timings.json").read_text(encoding="utf-8"))
+        required = ("operations_ns", "merge_ns", "reference_ns", "job_ns") if role == "A" else ("operations_ns",)
+        codec.fields(report, required)
+        operations_ns = report["operations_ns"]
+        codec.fields(operations_ns, tuple(name for _, _, name in peer_operations(roles, leaves, role)))
+        for duration in operations_ns.values():
+            codec.uint(duration)
+        for name in required[1:]:
+            codec.uint(report[name])
+        timings[role] = report
+    return timings
+
+
+def guest_links(roles: tuple[str, ...]) -> dict[str, int]:
+    # Hold all reservations until the list is complete to prevent duplicate ports.
+    with ExitStack() as stack:
+        links = {}
+        for role in roles[1:]:
+            listener = stack.enter_context(socket.socket())
+            listener.bind(("127.0.0.1", 0))
+            links[role] = listener.getsockname()[1]
+        return links
+
+
+def check_interruption(roots: dict[str, Path], logs: dict[str, str], executor: Path, scratch: Path,
+                       leaves: int, budget: int | None, mode: str, operation: str) -> dict:
+    roles = guest_roles(len(roots))
+    owner, _ = fault_target(roles, leaves, operation)
+    marker = f"GUEST_INTERRUPT role={owner} operation={operation} mode={mode}"
+    owner_exit = "GUEST_EXIT=75" if mode == "worker-exit" else "GUEST_EXIT=0"
+    if ([line for line in logs[owner].splitlines() if line.startswith("GUEST_INTERRUPT ")] != [marker]
+            or owner_exit not in logs[owner].splitlines()
+            or "GUEST_EXIT=1" not in logs["A"].splitlines()
+            or f"GUEST_JOB_INCOMPLETE operation={operation}" not in logs["A"].splitlines()):
+        raise RunError("expected interruption or coordinator failure marker is missing")
+    return replay_many(roots, leaves, executor, scratch, solve_budget=budget, interrupted=operation)
+
+
 def run(args: argparse.Namespace) -> dict:
-    leaves = planned_leaf_count(args.solve_budget, args.recursive)
+    roles = guest_roles(args.guests)
+    many = len(roles) > 2
+    recursive = args.recursive or many
+    if many:
+        leaves = args.leaves if args.leaves is not None else len(roles)
+        if not len(roles) <= leaves <= MAX_LEAVES:
+            raise RunError(f"leaf count must be between the guest count and {MAX_LEAVES}")
+        prepare_tree(*job_fixture(leaves), solve_budget=args.solve_budget)
+    else:
+        if args.leaves is not None:
+            raise RunError("explicit leaf count requires three or more guests")
+        leaves = planned_leaf_count(args.solve_budget, recursive)
+    target = None
+    if args.interrupt is not None:
+        if not many:
+            raise RunError("interruption scenarios require three or more guests")
+        target, _ = fault_target(roles, leaves, args.interrupt[1])
     output = args.output.resolve()
     if output.exists():
         raise RunError(f"output directory already exists: {output}")
@@ -423,26 +521,30 @@ def run(args: argparse.Namespace) -> dict:
               "runtime_root": None if args.runtime_root else "host build",
               "runtime_files": sum(1 for _ in runtime.rglob("*")),
               "environment": environment(accel), "solve_budget": args.solve_budget,
-              "recursive": args.recursive}
-    link = free_port()
+              "recursive": recursive, "guest_count": len(roles)}
+    links = guest_links(roles)
     record["planned_leaves"] = leaves
-    logs = {"A": output / "A-serial.log", "B": output / "B-serial.log"}
-    disks = {"A": work / "A.img", "B": work / "B.img"}
-    for role in ("A", "B"):
-        make_disk(disks[role])
+    if many:
+        record["topology"] = {"coordinator": "A", "guest_ips": {role: guest_ip(role) for role in roles},
+                              "transport": "QEMU hub with host-loopback socket links"}
+    logs = {role: output / f"{role}-serial.log" for role in roles}
+    disks = {role: work / f"{role}.img" for role in roles}
+    for disk in disks.values():
+        make_disk(disk)
     processes = {}
     started = time.monotonic()
     try:
-        processes["B"] = launch(boot_arguments("B", kernel, initramfs, disks["B"], logs["B"],
-                                               accel, args.memory, link, commit,
-                                               args.solve_budget, args.recursive, leaves))
-        time.sleep(1)
-        processes["A"] = launch(boot_arguments("A", kernel, initramfs, disks["A"], logs["A"],
-                                               accel, args.memory, link, commit,
-                                               args.solve_budget, args.recursive, leaves))
+        for role in (*roles[1:], roles[0]):
+            if role == roles[0]:
+                time.sleep(1)
+            processes[role] = launch(boot_arguments(
+                role, kernel, initramfs, disks[role], logs[role], accel, args.memory, links[roles[1]],
+                commit, args.solve_budget, recursive, leaves, links if many else None,
+                args.interrupt if role == target else None))
+        deadline = started + BOOT_TIMEOUT
         for role, process in processes.items():
             try:
-                process.wait(timeout=BOOT_TIMEOUT)
+                process.wait(timeout=max(0, deadline - time.monotonic()))
             except subprocess.TimeoutExpired:
                 raise RunError(f"guest {role} did not finish within {BOOT_TIMEOUT}s")
             if process.returncode:
@@ -451,33 +553,46 @@ def run(args: argparse.Namespace) -> dict:
         for process in processes.values():
             terminate(process)
     record["seconds"] = round(time.monotonic() - started, 2)
-    for role in ("A", "B"):
-        log = logs[role].read_text(encoding="utf-8", errors="replace")
-        (output / f"{role}-serial.log").write_text(log, encoding="utf-8")
-        if "GUEST_EXIT=0" not in log:
-            raise RunError(f"guest {role} did not report a clean exit")
-        if "Traceback" in log:
-            raise RunError(f"guest {role} raised an exception")
+    serial = {role: log.read_text(encoding="utf-8", errors="replace") for role, log in logs.items()}
     (output / "init").write_text(INIT, encoding="utf-8")
     roots = {}
-    for role in ("A", "B"):
-        # the guest mounts its evidence disk at /evidence and writes /evidence/<role>
+    for role in roles:
+        # The guest mounts its disk at /evidence and writes /evidence/<role>.
         disk_root = output / role
         extract(disks[role], disk_root)
         roots[role] = disk_root / role
-    for role, names in (("A", ("guest.json", "result.json")), ("B", ("guest.json",))):
-        for name in names:
-            if not (roots[role] / name).is_file():
-                raise RunError(f"guest {role} left no {name} on its evidence disk")
-    guests = {role: json.loads((roots[role] / "guest.json").read_text(encoding="utf-8"))
-              for role in ("A", "B")}
-    check_guests(guests["A"], guests["B"], commit=commit, executor_sha256=record["executor_sha256"],
-                 source_manifest_sha256=source_manifest_sha256)
-    record.update(check_run(roots["A"], roots["B"], leaf_count=leaves, recursive=args.recursive,
-                            solve_budget=args.solve_budget))
+    failure_path = roots["A"] / "failure.json"
+    if args.interrupt is not None:
+        mode, operation = args.interrupt
+        with TemporaryDirectory(prefix="replay-", dir=work) as replay:
+            failure = check_interruption(roots, serial, executor, Path(replay), leaves, args.solve_budget,
+                                         mode, operation)
+        record.update(failure, fault_mode=mode, interrupted_transcript_replayed=True)
+    elif many and failure_path.is_file():
+        record.update(json.loads(failure_path.read_bytes()))
+    if record.get("status") == "FAIL":
+        (output / "failure.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        return record
+    for role, log in serial.items():
+        if "GUEST_EXIT=0" not in log.splitlines() or "Traceback" in log:
+            raise RunError(f"guest {role} did not report a clean exit")
+    for role in roles:
+        if not (roots[role] / "guest.json").is_file():
+            raise RunError(f"guest {role} left no guest.json on its evidence disk")
+    guests = {role: json.loads((roots[role] / "guest.json").read_text(encoding="utf-8")) for role in roles}
+    if many:
+        check_topology(guests, record)
+        record["timings"] = read_timings(roots, leaves)
+        with TemporaryDirectory(prefix="replay-", dir=work) as replay:
+            record.update(replay_many(roots, leaves, executor, Path(replay), solve_budget=args.solve_budget))
+    else:
+        check_guests(guests["A"], guests["B"], commit=commit, executor_sha256=record["executor_sha256"],
+                     source_manifest_sha256=source_manifest_sha256)
+        record.update(check_run(roots["A"], roots["B"], leaf_count=leaves, recursive=recursive,
+                                solve_budget=args.solve_budget))
     record["guests"] = guests
     record["status"] = "PASS"
-    record["claim"] = ("two guests, one physical host: guest-level protocol and role split only; "
+    record["claim"] = (f"{len(roles)} guests, one physical host: guest-level protocol and role split only; "
                        "not physical host separation, not statistical independence")
     (output / "result.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     if not args.keep_work:
@@ -495,16 +610,26 @@ def main() -> None:
                         help="existing guest root with bin/busybox and usr/bin/python3")
     runner.add_argument("--solve-budget", type=int)
     runner.add_argument("--recursive", action="store_true")
+    runner.add_argument("--guests", type=int, default=2, help="guest count; three or more use a tree job")
     runner.add_argument("--accel", choices=("kvm", "tcg"), default="kvm")
+    runner.add_argument("--leaves", type=int, help="stats blocks in a tree job with three or more guests")
     runner.add_argument("--memory", type=int, default=1024)
     runner.add_argument("--keep-work", action="store_true")
+    runner.add_argument("--interrupt", nargs=2, metavar=("MODE", "OPERATION"),
+                        help="inject worker-exit or disconnect after receiving SOLVE-i or VERIFY-i")
     args = parser.parse_args()
+    if args.interrupt is not None and args.interrupt[0] not in ("worker-exit", "disconnect"):
+        runner.error("interruption mode must be worker-exit or disconnect")
     try:
         record = run(args)
-    except (RuntimeError, OSError, codec.CodecError, subprocess.CalledProcessError) as error:
+    except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as error:
         print(json.dumps({"status": "FAIL", "error": str(error)}, indent=2))
         raise SystemExit(1)
-    print(json.dumps({key: record[key] for key in ("status", "seconds", "slices", "job_id",
+    if record["status"] == "FAIL":
+        print(json.dumps({key: record[key] for key in ("status", "reason", "operation", "guest",
+                                                       "leaf_index", "output_published")}, indent=2))
+        raise SystemExit(1)
+    print(json.dumps({key: record[key] for key in ("status", "seconds", "guest_count", "slices", "job_id",
                                                    "output_sha256", "lan_transcript_equal",
                                                    "initramfs_sha256")}, indent=2))
 
