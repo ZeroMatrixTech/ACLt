@@ -2,19 +2,19 @@
 
 > 文档性质：持续更新的项目快照（living document）  
 > 基线版本：v0.5  
-> 快照日期：2026-11-11
+> 快照日期：2026-11-13
 > 当前阶段：G0 — 语义与问题空间冻结  
 > 权威范围：记录“现在已经知道什么、还没有证明什么、下一步需要什么证据”；不替代协议规范、ADR 或测试结果。
 
-## 当前实施入口（2026-11-11）
+## 当前实施入口（2026-11-13）
 
-最简验证机的乌托邦基线以[可信双机作业验收](minimal-verifier-baseline.md#可信双机验收)为终点。下一条实现切片优先打通拆分、跨机派发、交叉验证与归并。表中的本地验收项用于切片内核回归。
+最简验证机的乌托邦基线覆盖可信环境中的多机分工、派发、验证和归并。下一条实现切片按[通用分布式作业契约](distributed-job-contract.md)在本地多来宾上联合验收身份绑定、跨子树依赖、尝试账和交接发布。[可信双机条件](minimal-verifier-baseline.md#可信双机验收)适用于物理双机证据。
 
 | 工作 | 当前事实 | 下一动作 |
 |---|---|---|
 | 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 逐项验证诚实环境的边界场景 |
 | 本地双来宾验证 | [第 1 轮报告](../testing/MULTIVM-20261112.md)：同一作业在单宿主两个 QEMU 来宾上跑平坦两片、显式预算两片与树归并三片，两端角色切分、逐片交叉验证和归并输出均通过校验 | 只算来宾级证据；[DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md) 的物理双机条件与 G2/G3、P0-1B 仍未关闭 |
-| 本地可配置多来宾验证 | [n VM 验收](../testing/MULTIVM-N-20261112.md)：三来宾三片、四来宾六片均通过角色轮换、原始帧重放与成功输出等价验收 | 已验证[来宾工作进程退出与 TCP 断连](../testing/MULTIVM-N-FAULTS-20261113.md)时停止归并与留证，并验证[显式预算内的单次求解补算](../testing/MULTIVM-N-RETRY-20261113.md)；固定统计工件的[整题资源准入](../testing/MULTIVM-ROOT-LIMITS-20261113.md)已验收；并行调度、一般恢复、完整 trap 语义、经济性与原 Gate 各自待验收 |
+| 本地可配置多来宾验证 | [n VM 验收](../testing/MULTIVM-N-20261112.md)：三来宾三片、四来宾六片均通过角色轮换、原始帧重放与成功输出等价验收 | 已验证[来宾工作进程退出与 TCP 断连](../testing/MULTIVM-N-FAULTS-20261113.md)时停止归并与留证，并验证[显式预算内的单次求解补算](../testing/MULTIVM-N-RETRY-20261113.md)；固定统计工件的[整题资源准入](../testing/MULTIVM-ROOT-LIMITS-20261113.md)已验收；并行调度、一般恢复、经济性与原 Gate 各自待验收；完整单机 trap 等价用于明确声明该要求的任务 |
 | 可信宿主下的协调器交接 | [两阶段来宾验收](../testing/MULTIVM-HANDOFF-20261113.md)：第 0 片接纳后重启来宾，接手实例复用回执，完成同一作业与预算 | 接手由可信宿主串行化；在途恢复、自动选主与抗回滚待验收 |
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
