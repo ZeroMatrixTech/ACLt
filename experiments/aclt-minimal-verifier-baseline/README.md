@@ -37,3 +37,5 @@ make test-minimal-verifier-multivm \
 多来宾入口可用 `--interrupt MODE OPERATION` 在远端保存指定请求后注入工作进程退出或 TCP 关闭。两种验收及退出码见[作业中断报告](../../docs/testing/MULTIVM-N-FAULTS-20261113.md)。
 
 派发前检查固定统计工件的[整题资源下限](../../docs/testing/MULTIVM-ROOT-LIMITS-20261113.md)。三来宾及以上可用 `--root-gas-limit` 和 `--root-output-limit` 指定整题上限，分片求解预算仍用 `--solve-budget`。
+
+三来宾三叶作业可使用 `--handoff` 测试由宿主串行化的[协调器交接](../../docs/testing/MULTIVM-HANDOFF-20261113.md)，需要显式分片求解预算。

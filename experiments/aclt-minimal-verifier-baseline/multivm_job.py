@@ -73,7 +73,8 @@ def fault_target(roles: tuple[str, ...], leaf_count: int, value: str) -> tuple[s
 
 def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Exchange, *,
              solve_budget: int | None, elapsed_ns: dict[str, int] | None = None,
-             retry_solve: bool = False, account: bool = False, root_caps: dict | None = None) -> dict:
+             retry_solve: bool = False, account: bool = False, root_caps: dict | None = None,
+             after_accept: Callable[[int], None] | None = None) -> dict:
     started = time.monotonic_ns()
     artifact, data, limits = job_fixture(leaf_count, root_caps)
     reference_question = admit_stats_root(artifact, data, limits)
@@ -168,6 +169,8 @@ def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Ex
         reports.append(dict(start=shard.start, stop=shard.stop, question_id=shard.question_id.hex(),
                             execution_host=worker, verification_host=verifier, status=receipt["status"],
                             gas_limit=gas_limit, gas_used=outcome["gas_used"]))
+        if after_accept is not None:
+            after_accept(index + 1)
 
     merge_started = time.monotonic_ns()
     tree = merge_tree(plan, artifact, data, limits, submissions, solve_budget=solve_budget)

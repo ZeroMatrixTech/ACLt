@@ -18,11 +18,14 @@ from dualhost import fixture
 from lan import TIMEOUT, handle_request, run_job, serve
 from multivm_job import IncompleteExchange, assignments, guest_ip, guest_roles, label, peer_operations, run_many
 from tools.formal_migration.s2_transport import receive, send
+from tools.verification_profile import codec
 
 EVIDENCE = Path("/evidence")
 EXECUTOR = Path("/executor")
 CONNECT_TIMEOUT = 60
 FAULT_EXIT = 75
+HANDOFF_EXIT = 76
+HANDOFF_INPUT = Path("/handoff")
 
 
 def options() -> dict:
@@ -72,12 +75,37 @@ class InjectedDisconnect(RuntimeError):
     """The experiment intentionally closed the worker's TCP connection."""
 
 
+class HandoffCheckpoint(RuntimeError):
+    """Stop after accepting the first leaf and before the next dispatch."""
+
+
+def check_handoff_prefix(previous: Path, current: Path) -> None:
+    for name in ("plan.cbor", "original-input.bin", "artifact.cbor", "solve-attempts.json",
+                 "root-question.cbor"):
+        if name == "root-question.cbor" and not ((previous / name).exists() or (current / name).exists()):
+            continue
+        codec.need((previous / name).read_bytes() == (current / name).read_bytes(),
+                   f"handoff checkpoint differs: {name}")
+
+
+def retained_exchange(previous: Path, name: str, raw: bytes) -> bytes:
+    codec.need((previous / f"{name}-request.cbor").read_bytes() == raw,
+               f"handoff request differs: {name}")
+    return (previous / f"{name}-response.cbor").read_bytes()
+
+
 def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: int, report: dict) -> int:
     roles = guest_roles(int(pairs["aclt_guests"]))
     output = EVIDENCE / role
     coordinator = roles[0]
     operations_ns = {}
     elapsed_ns = {}
+    handoff = pairs.get("aclt_handoff")
+    if handoff:
+        report["handoff_phase"] = handoff
+    schedule = peer_operations(roles, leaves, role)
+    if handoff:
+        schedule = [op for op in schedule if (op[1] == 0) == (handoff == "before")]
     if role != coordinator:
         target = pairs.get("aclt_interrupt")
         mode = pairs.get("aclt_interrupt_mode")
@@ -96,7 +124,7 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
 
         try:
             bounds = serve(guest_ip(role), EXECUTOR, output, leaf_count=leaves, port=port,
-                           schedule=peer_operations(roles, leaves, role), expected_peer=guest_ip(coordinator),
+                           schedule=schedule, expected_peer=guest_ip(coordinator),
                            elapsed_ns=operations_ns, on_request=interrupt if target and mode != "drop-reply" else None,
                            before_send=interrupt if target and mode == "drop-reply" else None)
         except InjectedDisconnect:
@@ -121,6 +149,8 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
 
             def exchange(owner, action, index, raw):
                 nonlocal local_plan
+                if handoff == "after" and index == 0:
+                    return retained_exchange(HANDOFF_INPUT, label(action, index), raw)
                 if owner == coordinator:
                     started = time.monotonic_ns()
                     local_plan, result = handle_request(raw, action, EXECUTOR, prior_plan=local_plan,
@@ -136,9 +166,21 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
 
             root_caps = {name: int(pairs[f"aclt_root_{name}"])
                          for name in ("gas_limit", "output_limit") if f"aclt_root_{name}" in pairs}
+            def checkpoint(accepted: int) -> None:
+                if accepted != 1:
+                    return
+                if handoff == "before":
+                    raise HandoffCheckpoint
+                check_handoff_prefix(HANDOFF_INPUT, output)
+
             try:
                 summary = run_many(roles, leaves, output, exchange, solve_budget=budget, elapsed_ns=elapsed_ns,
-                                   retry_solve=pairs.get("aclt_retry_solve") == "1", account=True, root_caps=root_caps)
+                                   retry_solve=pairs.get("aclt_retry_solve") == "1", account=True, root_caps=root_caps,
+                                   after_accept=checkpoint if handoff else None)
+            except HandoffCheckpoint:
+                (output / "guest.json").write_text(json.dumps(report) + "\n")
+                print("GUEST_HANDOFF accepted=1", flush=True)
+                return HANDOFF_EXIT
             except IncompleteExchange as error:
                 print(f"GUEST_JOB_INCOMPLETE operation={error}", flush=True)
                 return 1

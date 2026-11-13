@@ -28,7 +28,7 @@ import time
 from baseline import ROOT, ask, solve
 from dualhost import fixture, snapshot
 from job import JOB_TAG, admit_stats_root, merge_job, prepare_job
-from lan import decode_answer, operations, request
+from lan import decode_answer, handle_request, operations, request
 from multivm_job import MAX_LEAVES, fault_target, guest_ip, guest_roles, job_fixture, peer_operations, replay_many
 from tools.verification_profile import codec
 from tree import merge_tree, prepare_tree
@@ -222,7 +222,7 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
                    accel: str, memory: int, link: int, commit: str, budget: int | None,
                    recursive: bool, leaves: int, links: dict[str, int] | None = None,
                    interrupt: tuple[str, str] | None = None, retry_solve: bool = False,
-                   root_caps: dict | None = None) -> list[str]:
+                   root_caps: dict | None = None, handoff: str | None = None) -> list[str]:
     ip = GUEST_A if role == "A" else GUEST_B
     peer = GUEST_B if role == "A" else GUEST_A
     if links is not None:
@@ -233,6 +233,8 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
     if links is not None:
         options.append(f"aclt_guests={len(links) + 1}")
     options.extend(f"aclt_root_{name}={value}" for name, value in (root_caps or {}).items())
+    if handoff is not None:
+        options.append(f"aclt_handoff={handoff}")
     if retry_solve:
         options.append("aclt_retry_solve=1")
     if interrupt is not None:
@@ -483,6 +485,72 @@ def check_interruption(roots: dict[str, Path], logs: dict[str, str], executor: P
                        retry_solve=retry_solve, account=account, root_caps=root_caps)
 
 
+def check_handoff_checkpoint(roots: dict[str, Path], executor: Path, budget: int, root_caps: dict) -> None:
+    artifact, data, limits = job_fixture(3, root_caps)
+    plan, leaves = prepare_tree(artifact, data, limits, solve_budget=budget)
+    shard = leaves[0]
+    a, b = roots["A"], roots["B"]
+    codec.need((a / "plan.cbor").read_bytes() == plan, "handoff plan differs")
+    solve_request = request("SOLVE", plan, artifact, shard)
+    codec.need((a / "SOLVE-0-request.cbor").read_bytes() == solve_request, "handoff solve request differs")
+    answer_frame = codec.decode((a / "SOLVE-0-response.cbor").read_bytes())
+    codec.fields(answer_frame, ("job_id", "start", "answer"))
+    job_id = codec.domain_hash(JOB_TAG, plan)
+    codec.need(answer_frame["job_id"] == job_id and answer_frame["start"] == shard.start,
+               "handoff answer is for a different job or leaf")
+    answer = decode_answer(answer_frame["answer"])
+    verify_request = request("VERIFY", plan, artifact, shard, answer)
+    _, receipt = handle_request(verify_request, "VERIFY", executor, leaf_index=0, leaf_count=3)
+    codec.need(codec.decode(receipt)["status"] == "ACCEPT", "handoff answer was not accepted")
+    for root in (a, b):
+        codec.need((root / "VERIFY-0-request.cbor").read_bytes() == verify_request
+                   and (root / "VERIFY-0-response.cbor").read_bytes() == receipt,
+                   "handoff verification differs from replay")
+    verify_frames = {"VERIFY-0-request.cbor", "VERIFY-0-response.cbor"}
+    allowed = {"A": verify_frames | {"SOLVE-0-request.cbor", "SOLVE-0-response.cbor"},
+               "B": verify_frames, "C": set()}
+    for role, root in roots.items():
+        frames = {path.name for pattern in ("*-request.cbor", "*-response.cbor") for path in root.glob(pattern)}
+        codec.need(frames == allowed[role], f"unexpected dispatches before handoff on {role}")
+        codec.need(not any((root / name).exists() for name in
+                           ("result.json", "merged-output.bin", "flat-output.bin", "reference-output.bin")),
+                   f"output published before handoff on {role}")
+    outcome = codec.decode(answer.outcome)
+    cap = codec.decode(shard.question)["limits"]["gas_limit"]
+    codec.need(outcome["outcome"] == "OK" and outcome["gas_used"] == cap, "invalid handoff solve cost")
+    expected = dict(solve_budget=budget, charged_gas=cap,
+                    attempts=[dict(leaf_index=0, guest="A", attempt=1, gas_limit=cap, status="ANSWER",
+                                   measured_gas=cap, charged_gas=cap)])
+    codec.need(json.loads((a / "solve-attempts.json").read_bytes()) == expected, "handoff ledger differs")
+
+
+def replay_handoff(before: dict[str, Path], after: dict[str, Path], executor: Path,
+                   budget: int, root_caps: dict, scratch: Path) -> dict:
+    check_handoff_checkpoint(before, executor, budget, root_caps)
+    boot_ids = set()
+    for phase, roots in (("before", before), ("after", after)):
+        for root in roots.values():
+            guest = json.loads((root / "guest.json").read_bytes())
+            codec.need(guest.get("handoff_phase") == phase and guest["boot_id"] not in boot_ids,
+                       f"unexpected guest identity in handoff phase: {phase}")
+            boot_ids.add(guest["boot_id"])
+    for name in ("SOLVE-0-request.cbor", "SOLVE-0-response.cbor", "VERIFY-0-request.cbor", "VERIFY-0-response.cbor",
+                 "artifact.cbor", "original-input.bin", "plan.cbor", "root-question.cbor"):
+        if (before["A"] / name).exists() or (after["A"] / name).exists():
+            codec.need((before["A"] / name).read_bytes() == (after["A"] / name).read_bytes(),
+                       f"handoff changed retained input {name}")
+    for root in (after["B"], after["C"]):
+        codec.need(not list(root.glob("*-0-*.cbor")), "accepted leaf was sent to a peer again")
+    verification = scratch / "B"
+    shutil.copytree(after["B"], verification)
+    for path in before["B"].glob("VERIFY-0-*.cbor"):
+        shutil.copyfile(path, verification / path.name)
+    replay = scratch / "replay"
+    replay.mkdir()
+    return replay_many(after | {"B": verification}, 3, executor, replay, solve_budget=budget,
+                       root_caps=root_caps, account=True)
+
+
 def run(args: argparse.Namespace) -> dict:
     roles = guest_roles(args.guests)
     many = len(roles) > 2
@@ -505,6 +573,9 @@ def run(args: argparse.Namespace) -> dict:
         leaves = planned_leaf_count(args.solve_budget, recursive)
     if args.retry_solve and (not many or args.solve_budget is None):
         raise RunError("solve retry requires three or more guests and an explicit solve budget")
+    if args.handoff and (len(roles) != 3 or leaves != 3 or args.solve_budget is None
+                         or args.interrupt is not None or args.retry_solve):
+        raise RunError("handoff requires three guests, three leaves, a solve budget, and no other fault mode")
     target = None
     if args.interrupt is not None:
         if not many:
@@ -553,40 +624,80 @@ def run(args: argparse.Namespace) -> dict:
         record["root_limits"] = job[2]
         record["topology"] = {"coordinator": "A", "guest_ips": {role: guest_ip(role) for role in roles},
                               "transport": "QEMU hub with host-loopback socket links"}
-    logs = {role: output / f"{role}-serial.log" for role in roles}
-    disks = {role: work / f"{role}.img" for role in roles}
-    for disk in disks.values():
-        make_disk(disk)
-    processes = {}
+    def boot(directory: Path, image: Path, handoff: str | None = None) -> tuple[dict[str, Path], dict[str, str]]:
+        directory.mkdir(exist_ok=True)
+        logs = {role: directory / f"{role}-serial.log" for role in roles}
+        disks = {role: work / f"{directory.name}-{role}.img" for role in roles}
+        for disk in disks.values():
+            make_disk(disk)
+        processes = {}
+        started = time.monotonic()
+        try:
+            for role in (*roles[1:], roles[0]):
+                if role == roles[0]:
+                    time.sleep(1)
+                processes[role] = launch(boot_arguments(
+                    role, kernel, image, disks[role], logs[role], accel, args.memory, links[roles[1]],
+                    commit, args.solve_budget, recursive, leaves, links if many else None,
+                    args.interrupt if role == target else None, args.retry_solve, root_caps, handoff))
+            deadline = started + BOOT_TIMEOUT
+            for role, process in processes.items():
+                try:
+                    process.wait(timeout=max(0, deadline - time.monotonic()))
+                except subprocess.TimeoutExpired:
+                    raise RunError(f"guest {role} did not finish within {BOOT_TIMEOUT}s")
+                if process.returncode:
+                    raise RunError(f"guest {role} exited {process.returncode}")
+        finally:
+            for process in processes.values():
+                terminate(process)
+        roots = {}
+        for role in roles:
+            disk_root = directory / role
+            extract(disks[role], disk_root)
+            roots[role] = disk_root / role
+        serial = {role: log.read_text(encoding="utf-8", errors="replace") for role, log in logs.items()}
+        return roots, serial
+
     started = time.monotonic()
-    try:
-        for role in (*roles[1:], roles[0]):
-            if role == roles[0]:
-                time.sleep(1)
-            processes[role] = launch(boot_arguments(
-                role, kernel, initramfs, disks[role], logs[role], accel, args.memory, links[roles[1]],
-                commit, args.solve_budget, recursive, leaves, links if many else None,
-                args.interrupt if role == target else None, args.retry_solve, root_caps))
-        deadline = started + BOOT_TIMEOUT
-        for role, process in processes.items():
-            try:
-                process.wait(timeout=max(0, deadline - time.monotonic()))
-            except subprocess.TimeoutExpired:
-                raise RunError(f"guest {role} did not finish within {BOOT_TIMEOUT}s")
-            if process.returncode:
-                raise RunError(f"guest {role} exited {process.returncode}")
-    finally:
-        for process in processes.values():
-            terminate(process)
-    record["seconds"] = round(time.monotonic() - started, 2)
-    serial = {role: log.read_text(encoding="utf-8", errors="replace") for role, log in logs.items()}
     (output / "init").write_text(INIT, encoding="utf-8")
-    roots = {}
-    for role in roles:
-        # The guest mounts its disk at /evidence and writes /evidence/<role>.
-        disk_root = output / role
-        extract(disks[role], disk_root)
-        roots[role] = disk_root / role
+    if args.handoff:
+        before, serial = boot(output / "before", initramfs, "before")
+        if ("GUEST_HANDOFF accepted=1" not in serial["A"].splitlines()
+                or "GUEST_EXIT=76" not in serial["A"].splitlines()
+                or any("GUEST_EXIT=0" not in serial[role].splitlines() for role in roles[1:])):
+            raise RunError("old guest did not stop at the handoff checkpoint")
+        guests_before = {role: json.loads((root / "guest.json").read_bytes()) for role, root in before.items()}
+        check_topology(guests_before, record)
+        check_handoff_checkpoint(before, executor, args.solve_budget, root_caps)
+        transfer = work / "transfer"
+        checkpoint = transfer / "handoff"
+        checkpoint.mkdir(parents=True)
+        for path in before["A"].iterdir():
+            if path.name != "guest.json":
+                shutil.copyfile(path, checkpoint / path.name)
+        cpio = work / "handoff.cpio"
+        write_cpio(transfer, cpio)
+        successor = output / "successor.cpio.gz"
+        shutil.copyfile(initramfs, successor)
+        with successor.open("ab") as raw, gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=1, mtime=0) as stream:
+            stream.write(cpio.read_bytes())
+        roots, serial = boot(output / "after", successor, "after")
+        guests_after = {role: json.loads((root / "guest.json").read_bytes()) for role, root in roots.items()}
+        check_topology(guests_after, record)
+        if any("GUEST_EXIT=0" not in log.splitlines() or "Traceback" in log for log in serial.values()):
+            raise RunError("successor phase failed")
+        with TemporaryDirectory(prefix="replay-", dir=work) as replay:
+            record.update(replay_handoff(before, roots, executor, args.solve_budget, root_caps, Path(replay)))
+        record.update(status="PASS", handoff=True, seconds=round(time.monotonic() - started, 2),
+                      before_guests=guests_before, guests=guests_after, successor_initramfs_sha256=sha256(successor),
+                      solve_accounting=json.loads((roots["A"] / "solve-attempts.json").read_bytes()))
+        (output / "result.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        if not args.keep_work:
+            shutil.rmtree(work)
+        return record
+    roots, serial = boot(output, initramfs)
+    record["seconds"] = round(time.monotonic() - started, 2)
     failure_path = roots["A"] / "failure.json"
     recovered = many and args.interrupt is not None and (roots["A"] / "result.json").is_file()
     if args.interrupt is not None:
@@ -666,6 +777,7 @@ def main() -> None:
     runner.add_argument("--root-gas-limit", type=int, help="whole-task gas cap for a three-or-more guest job")
     runner.add_argument("--root-output-limit", type=int, help="whole-task output bytes for a three-or-more guest job")
     runner.add_argument("--memory", type=int, default=1024)
+    runner.add_argument("--handoff", action="store_true", help="replace the coordinator after the first accepted leaf")
     runner.add_argument("--keep-work", action="store_true")
     runner.add_argument("--retry-solve", action="store_true",
                         help="allow one budgeted coordinator retry of an eligible remote solve")
