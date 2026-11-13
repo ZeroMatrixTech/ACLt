@@ -155,11 +155,17 @@ def replay_many(roots: dict[str, Path], leaf_count: int, executor: Path, scratch
     plans = {}
     expected_files = {role: set() for role in roles}
 
+    def retained_frame(root: Path, name: str) -> bytes:
+        try:
+            return (root / name).read_bytes()
+        except OSError as error:
+            raise codec.CodecError(f"cannot read retained frame {name}") from error
+
     def exchange(role, action, index, raw):
         name = label(action, index)
         req, rep = f"{name}-request.cbor", f"{name}-response.cbor"
         for root in {coordinator, roots[role]}:
-            codec.need((root / req).read_bytes() == raw, f"{role} {name} request differs from replay")
+            codec.need(retained_frame(root, req) == raw, f"{role} {name} request differs from replay")
         expected_files[roles[0]].add(req)
         expected_files[role].add(req)
         if name == interrupted:
@@ -169,7 +175,7 @@ def replay_many(roots: dict[str, Path], leaf_count: int, executor: Path, scratch
         plans[role], response = handle_request(raw, action, executor, prior_plan=plans.get(role),
                                                leaf_index=index, leaf_count=len(leaves))
         for root in {coordinator, roots[role]}:
-            codec.need((root / rep).read_bytes() == response, f"{role} {name} response differs from replay")
+            codec.need(retained_frame(root, rep) == response, f"{role} {name} response differs from replay")
         return response
 
     try:
