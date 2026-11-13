@@ -219,7 +219,7 @@ def planned_leaf_count(budget: int | None, recursive: bool) -> int:
 def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Path,
                    accel: str, memory: int, link: int, commit: str, budget: int | None,
                    recursive: bool, leaves: int, links: dict[str, int] | None = None,
-                   interrupt: tuple[str, str] | None = None) -> list[str]:
+                   interrupt: tuple[str, str] | None = None, retry_solve: bool = False) -> list[str]:
     ip = GUEST_A if role == "A" else GUEST_B
     peer = GUEST_B if role == "A" else GUEST_A
     if links is not None:
@@ -229,6 +229,8 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
                f"aclt_leaves={leaves}"]
     if links is not None:
         options.append(f"aclt_guests={len(links) + 1}")
+    if retry_solve:
+        options.append("aclt_retry_solve=1")
     if interrupt is not None:
         mode, operation = interrupt
         options.extend((f"aclt_interrupt={operation}", f"aclt_interrupt_mode={mode}"))
@@ -425,7 +427,8 @@ def check_topology(guests: dict, record: dict) -> None:
         raise RunError("coordinator reported unexpected TCP addresses")
 
 
-def read_timings(roots: dict[str, Path], leaves: int) -> dict:
+def read_timings(roots: dict[str, Path], leaves: int, *, retry: str | None = None,
+                 missing_timing: tuple[str, str] | None = None) -> dict:
     roles = tuple(roots)
     timings = {}
     for role, root in roots.items():
@@ -433,7 +436,10 @@ def read_timings(roots: dict[str, Path], leaves: int) -> dict:
         required = ("operations_ns", "merge_ns", "reference_ns", "job_ns") if role == "A" else ("operations_ns",)
         codec.fields(report, required)
         operations_ns = report["operations_ns"]
-        codec.fields(operations_ns, tuple(name for _, _, name in peer_operations(roles, leaves, role)))
+        names = [name for _, _, name in peer_operations(roles, leaves, role) if (role, name) != missing_timing]
+        if role == "A" and retry is not None:
+            names.append(f"{retry}-retry")
+        codec.fields(operations_ns, tuple(names))
         for duration in operations_ns.values():
             codec.uint(duration)
         for name in required[1:]:
@@ -454,17 +460,22 @@ def guest_links(roles: tuple[str, ...]) -> dict[str, int]:
 
 
 def check_interruption(roots: dict[str, Path], logs: dict[str, str], executor: Path, scratch: Path,
-                       leaves: int, budget: int | None, mode: str, operation: str) -> dict:
+                       leaves: int, budget: int | None, mode: str, operation: str, *,
+                       retry_solve: bool = False, recovered: bool = False, account: bool = False) -> dict:
     roles = guest_roles(len(roots))
     owner, _ = fault_target(roles, leaves, operation)
     marker = f"GUEST_INTERRUPT role={owner} operation={operation} mode={mode}"
     owner_exit = "GUEST_EXIT=75" if mode == "worker-exit" else "GUEST_EXIT=0"
+    if mode == "drop-reply" and not (roots[owner] / f"{operation}-response.cbor").is_file():
+        raise RunError("dropped reply was not retained by its worker")
+    coordinator_exit = "GUEST_EXIT=0" if recovered else "GUEST_EXIT=1"
     if ([line for line in logs[owner].splitlines() if line.startswith("GUEST_INTERRUPT ")] != [marker]
             or owner_exit not in logs[owner].splitlines()
-            or "GUEST_EXIT=1" not in logs["A"].splitlines()
-            or f"GUEST_JOB_INCOMPLETE operation={operation}" not in logs["A"].splitlines()):
+            or coordinator_exit not in logs["A"].splitlines()
+            or (not recovered and f"GUEST_JOB_INCOMPLETE operation={operation}" not in logs["A"].splitlines())):
         raise RunError("expected interruption or coordinator failure marker is missing")
-    return replay_many(roots, leaves, executor, scratch, solve_budget=budget, interrupted=operation)
+    return replay_many(roots, leaves, executor, scratch, solve_budget=budget, interrupted=operation,
+                       retry_solve=retry_solve, account=account)
 
 
 def run(args: argparse.Namespace) -> dict:
@@ -480,6 +491,8 @@ def run(args: argparse.Namespace) -> dict:
         if args.leaves is not None:
             raise RunError("explicit leaf count requires three or more guests")
         leaves = planned_leaf_count(args.solve_budget, recursive)
+    if args.retry_solve and (not many or args.solve_budget is None):
+        raise RunError("solve retry requires three or more guests and an explicit solve budget")
     target = None
     if args.interrupt is not None:
         if not many:
@@ -540,7 +553,7 @@ def run(args: argparse.Namespace) -> dict:
             processes[role] = launch(boot_arguments(
                 role, kernel, initramfs, disks[role], logs[role], accel, args.memory, links[roles[1]],
                 commit, args.solve_budget, recursive, leaves, links if many else None,
-                args.interrupt if role == target else None))
+                args.interrupt if role == target else None, args.retry_solve))
         deadline = started + BOOT_TIMEOUT
         for role, process in processes.items():
             try:
@@ -562,19 +575,24 @@ def run(args: argparse.Namespace) -> dict:
         extract(disks[role], disk_root)
         roots[role] = disk_root / role
     failure_path = roots["A"] / "failure.json"
+    recovered = many and args.interrupt is not None and (roots["A"] / "result.json").is_file()
     if args.interrupt is not None:
         mode, operation = args.interrupt
         with TemporaryDirectory(prefix="replay-", dir=work) as replay:
             failure = check_interruption(roots, serial, executor, Path(replay), leaves, args.solve_budget,
-                                         mode, operation)
+                                         mode, operation, retry_solve=args.retry_solve,
+                                         recovered=recovered, account=True)
         record.update(failure, fault_mode=mode, interrupted_transcript_replayed=True)
     elif many and failure_path.is_file():
         record.update(json.loads(failure_path.read_bytes()))
+    if many and (roots["A"] / "solve-attempts.json").is_file():
+        record["solve_accounting"] = json.loads((roots["A"] / "solve-attempts.json").read_bytes())
     if record.get("status") == "FAIL":
         (output / "failure.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
         return record
     for role, log in serial.items():
-        if "GUEST_EXIT=0" not in log.splitlines() or "Traceback" in log:
+        expected_exit = "GUEST_EXIT=75" if recovered and role == target and mode == "worker-exit" else "GUEST_EXIT=0"
+        if expected_exit not in log.splitlines() or "Traceback" in log:
             raise RunError(f"guest {role} did not report a clean exit")
     for role in roles:
         if not (roots[role] / "guest.json").is_file():
@@ -582,9 +600,14 @@ def run(args: argparse.Namespace) -> dict:
     guests = {role: json.loads((roots[role] / "guest.json").read_text(encoding="utf-8")) for role in roles}
     if many:
         check_topology(guests, record)
-        record["timings"] = read_timings(roots, leaves)
-        with TemporaryDirectory(prefix="replay-", dir=work) as replay:
-            record.update(replay_many(roots, leaves, executor, Path(replay), solve_budget=args.solve_budget))
+        if recovered:
+            missing = (target, operation) if mode != "drop-reply" else None
+            record["timings"] = read_timings(roots, leaves, retry=operation, missing_timing=missing)
+        else:
+            record["timings"] = read_timings(roots, leaves)
+            with TemporaryDirectory(prefix="replay-", dir=work) as replay:
+                record.update(replay_many(roots, leaves, executor, Path(replay), solve_budget=args.solve_budget,
+                                          account=True))
     else:
         check_guests(guests["A"], guests["B"], commit=commit, executor_sha256=record["executor_sha256"],
                      source_manifest_sha256=source_manifest_sha256)
@@ -615,11 +638,13 @@ def main() -> None:
     runner.add_argument("--leaves", type=int, help="stats blocks in a tree job with three or more guests")
     runner.add_argument("--memory", type=int, default=1024)
     runner.add_argument("--keep-work", action="store_true")
+    runner.add_argument("--retry-solve", action="store_true",
+                        help="allow one budgeted coordinator retry of an eligible remote solve")
     runner.add_argument("--interrupt", nargs=2, metavar=("MODE", "OPERATION"),
                         help="inject worker-exit or disconnect after receiving SOLVE-i or VERIFY-i")
     args = parser.parse_args()
-    if args.interrupt is not None and args.interrupt[0] not in ("worker-exit", "disconnect"):
-        runner.error("interruption mode must be worker-exit or disconnect")
+    if args.interrupt is not None and args.interrupt[0] not in ("worker-exit", "disconnect", "drop-reply"):
+        runner.error("interruption mode must be worker-exit, disconnect, or drop-reply")
     try:
         record = run(args)
     except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as error:
