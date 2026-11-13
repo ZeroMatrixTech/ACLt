@@ -15,6 +15,7 @@ import time
 sys.path[:0] = ["/repo", "/repo/experiments/aclt-minimal-verifier-baseline"]
 
 from dualhost import fixture
+import general_vm
 from lan import TIMEOUT, handle_request, run_job, serve
 from multivm_job import IncompleteExchange, assignments, guest_ip, guest_roles, label, peer_operations, run_many
 from tools.formal_migration.s2_transport import receive, send
@@ -191,6 +192,56 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
     return 0
 
 
+def run_general(role, port, budget, report, pairs):
+    output = EVIDENCE / role
+    output.mkdir(mode=0o700)
+    drop = pairs.get("aclt_general_drop") == "1"
+    if role != "A":
+        report.update(general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop))
+    else:
+        roles = guest_roles(int(pairs["aclt_guests"]))
+        job = general_vm.fixture(bytes.fromhex(pairs["aclt_execution_nonce"]), budget,
+                                 flat=pairs.get("aclt_general_flat") == "1")
+        order = tuple(int(slot) for slot in pairs["aclt_general_order"])
+        previous = HANDOFF_INPUT / "journal.cbor" if pairs.get("aclt_handoff") == "after" else None
+
+        report["connections"] = {}
+
+        def remote(owner, raw, *, reply=True):
+            with connect(guest_ip(owner), port) as connection:
+                connection.settimeout(general_vm.TIMEOUT)
+                report["connections"][owner] = dict(local_ip=connection.getsockname()[0],
+                                                     peer_ip=connection.getpeername()[0])
+                send(connection, raw)
+                if reply:
+                    return receive(connection)
+
+        def exchange(owner, raw):
+            name = general_vm.wire_name(raw)
+            (output / f"{name}-request.cbor").write_bytes(raw)
+            result = (general_vm.handle(raw, EXECUTOR) if owner == role else remote(owner, raw))
+            (output / f"{name}-response.cbor").write_bytes(result)
+            return result
+
+        # Finish the operation stream even on a blocked budget or checkpoint.
+        try:
+            journal, status = general_vm.run(
+                job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
+                checkpoint=int(pairs.get("aclt_general_checkpoint", "0")),
+            )
+        finally:
+            for peer in roles[1:]:
+                remote(peer, general_vm.STOP, reply=False)
+        (output / "declaration.cbor").write_bytes(job.declaration)
+        (output / "plan.cbor").write_bytes(job.plan)
+        (output / "execution.cbor").write_bytes(job.execution)
+        if journal.final is not None:
+            (output / "publication.cbor").write_bytes(codec.encode(journal.final))
+        report["general_status"] = status
+    (output / "guest.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
+    return 0
+
+
 def main() -> int:
     pairs = options()
     role = pairs["aclt_role"]
@@ -200,6 +251,8 @@ def main() -> int:
     leaves = int(pairs.get("aclt_leaves", "2"))
     print(f"GUEST_CONF role={role} port={port} leaves={leaves}", flush=True)
     report = identity(role, pairs)
+    if "aclt_execution_nonce" in pairs:
+        return run_general(role, port, budget, report, pairs)
     if "aclt_guests" in pairs:
         return run_topology(role, pairs, port, budget, leaves, report)
     if role == "B":
