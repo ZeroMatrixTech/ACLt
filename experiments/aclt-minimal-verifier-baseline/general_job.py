@@ -61,11 +61,13 @@ class Job:
         c.fields(plan["artifacts"], ("copy", "double"))
         c.need(plan["artifacts"] == {op: c.domain_hash(ARTIFACT_TAG, raw)
                                     for op, raw in self.artifacts.items()}, "plan artifact mismatch")
+        # Any acyclic path has at most len(tasks) - 1 doublings.
+        literal_limit = (2**63 - 1) >> (len(tasks) - 1)
         for task in tasks:
             if type(task) is dict and "literal" in task:
                 c.fields(task, ("literal",))
-                c.need(type(task["literal"]) is int and -(2**63) <= task["literal"] < 2**63,
-                       "literal outside i64")
+                c.need(type(task["literal"]) is int and abs(task["literal"]) <= literal_limit,
+                       "literal exceeds the task family's safe i64 bound")
             else:
                 c.fields(task, ("double",))
                 c.need(c.uint(task["double"]) < len(tasks), "unknown dependency")
@@ -77,15 +79,11 @@ class Job:
         c.need(plan["dependencies"] == expected_dependencies, "plan changes declared dependencies")
         # All open events precede dispatch and merges depend only on their children.
         # In this family only leaf-to-leaf edges can complete an event cycle.
-        resolved = {}
-        while len(resolved) < len(tasks):
-            ready = [(slot, task) for slot, task in enumerate(tasks)
-                     if slot not in resolved and ("literal" in task or task["double"] in resolved)]
+        unresolved = set(range(len(tasks)))
+        while unresolved:
+            ready = {slot for slot in unresolved if expected_dependencies.get(slot) not in unresolved}
             c.need(ready, "cyclic dependency")
-            for slot, task in ready:
-                value = task["literal"] if "literal" in task else 2 * resolved[task["double"]]
-                c.need(-(2**63) <= value < 2**63, "task family overflows i64")
-                resolved[slot] = value
+            unresolved.difference_update(ready)
         c.need(execution["declaration_id"] == self.declaration_id
                and execution["plan_id"] == self.plan_id, "execution binding mismatch")
         c.digest_bytes(execution["nonce"])
