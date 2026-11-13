@@ -26,6 +26,7 @@ from tempfile import TemporaryDirectory
 import time
 
 from baseline import ROOT, ask, solve
+import general_vm
 from dualhost import fixture, snapshot
 from job import JOB_TAG, admit_stats_root, merge_job, prepare_job
 from lan import decode_answer, handle_request, operations, request
@@ -222,7 +223,8 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
                    accel: str, memory: int, link: int, commit: str, budget: int | None,
                    recursive: bool, leaves: int, links: dict[str, int] | None = None,
                    interrupt: tuple[str, str] | None = None, retry_solve: bool = False,
-                   root_caps: dict | None = None, handoff: str | None = None) -> list[str]:
+                   root_caps: dict | None = None, handoff: str | None = None,
+                   general_options: tuple[str, ...] = ()) -> list[str]:
     ip = GUEST_A if role == "A" else GUEST_B
     peer = GUEST_B if role == "A" else GUEST_A
     if links is not None:
@@ -244,6 +246,7 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
         options.append(f"aclt_budget={budget}")
     if recursive:
         options.append("aclt_recursive=1")
+    options.extend(general_options)
     netdev = (f"socket,id=n0,listen=127.0.0.1:{link}" if role == "B"
               else f"socket,id=n0,connect=127.0.0.1:{link}")
     commands = ["qemu-system-x86_64", "-accel", accel]
@@ -551,6 +554,60 @@ def replay_handoff(before: dict[str, Path], after: dict[str, Path], executor: Pa
                        root_caps=root_caps, account=True)
 
 
+def run_general(job, args, boot, executor, image, output, record, successor_image):
+    def phase(directory, image, handoff=None, history=()):
+        roots, serial = boot(directory, image, handoff)
+        if any("GUEST_EXIT=0" not in log.splitlines() or "Traceback" in log for log in serial.values()):
+            raise RunError("general job guest failed")
+        guests = {role: json.loads((root / "guest.json").read_bytes()) for role, root in roots.items()}
+        check_topology(guests, record)
+        for name in ("declaration", "plan", "execution"):
+            if (roots["A"] / f"{name}.cbor").read_bytes() != getattr(job, name):
+                raise RunError(f"guest changed frozen {name}")
+        journal = general_vm.replay(job, roots, executor, history)
+        publication = roots["A"] / "publication.cbor"
+        if journal.final is None:
+            if publication.exists():
+                raise RunError("incomplete run published an output")
+        elif publication.read_bytes() != codec.encode(journal.final):
+            raise RunError("publication differs from replay")
+        return roots, guests, journal
+
+    history = ()
+    before_guests = None
+    if args.general_checkpoint:
+        before, before_guests, journal = phase(output / "before", image, "before")
+        if (before_guests["A"]["general_status"] != "CHECKPOINT"
+                or len(journal.accepted) != args.general_checkpoint or journal.final is not None
+                or journal.reserved):
+            raise RunError("guest did not reach the requested quiescent checkpoint")
+        history = journal.events
+        image = successor_image(image, (before["A"] / "journal.cbor",))
+    _, guests, journal = phase(output / "after" if history else output, image,
+                               "after" if history else None, history)
+    if history and (journal.events[len(history)] != {"kind": "HANDOFF", "epoch": 1}
+                    or {g["boot_id"] for g in guests.values()} & {g["boot_id"] for g in before_guests.values()}):
+        raise RunError("successor did not take over after the checkpoint")
+    result = guests["A"]["general_status"]
+    if result not in ("PUBLISHED", "BUDGET_BLOCKED") or (result == "PUBLISHED") != (journal.final is not None):
+        raise RunError(f"unexpected terminal state: {result}")
+    if result == "BUDGET_BLOCKED":
+        if not args.general_drop or journal.charged + sum(
+                cap for slot, cap in enumerate(job.caps) if slot not in journal.accepted) <= job.budget:
+            raise RunError("guest reported a budget block with enough remaining gas")
+    control = general_vm.standalone_probe(job, max(job.caps))
+    if control["outcome"] != "TRAP_GAS_EXHAUSTED":
+        raise RunError("single-machine resource control did not trap")
+    return dict(status="PASS" if journal.final else "FAIL", general_status=result,
+                declaration_id=job.declaration_id.hex(), plan_id=job.plan_id.hex(),
+                execution_id=job.execution_id.hex(), charged_gas=journal.charged,
+                output=journal.final["output"] if journal.final else None,
+                solve_order=[event["slot"] for event in journal.events if event["kind"] == "RESERVE"],
+                acceptance_order=list(journal.accepted),
+                standalone_control=control, handoff=bool(history), before_guests=before_guests,
+                guests=guests, claim="Guest-level trusted execution on one physical host")
+
+
 def run(args: argparse.Namespace) -> dict:
     roles = guest_roles(args.guests)
     many = len(roles) > 2
@@ -558,9 +615,19 @@ def run(args: argparse.Namespace) -> dict:
     root_caps = {name: value for name, value in (("gas_limit", args.root_gas_limit),
                                                 ("output_limit", args.root_output_limit))
                  if value is not None}
-    if root_caps and not many:
+    general = getattr(args, "general", False)
+    job = None
+    execution = None
+    if general:
+        if not many or args.handoff or args.interrupt or args.retry_solve or args.leaves or root_caps:
+            raise RunError("general job requires at least three guests and its own fault and handoff options")
+        leaves = len(general_vm.CAPS)
+        budget = args.solve_budget if args.solve_budget is not None else general_vm.DEFAULT_BUDGET
+        args.solve_budget = budget
+        execution = general_vm.fixture(os.urandom(32), budget, flat=args.general_flat)
+    elif root_caps and not many:
         raise RunError("explicit whole-task limits require three or more guests")
-    if many:
+    elif many:
         leaves = args.leaves if args.leaves is not None else len(roles)
         if not len(roles) <= leaves <= MAX_LEAVES:
             raise RunError(f"leaf count must be between the guest count and {MAX_LEAVES}")
@@ -621,7 +688,8 @@ def run(args: argparse.Namespace) -> dict:
     links = guest_links(roles)
     record["planned_leaves"] = leaves
     if many:
-        record["root_limits"] = job[2]
+        if job is not None:
+            record["root_limits"] = job[2]
         record["topology"] = {"coordinator": "A", "guest_ips": {role: guest_ip(role) for role in roles},
                               "transport": "QEMU hub with host-loopback socket links"}
     def boot(directory: Path, image: Path, handoff: str | None = None) -> tuple[dict[str, Path], dict[str, str]]:
@@ -632,6 +700,15 @@ def run(args: argparse.Namespace) -> dict:
             make_disk(disk)
         processes = {}
         started = time.monotonic()
+        general_options = ()
+        if general:
+            general_options = (
+                f'aclt_execution_nonce={codec.decode(execution.execution)["nonce"].hex()}',
+                f'aclt_general_order={args.general_order}',
+                f'aclt_general_drop={int(args.general_drop)}',
+                f'aclt_general_flat={int(args.general_flat)}',
+                f'aclt_general_checkpoint={args.general_checkpoint if handoff == "before" else 0}',
+            )
         try:
             for role in (*roles[1:], roles[0]):
                 if role == roles[0]:
@@ -639,7 +716,8 @@ def run(args: argparse.Namespace) -> dict:
                 processes[role] = launch(boot_arguments(
                     role, kernel, image, disks[role], logs[role], accel, args.memory, links[roles[1]],
                     commit, args.solve_budget, recursive, leaves, links if many else None,
-                    args.interrupt if role == target else None, args.retry_solve, root_caps, handoff))
+                    args.interrupt if role == target else None, args.retry_solve, root_caps, handoff,
+                    general_options))
             deadline = started + BOOT_TIMEOUT
             for role, process in processes.items():
                 try:
@@ -659,8 +737,30 @@ def run(args: argparse.Namespace) -> dict:
         serial = {role: log.read_text(encoding="utf-8", errors="replace") for role, log in logs.items()}
         return roots, serial
 
+    def successor_image(source: Path, files) -> Path:
+        transfer = work / "transfer"
+        checkpoint = transfer / "handoff"
+        checkpoint.mkdir(parents=True)
+        for path in files:
+            shutil.copyfile(path, checkpoint / path.name)
+        cpio = work / "handoff.cpio"
+        write_cpio(transfer, cpio)
+        successor = output / "successor.cpio.gz"
+        shutil.copyfile(source, successor)
+        with successor.open("ab") as raw, gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=1, mtime=0) as stream:
+            stream.write(cpio.read_bytes())
+        return successor
+
     started = time.monotonic()
     (output / "init").write_text(INIT, encoding="utf-8")
+    if general:
+        record.update(run_general(execution, args, boot, executor, initramfs, output, record,
+                                  successor_image))
+        record["seconds"] = round(time.monotonic() - started, 2)
+        (output / "result.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        if not args.keep_work:
+            shutil.rmtree(work)
+        return record
     if args.handoff:
         before, serial = boot(output / "before", initramfs, "before")
         if ("GUEST_HANDOFF accepted=1" not in serial["A"].splitlines()
@@ -670,18 +770,8 @@ def run(args: argparse.Namespace) -> dict:
         guests_before = {role: json.loads((root / "guest.json").read_bytes()) for role, root in before.items()}
         check_topology(guests_before, record)
         check_handoff_checkpoint(before, executor, args.solve_budget, root_caps)
-        transfer = work / "transfer"
-        checkpoint = transfer / "handoff"
-        checkpoint.mkdir(parents=True)
-        for path in before["A"].iterdir():
-            if path.name != "guest.json":
-                shutil.copyfile(path, checkpoint / path.name)
-        cpio = work / "handoff.cpio"
-        write_cpio(transfer, cpio)
-        successor = output / "successor.cpio.gz"
-        shutil.copyfile(initramfs, successor)
-        with successor.open("ab") as raw, gzip.GzipFile(fileobj=raw, mode="wb", compresslevel=1, mtime=0) as stream:
-            stream.write(cpio.read_bytes())
+        successor = successor_image(initramfs, (path for path in before["A"].iterdir()
+                                                 if path.name != "guest.json"))
         roots, serial = boot(output / "after", successor, "after")
         guests_after = {role: json.loads((root / "guest.json").read_bytes()) for role, root in roots.items()}
         check_topology(guests_after, record)
@@ -779,11 +869,23 @@ def main() -> None:
     runner.add_argument("--memory", type=int, default=1024)
     runner.add_argument("--handoff", action="store_true", help="replace the coordinator after the first accepted leaf")
     runner.add_argument("--keep-work", action="store_true")
+    runner.add_argument("--general", action="store_true", help="run the distributed job contract fixture")
+    runner.add_argument("--general-order", choices=("0123", "3102", "1023"), default="0123",
+                        help="priority by slot; dependencies always gate dispatch")
+    runner.add_argument("--general-drop", action="store_true", help="drop B's first solve reply")
+    runner.add_argument("--general-flat", action="store_true", help="use the alternative flat merge plan")
+    runner.add_argument("--general-checkpoint", choices=(0, 1, 2), type=int, default=0,
+                        help="handoff after this many accepted slots")
     runner.add_argument("--retry-solve", action="store_true",
                         help="allow one budgeted coordinator retry of an eligible remote solve")
     runner.add_argument("--interrupt", nargs=2, metavar=("MODE", "OPERATION"),
                         help="inject worker-exit or disconnect after receiving SOLVE-i or VERIFY-i")
     args = parser.parse_args()
+    if not args.general and (args.general_drop or args.general_flat or args.general_checkpoint
+                             or args.general_order != "0123"):
+        runner.error("general scenario options require --general")
+    if args.general_drop and args.general_checkpoint and not args.general_order.startswith("1"):
+        runner.error("for a combined scenario, choose --general-order 1023 to drop before handoff")
     if args.interrupt is not None and args.interrupt[0] not in ("worker-exit", "disconnect", "drop-reply"):
         runner.error("interruption mode must be worker-exit, disconnect, or drop-reply")
     try:
@@ -791,6 +893,10 @@ def main() -> None:
     except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as error:
         print(json.dumps({"status": "FAIL", "error": str(error)}, indent=2))
         raise SystemExit(1)
+    if args.general:
+        print(json.dumps({key: record[key] for key in ("status", "execution_id", "charged_gas",
+                                                       "output", "seconds")}, indent=2))
+        raise SystemExit(0 if record["status"] == "PASS" else 1)
     if record["status"] == "FAIL":
         print(json.dumps({key: record[key] for key in ("status", "reason", "operation", "guest",
                                                        "leaf_index", "output_published")}, indent=2))
