@@ -39,3 +39,16 @@ make test-minimal-verifier-multivm \
 派发前检查固定统计工件的[整题资源下限](../../docs/testing/MULTIVM-ROOT-LIMITS-20261113.md)。三来宾及以上可用 `--root-gas-limit` 和 `--root-output-limit` 指定整题上限，分片求解预算仍用 `--solve-budget`。
 
 三来宾三叶作业可使用 `--handoff` 测试由宿主串行化的[协调器交接](../../docs/testing/MULTIVM-HANDOFF-20261113.md)，需要显式分片求解预算。
+
+
+## 通用作业契约切片
+
+使用 `--general` 运行整数向量任务族，四个槽位按树形或平铺归并。来宾数与槽位数独立配置，至少三个来宾才能为补算保留不同的求解方和验证方。原统计实验继续使用其原入口。
+
+```sh
+python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
+  --general --guests 3 --general-order 1023 --general-drop --general-checkpoint 2 \
+  --kernel /path/to/vmlinuz --output /tmp/aclt-general-handoff
+```
+
+默认求解预算是 `41170`。槽位 1 的首算在执行后丢弃答复时全额计入 `8232`，补算仍要独立预留。`--solve-budget 41169` 配合丢答复场景会在补算派发前停止并返回退出码 1。证据目录保存声明、计划、执行实例、逐端 CBOR 帧、可重放日志、来宾报告，以及通过重放校验的发布记录。详见[三来宾联合验收](../../docs/testing/MULTIVM-GENERAL-JOB-20261113.md)。
