@@ -585,8 +585,21 @@ def run(args: argparse.Namespace) -> dict:
         record.update(failure, fault_mode=mode, interrupted_transcript_replayed=True)
     elif many and failure_path.is_file():
         record.update(json.loads(failure_path.read_bytes()))
-    if many and (roots["A"] / "solve-attempts.json").is_file():
-        record["solve_accounting"] = json.loads((roots["A"] / "solve-attempts.json").read_bytes())
+    ledger = roots["A"] / "solve-attempts.json"
+    if many and ledger.is_file():
+        record["solve_accounting"] = json.loads(ledger.read_bytes())
+    if many and args.retry_solve and args.interrupt is None and record.get("status") != "FAIL":
+        unanswered = [row for row in record["solve_accounting"]["attempts"] if row["status"] == "NO_REPLY"]
+        if unanswered:
+            if len(unanswered) != 1:
+                raise RunError("expected at most one unanswered solve in a recovered job")
+            operation = f"SOLVE-{unanswered[0]['leaf_index']}"
+            target, _ = fault_target(roles, leaves, operation)
+            recovered = True
+            mode = None
+            with TemporaryDirectory(prefix="replay-", dir=work) as replay:
+                record.update(replay_many(roots, leaves, executor, Path(replay), solve_budget=args.solve_budget,
+                                          interrupted=operation, retry_solve=True, account=True))
     if record.get("status") == "FAIL":
         (output / "failure.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
         return record
@@ -601,7 +614,8 @@ def run(args: argparse.Namespace) -> dict:
     if many:
         check_topology(guests, record)
         if recovered:
-            missing = (target, operation) if mode != "drop-reply" else None
+            response = roots[target] / f"{operation}-response.cbor"
+            missing = None if response.is_file() else (target, operation)
             record["timings"] = read_timings(roots, leaves, retry=operation, missing_timing=missing)
         else:
             record["timings"] = read_timings(roots, leaves)
