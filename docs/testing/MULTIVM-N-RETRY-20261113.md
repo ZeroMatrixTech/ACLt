@@ -1,6 +1,6 @@
 # 最简验证机 · 无答复的求解计量与补算（2026-11-13）
 
-实跑源码为 `f47327eaa2a5f64db9ce1e8d796c67f2905263db`。三台同宿主 QEMU 来宾以 TCG、每来宾 1024 MiB 运行固定 `stats-int-v1` 三叶树作业。第二片对应 `SOLVE-1`、输入区间 `[2, 4)`，其额度是 8719 gas。
+实跑源码为 `10a115252baa56560660753e216084fbe671310f`。三台同宿主 QEMU 来宾以 TCG、每来宾 1024 MiB 运行固定 `stats-int-v1` 三叶树作业。第二片对应 `SOLVE-1`、输入区间 `[2, 4)`，其额度是 8719 gas。
 
 | 场景 | 求解预算 | 计入 gas | 结果 |
 |---|---:|---:|---|
@@ -19,6 +19,6 @@ python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
   --solve-budget 34768 --retry-solve --interrupt drop-reply SOLVE-1
 ```
 
-[证据包](public-evidence/MULTIVM-N-RETRY-public-evidence.tar.gz) SHA-256 为 `de7b3bd4e379c35df2b73cd20e27aad58dbb9a57f38f2fe4592ec661632429a8`。其中三组注入实跑保留来宾日志、答复、逐次求解账和宿主摘要。回归重放预算边界，并检查无答复尝试被少计时会拒绝。
+[证据包](public-evidence/MULTIVM-N-RETRY-public-evidence.tar.gz) SHA-256 为 `6be876c58a4ba2f30d3cbbb3fe38ffd62cb46902758019aeda962a80aef78b11`。包含正常对照和三组注入实跑，保留来宾日志、答复、逐次求解账和宿主摘要。回归重放预算边界，并检查无答复尝试被少计时会拒绝。
 
 后续蒙特卡洛模拟可把无答复事件概率作为输入，对每次无答复按其分片额度计入 gas，按同一预算规则统计额外消耗和作业完成率。上述注入数据校验计量规则，故障率仍需另行估计。同宿主来宾的故障也可能相关。

@@ -126,7 +126,7 @@ edb924682deb72f18060a8ef61cf86fbd5c8d20192246e960de620f2711f1127  docs/testing/M
 58310629585ca326d251964c2d0dd379b02fe65d16a0598f3197e90b00521ccf  docs/testing/MULTIVM-20261112.summary.json
 fb076b689c1531762d28762882452fd5e7e6f910485ed2322528f042d4aa69fa  docs/testing/MULTIVM-N-20261112.md
 4cf914626a68d8c2b968bcb9bee0dd2115b313d3954b1c70335f6ba0cea815cf  docs/testing/MULTIVM-N-FAULTS-20261113.md
-a73a3bdaa70bb57617250a78c22a61d183fde30df7d45095d5c40abb33b851db  docs/testing/MULTIVM-N-RETRY-20261113.md
+1375fa59040da46877f6c846d02972649bb02d0ed0d8bf23f148f9f5ac2c8903  docs/testing/MULTIVM-N-RETRY-20261113.md
 2a66e65a9417d3e470cde1421fa523e3dfc830abe67b8716f7bc5758a33bbdef  docs/testing/P0-1B-INVENTORY-20261023.md
 1ad67951baf2e274374052b18e843968f09c3273ea37be05600151db559782c8  docs/testing/PROFILE-AUTHORITY-R11-20261109.md
 162397c4f63f54ca46c630dd64899084e86aa063e9124928e5958e8989dd0794  docs/testing/PROFILE-AUTHORITY-R11-20261109.summary.json
@@ -213,7 +213,7 @@ acbbc8b12be5f54a745dedb2e38b3598df48133b0e4bd839ef6ea942be255643  docs/testing/p
 7219e251b4d09d3696ed9b447b651de12f2edd0d0efc408900db379afe1e475e  docs/testing/public-evidence/MULTIVM-20261112-public-evidence.tar.gz
 b8cb73304e8a99ac4eeed55f1c71a2d115c356a2e19fa156bb98e2fb1b8f5eee  docs/testing/public-evidence/MULTIVM-N-20261112-public-evidence.tar.gz
 a30e291bee2195ea234a23251a30fcfba25cacebd0367d41ad54abec251d99d5  docs/testing/public-evidence/MULTIVM-N-FAULTS-public-evidence.tar.gz
-de7b3bd4e379c35df2b73cd20e27aad58dbb9a57f38f2fe4592ec661632429a8  docs/testing/public-evidence/MULTIVM-N-RETRY-public-evidence.tar.gz
+6be876c58a4ba2f30d3cbbb3fe38ffd62cb46902758019aeda962a80aef78b11  docs/testing/public-evidence/MULTIVM-N-RETRY-public-evidence.tar.gz
 1339e42d9c94da1c191caa38163897b76ea65dd083c3b472b62d61796cb1a386  docs/testing/public-evidence/PROFILE-AUTHORITY-R11-source.tar.gz
 2ef2edc0b8a94c261d13a589fb90e4386ae18ced1452fa3de8bf37e362b4f322  docs/testing/public-evidence/PROFILE-COMMITMENTS-R8-source.tar.gz
 8586f9f449cf2899c469f0fdcc4b5d440aa21a534a63d8599396bba2a3ec75e9  docs/testing/public-evidence/PROFILE-CREATION-R6-source.tar.gz
