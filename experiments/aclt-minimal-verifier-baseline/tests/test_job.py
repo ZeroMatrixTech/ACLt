@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from baseline import PROBE, QUESTION_TAG, Verdict, ask, solve, verify
 from dualhost import fixture
 from job import (
-    BOUNDED_RULE, HEADER, ROW, VALUE, merge_job, prepare_job, record_verdict, stats_gas_bound,
+    BOUNDED_RULE, HEADER, ROW, VALUE, admit_stats_root, merge_job, prepare_job, record_verdict, stats_gas_bound,
 )
 from lan import decode_answer, handle_request, operations, request, run_job
 from tree import TREE_RULE, merge_tree, prepare_tree, tree_slots
@@ -133,6 +133,36 @@ class JobTests(unittest.TestCase):
         whole = solve(ask(self.artifact, self.data, limits), self.artifact, self.data)
         self.assertEqual(codec.decode(whole.outcome), {"outcome": "TRAP_GAS_EXHAUSTED", "gas_used": 9016})
         self.assertEqual(len(merge_job(plan, self.artifact, self.data, limits, submissions)), 144)
+
+    def test_whole_task_resource_boundary_precedes_dispatch(self):
+        exact = dict(self.limits, gas_limit=9425, output_limit=144, call_depth_limit=1)
+        question = admit_stats_root(self.artifact, self.data, exact)
+        answer = solve(question, self.artifact, self.data)
+        outcome = codec.decode(answer.outcome)
+        self.assertEqual((outcome["outcome"], outcome["gas_used"], len(outcome["output"])),
+                         ("OK", 9425, 144))
+        self.assertEqual(verify(question, self.artifact, self.data, answer, executor=self.executor),
+                         Verdict("ACCEPT"))
+        for field, expected_trap, message in (
+            ("gas_limit", "TRAP_GAS_EXHAUSTED", "whole-task gas limit needs at least 9425"),
+            ("output_limit", "TRAP_OUTPUT_LIMIT", "whole-task output limit needs at least 144 bytes"),
+        ):
+            short = dict(exact, **{field: exact[field] - 1})
+            question = ask(self.artifact, self.data, short)
+            answer = solve(question, self.artifact, self.data)
+            self.assertEqual(codec.decode(answer.outcome)["outcome"], expected_trap)
+            self.assertEqual(verify(question, self.artifact, self.data, answer, executor=self.executor),
+                             Verdict("ACCEPT"))
+            for recursive in (False, True):
+                with self.subTest(field=field, recursive=recursive), TemporaryDirectory() as directory:
+                    output = Path(directory)
+                    with patch("lan.send") as send, patch("lan.solve") as execute:
+                        with self.assertRaisesRegex(codec.CodecError, message):
+                            run_job(None, self.artifact, self.data, short, self.executor, output,
+                                    recursive=recursive)
+                    send.assert_not_called()
+                    execute.assert_not_called()
+                    self.assertEqual(list(output.iterdir()), [])
 
     def test_static_metering_coefficients_from_pinned_wasm_paths(self):
         module = validate(self.artifact, self.limits)

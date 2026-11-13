@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 import time
 
-from baseline import Verdict, ask, solve
+from baseline import Verdict, solve
 from dualhost import fixture
-from job import HEADER, JOB_TAG, VALUE, record_verdict
+from job import HEADER, JOB_TAG, VALUE, admit_stats_root, record_verdict
 from lan import decode_answer, handle_request, request
 from tools.verification_profile import codec
 from tree import merge_tree, prepare_tree
@@ -29,14 +29,14 @@ def guest_ip(role: str) -> str:
     return f"10.0.3.{ord(role) - ord('A') + 1}"
 
 
-def job_fixture(leaf_count: int) -> tuple[bytes, bytes, dict]:
+def job_fixture(leaf_count: int, root_caps: dict | None = None) -> tuple[bytes, bytes, dict]:
     artifact, data, limits = fixture()
     if leaf_count > 3:
         # Preserve the original three-leaf fixture. For larger topologies, use
         # deterministic two-element blocks, with a short last block.
         values = range(1 - leaf_count, leaf_count)
         data = HEADER.pack(2, len(values)) + b"".join(VALUE.pack(value) for value in values)
-    return artifact, data, limits
+    return artifact, data, limits | (root_caps or {})
 
 
 def assignments(roles: tuple[str, ...], leaf_count: int):
@@ -73,11 +73,14 @@ def fault_target(roles: tuple[str, ...], leaf_count: int, value: str) -> tuple[s
 
 def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Exchange, *,
              solve_budget: int | None, elapsed_ns: dict[str, int] | None = None,
-             retry_solve: bool = False, account: bool = False) -> dict:
+             retry_solve: bool = False, account: bool = False, root_caps: dict | None = None) -> dict:
     started = time.monotonic_ns()
-    artifact, data, limits = job_fixture(leaf_count)
+    artifact, data, limits = job_fixture(leaf_count, root_caps)
+    reference_question = admit_stats_root(artifact, data, limits)
     plan, leaves = prepare_tree(artifact, data, limits, solve_budget=solve_budget)
     job_id = codec.domain_hash(JOB_TAG, plan)
+    if root_caps:
+        (output / "root-question.cbor").write_bytes(reference_question)
     (output / "plan.cbor").write_bytes(plan)
     (output / "original-input.bin").write_bytes(data)
     (output / "artifact.cbor").write_bytes(artifact)
@@ -171,7 +174,7 @@ def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Ex
     merge_ns = time.monotonic_ns() - merge_started
     reverse = merge_tree(plan, artifact, data, limits, submissions[::-1], solve_budget=solve_budget)
     reference_started = time.monotonic_ns()
-    reference = codec.decode(solve(ask(artifact, data, limits), artifact, data).outcome)
+    reference = codec.decode(solve(reference_question, artifact, data).outcome)
     reference_ns = time.monotonic_ns() - reference_started
     codec.need(reference["outcome"] == "OK"
                and tree.output == reverse.output == tree.flat_output == reverse.flat_output == reference["output"],
@@ -191,11 +194,11 @@ def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Ex
 
 def replay_many(roots: dict[str, Path], leaf_count: int, executor: Path, scratch: Path, *,
                 solve_budget: int | None, interrupted: str | None = None,
-                retry_solve: bool = False, account: bool = False) -> dict:
+                retry_solve: bool = False, account: bool = False, root_caps: dict | None = None) -> dict:
     roles = guest_roles(len(roots))
     codec.need(set(roots) == set(roles), "unexpected guest roles")
     coordinator = roots[roles[0]]
-    _, leaves = prepare_tree(*job_fixture(leaf_count), solve_budget=solve_budget)
+    _, leaves = prepare_tree(*job_fixture(leaf_count, root_caps), solve_budget=solve_budget)
     plans = {}
     expected_files = {role: set() for role in roles}
 
@@ -231,7 +234,7 @@ def replay_many(roots: dict[str, Path], leaf_count: int, executor: Path, scratch
 
     try:
         summary = run_many(roles, leaf_count, scratch, exchange, solve_budget=solve_budget,
-                           retry_solve=retry_solve, account=account)
+                           retry_solve=retry_solve, account=account, root_caps=root_caps)
     except IncompleteExchange:
         if interrupted is None:
             raise

@@ -27,7 +27,7 @@ import time
 
 from baseline import ROOT, ask, solve
 from dualhost import fixture, snapshot
-from job import JOB_TAG, merge_job, prepare_job
+from job import JOB_TAG, admit_stats_root, merge_job, prepare_job
 from lan import decode_answer, operations, request
 from multivm_job import MAX_LEAVES, fault_target, guest_ip, guest_roles, job_fixture, peer_operations, replay_many
 from tools.verification_profile import codec
@@ -209,17 +209,20 @@ def make_disk(path: Path) -> None:
 
 def planned_leaf_count(budget: int | None, recursive: bool) -> int:
     """Plan the job on the host so both guests agree on its shape before boot."""
+    job = fixture()
+    admit_stats_root(*job)
     if recursive:
-        _, slices = prepare_tree(*fixture(), solve_budget=budget)
+        _, slices = prepare_tree(*job, solve_budget=budget)
     else:
-        _, slices = prepare_job(*fixture(), allocate_gas=True, solve_budget=budget)
+        _, slices = prepare_job(*job, allocate_gas=True, solve_budget=budget)
     return len(slices)
 
 
 def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Path,
                    accel: str, memory: int, link: int, commit: str, budget: int | None,
                    recursive: bool, leaves: int, links: dict[str, int] | None = None,
-                   interrupt: tuple[str, str] | None = None, retry_solve: bool = False) -> list[str]:
+                   interrupt: tuple[str, str] | None = None, retry_solve: bool = False,
+                   root_caps: dict | None = None) -> list[str]:
     ip = GUEST_A if role == "A" else GUEST_B
     peer = GUEST_B if role == "A" else GUEST_A
     if links is not None:
@@ -229,6 +232,7 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
                f"aclt_leaves={leaves}"]
     if links is not None:
         options.append(f"aclt_guests={len(links) + 1}")
+    options.extend(f"aclt_root_{name}={value}" for name, value in (root_caps or {}).items())
     if retry_solve:
         options.append("aclt_retry_solve=1")
     if interrupt is not None:
@@ -461,7 +465,8 @@ def guest_links(roles: tuple[str, ...]) -> dict[str, int]:
 
 def check_interruption(roots: dict[str, Path], logs: dict[str, str], executor: Path, scratch: Path,
                        leaves: int, budget: int | None, mode: str, operation: str, *,
-                       retry_solve: bool = False, recovered: bool = False, account: bool = False) -> dict:
+                       retry_solve: bool = False, recovered: bool = False, account: bool = False,
+                       root_caps: dict | None = None) -> dict:
     roles = guest_roles(len(roots))
     owner, _ = fault_target(roles, leaves, operation)
     marker = f"GUEST_INTERRUPT role={owner} operation={operation} mode={mode}"
@@ -475,18 +480,25 @@ def check_interruption(roots: dict[str, Path], logs: dict[str, str], executor: P
             or (not recovered and f"GUEST_JOB_INCOMPLETE operation={operation}" not in logs["A"].splitlines())):
         raise RunError("expected interruption or coordinator failure marker is missing")
     return replay_many(roots, leaves, executor, scratch, solve_budget=budget, interrupted=operation,
-                       retry_solve=retry_solve, account=account)
+                       retry_solve=retry_solve, account=account, root_caps=root_caps)
 
 
 def run(args: argparse.Namespace) -> dict:
     roles = guest_roles(args.guests)
     many = len(roles) > 2
     recursive = args.recursive or many
+    root_caps = {name: value for name, value in (("gas_limit", args.root_gas_limit),
+                                                ("output_limit", args.root_output_limit))
+                 if value is not None}
+    if root_caps and not many:
+        raise RunError("explicit whole-task limits require three or more guests")
     if many:
         leaves = args.leaves if args.leaves is not None else len(roles)
         if not len(roles) <= leaves <= MAX_LEAVES:
             raise RunError(f"leaf count must be between the guest count and {MAX_LEAVES}")
-        prepare_tree(*job_fixture(leaves), solve_budget=args.solve_budget)
+        job = job_fixture(leaves, root_caps)
+        admit_stats_root(*job)
+        prepare_tree(*job, solve_budget=args.solve_budget)
     else:
         if args.leaves is not None:
             raise RunError("explicit leaf count requires three or more guests")
@@ -538,6 +550,7 @@ def run(args: argparse.Namespace) -> dict:
     links = guest_links(roles)
     record["planned_leaves"] = leaves
     if many:
+        record["root_limits"] = job[2]
         record["topology"] = {"coordinator": "A", "guest_ips": {role: guest_ip(role) for role in roles},
                               "transport": "QEMU hub with host-loopback socket links"}
     logs = {role: output / f"{role}-serial.log" for role in roles}
@@ -553,7 +566,7 @@ def run(args: argparse.Namespace) -> dict:
             processes[role] = launch(boot_arguments(
                 role, kernel, initramfs, disks[role], logs[role], accel, args.memory, links[roles[1]],
                 commit, args.solve_budget, recursive, leaves, links if many else None,
-                args.interrupt if role == target else None, args.retry_solve))
+                args.interrupt if role == target else None, args.retry_solve, root_caps))
         deadline = started + BOOT_TIMEOUT
         for role, process in processes.items():
             try:
@@ -581,7 +594,7 @@ def run(args: argparse.Namespace) -> dict:
         with TemporaryDirectory(prefix="replay-", dir=work) as replay:
             failure = check_interruption(roots, serial, executor, Path(replay), leaves, args.solve_budget,
                                          mode, operation, retry_solve=args.retry_solve,
-                                         recovered=recovered, account=True)
+                                         recovered=recovered, account=True, root_caps=root_caps)
         record.update(failure, fault_mode=mode, interrupted_transcript_replayed=True)
     elif many and failure_path.is_file():
         record.update(json.loads(failure_path.read_bytes()))
@@ -599,7 +612,7 @@ def run(args: argparse.Namespace) -> dict:
             mode = None
             with TemporaryDirectory(prefix="replay-", dir=work) as replay:
                 record.update(replay_many(roots, leaves, executor, Path(replay), solve_budget=args.solve_budget,
-                                          interrupted=operation, retry_solve=True, account=True))
+                                          interrupted=operation, retry_solve=True, account=True, root_caps=root_caps))
     if record.get("status") == "FAIL":
         (output / "failure.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
         return record
@@ -621,7 +634,7 @@ def run(args: argparse.Namespace) -> dict:
             record["timings"] = read_timings(roots, leaves)
             with TemporaryDirectory(prefix="replay-", dir=work) as replay:
                 record.update(replay_many(roots, leaves, executor, Path(replay), solve_budget=args.solve_budget,
-                                          account=True))
+                                          account=True, root_caps=root_caps))
     else:
         check_guests(guests["A"], guests["B"], commit=commit, executor_sha256=record["executor_sha256"],
                      source_manifest_sha256=source_manifest_sha256)
@@ -650,6 +663,8 @@ def main() -> None:
     runner.add_argument("--guests", type=int, default=2, help="guest count; three or more use a tree job")
     runner.add_argument("--accel", choices=("kvm", "tcg"), default="kvm")
     runner.add_argument("--leaves", type=int, help="stats blocks in a tree job with three or more guests")
+    runner.add_argument("--root-gas-limit", type=int, help="whole-task gas cap for a three-or-more guest job")
+    runner.add_argument("--root-output-limit", type=int, help="whole-task output bytes for a three-or-more guest job")
     runner.add_argument("--memory", type=int, default=1024)
     runner.add_argument("--keep-work", action="store_true")
     runner.add_argument("--retry-solve", action="store_true",

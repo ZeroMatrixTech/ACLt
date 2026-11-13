@@ -19,7 +19,7 @@ import tarfile
 import unicodedata
 
 from baseline import LIMITS, PROBE, ROOT
-from job import HEADER, VALUE, prepare_job
+from job import HEADER, VALUE, admit_stats_root, prepare_job
 from lan import TIMEOUT, operations, run_job, serve
 from tree import prepare_tree
 
@@ -72,6 +72,7 @@ def fixture() -> tuple[bytes, bytes, dict]:
 def run(peer: str, address: str, remote_root: str, output: Path, *, solve_budget: int | None = None,
         recursive: bool = False) -> None:
     job = fixture()
+    admit_stats_root(*job)
     if recursive:
         _, slices = prepare_tree(*job, solve_budget=solve_budget)
     else:
