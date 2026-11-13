@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Job messages over the existing length-prefixed LAN transport."""
 
+from collections.abc import Callable
 import hashlib
 import json
 from pathlib import Path
@@ -107,7 +108,8 @@ def handle_request(raw: bytes, expected_action: str, executor: Path, *, prior_pl
 
 def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port: int = 0,
           schedule: list[tuple[str, int, str]] | None = None, expected_peer: str | None = None,
-          elapsed_ns: dict[str, int] | None = None) -> dict:
+          elapsed_ns: dict[str, int] | None = None,
+          on_request: Callable[[str, socket.socket], None] | None = None) -> dict:
     output.mkdir(mode=0o700)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.bind((bind, port))
@@ -124,6 +126,8 @@ def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port:
             for action, index, label in operations(leaf_count) if schedule is None else schedule:
                 raw = receive(connection)
                 (output / f"{label}-request.cbor").write_bytes(raw)
+                if on_request is not None:
+                    on_request(label, connection)
                 started = time.monotonic_ns()
                 plan, response = handle_request(raw, action, executor, prior_plan=plan,
                                                 leaf_index=index, leaf_count=leaf_count)

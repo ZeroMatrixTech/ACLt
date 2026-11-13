@@ -29,7 +29,7 @@ from baseline import ROOT, ask, solve
 from dualhost import fixture, snapshot
 from job import JOB_TAG, merge_job, prepare_job
 from lan import decode_answer, operations, request
-from multivm_job import MAX_LEAVES, guest_ip, guest_roles, job_fixture, peer_operations, replay_many
+from multivm_job import MAX_LEAVES, fault_target, guest_ip, guest_roles, job_fixture, peer_operations, replay_many
 from tools.verification_profile import codec
 from tree import merge_tree, prepare_tree
 
@@ -218,7 +218,8 @@ def planned_leaf_count(budget: int | None, recursive: bool) -> int:
 
 def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Path,
                    accel: str, memory: int, link: int, commit: str, budget: int | None,
-                   recursive: bool, leaves: int, links: dict[str, int] | None = None) -> list[str]:
+                   recursive: bool, leaves: int, links: dict[str, int] | None = None,
+                   interrupt: tuple[str, str] | None = None) -> list[str]:
     ip = GUEST_A if role == "A" else GUEST_B
     peer = GUEST_B if role == "A" else GUEST_A
     if links is not None:
@@ -228,6 +229,9 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
                f"aclt_leaves={leaves}"]
     if links is not None:
         options.append(f"aclt_guests={len(links) + 1}")
+    if interrupt is not None:
+        mode, operation = interrupt
+        options.extend((f"aclt_interrupt={operation}", f"aclt_interrupt_mode={mode}"))
     if budget is not None:
         options.append(f"aclt_budget={budget}")
     if recursive:
@@ -449,6 +453,20 @@ def guest_links(roles: tuple[str, ...]) -> dict[str, int]:
         return links
 
 
+def check_interruption(roots: dict[str, Path], logs: dict[str, str], executor: Path, scratch: Path,
+                       leaves: int, budget: int | None, mode: str, operation: str) -> dict:
+    roles = guest_roles(len(roots))
+    owner, _ = fault_target(roles, leaves, operation)
+    marker = f"GUEST_INTERRUPT role={owner} operation={operation} mode={mode}"
+    owner_exit = "GUEST_EXIT=75" if mode == "worker-exit" else "GUEST_EXIT=0"
+    if ([line for line in logs[owner].splitlines() if line.startswith("GUEST_INTERRUPT ")] != [marker]
+            or owner_exit not in logs[owner].splitlines()
+            or "GUEST_EXIT=1" not in logs["A"].splitlines()
+            or f"GUEST_JOB_INCOMPLETE operation={operation}" not in logs["A"].splitlines()):
+        raise RunError("expected interruption or coordinator failure marker is missing")
+    return replay_many(roots, leaves, executor, scratch, solve_budget=budget, interrupted=operation)
+
+
 def run(args: argparse.Namespace) -> dict:
     roles = guest_roles(args.guests)
     many = len(roles) > 2
@@ -462,6 +480,11 @@ def run(args: argparse.Namespace) -> dict:
         if args.leaves is not None:
             raise RunError("explicit leaf count requires three or more guests")
         leaves = planned_leaf_count(args.solve_budget, recursive)
+    target = None
+    if args.interrupt is not None:
+        if not many:
+            raise RunError("interruption scenarios require three or more guests")
+        target, _ = fault_target(roles, leaves, args.interrupt[1])
     output = args.output.resolve()
     if output.exists():
         raise RunError(f"output directory already exists: {output}")
@@ -516,7 +539,8 @@ def run(args: argparse.Namespace) -> dict:
                 time.sleep(1)
             processes[role] = launch(boot_arguments(
                 role, kernel, initramfs, disks[role], logs[role], accel, args.memory, links[roles[1]],
-                commit, args.solve_budget, recursive, leaves, links if many else None))
+                commit, args.solve_budget, recursive, leaves, links if many else None,
+                args.interrupt if role == target else None))
         deadline = started + BOOT_TIMEOUT
         for role, process in processes.items():
             try:
@@ -529,19 +553,29 @@ def run(args: argparse.Namespace) -> dict:
         for process in processes.values():
             terminate(process)
     record["seconds"] = round(time.monotonic() - started, 2)
-    for role in roles:
-        log = logs[role].read_text(encoding="utf-8", errors="replace")
-        if "GUEST_EXIT=0" not in log.splitlines():
-            raise RunError(f"guest {role} did not report a clean exit")
-        if "Traceback" in log:
-            raise RunError(f"guest {role} raised an exception")
+    serial = {role: log.read_text(encoding="utf-8", errors="replace") for role, log in logs.items()}
     (output / "init").write_text(INIT, encoding="utf-8")
     roots = {}
     for role in roles:
-        # the guest mounts its evidence disk at /evidence and writes /evidence/<role>
+        # The guest mounts its disk at /evidence and writes /evidence/<role>.
         disk_root = output / role
         extract(disks[role], disk_root)
         roots[role] = disk_root / role
+    failure_path = roots["A"] / "failure.json"
+    if args.interrupt is not None:
+        mode, operation = args.interrupt
+        with TemporaryDirectory(prefix="replay-", dir=work) as replay:
+            failure = check_interruption(roots, serial, executor, Path(replay), leaves, args.solve_budget,
+                                         mode, operation)
+        record.update(failure, fault_mode=mode, interrupted_transcript_replayed=True)
+    elif many and failure_path.is_file():
+        record.update(json.loads(failure_path.read_bytes()))
+    if record.get("status") == "FAIL":
+        (output / "failure.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+        return record
+    for role, log in serial.items():
+        if "GUEST_EXIT=0" not in log.splitlines() or "Traceback" in log:
+            raise RunError(f"guest {role} did not report a clean exit")
     for role in roles:
         if not (roots[role] / "guest.json").is_file():
             raise RunError(f"guest {role} left no guest.json on its evidence disk")
@@ -581,11 +615,19 @@ def main() -> None:
     runner.add_argument("--leaves", type=int, help="stats blocks in a tree job with three or more guests")
     runner.add_argument("--memory", type=int, default=1024)
     runner.add_argument("--keep-work", action="store_true")
+    runner.add_argument("--interrupt", nargs=2, metavar=("MODE", "OPERATION"),
+                        help="inject worker-exit or disconnect after receiving SOLVE-i or VERIFY-i")
     args = parser.parse_args()
+    if args.interrupt is not None and args.interrupt[0] not in ("worker-exit", "disconnect"):
+        runner.error("interruption mode must be worker-exit or disconnect")
     try:
         record = run(args)
     except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as error:
         print(json.dumps({"status": "FAIL", "error": str(error)}, indent=2))
+        raise SystemExit(1)
+    if record["status"] == "FAIL":
+        print(json.dumps({key: record[key] for key in ("status", "reason", "operation", "guest",
+                                                       "leaf_index", "output_published")}, indent=2))
         raise SystemExit(1)
     print(json.dumps({key: record[key] for key in ("status", "seconds", "guest_count", "slices", "job_id",
                                                    "output_sha256", "lan_transcript_equal",

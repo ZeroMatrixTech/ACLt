@@ -5,6 +5,7 @@
 from contextlib import ExitStack
 import hashlib
 import json
+import os
 from pathlib import Path
 import platform
 import socket
@@ -15,12 +16,13 @@ sys.path[:0] = ["/repo", "/repo/experiments/aclt-minimal-verifier-baseline"]
 
 from dualhost import fixture
 from lan import TIMEOUT, handle_request, run_job, serve
-from multivm_job import guest_ip, guest_roles, label, peer_operations, run_many
+from multivm_job import IncompleteExchange, guest_ip, guest_roles, label, peer_operations, run_many
 from tools.formal_migration.s2_transport import receive, send
 
 EVIDENCE = Path("/evidence")
 EXECUTOR = Path("/executor")
 CONNECT_TIMEOUT = 60
+FAULT_EXIT = 75
 
 
 def options() -> dict:
@@ -66,16 +68,38 @@ def connect(peer: str, port: int) -> socket.socket:
             time.sleep(0.2)
 
 
-def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: int, report: dict) -> None:
+class InjectedDisconnect(RuntimeError):
+    """The experiment intentionally closed the worker's TCP connection."""
+
+
+def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: int, report: dict) -> int:
     roles = guest_roles(int(pairs["aclt_guests"]))
     output = EVIDENCE / role
     coordinator = roles[0]
     operations_ns = {}
     elapsed_ns = {}
     if role != coordinator:
-        bounds = serve(guest_ip(role), EXECUTOR, output, leaf_count=leaves, port=port,
-                       schedule=peer_operations(roles, leaves, role), expected_peer=guest_ip(coordinator),
-                       elapsed_ns=operations_ns)
+        target = pairs.get("aclt_interrupt")
+        mode = pairs.get("aclt_interrupt_mode")
+
+        def interrupt(operation: str, connection: socket.socket) -> None:
+            if operation != target:
+                return
+            print(f"GUEST_INTERRUPT role={role} operation={operation} mode={mode}", flush=True)
+            if mode == "worker-exit":
+                os._exit(FAULT_EXIT)
+            connection.shutdown(socket.SHUT_RDWR)
+            raise InjectedDisconnect
+
+        try:
+            bounds = serve(guest_ip(role), EXECUTOR, output, leaf_count=leaves, port=port,
+                           schedule=peer_operations(roles, leaves, role), expected_peer=guest_ip(coordinator),
+                           elapsed_ns=operations_ns, on_request=interrupt if target else None)
+        except InjectedDisconnect:
+            return 0
+        except OSError as error:
+            print(f"GUEST_TRANSPORT_STOP role={role} reason={error}", flush=True)
+            return 1
         report.update(local_socket_ip=bounds["local_ip"], peer_socket_ip=bounds["peer_ip"])
     else:
         output.mkdir(mode=0o700)
@@ -101,11 +125,16 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
                 send(connection, raw)
                 return receive(connection)
 
-            summary = run_many(roles, leaves, output, exchange, solve_budget=budget, elapsed_ns=elapsed_ns)
+            try:
+                summary = run_many(roles, leaves, output, exchange, solve_budget=budget, elapsed_ns=elapsed_ns)
+            except IncompleteExchange as error:
+                print(f"GUEST_JOB_INCOMPLETE operation={error}", flush=True)
+                return 1
             print(f"GUEST_RESULT slices={len(summary['slices'])}", flush=True)
     (output / "timings.json").write_text(json.dumps(dict(operations_ns=operations_ns, **elapsed_ns), indent=2)
                                          + "\n", encoding="utf-8")
     (output / "guest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return 0
 
 
 def main() -> int:
@@ -118,8 +147,7 @@ def main() -> int:
     print(f"GUEST_CONF role={role} port={port} leaves={leaves}", flush=True)
     report = identity(role, pairs)
     if "aclt_guests" in pairs:
-        run_topology(role, pairs, port, budget, leaves, report)
-        return 0
+        return run_topology(role, pairs, port, budget, leaves, report)
     if role == "B":
         bounds = serve(pairs["aclt_ip"].split("/")[0], EXECUTOR, EVIDENCE / "B", leaf_count=leaves,
                        port=port)
