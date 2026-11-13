@@ -16,7 +16,7 @@ sys.path[:0] = ["/repo", "/repo/experiments/aclt-minimal-verifier-baseline"]
 
 from dualhost import fixture
 from lan import TIMEOUT, handle_request, run_job, serve
-from multivm_job import IncompleteExchange, guest_ip, guest_roles, label, peer_operations, run_many
+from multivm_job import IncompleteExchange, assignments, guest_ip, guest_roles, label, peer_operations, run_many
 from tools.formal_migration.s2_transport import receive, send
 
 EVIDENCE = Path("/evidence")
@@ -85,8 +85,11 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
         def interrupt(operation: str, connection: socket.socket) -> None:
             if operation != target:
                 return
+            report.update(local_socket_ip=connection.getsockname()[0], peer_socket_ip=connection.getpeername()[0])
             print(f"GUEST_INTERRUPT role={role} operation={operation} mode={mode}", flush=True)
             if mode == "worker-exit":
+                (output / "timings.json").write_text(json.dumps(dict(operations_ns=operations_ns)) + "\n")
+                (output / "guest.json").write_text(json.dumps(report) + "\n")
                 os._exit(FAULT_EXIT)
             connection.shutdown(socket.SHUT_RDWR)
             raise InjectedDisconnect
@@ -94,13 +97,15 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
         try:
             bounds = serve(guest_ip(role), EXECUTOR, output, leaf_count=leaves, port=port,
                            schedule=peer_operations(roles, leaves, role), expected_peer=guest_ip(coordinator),
-                           elapsed_ns=operations_ns, on_request=interrupt if target else None)
+                           elapsed_ns=operations_ns, on_request=interrupt if target and mode != "drop-reply" else None,
+                           before_send=interrupt if target and mode == "drop-reply" else None)
         except InjectedDisconnect:
-            return 0
+            pass
         except OSError as error:
             print(f"GUEST_TRANSPORT_STOP role={role} reason={error}", flush=True)
             return 1
-        report.update(local_socket_ip=bounds["local_ip"], peer_socket_ip=bounds["peer_ip"])
+        else:
+            report.update(local_socket_ip=bounds["local_ip"], peer_socket_ip=bounds["peer_ip"])
     else:
         output.mkdir(mode=0o700)
         with ExitStack() as stack:
@@ -112,6 +117,7 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
                 for peer, connection in connections.items()
             }
             local_plan = None
+            scheduled = assignments(roles, leaves)
 
             def exchange(owner, action, index, raw):
                 nonlocal local_plan
@@ -119,14 +125,18 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
                     started = time.monotonic_ns()
                     local_plan, result = handle_request(raw, action, EXECUTOR, prior_plan=local_plan,
                                                         leaf_index=index, leaf_count=leaves)
-                    operations_ns[label(action, index)] = time.monotonic_ns() - started
+                    name = label(action, index)
+                    if action == "SOLVE" and scheduled[index][0] != coordinator:
+                        name += "-retry"
+                    operations_ns[name] = time.monotonic_ns() - started
                     return result
                 connection = connections[owner]
                 send(connection, raw)
                 return receive(connection)
 
             try:
-                summary = run_many(roles, leaves, output, exchange, solve_budget=budget, elapsed_ns=elapsed_ns)
+                summary = run_many(roles, leaves, output, exchange, solve_budget=budget, elapsed_ns=elapsed_ns,
+                                   retry_solve=pairs.get("aclt_retry_solve") == "1", account=True)
             except IncompleteExchange as error:
                 print(f"GUEST_JOB_INCOMPLETE operation={error}", flush=True)
                 return 1

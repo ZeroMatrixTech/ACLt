@@ -72,7 +72,8 @@ def fault_target(roles: tuple[str, ...], leaf_count: int, value: str) -> tuple[s
 
 
 def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Exchange, *,
-             solve_budget: int | None, elapsed_ns: dict[str, int] | None = None) -> dict:
+             solve_budget: int | None, elapsed_ns: dict[str, int] | None = None,
+             retry_solve: bool = False, account: bool = False) -> dict:
     started = time.monotonic_ns()
     artifact, data, limits = job_fixture(leaf_count)
     plan, leaves = prepare_tree(artifact, data, limits, solve_budget=solve_budget)
@@ -83,41 +84,83 @@ def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Ex
     submissions = []
     reports = []
     wire_bytes = 0
+    attempts = []
+    account = account or retry_solve
+    retry_available = retry_solve
+    limits_by_leaf = [codec.decode(shard.question)["limits"]["gas_limit"] for shard in leaves]
+    remaining = sum(limits_by_leaf)
+    charged = 0
 
-    def dispatch(role, action, index, shard, raw):
+    def save_attempt(index, owner, attempt, measured):
+        nonlocal charged
+        cap = limits_by_leaf[index]
+        charge = cap if measured is None else measured
+        charged += charge
+        attempts.append(dict(leaf_index=index, guest=owner, attempt=attempt, gas_limit=cap,
+                             status="NO_REPLY" if measured is None else "ANSWER",
+                             measured_gas=measured, charged_gas=charge))
+        (output / "solve-attempts.json").write_text(
+            json.dumps(dict(solve_budget=solve_budget, charged_gas=charged, attempts=attempts), indent=2)
+            + "\n", encoding="utf-8")
+
+    def fail(role, name, index, shard, error):
+        failure = dict(status="FAIL", job_id=job_id.hex(), reason="EXCHANGE_INCOMPLETE",
+                       operation=name, guest=role, leaf_index=index, start=shard.start, stop=shard.stop,
+                       accepted_leaf_indices=list(range(len(submissions))),
+                       unaccepted_leaf_indices=list(range(len(submissions), len(leaves))),
+                       output_published=False)
+        (output / "failure.json").write_text(json.dumps(failure, indent=2) + "\n", encoding="utf-8")
+        raise IncompleteExchange(name) from error
+
+    def dispatch(role, action, index, raw, *, retry=False):
         nonlocal wire_bytes
-        name = label(action, index)
+        name = label(action, index) + ("-retry" if retry else "")
         (output / f"{name}-request.cbor").write_bytes(raw)
-        try:
-            response = exchange(role, action, index, raw)
-        except OSError as error:
-            if role == roles[0]:
-                raise
-            failure = dict(status="FAIL", job_id=job_id.hex(), reason="EXCHANGE_INCOMPLETE",
-                           operation=name, guest=role, leaf_index=index, start=shard.start, stop=shard.stop,
-                           accepted_leaf_indices=list(range(len(submissions))),
-                           unaccepted_leaf_indices=list(range(len(submissions), len(leaves))),
-                           output_published=False)
-            (output / "failure.json").write_text(json.dumps(failure, indent=2) + "\n", encoding="utf-8")
-            raise IncompleteExchange(name) from error
+        response = exchange(role, action, index, raw)
         (output / f"{name}-response.cbor").write_bytes(response)
         if role != roles[0]:
             wire_bytes += len(raw) + len(response)
         return codec.decode(response)
 
     for index, (shard, (worker, verifier)) in enumerate(zip(leaves, assignments(roles, len(leaves)), strict=True)):
-        result = dispatch(worker, "SOLVE", index, shard, request("SOLVE", plan, artifact, shard))
+        raw = request("SOLVE", plan, artifact, shard)
+        gas_limit = limits_by_leaf[index]
+        remaining -= gas_limit
+        retried = False
+        try:
+            result = dispatch(worker, "SOLVE", index, raw)
+        except OSError as error:
+            if worker == roles[0]:
+                raise
+            if account:
+                save_attempt(index, worker, 1, None)
+            # Keep enough gas for every remaining first attempt. A may take over
+            # only when the original verifier is a distinct, reachable role.
+            if (not retry_available or verifier == roles[0] or solve_budget is None
+                    or peer_operations(roles, leaf_count, worker)[-1][2] != label("SOLVE", index)
+                    or charged + gas_limit + remaining > solve_budget):
+                fail(worker, label("SOLVE", index), index, shard, error)
+            retry_available = False
+            retried = True
+            worker = roles[0]
+            result = dispatch(worker, "SOLVE", index, raw, retry=True)
         codec.fields(result, ("job_id", "start", "answer"))
         codec.need(result["job_id"] == job_id and codec.uint(result["start"]) == shard.start,
                    "SOLVE response is for a different job or position")
         answer = decode_answer(result["answer"])
-        receipt = dispatch(verifier, "VERIFY", index, shard, request("VERIFY", plan, artifact, shard, answer))
-        codec.need(receipt == record_verdict(plan, shard.start, answer, Verdict("ACCEPT")),
-                   "slice needs an ACCEPT bound to its exact answer")
         outcome = codec.decode(answer.outcome)
-        gas_limit = codec.decode(shard.question)["limits"]["gas_limit"]
         codec.need(outcome.get("outcome") == "OK" and codec.uint(outcome["gas_used"]) == gas_limit,
                    "shard outcome or gas differs from the planned successful path")
+        if account:
+            save_attempt(index, worker, 2 if retried else 1, outcome["gas_used"])
+        try:
+            receipt = dispatch(verifier, "VERIFY", index, request("VERIFY", plan, artifact, shard, answer))
+        except OSError as error:
+            if verifier == roles[0]:
+                raise
+            fail(verifier, label("VERIFY", index), index, shard, error)
+        codec.need(receipt == record_verdict(plan, shard.start, answer, Verdict("ACCEPT")),
+                   "slice needs an ACCEPT bound to its exact answer")
         submissions.append((answer, receipt))
         reports.append(dict(start=shard.start, stop=shard.stop, question_id=shard.question_id.hex(),
                             execution_host=worker, verification_host=verifier, status=receipt["status"],
@@ -147,7 +190,8 @@ def run_many(roles: tuple[str, ...], leaf_count: int, output: Path, exchange: Ex
 
 
 def replay_many(roots: dict[str, Path], leaf_count: int, executor: Path, scratch: Path, *,
-                solve_budget: int | None, interrupted: str | None = None) -> dict:
+                solve_budget: int | None, interrupted: str | None = None,
+                retry_solve: bool = False, account: bool = False) -> dict:
     roles = guest_roles(len(roots))
     codec.need(set(roots) == set(roles), "unexpected guest roles")
     coordinator = roots[roles[0]]
@@ -163,12 +207,19 @@ def replay_many(roots: dict[str, Path], leaf_count: int, executor: Path, scratch
 
     def exchange(role, action, index, raw):
         name = label(action, index)
+        if name == interrupted and action == "SOLVE" and role == roles[0]:
+            name += "-retry"
         req, rep = f"{name}-request.cbor", f"{name}-response.cbor"
         for root in {coordinator, roots[role]}:
             codec.need(retained_frame(root, req) == raw, f"{role} {name} request differs from replay")
         expected_files[roles[0]].add(req)
         expected_files[role].add(req)
         if name == interrupted:
+            if (roots[role] / rep).is_file():
+                _, response = handle_request(raw, action, executor, prior_plan=plans.get(role),
+                                             leaf_index=index, leaf_count=len(leaves))
+                codec.need(retained_frame(roots[role], rep) == response, f"{role} {name} unsent response differs from replay")
+                expected_files[role].add(rep)
             raise ConnectionError("replay of incomplete exchange")
         expected_files[roles[0]].add(rep)
         expected_files[role].add(rep)
@@ -179,13 +230,15 @@ def replay_many(roots: dict[str, Path], leaf_count: int, executor: Path, scratch
         return response
 
     try:
-        summary = run_many(roles, leaf_count, scratch, exchange, solve_budget=solve_budget)
+        summary = run_many(roles, leaf_count, scratch, exchange, solve_budget=solve_budget,
+                           retry_solve=retry_solve, account=account)
     except IncompleteExchange:
         if interrupted is None:
             raise
         summary = None
     else:
-        codec.need(interrupted is None, "expected exchange to be interrupted")
+        codec.need(interrupted is None or (retry_solve and (scratch / f"{interrupted}-retry-response.cbor").is_file()),
+                   "expected exchange to be interrupted")
     for role, root in roots.items():
         actual = {file.name for pattern in ("*-request.cbor", "*-response.cbor") for file in root.glob(pattern)}
         codec.need(actual == expected_files[role], f"{role} has unexpected transcript inventory")

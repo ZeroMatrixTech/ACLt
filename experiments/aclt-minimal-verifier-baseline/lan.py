@@ -109,7 +109,8 @@ def handle_request(raw: bytes, expected_action: str, executor: Path, *, prior_pl
 def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port: int = 0,
           schedule: list[tuple[str, int, str]] | None = None, expected_peer: str | None = None,
           elapsed_ns: dict[str, int] | None = None,
-          on_request: Callable[[str, socket.socket], None] | None = None) -> dict:
+          on_request: Callable[[str, socket.socket], None] | None = None,
+          before_send: Callable[[str, socket.socket], None] | None = None) -> dict:
     output.mkdir(mode=0o700)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.bind((bind, port))
@@ -134,6 +135,8 @@ def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port:
                 if elapsed_ns is not None:
                     elapsed_ns[label] = time.monotonic_ns() - started
                 (output / f"{label}-response.cbor").write_bytes(response)
+                if before_send is not None:
+                    before_send(label, connection)
                 send(connection, response)
     return {"port": local_port, "local_ip": bind, "peer_ip": peer[0]}
 
