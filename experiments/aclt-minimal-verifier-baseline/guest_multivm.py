@@ -134,9 +134,11 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
                 send(connection, raw)
                 return receive(connection)
 
+            root_caps = {name: int(pairs[f"aclt_root_{name}"])
+                         for name in ("gas_limit", "output_limit") if f"aclt_root_{name}" in pairs}
             try:
                 summary = run_many(roles, leaves, output, exchange, solve_budget=budget, elapsed_ns=elapsed_ns,
-                                   retry_solve=pairs.get("aclt_retry_solve") == "1", account=True)
+                                   retry_solve=pairs.get("aclt_retry_solve") == "1", account=True, root_caps=root_caps)
             except IncompleteExchange as error:
                 print(f"GUEST_JOB_INCOMPLETE operation={error}", flush=True)
                 return 1

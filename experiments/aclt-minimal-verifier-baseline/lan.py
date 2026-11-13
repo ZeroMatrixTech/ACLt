@@ -8,10 +8,10 @@ from pathlib import Path
 import socket
 import time
 
-from baseline import ARTIFACT_TAG, LIMITS, QUESTION_TAG, Answer, ask, solve, verify
+from baseline import ARTIFACT_TAG, LIMITS, QUESTION_TAG, Answer, solve, verify
 from job import (
     BOUNDED_RULE, HEADER, JOB_TAG, RULE, STATS_RIR_ID, VALUE, Slice, merge_job, prepare_job,
-    record_verdict, stats_gas_bound,
+    admit_stats_root, record_verdict, stats_gas_bound,
 )
 from tools.formal_migration.s2_transport import receive, send
 from tools.verification_profile import codec
@@ -144,11 +144,11 @@ def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port:
 def run_job(connection: socket.socket, artifact: bytes, data: bytes, limits: dict,
             executor: Path, output: Path, *, solve_budget: int | None = None,
             recursive: bool = False) -> dict:
+    reference_question = admit_stats_root(artifact, data, limits)
     if recursive:
         plan, slices = prepare_tree(artifact, data, limits, solve_budget=solve_budget)
     else:
         plan, slices = prepare_job(artifact, data, limits, allocate_gas=True, solve_budget=solve_budget)
-    reference_question = ask(artifact, data, limits)
     job_id = codec.domain_hash(JOB_TAG, plan)
     (output / "plan.cbor").write_bytes(plan)
     (output / "original-input.bin").write_bytes(data)

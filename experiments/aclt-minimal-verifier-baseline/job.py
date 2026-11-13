@@ -50,6 +50,19 @@ def stats_input(artifact: bytes, data: bytes) -> tuple[int, int, memoryview]:
     return chunk, count, values
 
 
+def admit_stats_root(artifact: bytes, data: bytes, limits: dict) -> bytes:
+    """Admit only the successful whole-task path of the pinned artifact."""
+    chunk, count, _ = stats_input(artifact, data)
+    question = ask(artifact, data, limits)
+    required_gas = stats_gas_bound(count, chunk)
+    required_output = ROW.size * ((count + chunk - 1) // chunk)
+    codec.need(limits["gas_limit"] >= required_gas,
+               f"whole-task gas limit needs at least {required_gas}")
+    codec.need(limits["output_limit"] >= required_output,
+               f"whole-task output limit needs at least {required_output} bytes")
+    return question
+
+
 def freeze_slice(artifact: bytes, values: memoryview, chunk: int, start: int, stop: int,
                  limits: dict, *, allocate_gas: bool) -> Slice:
     raw = HEADER.pack(chunk, stop - start) + values[start * VALUE.size:stop * VALUE.size].tobytes()
