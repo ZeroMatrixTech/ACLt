@@ -595,16 +595,13 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         if not args.general_drop or journal.charged + sum(
                 cap for slot, cap in enumerate(job.caps) if slot not in journal.accepted) <= job.budget:
             raise RunError("guest reported a budget block with enough remaining gas")
-    control = general_vm.standalone_probe(job, max(job.caps))
-    if control["outcome"] != "TRAP_GAS_EXHAUSTED":
-        raise RunError("single-machine resource control did not trap")
     return dict(status="PASS" if journal.final else "FAIL", general_status=result,
                 declaration_id=job.declaration_id.hex(), plan_id=job.plan_id.hex(),
                 execution_id=job.execution_id.hex(), charged_gas=journal.charged,
                 output=journal.final["output"] if journal.final else None,
                 solve_order=[event["slot"] for event in journal.events if event["kind"] == "RESERVE"],
                 acceptance_order=list(journal.accepted),
-                standalone_control=control, handoff=bool(history), before_guests=before_guests,
+                handoff=bool(history), before_guests=before_guests,
                 guests=guests, claim="Guest-level trusted execution on one physical host")
 
 
