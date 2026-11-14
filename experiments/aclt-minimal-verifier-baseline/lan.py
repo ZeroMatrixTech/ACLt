@@ -143,7 +143,7 @@ def serve(bind: str, executor: Path, output: Path, *, leaf_count: int = 2, port:
 
 def run_job(connection: socket.socket, artifact: bytes, data: bytes, limits: dict,
             executor: Path, output: Path, *, solve_budget: int | None = None,
-            recursive: bool = False) -> dict:
+            recursive: bool = False, reverse_schedule: bool = False) -> dict:
     reference_question = admit_stats_root(artifact, data, limits)
     if recursive:
         plan, slices = prepare_tree(artifact, data, limits, solve_budget=solve_budget)
@@ -162,7 +162,10 @@ def run_job(connection: socket.socket, artifact: bytes, data: bytes, limits: dic
         return codec.decode(response)
 
     submissions = []
-    for action, index, label in operations(len(slices)):
+    schedule = operations(len(slices))
+    if reverse_schedule:
+        schedule.reverse()
+    for action, index, label in schedule:
         shard = slices[index]
         if action == "SOLVE":
             response = exchange(label, request(action, plan, artifact, shard))
@@ -225,6 +228,9 @@ def run_job(connection: socket.socket, artifact: bytes, data: bytes, limits: dic
         "reverse_order_equal": True,
         "slices": reports,
     }
+    if not recursive:
+        (output / "accepted-order.json").write_text(
+            json.dumps([receipt["start"] for _, receipt in submissions]) + "\n")
     if recursive:
         summary["flat_output_equal"] = True
         summary["tree_merge_order"] = tree.merge_order

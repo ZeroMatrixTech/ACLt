@@ -201,6 +201,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-14 | v0.5 | M3 完成固定统计用例的物理双机验收。两种 LAN 返回顺序的归并结果均与单机参照逐字节一致，漏片和错绑提交均由实跑证据重放并被拒绝 | [M3 验收报告](../testing/DUALHOST-BASELINE-20261114.md)、OQ-04、OQ-06 | 不变 |
 | 2026-11-14 | v0.5 | 维护者决定规范、文档、研究文稿与测试证据沿用 Apache-2.0，仓库全部工件采用同一许可；第三方材料保留原许可；名称、商标与贡献机制仍 `OPEN` | `README.md`、`CONTRIBUTING.md`、OQ-01 | 公开发布 |
 | 2026-10-23 | v0.5 / V1 target | 项目决定 RIR 主体采用确定性 Wasm 核心子集；起草 ADR-0006（`PROPOSED`），未改规范对象与 V1 处置 | [ADR-0006 草案](../05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md) | G0 未通过退出 |
 | 2026-10-23 | v0.5 / V1 target | 候选模板/claim 编码、2 摘要与 Python/Rust 对拍；规则仍为局部覆盖 | [编码记录](../testing/CLAIM-CODEC-20261023.md) | G0/G2 未通过退出 |
