@@ -7,7 +7,7 @@ import sys
 import time
 from threading import RLock
 
-from general_job import Journal
+from general_job import BudgetError, Journal
 from tools.verification_profile import codec as c
 
 
@@ -136,6 +136,8 @@ class GuestJournal(Journal):
         send(self.writer, dict(epoch=epoch, event=kind, fields=fields))
         response = receive(self.reader, guest=True)
         if "error" in response:
+            if response.get("code") == "BUDGET_BLOCKED":
+                raise BudgetError(response["error"])
             raise CoordinationError(response["error"])
         result = super().add(kind, **fields) if kind == "HANDOFF" else super().add(kind, writer_epoch=epoch, **fields)
         c.need(result == response.get("result"), "host and guest journals differ")
@@ -162,6 +164,8 @@ def serve(authority, process, reader, writer, *, on_intent=None):
                 if on_intent is not None:
                     on_intent()
                 result = authority.commit(process)
+        except BudgetError as error:
+            send(writer, {"error": str(error), "code": "BUDGET_BLOCKED"})
         except c.CodecError as error:
             send(writer, {"error": str(error)})
         else:

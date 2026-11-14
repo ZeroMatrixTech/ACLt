@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Regression coverage for frozen-question reuse and trusted host coordination."""
 
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from pathlib import Path
+import socket
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
@@ -10,7 +13,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from baseline import PROBE, QUESTION_TAG
-from coordination import Coordinator, CoordinationError, conflicting_intent
+from coordination import Coordinator, CoordinationError, GuestJournal, conflicting_intent, serve
 from general_job import Job, Journal, c, digest, handle
 from general_vm import DEFAULT_BUDGET, fixture, run, source_journal
 from test_baseline import build_executor
@@ -103,6 +106,66 @@ class ReuseTests(unittest.TestCase):
 
 
 class CoordinationTests(unittest.TestCase):
+    def test_guarded_replay_requires_current_writer_epoch(self):
+        job = fixture(bytes(32), DEFAULT_BUDGET)
+        start = dict(kind="START", execution=job.execution, writer_epoch=0)
+        handoff = dict(kind="HANDOFF", epoch=1)
+        journal = Journal(job, None, (start, handoff))
+        reserve = dict(kind="RESERVE", slot=0, attempt=1, worker="A",
+                       request=journal.frame(0, 1, "SOLVE"))
+        replay = Journal(job, None, (start, handoff, reserve | {"writer_epoch": 1}))
+        self.assertEqual(replay.reserved, job.caps[0])
+        with self.assertRaisesRegex(c.CodecError, "wrong writer epoch"):
+            Journal(job, None, (start, handoff, reserve | {"writer_epoch": 0}))
+        with self.assertRaisesRegex(c.CodecError, "missing writer epoch"):
+            Journal(job, None, (start, handoff, reserve))
+
+    def test_legacy_replay_accepts_untagged_events(self):
+        job = fixture(bytes(32), DEFAULT_BUDGET)
+        start = dict(kind="START", execution=job.execution)
+        handoff = dict(kind="HANDOFF", epoch=1)
+        journal = Journal(job, None, (start, handoff))
+        reserve = dict(kind="RESERVE", slot=0, attempt=1, worker="A",
+                       request=journal.frame(0, 1, "SOLVE"))
+        replay = Journal(job, None, (start, handoff, reserve))
+        self.assertEqual((replay.epoch, replay.reserved), (1, job.caps[0]))
+
+    def test_budget_block_survives_host_guest_round_trip(self):
+        job = fixture(bytes(32), DEFAULT_BUDGET - 1)
+        dispatched = []
+
+        def drop(role, raw):
+            dispatched.append((role, c.decode(raw)["attempt"]))
+            raise ConnectionError("first reply lost")
+
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            guard = Coordinator(job, root / "host.cbor", root / "trace")
+            with subprocess.Popen([sys.executable, "-c", "import signal; signal.pause()"]) as owner:
+                try:
+                    guard.assign(owner)
+                    host, guest = socket.socketpair()
+                    with host, guest, host.makefile("rb") as host_in, host.makefile("wb") as host_out, \
+                         guest.makefile("rb") as guest_in, guest.makefile("wb") as guest_out, \
+                         ThreadPoolExecutor(max_workers=1) as pool:
+                        host.settimeout(5)
+                        guest.settimeout(5)
+                        serving = pool.submit(serve, guard, owner, host_in, host_out)
+                        factory = partial(GuestJournal, reader=guest_in, writer=guest_out)
+                        try:
+                            mirror, status = run(job, ROLES, root / "guest.cbor", drop,
+                                                 order=(1, 0, 2, 3), journal_factory=factory)
+                        finally:
+                            guest.shutdown(socket.SHUT_WR)
+                        serving.result(timeout=5)
+                    self.assertEqual(status, "BUDGET_BLOCKED")
+                    self.assertEqual(dispatched, [("B", 1)])
+                    self.assertFalse(guard.paused)
+                    self.assertEqual(guard.journal.events, mirror.events)
+                    self.assertEqual((mirror.charged, mirror.reserved), (job.caps[1], 0))
+                finally:
+                    owner.terminate()
+
     def test_live_owner_reassignment_stale_write_and_overlap(self):
         with TemporaryDirectory() as temp:
             root = Path(temp)
@@ -116,6 +179,9 @@ class CoordinationTests(unittest.TestCase):
                     start = {"epoch": 0, "event": "START", "fields": {"execution": job.execution}}
                     guard.begin(old, start)
                     guard.commit(old)
+                    with self.assertRaisesRegex(CoordinationError, "requires host reassignment"):
+                        guard.begin(old, {"epoch": 0, "event": "HANDOFF", "fields": {"epoch": 1}})
+                    self.assertEqual(guard.journal.epoch, 0)
                     with self.assertRaisesRegex(CoordinationError, "still running"):
                         guard.assign(new)
                     old.terminate()

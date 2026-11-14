@@ -218,7 +218,11 @@ class Journal:
         return c.encode(fields)
 
     def apply(self, event):
-        if "writer_epoch" in event:
+        has_epoch = "writer_epoch" in event
+        if self.events and event["kind"] != "HANDOFF":
+            guarded = "writer_epoch" in self.events[0]
+            c.need(has_epoch == guarded, "missing writer epoch" if guarded else "unexpected writer epoch")
+        if has_epoch:
             c.need(c.uint(event["writer_epoch"]) == self.epoch, "wrong writer epoch")
             fields = {key: value for key, value in event.items() if key != "writer_epoch"}
             return self.apply_event(fields, event)
