@@ -18,7 +18,7 @@ jobs:
       - name: Install Ubuntu build prerequisites
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends ca-certificates git g++ rustc cargo python3 bash coreutils make openssl
+          apt-get install -y --no-install-recommends ca-certificates git g++ rustc cargo python3 bash coreutils make openssl e2fsprogs
       - name: Checkout complete retained history
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
