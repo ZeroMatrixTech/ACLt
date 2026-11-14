@@ -126,7 +126,9 @@ class CapacitySortRegressionTests(unittest.TestCase):
 
     def assert_original_still_replays(self, a, b, before):
         self.assertEqual(self.tree_digest(b), before)
-        self.assertEqual(capacity_sort.replay(a, b)["status"], "PASS")
+        result = capacity_sort.replay(a, b)
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(self.tree_digest(b), before)
 
     def assert_scaled_capacity(self, usable):
         self.assertGreaterEqual(usable, PARTITION_BYTES)
