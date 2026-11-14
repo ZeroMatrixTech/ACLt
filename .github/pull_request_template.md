@@ -20,7 +20,12 @@ Closes #
 
 ## 理论缺口
 
-无 / 已登记的 `theory-gap` Issue：#；依赖它们的结论已标为 `ASSUMPTION`（PARALLEL-1 第 5.6 节）
+<!-- PARALLEL-1 第 5.6 节。只有 Issue 链接不算完成：每个缺口都写明属于哪一种以及适用范围。 -->
+
+无 / 逐项列出：
+
+- **阻塞**（#）：已停下的验收标准：
+- **不阻塞**（#）：`ASSUMPTION` 标记所在的文件与位置：
 
 ## Residual risk
 
