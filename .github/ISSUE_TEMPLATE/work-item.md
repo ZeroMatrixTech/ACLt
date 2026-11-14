@@ -40,6 +40,10 @@ labels: ["work-item"]
 - 本次运行：
 - 多虚拟机、物理双机或 B 机时段：不需要
 
+## 理论依赖
+
+无 / `theory-gap` Issue：#（PARALLEL-1 第 5.6 节）
+
 ## 文档同步
 
 - CONTRIBUTING §7 适用行：
