@@ -58,7 +58,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 |---|---|---|---|---|
 | 名称与定位 | `DECIDED`；外部权利 `OPEN` | — | 名称为 ACLt Protocol；它是协议而非区块链 | 名称法律检索、域名、商标和兼容性标识政策 |
 | 代码许可 | `DECIDED` | — | 代码与参考实现采用 Apache-2.0；根目录 `LICENSE` 已存在 | 未来源码 SPDX、按需 NOTICE 和第三方许可清单 |
-| 其他工件许可 | `OPEN` | — | 不自动继承代码许可 | 规范、文档、论文、名称和商标政策 |
+| 其他工件许可 | `DECIDED` | — | 2026-11-14 决定规范、文档、仓库内研究文稿与测试证据沿用 Apache-2.0；第三方材料保留原许可；名称与商标不在许可范围内，见「名称与定位」 | 按需 NOTICE；文稿投稿时出版方另有条款的单独处理 |
 | 状态与版本 | `DECIDED` | `CORE` | SemanticStatus 与 VersionDisposition 分离；v0.5 是语义基线，V1 是 ConformanceTarget | machine-readable registry、版本兼容矩阵 |
 | 最小本体 | `DECIDED` | `CORE` | 只有 Requester 与 Provider 是不可约 Principal | Principal Schema、轮换与控制关系 |
 | Abstract Machine | 边界 `DECIDED`；形式模型 `OPEN` | `CORE` | 以对象和合法事件驱动状态转换；无共享机器地址空间 | machine-readable 状态、完整转换和恢复模型 |
@@ -158,7 +158,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 1. 完成 **ACLt Protocol** 名称冲突检索。
 2. 保持根目录 Apache License 2.0 `LICENSE` 不被改写，并给未来适用源码加入 `SPDX-License-Identifier: Apache-2.0`。
-3. 决定规范、文档、论文、名称、商标和兼容性声明的独立许可/使用政策。
+3. 决定名称、商标和兼容性声明的使用政策。规范、文档与研究文稿已于 2026-11-14 决定沿用 Apache-2.0。
 4. 决定贡献者许可机制（仅项目许可证、DCO 或 CLA）及第三方代码接受规则。
 
 ### P1 — 阻断 G1/G2 的可信推进
@@ -200,6 +200,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-14 | v0.5 | 维护者决定规范、文档、研究文稿与测试证据沿用 Apache-2.0，仓库全部工件采用同一许可；第三方材料保留原许可；名称、商标与贡献机制仍 `OPEN` | `README.md`、`CONTRIBUTING.md`、OQ-01 | 公开发布 |
 | 2026-10-23 | v0.5 / V1 target | 项目决定 RIR 主体采用确定性 Wasm 核心子集；起草 ADR-0006（`PROPOSED`），未改规范对象与 V1 处置 | [ADR-0006 草案](../05-decisions/ADR-0006-rir-deterministic-wasm-core-subset.md) | G0 未通过退出 |
 | 2026-10-23 | v0.5 / V1 target | 候选模板/claim 编码、2 摘要与 Python/Rust 对拍；规则仍为局部覆盖 | [编码记录](../testing/CLAIM-CODEC-20261023.md) | G0/G2 未通过退出 |
 | 2026-10-23 | v0.5 / V1 target | 完成 119 项规则与 18 摘要覆盖盘点；修正登记，运行时能力未改变 | [盘点报告](../testing/P0-1B-INVENTORY-20261023.md) | G0/G2 未通过退出 |

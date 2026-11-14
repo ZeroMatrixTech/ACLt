@@ -43,7 +43,7 @@
 
 | ID | 问题组 | 优先级 | 状态 | 主要阻断 |
 |---|---|---:|---|---|
-| OQ-01 | 名称、分层许可与发布章程 | P0 | OPEN（代码许可已决定） | 公开发布 |
+| OQ-01 | 名称、分层许可与发布章程 | P0 | OPEN（仓库工件许可已决定） | 公开发布 |
 | OQ-02 | 规范对象、编码与版本演进 | P0 | OPEN | G0 |
 | OQ-03 | Principal、签名与控制关系 | P0 | OPEN | G0 |
 | OQ-04 | WorkPlan、准入与 Assignment 合法性 | P0 | OPEN | G0 |
@@ -66,15 +66,15 @@
 
 1. 名称：保留 ACLt Protocol；在冲突时加限定词；或在公开发布前更名。
 2. 代码与参考实现：**已决定采用 Apache License 2.0**；不再在 MIT、copyleft、双许可证或暂不授权之间保持开放。
-3. 协议规范与项目文档：Apache-2.0；CC BY 4.0；CC BY-SA 4.0；独立开放规范条款；或在稳定发布前保留版权、仅供审阅。
-4. 研究论文：作者保留版权；CC BY；或按投稿平台/出版社条款单独授权。
+3. 协议规范与项目文档：**2026-11-14 决定采用 Apache-2.0**，与代码相同；不再在 CC BY 4.0、CC BY-SA 4.0、独立开放规范条款或保留版权之间保持开放。
+4. 研究论文：仓库内文稿采用 Apache-2.0；投稿时出版方另有条款的，单独处理。
 5. 名称、商标与兼容性：不设独立政策；建立名称/商标使用政策；另设兼容性声明或认证政策。
 6. 贡献许可：仅依项目许可证；Developer Certificate of Origin（DCO）；Contributor License Agreement（CLA）。
 7. 发布标记：research preview；draft specification；experimental implementation；release candidate。
 
-**当前建议。** 保留名称但完成法律与生态检索；根目录已经包含未经修改的 Apache License 2.0 英文全文，后续应保持该文件，并为未来适用源码使用 `SPDX-License-Identifier: Apache-2.0`；只有存在归属或第三方通知要求时才增加相应 `NOTICE` 内容。不得把代码许可默认为规范、文档、论文或商标许可。v0.5 公开时标为 draft/research baseline；贡献机制根据维护主体、来源证明和再许可需求在仅项目许可证、DCO 与 CLA 之间选择。
+**当前建议。** 保留名称但完成法律与生态检索；根目录已经包含未经修改的 Apache License 2.0 英文全文，后续应保持该文件，并为未来适用源码使用 `SPDX-License-Identifier: Apache-2.0`；只有存在归属或第三方通知要求时才增加相应 `NOTICE` 内容。规范、文档与仓库内研究文稿沿用 Apache-2.0；该许可不授予名称或商标使用权（第 6 条），名称、商标与兼容性政策另行决定。v0.5 公开时标为 draft/research baseline；贡献机制根据维护主体、来源证明和再许可需求在仅项目许可证、DCO 与 CLA 之间选择。
 
-**关闭证据。** 代码许可证选择及根目录 `LICENSE` 已经完成；其余关闭证据为未来源码 SPDX 检查、按需 `NOTICE`、第三方许可清单、规范/文档/论文许可声明、名称与商标检索、贡献规则、README 中统一的成熟度声明，以及必要的法律意见。
+**关闭证据。** 代码许可证选择及根目录 `LICENSE` 已经完成；规范、文档与研究文稿的许可声明已于 2026-11-14 写入 README 与 CONTRIBUTING。其余关闭证据为未来源码 SPDX 检查、按需 `NOTICE`、第三方许可清单、名称与商标检索、贡献规则、README 中统一的成熟度声明，以及必要的法律意见。
 
 **依赖。** OQ-13 的维护主体与发布权限。
 
