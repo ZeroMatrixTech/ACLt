@@ -138,7 +138,7 @@ class GuestJournal(Journal):
         if "error" in response:
             raise CoordinationError(response["error"])
         result = super().add(kind, **fields) if kind == "HANDOFF" else super().add(kind, writer_epoch=epoch, **fields)
-        c.need(result == response["result"], "host and guest journals differ")
+        c.need(result == response.get("result"), "host and guest journals differ")
         return result
 
 
@@ -165,7 +165,7 @@ def serve(authority, process, reader, writer, *, on_intent=None):
         except c.CodecError as error:
             send(writer, {"error": str(error)})
         else:
-            send(writer, {"result": result})
+            send(writer, {} if result is None else {"result": result})
 
 
 def conflicting_intent(authority):
