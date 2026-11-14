@@ -18,6 +18,10 @@ Closes #
 
 无 / `evidence/<YYYYMMDD>-<topic>`
 
+## 理论缺口
+
+无 / 已登记的 `theory-gap` Issue：#；依赖它们的结论已标为 `ASSUMPTION`（PARALLEL-1 第 5.6 节）
+
 ## Residual risk
 
 ## Documents updated

@@ -41,6 +41,7 @@ disable-model-invocation: true
 - 文件集写到具体路径。
 - 热点文件单独列出：`SINGLEHOST-SHA256SUMS`、`WORKFLOW-SHA256SUMS`、`docs/07-roadmap/current-status.md`、`docs/README.md`、`Makefile`。
 - 验收标准要能由审计会话逐条检验。
+- **理论依赖：** 列出本条目依赖、但尚无模型、推导或估计支撑的性质（PARALLEL-1 第 5.6 节）。每一项都先用 `gh issue list --label theory-gap --state all` 查找已有 Issue；没有的，在计划卡中写明出处、所需数学对象和它阻塞什么，批准后按 `.github/ISSUE_TEMPLATE/theory-gap.md` 建 Issue。验收依赖某个缺口时，把相应部分写成“等待建模”，不自行建模，也不挑选参数。
 - 不写入凭据、真实 IP、用户名或本地路径。
 
 ## 4. 并行判定
