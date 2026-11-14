@@ -129,6 +129,15 @@ class Job:
         limits = dict(gas_limit=self.caps[slot], output_limit=8, memory_pages_limit=2, call_depth_limit=8)
         return dict(question=ask(artifact, data, limits), artifact=artifact, data=data, dependency=dependency)
 
+    charge_field = "charged_gas"
+
+    def decode_outcome(self, slot, frozen, answer):
+        parsed = decode_answer(answer)
+        c.need(parsed.question_id == c.domain_hash(QUESTION_TAG, frozen), "answer is for another question")
+        outcome = c.decode(parsed.outcome)
+        c.fields(outcome, ("outcome", "gas_used"), ("output",))
+        return outcome
+
     def check_output(self, slot, outcome, accepted):
         c.need(outcome["outcome"] == "OK" and type(outcome.get("output")) is bytes
                and len(outcome["output"]) == INT.size, "task did not return a composable value")
@@ -136,6 +145,13 @@ class Job:
         expected = (task["literal"] if "literal" in task
                     else 2 * INT.unpack(accepted[task["double"]]["output"])[0])
         c.need(outcome["output"] == INT.pack(expected), "output violates task family")
+
+    def check_answer(self, slot, outcome):
+        c.need(c.uint(outcome["gas_used"]) <= self.caps[slot], "invalid reported gas")
+
+    def check_verdict(self, slot, outcome, verdict):
+        c.need(verdict == "ACCEPT", "not verified")
+        return c.uint(outcome["gas_used"])
 
     def merge_output(self, accepted):
         return merge(c.decode(self.plan)["tree"], {slot: row["output"] for slot, row in accepted.items()})
@@ -221,9 +237,10 @@ class Journal:
             output = self.job.merge_output(self.accepted)
             evidence = [self.accepted[i]["evidence"] for i in leaves(c.decode(self.job.plan)["tree"])]
             self.final = dict(execution_id=self.job.execution_id, declaration_id=self.job.declaration_id,
-                              plan_id=self.job.plan_id, charged_gas=self.charged, output=output,
+                              plan_id=self.job.plan_id, output=output,
                               output_digest=digest("Output", c.encode(output)), evidence=evidence,
                               journal_digest=digest("Journal", c.encode([*self.events, event])))
+            self.final[self.job.charge_field] = self.charged
             return
 
         slot = c.uint(event["slot"])
@@ -255,13 +272,9 @@ class Journal:
             c.fields(event, ("kind", "slot", "attempt", "response"))
             c.need(attempt and attempt["state"] == "RESERVED", "answer is late or unsolicited")
             answer = response_for(attempt["request"], event["response"], "answer")
-            parsed = decode_answer(answer)
             frozen = c.decode(attempt["request"])["question"]
-            c.need(parsed.question_id == c.domain_hash(QUESTION_TAG, frozen), "answer is for another question")
-            outcome = c.decode(parsed.outcome)
-            c.fields(outcome, ("outcome", "gas_used"), ("output",))
-            gas = c.uint(outcome["gas_used"])
-            c.need(gas <= cap, "invalid reported gas")
+            outcome = self.job.decode_outcome(slot, frozen, answer)
+            self.job.check_answer(slot, outcome)
             # The cap stays reserved until the independent verifier validates the outcome.
             attempt.update(state="ANSWER", answer=answer, outcome=outcome)
         elif kind == "ACCEPT":
@@ -271,11 +284,13 @@ class Journal:
             c.need(event["verifier"] != attempt["worker"], "verification must use a distinct role")
             c.need(event["request"] == self.frame(slot, number, "VERIFY", attempt["answer"]),
                    "wrong frozen verify request")
-            c.need(response_for(event["request"], event["response"], "verdict") == "ACCEPT", "not verified")
+            verdict = response_for(event["request"], event["response"], "verdict")
             outcome = attempt["outcome"]
+            used = self.job.check_verdict(slot, outcome, verdict)
             self.job.check_output(slot, outcome, self.accepted)
+            c.need(used <= cap, "verified usage exceeds reservation")
             self.reserved -= cap
-            self.charged += outcome["gas_used"]
+            self.charged += used
             attempt["state"] = "ACCEPTED"
             self.accepted[slot] = dict(output=outcome["output"], evidence=digest("Acceptance", c.encode(event)))
         else:

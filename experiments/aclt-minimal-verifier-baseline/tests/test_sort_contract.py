@@ -10,7 +10,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import capacity_sort as sort
-from general_job import digest
+from general_job import Journal, digest
+from general_vm import run
 import sort_contract as contract
 from tools.verification_profile import codec as c
 
@@ -87,3 +88,51 @@ class SortDeliveryTests(unittest.TestCase):
             sort.image_command(altered, "write", ordered, 0, [])
         with self.assertRaisesRegex(ValueError, "record differs from frozen source or range"):
             self.verify(0, image=altered)
+
+
+class SortLedgerTests(unittest.TestCase):
+    def test_accounting_retry_and_handoff(self):
+        job = contract.SortJob(EXECUTION)
+        executions = []
+
+        def exchange(owner, raw):
+            request = contract.checked_request(job, raw)
+            slot, number, action = (request[key] for key in ("slot", "attempt", "action"))
+            executions.append((owner, slot, number, action))
+            if (slot, number, action) == (1, 1, "SOLVE"):
+                raise ConnectionError("dropped")
+            descriptor = dict(partition=slot, bytes=sort.PARTITION_BYTES,
+                              records=contract.CAPS[slot], sha256=bytes([slot]) * 32)
+            response = {"request": digest("Request", raw)}
+            if action == "SOLVE":
+                response["answer"] = c.encode(dict(question=request["question"], output=descriptor))
+            else:
+                response["verdict"] = descriptor
+            return c.encode(response)
+
+        self.assertEqual(job.budget, 786432)
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            before, status = run(job, ("A", "B", "C"), root / "before.cbor", exchange,
+                                 order=(1, 0), checkpoint=1, placement=contract.PLACEMENT,
+                                 retry_worker=contract.retry_on_same_worker)
+            self.assertEqual((status, before.charged, before.reserved), ("CHECKPOINT", 524288, 0))
+            self.assertEqual(before.attempts[1, 1]["state"], "NO_REPLY")
+            after, status = run(job, ("A", "B", "C"), root / "after.cbor", exchange,
+                                order=(1, 0), previous=before.path, placement=contract.PLACEMENT,
+                                retry_worker=contract.retry_on_same_worker)
+            self.assertEqual((status, after.final["charged_records"]), ("PUBLISHED", 786432))
+            self.assertNotIn("charged_gas", after.final)
+            self.assertEqual(after.events[:len(before.events)], before.events)
+            self.assertEqual(after.accepted[1], before.accepted[1])
+            self.assertEqual([item["partition"] for item in after.final["output"]], [0, 1])
+            self.assertEqual([item[:3] for item in executions if item[3] == "SOLVE"],
+                             [("B", 1, 1), ("B", 1, 2), ("C", 0, 1)])
+            self.assertEqual(Journal(job, after.path, after.events).final, after.final)
+
+    def test_verified_count_must_match_frozen_count(self):
+        job = contract.SortJob(EXECUTION)
+        descriptor = dict(partition=0, bytes=sort.PARTITION_BYTES,
+                          records=contract.CAPS[0], sha256=b"x" * 32)
+        with self.assertRaisesRegex(ValueError, "incomplete sort partition"):
+            job.check_verdict(0, {"output": descriptor}, descriptor | {"records": descriptor["records"] - 1})
