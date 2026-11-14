@@ -41,10 +41,12 @@ TOOLS = ("mkfs.ext4", "debugfs", "dumpe2fs")
 MISSING = tuple(tool for tool in TOOLS if shutil.which(tool) is None)
 IN_CI = "CI" in os.environ
 
-# ASSUMPTION (theory-gap #114): the 1 MiB image is an empirically chosen
-# discriminator fixture, not a derived capacity model. The suite asserts only
-# the observed ext4 boundary for this fixture; it does not establish the
-# 6/8 MiB physical scale or a general feasibility result.
+# 经验证据（限 e2fsprogs 1.47.2、mkfs.ext4 -m 0 -O ^has_journal
+# 与宿主默认配置、1 MiB 镜像与 65,536 条记录），见 #114：
+# the 1 MiB image is an empirically chosen discriminator fixture, not a derived
+# capacity model. The suite asserts only the observed ext4 boundary for this
+# fixture; it does not establish the 6/8 MiB physical scale or a general
+# feasibility result.
 IMAGE_BYTES = 1 << 20
 RECORDS = 1 << 16
 PARTITION_BYTES = RECORDS // 2 * capacity_sort.RECORD.size
