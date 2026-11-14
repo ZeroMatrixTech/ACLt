@@ -4,6 +4,7 @@
 import os
 import subprocess
 import sys
+import time
 from threading import RLock
 
 from general_job import Journal
@@ -91,15 +92,34 @@ class Coordinator:
             self.record("WRITE_COMMITTED", owner=process.pid, epoch=self.epoch, event=message["event"])
             return result
 
-def receive(stream):
-    length = int.from_bytes(stream.read(4), "big")
-    c.need(0 < length <= 900000, "invalid coordination frame")
-    return c.decode(stream.read(length))
+def receive(stream, *, guest=False):
+    def exact(size):
+        data = bytearray()
+        deadline = time.monotonic() + 10 if guest else None
+        while len(data) < size:
+            block = stream.read(size - len(data))
+            if block:
+                data.extend(block)
+            elif deadline is None or time.monotonic() >= deadline:
+                raise CoordinationError("coordination host response incomplete")
+            else:
+                time.sleep(0.02)
+        return bytes(data)
+
+    header = exact(4)
+    length = int.from_bytes(header, "big")
+    c.need(0 < length <= 900000, f"invalid coordination frame header {header.hex()}")
+    return c.decode(exact(length))
 
 
 def send(stream, message):
     raw = c.encode(message)
-    stream.write(len(raw).to_bytes(4, "big") + raw)
+    frame = memoryview(len(raw).to_bytes(4, "big") + raw)
+    while frame:
+        written = stream.write(frame)
+        if not written:
+            raise CoordinationError("coordination frame write incomplete")
+        frame = frame[written:]
     stream.flush()
 
 
@@ -114,7 +134,7 @@ class GuestJournal(Journal):
     def add(self, kind, **fields):
         epoch = fields["epoch"] if kind == "HANDOFF" else self.epoch
         send(self.writer, dict(epoch=epoch, event=kind, fields=fields))
-        response = receive(self.reader)
+        response = receive(self.reader, guest=True)
         if "error" in response:
             raise CoordinationError(response["error"])
         result = super().add(kind, **fields) if kind == "HANDOFF" else super().add(kind, writer_epoch=epoch, **fields)

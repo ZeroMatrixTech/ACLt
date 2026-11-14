@@ -268,9 +268,7 @@ def run_general(role, port, budget, report, pairs):
                                if (entry / "name").read_text().strip() == "aclt.coordination")
                     port_path = f"/dev/{device}"
                     device = resources.enter_context(open(port_path, "r+b", buffering=0))
-                    reader = resources.enter_context(os.fdopen(os.dup(device.fileno()), "rb"))
-                    writer = resources.enter_context(os.fdopen(os.dup(device.fileno()), "wb"))
-                    journal_factory = partial(coordination.GuestJournal, reader=reader, writer=writer)
+                    journal_factory = partial(coordination.GuestJournal, reader=device, writer=device)
                 try:
                     journal, status = general_vm.run(
                         job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
