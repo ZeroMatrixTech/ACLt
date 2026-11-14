@@ -51,7 +51,7 @@ class ReuseTests(unittest.TestCase):
         self.target = change(fixture(bytes(32), DEFAULT_BUDGET, flat=True),
                              nonce=b"b" * 32, tasks=self.tasks)
 
-    def reuse(self, journal, slot, source_slot, **overrides):
+    def reuse(self, journal, slot, source_slot, /, **overrides):
         question = journal.job.question(slot, journal.accepted)["question"]
         fields = dict(slot=slot, source_execution=self.old.execution_id, source_slot=source_slot,
                       source_evidence=self.source.accepted[source_slot]["evidence"],
