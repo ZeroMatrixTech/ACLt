@@ -63,7 +63,7 @@
 | 条件 | 2026-11-14 状态 | 证据或后续条目 |
 |---|---|---|
 | 本地内核验收 1–4（闭环、语义边界、拒绝路径、差异检测） | 已满足 | [语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)；`make test-minimal-verifier` |
-| 通用契约 §6 最小跨面验收 | 部分满足，仅来宾级 | [联合验收报告](../testing/MULTIVM-GENERAL-JOB-20261113.md)覆盖两种合法顺序、树形与平铺计划身份、补算记账、预算不足停止和串行交接；同宿主三来宾，不是物理故障域分离。仍缺两个子项，归入条目 M9：其一，计划改为平铺后，按新槽位重新核对并复用已有证据的正例（现有证据中两种计划各自全部重算，回归只覆盖错绑拒绝）；其二，同时存在两个写者时停止（现有交接由宿主先停旧来宾，属于串行交接） |
+| 通用契约 §6 最小跨面验收 | 已满足（来宾级证据） | [联合验收报告](../testing/MULTIVM-GENERAL-JOB-20261113.md)覆盖身份、依赖、补算、预算和交接。[M9 验收报告](../testing/MULTIVM-CONTRACT-CLOSURE-20261114.md)补齐跨计划复用与双写者停止，适用范围为可信单宿主。 |
 | 物理双机完成条件（本文[可信双机验收](#完成条件)） | 已满足 | [M3 物理双机基线验收](../testing/DUALHOST-BASELINE-20261114.md)覆盖首个用例的两种 LAN 返回顺序及与整题参照的逐字节对照。漏片和错绑均由实跑证据离线重放并被拒绝。 |
 | 一项超出单节点资源的负载在通用契约下被验收 | 已满足（来宾级证据） | [多来宾容量排序通用契约验收](../testing/MULTIVM-SORT-CONTRACT-20261114.md)在同宿主上以单来宾实际交付失败为对照，由三来宾经共享尝试账、接纳与协调器交接发布两片合计 8 MiB 的固定排序结果。 |
 | 以上实验的本地回归全部纳入 `make test` | 已满足 | `experiments/aclt-minimal-verifier-baseline/tests/test_capacity_sort.py` 覆盖缩放双端往返与重放、删除 B 分区、替换一个字节和单节点容量耗尽；2026-11-14 经 PR #113 CI 与本地 `make test-minimal-verifier` 执行，退出 0（72 个用例）。缩放参数为 1 MiB 镜像、65,536 条记录，直接调用模块函数，不覆盖 CLI 和 6/8 MiB 规模。经验证据（限 e2fsprogs 1.47.2 与固定 mkfs 选项），见 [theory-gap #114](https://github.com/ZeroMatrixTech/ACLt/issues/114)：1 MiB 夹具的容量边界仅实测，未推导。 |

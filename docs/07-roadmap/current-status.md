@@ -15,7 +15,7 @@
 | 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 按[乌托邦基线闭合条件](minimal-verifier-baseline.md#乌托邦基线闭合条件)推进：补容量排序回归（M1）、物理双机基线验收（M3）、排序任务族接入通用契约（M2）、补齐契约 §6 的证据复用与双写者停止（M9） |
 | 本地双来宾验证 | [第 1 轮报告](../testing/MULTIVM-20261112.md)：同一作业在单宿主两个 QEMU 来宾上跑平坦两片、显式预算两片与树归并三片，两端角色切分、逐片交叉验证和归并输出均通过校验 | 只算来宾级证据；[DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md) 的物理双机条件与 G2/G3、P0-1B 仍未关闭 |
 | 本地可配置多来宾验证 | [n VM 验收](../testing/MULTIVM-N-20261112.md)：三来宾三片、四来宾六片均通过角色轮换、原始帧重放与成功输出等价验收 | 已验证[来宾工作进程退出与 TCP 断连](../testing/MULTIVM-N-FAULTS-20261113.md)时停止归并与留证，并验证[显式预算内的单次求解补算](../testing/MULTIVM-N-RETRY-20261113.md)；固定统计工件的[整题资源准入](../testing/MULTIVM-ROOT-LIMITS-20261113.md)已验收；并行调度、一般恢复、经济性与原 Gate 各自待验收；完整单机 trap 等价用于明确声明该要求的任务 |
-| 可信宿主下的协调器交接 | [两阶段来宾验收](../testing/MULTIVM-HANDOFF-20261113.md)：第 0 片接纳后重启来宾，接手实例复用回执，完成同一作业与预算 | 接手由可信宿主串行化；在途恢复、自动选主与抗回滚待验收 |
+| 可信宿主下的协调器交接 | [M9 来宾验收](../testing/MULTIVM-CONTRACT-CLOSURE-20261114.md)验证同一执行的轮次交接、旧写入拒绝和双写停止，并补齐跨计划证据复用 | 适用可信单宿主与无在途检查点。在途恢复、自动选主与抗回滚待验收 |
 | 单节点交付容量对照 | [物理双机固定容量排序](../testing/DUALHOST-CAPACITY-SORT-20261114.md)已通过：单个 6 MiB 镜像无法完整交付 8 MiB，双机各用同规格镜像完成并可重放 | 将排序任务族接到通用契约的统一尝试账、接纳与交接入口 |
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
 | 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
@@ -201,6 +201,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-14 | v0.5 | M9 补齐通用契约 §6 在可信单宿主的跨计划复用与双写停止，证据为来宾级 | [M9 验收报告](../testing/MULTIVM-CONTRACT-CLOSURE-20261114.md)、OQ-04、OQ-06 | 不变 |
 | 2026-11-14 | v0.5 | M2 在同宿主三来宾完成通用契约下的固定容量排序，含记录数记账、补算及无在途协调器交接。单来宾对照实际写入失败，证据为来宾级 | [M2 验收报告](../testing/MULTIVM-SORT-CONTRACT-20261114.md)、OQ-04、OQ-05、OQ-06 | 不变 |
 | 2026-11-14 | v0.5 | M3 完成固定统计用例的物理双机验收。两种 LAN 返回顺序的归并结果均与单机参照逐字节一致，漏片和错绑提交均由实跑证据重放并被拒绝 | [M3 验收报告](../testing/DUALHOST-BASELINE-20261114.md)、OQ-04、OQ-06 | 不变 |
 | 2026-11-14 | v0.5 | 维护者决定规范、文档、研究文稿与测试证据沿用 Apache-2.0，仓库全部工件采用同一许可；第三方材料保留原许可；名称、商标与贡献机制仍 `OPEN` | `README.md`、`CONTRIBUTING.md`、OQ-01 | 公开发布 |
