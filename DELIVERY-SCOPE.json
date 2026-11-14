@@ -9,7 +9,8 @@
     "scripts",
     "docs",
     "experiments",
-    ".github"
+    ".github",
+    ".claude/skills"
   ],
   "top_level_files": [
     "README.md",

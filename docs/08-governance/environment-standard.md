@@ -3,7 +3,7 @@
 > 文档状态：Living engineering policy（本次建立的工程协作约定）  
 > 当前语义基线：v0.5；ConformanceTarget：V1  
 > 环境规范版本：ENV-1  
-> 最后更新：2026-11-12
+> 最后更新：2026-11-14
 > 适用范围：Linux 本地回归、本地多虚拟机与双物理机 SSH 验证
 
 ## 1. 范围与权威边界
@@ -145,6 +145,14 @@ git diff --stat
 ```
 
 提交说明使用 [CONTRIBUTING 的模板](../../CONTRIBUTING.md#6-提交说明模板)，写问题、变更、验证、剩余风险及同步文件。不得 force push 共享分支。审计准备阶段不自行提交、推送、合并或创建 PR；这些操作按获得授权的独立流程执行。
+
+多个主题分支并行开发时，按[多分支并行开发流程](parallel-workflow.md)（PARALLEL-1）执行：
+
+- 每个条目使用独立的 worktree；
+- 审计由独立的只读会话进行；
+- 合并前把最新 `main` merge 进分支，不使用 rebase。
+
+该流程第 4 节列出维护者批准的长期授权，它就是上文所说的授权流程。
 
 文本统一 UTF-8 与 LF，新文件末尾保留换行；不要批量改动历史文件行尾。建议在自己的 clone 设置 `git config --local core.autocrlf false`，不要覆盖用户全局设置。当前仓库尚未以 `.gitattributes` 或 `.editorconfig` 强制这些约定。
 

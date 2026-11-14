@@ -58,6 +58,7 @@
 - [2026-10-13 导航维护记录](08-governance/audits/audit-20261013-01-document-navigation.md)：实验入口、复现边界与历史报告标注。
 
 - [运行与协作环境规范](08-governance/environment-standard.md)：ENV-1 工具版本、安装验收、Git 协作与交接约定。
+- [多分支并行开发流程](08-governance/parallel-workflow.md)：PARALLEL-1 会话分工、计划卡、PR 审计与合并前同步。
 
 - [当前实验索引](../experiments/README.md)、[state3 使用说明](../experiments/aclt-minimal-verifier-state3/README.md)与[多节点 admission 原型](../experiments/aclt-multinode-admission/README.md)。
 - [架构阅读指南](00-overview/architecture-guide.md)与[交互演示](00-overview/aclt-theater.html)：帮助理解架构，不替代规范或验证证据。
