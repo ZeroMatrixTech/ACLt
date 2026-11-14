@@ -171,7 +171,7 @@ flowchart LR
 ACLt/
 ├── README.md                        项目总入口
 ├── CONTRIBUTING.md                  贡献流程、同步要求和审查标准
-├── LICENSE                          代码与参考实现的许可证文本
+├── LICENSE                          仓库全部工件的许可证文本（Apache-2.0）
 ├── docs/
 │   ├── README.md                    文档索引、权威范围、冲突处理
 │   ├── 00-overview/                 为什么做、术语、系统边界
