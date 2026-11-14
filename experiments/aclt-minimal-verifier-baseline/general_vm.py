@@ -5,7 +5,7 @@ from contextlib import closing
 import json
 import socket
 
-from baseline import ARTIFACT_TAG, PROBE, ask, solve, validate
+from baseline import ARTIFACT_TAG, PROBE, QUESTION_TAG, ask, solve, validate
 from general_job import BudgetError, FAMILY, INT, Job, Journal, digest, handle
 from multivm_job import assignments, guest_ip
 from tools.formal_migration.s2_transport import receive, send
@@ -64,9 +64,10 @@ def standalone_probe(job, gas_limit):
 
 
 def run(job, roles, path, exchange, *, order, checkpoint=0, previous=None,
-        placement=None, retry_worker=None):
+        placement=None, retry_worker=None, source=None, reuse=None, journal_factory=Journal):
+    c.need(reuse is None or source is not None, "reuse needs verified source evidence")
     history = c.decode(previous.read_bytes()) if previous else ()
-    journal = Journal(job, path, history)
+    journal = journal_factory(job, path, history, source=source)
     if previous:
         journal.add("HANDOFF", epoch=journal.epoch + 1)
     else:
@@ -75,6 +76,17 @@ def run(job, roles, path, exchange, *, order, checkpoint=0, previous=None,
         placement = assignments(roles, len(job.tasks))
     while journal.ready():
         slot = next(slot for slot in order if slot in journal.ready())
+        if reuse is not None and slot in reuse:
+            source_slot = reuse[slot]
+            receipt = source.accepted.get(source_slot)
+            c.need(receipt is not None, "missing source acceptance")
+            question = job.question(slot, journal.accepted)["question"]
+            journal.add("REUSE", slot=slot, source_execution=source.job.execution_id,
+                        source_slot=source_slot, source_evidence=receipt["evidence"],
+                        question_id=c.domain_hash(QUESTION_TAG, question))
+            if len(journal.accepted) == checkpoint:
+                return journal, "CHECKPOINT"
+            continue
         worker, verifier = placement[slot]
         attempt = 1
         while True:
@@ -141,12 +153,12 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None):
                     respond(sort_job, raw, connection, response_path, drop=drop)
 
 
-def replay(job, roots, executor, previous=(), *, check_response=None):
+def replay(job, roots, executor, previous=(), *, check_response=None, source=None):
     """Check all requests and recompute the retained peer responses before replaying."""
     journal_path = roots["A"] / "journal.cbor"
     events = c.decode(journal_path.read_bytes())
     c.need(events[:len(previous)] == list(previous), "successor changed retained history")
-    journal = Journal(job, journal_path, events)
+    journal = Journal(job, journal_path, events, source=source)
     expected = {role: set() for role in roots}
     for event in events[len(previous):]:
         kind = event["kind"]
@@ -183,3 +195,13 @@ def replay(job, roots, executor, previous=(), *, check_response=None):
         actual = {path.name for path in root.glob("*-*.cbor")}
         c.need(actual == expected[role], "peer frame inventory differs")
     return journal
+
+
+def source_journal(job, path, executor):
+    events = c.decode(path.read_bytes())
+    source = Journal(job, path, events)
+    c.need(source.final is not None, "source execution did not publish")
+    for event in source.events:
+        if event["kind"] == "ACCEPT":
+            c.need(handle(event["request"], executor) == event["response"], "source verification differs")
+    return source

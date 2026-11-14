@@ -7,6 +7,7 @@ physical machine, so host-level faults, memory, and the kernel image are shared.
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
 import gzip
 import hashlib
@@ -26,6 +27,7 @@ from tempfile import TemporaryDirectory
 import time
 
 from baseline import ROOT, ask, solve
+import coordination
 import general_vm
 import sort_contract
 from dualhost import fixture, snapshot
@@ -236,7 +238,7 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
                    recursive: bool, leaves: int, links: dict[str, int] | None = None,
                    interrupt: tuple[str, str] | None = None, retry_solve: bool = False,
                    root_caps: dict | None = None, handoff: str | None = None,
-                   general_options: tuple[str, ...] = ()) -> list[str]:
+                   general_options: tuple[str, ...] = (), coordination_port: int | None = None) -> list[str]:
     ip = GUEST_A if role == "A" else GUEST_B
     peer = GUEST_B if role == "A" else GUEST_A
     if links is not None:
@@ -279,6 +281,10 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
                                  "-netdev", f"hubport,id=hub{peer_role},hubid=0,netdev=link{peer_role}"])
         else:
             netdev = f"socket,id=n0,listen=127.0.0.1:{links[role]}"
+    if coordination_port is not None:
+        commands.extend(["-device", "virtio-serial-pci",
+                         "-chardev", f"socket,id=control,host=127.0.0.1,port={coordination_port}",
+                         "-device", "virtserialport,chardev=control,name=aclt.coordination"])
     return commands + ["-netdev", netdev, "-device", device]
 
 
@@ -583,17 +589,25 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
             raise RunError("single guest did not demonstrate capacity exhaustion")
         record["single_guest_control"] = result
 
-    def phase(directory, image, handoff=None, history=()):
-        roots, serial = boot(directory, image, handoff)
+    scenario = getattr(args, "m9", None)
+    authority = None
+    if scenario in ("handoff", "overlap"):
+        authority = coordination.Coordinator(job, output / "host-journal.cbor",
+                                             output / "coordination.trace")
+
+    def phase(directory, image, handoff=None, history=(), phase_job=job, source=None, guard=None):
+        roots, serial = boot(directory, image, handoff, phase_job=phase_job, guard=guard)
         if any("GUEST_EXIT=0" not in log.splitlines() or "Traceback" in log for log in serial.values()):
             raise RunError("general job guest failed")
         guests = {role: json.loads((root / "guest.json").read_bytes()) for role, root in roots.items()}
         check_topology(guests, record)
         for name in ("declaration", "plan", "execution"):
-            if (roots["A"] / f"{name}.cbor").read_bytes() != getattr(job, name):
+            if (roots["A"] / f"{name}.cbor").read_bytes() != getattr(phase_job, name):
                 raise RunError(f"guest changed frozen {name}")
-        journal = general_vm.replay(job, roots, executor, history,
+        journal = general_vm.replay(phase_job, roots, executor, history, source=source,
                                     check_response=check_sort_response if is_sort else None)
+        if guard and guard.journal.events != journal.events:
+            raise RunError("guest evidence differs from authoritative host journal")
         publication = roots["A"] / "publication.cbor"
         if journal.final is None:
             if publication.exists():
@@ -605,8 +619,22 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
     history = ()
     before_guests = None
     before = {}
+    source = None
+    mode = None
+    if scenario == "reuse":
+        source_job = general_vm.fixture(os.urandom(32), job.budget)
+        source_guard = coordination.Coordinator(source_job, output / "source-journal.cbor",
+                                                output / "source-coordination.trace")
+        source_roots, _, source = phase(output / "source", image, phase_job=source_job,
+                                        guard=source_guard)
+        source_path = output / "source.cbor"
+        shutil.copyfile(source_roots["A"] / "journal.cbor", source_path)
+        image = successor_image(image, (source_path,))
+        authority = coordination.Coordinator(job, output / "host-journal.cbor",
+                                             output / "coordination.trace", source=source)
+        mode = "reuse"
     if args.general_checkpoint:
-        before, before_guests, journal = phase(output / "before", image, "before")
+        before, before_guests, journal = phase(output / "before", image, "before", guard=authority)
         if (before_guests["A"]["general_status"] != "CHECKPOINT"
                 or len(journal.accepted) != args.general_checkpoint or journal.final is not None
                 or journal.reserved):
@@ -619,12 +647,13 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
             files.append(before[owner] / "delivery.img")
         image = successor_image(image, files)
     roots, guests, journal = phase(output / "after" if history else output, image,
-                               "after" if history else None, history)
+                                   "after" if history else mode, history, source=source, guard=authority)
     if history and (journal.events[len(history)] != {"kind": "HANDOFF", "epoch": 1}
                     or {g["boot_id"] for g in guests.values()} & {g["boot_id"] for g in before_guests.values()}):
         raise RunError("successor did not take over after the checkpoint")
     result = guests["A"]["general_status"]
-    if result not in ("PUBLISHED", "BUDGET_BLOCKED") or (result == "PUBLISHED") != (journal.final is not None):
+    expected = ("COORDINATION_PAUSED",) if scenario == "overlap" else ("PUBLISHED", "BUDGET_BLOCKED")
+    if result not in expected or (result == "PUBLISHED") != (journal.final is not None):
         raise RunError(f"unexpected terminal state: {result}")
     if result == "BUDGET_BLOCKED":
         if not args.general_drop or journal.charged + sum(
@@ -634,7 +663,17 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         sort_contract.verify_retained(
             job, journal, lambda request: (before if history and request["epoch"] == 0 else roots)
             [sort_contract.PLACEMENT[request["slot"]][0]] / "delivery.img")
-    return dict(status="PASS" if journal.final else "FAIL", general_status=result,
+    overlap = scenario == "overlap"
+    if overlap and (not authority.paused or len(journal.events) != len(history) + 1):
+        raise RunError("overlap did not stop both dispatch and publication")
+    if source is not None:
+        if (job.declaration_id != source.job.declaration_id or job.plan_id == source.job.plan_id
+                or journal.charged or journal.attempts or journal.final is None
+                or journal.final["output"] != source.final["output"]):
+            raise RunError("reused publication differs from its source or incurred solve costs")
+        record["source_execution_id"] = source.job.execution_id.hex()
+        record["source_charged_gas"] = source.charged
+    return dict(status="PASS" if journal.final or overlap else "FAIL", general_status=result,
                 declaration_id=job.declaration_id.hex(), plan_id=job.plan_id.hex(),
                 execution_id=job.execution_id.hex(), **{job.charge_field: journal.charged},
                 output=json.loads(json.dumps(journal.final["output"], default=bytes.hex))
@@ -738,7 +777,8 @@ def run(args: argparse.Namespace) -> dict:
             record["root_limits"] = job[2]
         record["topology"] = {"coordinator": "A", "guest_ips": {role: guest_ip(role) for role in roles},
                               "transport": "QEMU hub with host-loopback socket links"}
-    def boot(directory: Path, image: Path, handoff: str | None = None) -> tuple[dict[str, Path], dict[str, str]]:
+    def boot(directory: Path, image: Path, handoff: str | None = None, *,
+             phase_job=execution, guard=None) -> tuple[dict[str, Path], dict[str, str]]:
         directory.mkdir(exist_ok=True)
         active = ("A",) if handoff == "control" else roles
         logs = {role: directory / f"{role}-serial.log" for role in active}
@@ -750,14 +790,19 @@ def run(args: argparse.Namespace) -> dict:
         general_options = ()
         if general:
             general_options = (
-                f'aclt_execution_nonce={codec.decode(execution.execution)["nonce"].hex()}',
+                f'aclt_execution_nonce={codec.decode(phase_job.execution)["nonce"].hex()}',
                 f"aclt_capacity_sort={int(is_sort)}",
                 f'aclt_general_order={args.general_order}',
                 f'aclt_general_drop={int(args.general_drop)}',
-                f'aclt_general_flat={int(args.general_flat)}',
+                f'aclt_general_flat={int(not is_sort and codec.decode(phase_job.plan)["tree"] == list(range(leaves)))}',
+                f'aclt_coordinated={int(guard is not None)}',
                 f'aclt_general_checkpoint={args.general_checkpoint if handoff == "before" else 0}',
             )
+        listener = pool = None
         try:
+            if guard:
+                listener = socket.create_server(("127.0.0.1", 0))
+                listener.settimeout(30)
             for role in (*active[1:], active[0]):
                 if role == active[0] and len(active) > 1:
                     time.sleep(1)
@@ -765,7 +810,21 @@ def run(args: argparse.Namespace) -> dict:
                     role, kernel, image, disks[role], logs[role], accel, args.memory, links[roles[1]],
                     commit, args.solve_budget, recursive, leaves, links if len(active) > 1 and many else None,
                     args.interrupt if role == target else None, args.retry_solve, root_caps, handoff,
-                    general_options))
+                    general_options, listener.getsockname()[1] if listener and role == "A" else None))
+            if guard:
+                coordinator = processes["A"]
+                guard.assign(coordinator)
+                connection, _ = listener.accept()
+                pool = ThreadPoolExecutor(max_workers=1)
+
+                def admission():
+                    with connection, connection.makefile("rb") as reader, connection.makefile("wb") as writer:
+                        inject = None
+                        if getattr(args, "m9", None) == "overlap" and handoff == "after":
+                            inject = lambda: coordination.conflicting_intent(guard)
+                        coordination.serve(guard, coordinator, reader, writer, on_intent=inject)
+
+                admission_result = pool.submit(admission)
             deadline = started + BOOT_TIMEOUT
             for role, process in processes.items():
                 try:
@@ -774,9 +833,15 @@ def run(args: argparse.Namespace) -> dict:
                     raise RunError(f"guest {role} did not finish within {BOOT_TIMEOUT}s")
                 if process.returncode:
                     raise RunError(f"guest {role} exited {process.returncode}")
+            if pool:
+                admission_result.result(timeout=10)
         finally:
             for process in processes.values():
                 terminate(process)
+            if listener:
+                listener.close()
+            if pool:
+                pool.shutdown()
         roots = {}
         for role in active:
             disk_root = directory / role
@@ -917,6 +982,7 @@ def main() -> None:
     runner.add_argument("--memory", type=int, default=1024)
     runner.add_argument("--handoff", action="store_true", help="replace the coordinator after the first accepted leaf")
     runner.add_argument("--keep-work", action="store_true")
+    runner.add_argument("--m9", choices=("reuse", "handoff", "overlap"), help="run a contract closure scenario")
     runner.add_argument("--general", action="store_true", help="run the integer-vector contract fixture")
     runner.add_argument("--capacity-sort", action="store_true", help="run the fixed capacity-sort contract fixture")
     runner.add_argument("--general-order", choices=("0123", "3102", "1023", "01", "10"), default="0123",
@@ -930,6 +996,12 @@ def main() -> None:
     runner.add_argument("--interrupt", nargs=2, metavar=("MODE", "OPERATION"),
                         help="inject worker-exit or disconnect after receiving SOLVE-i or VERIFY-i")
     args = parser.parse_args()
+    if args.m9:
+        if args.capacity_sort or args.general_drop or args.general_flat or args.general_checkpoint:
+            runner.error("M9 scenarios choose their own family, plan and checkpoint")
+        args.general = True
+        args.general_flat = args.m9 == "reuse"
+        args.general_checkpoint = int(args.m9 != "reuse")
     if args.capacity_sort:
         if args.general or args.general_flat or args.general_checkpoint > 1:
             runner.error("capacity sort has its own fixed plan and one-slot checkpoint")

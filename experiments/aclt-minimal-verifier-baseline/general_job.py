@@ -188,9 +188,10 @@ def response_for(raw, response, field):
 class Journal:
     """One trusted writer, with a durable transition before dispatch."""
 
-    def __init__(self, job, path: Path, events=()):
+    def __init__(self, job, path: Path, events=(), *, source=None):
         self.job = job
         self.path = path
+        self.source = source
         self.lock = RLock()
         self.events = []
         self.epoch = 0
@@ -217,6 +218,17 @@ class Journal:
         return c.encode(fields)
 
     def apply(self, event):
+        has_epoch = "writer_epoch" in event
+        if self.events and event["kind"] != "HANDOFF":
+            guarded = "writer_epoch" in self.events[0]
+            c.need(has_epoch == guarded, "missing writer epoch" if guarded else "unexpected writer epoch")
+        if has_epoch:
+            c.need(c.uint(event["writer_epoch"]) == self.epoch, "wrong writer epoch")
+            fields = {key: value for key, value in event.items() if key != "writer_epoch"}
+            return self.apply_event(fields, event)
+        return self.apply_event(event, event)
+
+    def apply_event(self, event, recorded):
         kind = event["kind"]
         c.need(self.final is None, "execution already published")
         if kind == "START":
@@ -239,8 +251,12 @@ class Journal:
             self.final = dict(execution_id=self.job.execution_id, declaration_id=self.job.declaration_id,
                               plan_id=self.job.plan_id, output=output,
                               output_digest=digest("Output", c.encode(output)), evidence=evidence,
-                              journal_digest=digest("Journal", c.encode([*self.events, event])))
+                              journal_digest=digest("Journal", c.encode([*self.events, recorded])))
             self.final[self.job.charge_field] = self.charged
+            return
+
+        if kind == "REUSE":
+            self.apply_reuse(event, recorded)
             return
 
         slot = c.uint(event["slot"])
@@ -255,7 +271,7 @@ class Journal:
             first = self.attempts.get((slot, 1))
             c.need(number == 1 or first and first["state"] == "NO_REPLY", "retry requires unanswered first attempt")
             c.need(number == 1 or all(n == 1 for _, n in self.attempts), "execution already used its one retry")
-            future = sum(cap for i, cap in enumerate(self.job.caps) if (i, 1) not in self.attempts)
+            future = sum(cap for i, cap in enumerate(self.job.caps) if (i, 1) not in self.attempts and i not in self.accepted)
             required = cap if number == 1 else cap + future
             if self.charged + self.reserved + required > self.job.budget:
                 raise BudgetError("insufficient solve budget")
@@ -292,20 +308,46 @@ class Journal:
             self.reserved -= cap
             self.charged += used
             attempt["state"] = "ACCEPTED"
-            self.accepted[slot] = dict(output=outcome["output"], evidence=digest("Acceptance", c.encode(event)))
+            self.accepted[slot] = dict(output=outcome["output"], evidence=digest("Acceptance", c.encode(recorded)))
         else:
             raise c.CodecError("unknown journal transition")
         c.need(self.charged + self.reserved <= self.job.budget, "budget invariant violated")
+
+    def apply_reuse(self, event, recorded):
+        c.fields(event, ("kind", "slot", "source_execution", "source_slot", "source_evidence", "question_id"))
+        slot = c.uint(event["slot"])
+        c.need(slot in self.ready() and not any(index == slot for index, _ in self.attempts),
+               "slot cannot accept reused evidence")
+        c.need(self.source is not None and event["source_execution"] == self.source.job.execution_id
+               and event["source_execution"] != self.job.execution_id, "wrong source execution")
+        c.need(isinstance(self.job, Job) and isinstance(self.source.job, Job),
+               "unsupported evidence reuse family")
+        source_slot = c.uint(event["source_slot"])
+        receipt = self.source.accepted.get(source_slot)
+        c.need(receipt is not None and receipt["evidence"] == event["source_evidence"],
+               "missing or wrong source acceptance")
+        original = next((entry for entry in self.source.events if
+                         entry["kind"] == "ACCEPT" and entry["slot"] == source_slot), None)
+        c.need(original is not None, "source must be an original verified acceptance")
+        request = c.decode(original["request"])
+        question = self.job.question(slot, self.accepted)["question"]
+        identifier = c.domain_hash(QUESTION_TAG, question)
+        c.need(c.domain_hash(QUESTION_TAG, request["question"]) == identifier
+               and event["question_id"] == identifier, "frozen question mismatch")
+        outcome = self.job.decode_outcome(slot, question, request["answer"])
+        self.job.check_output(slot, outcome, self.accepted)
+        c.need(outcome["output"] == receipt["output"], "source output differs from accepted result")
+        self.accepted[slot] = dict(output=receipt["output"], evidence=digest("Acceptance", c.encode(recorded)))
 
     def add(self, kind, **fields):
         event = dict(kind=kind, **fields)
         with self.lock:
             if kind == "PUBLISH" and self.final is not None:
                 return self.final
-            if kind == "ACCEPT" and event in self.events:
+            if kind in ("ACCEPT", "REUSE") and event in self.events:
                 return None
             # Validate on a replay before updating the live state or allowing any dispatch.
-            updated = Journal(self.job, self.path, [*self.events, event])
+            updated = Journal(self.job, self.path, [*self.events, event], source=self.source)
             pending = self.path.with_suffix(".pending")
             with pending.open("wb") as stream:
                 stream.write(c.encode(updated.events))

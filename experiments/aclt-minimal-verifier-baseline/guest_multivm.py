@@ -3,6 +3,7 @@
 """Guest entry for the minimal-verifier VM run; reads its role from the kernel command line."""
 
 from contextlib import ExitStack
+from functools import partial
 import hashlib
 import json
 import os
@@ -15,6 +16,7 @@ import time
 sys.path[:0] = ["/repo", "/repo/experiments/aclt-minimal-verifier-baseline"]
 
 import capacity_sort
+import coordination
 from dualhost import fixture
 import sort_contract
 import general_vm
@@ -212,6 +214,14 @@ def run_general(role, port, budget, report, pairs):
         roles = guest_roles(int(pairs["aclt_guests"]))
         job = sort_job or general_vm.fixture(nonce, budget,
                                  flat=pairs.get("aclt_general_flat") == "1")
+        reuse = None
+        source = None
+        if pairs.get("aclt_handoff") == "reuse":
+            source_path = HANDOFF_INPUT / "source.cbor"
+            source_execution = codec.decode(codec.decode(source_path.read_bytes())[0]["execution"])
+            source_job = general_vm.fixture(source_execution["nonce"], source_execution["budget"])
+            source = general_vm.source_journal(source_job, source_path, EXECUTOR)
+            reuse = {slot: slot for slot in range(len(job.tasks))}
         order = tuple(int(slot) for slot in pairs["aclt_general_order"])
         previous = HANDOFF_INPUT / "journal.cbor" if pairs.get("aclt_handoff") == "after" else None
 
@@ -251,10 +261,24 @@ def run_general(role, port, budget, report, pairs):
                         retained = general_vm.Journal(job, previous, codec.decode(previous.read_bytes()))
                         sort_contract.verify_retained(
                             job, retained, lambda request: HANDOFF_INPUT / "delivery.img")
-                journal, status = general_vm.run(
-                    job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
-                    checkpoint=checkpoint, placement=placement, retry_worker=retry_worker,
-                )
+                journal_factory = general_vm.Journal
+                if pairs.get("aclt_coordinated") == "1":
+                    # Minimal initramfs has devtmpfs but no udev symlink rules.
+                    device, = (entry.name for entry in Path("/sys/class/virtio-ports").iterdir()
+                               if (entry / "name").read_text().strip() == "aclt.coordination")
+                    port_path = f"/dev/{device}"
+                    device = resources.enter_context(open(port_path, "r+b", buffering=0))
+                    journal_factory = partial(coordination.GuestJournal, reader=device, writer=device)
+                try:
+                    journal, status = general_vm.run(
+                        job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
+                        checkpoint=checkpoint, placement=placement, retry_worker=retry_worker,
+                        source=source, reuse=reuse, journal_factory=journal_factory,
+                    )
+                except coordination.CoordinationError:
+                    journal = general_vm.Journal(job, output / "journal.cbor",
+                                                 codec.decode((output / "journal.cbor").read_bytes()))
+                    status = "COORDINATION_PAUSED"
         finally:
             for peer in roles[1:]:
                 remote(peer, general_vm.STOP, reply=False)
