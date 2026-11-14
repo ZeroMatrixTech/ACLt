@@ -63,16 +63,19 @@ def standalone_probe(job, gas_limit):
     return c.decode(solve(ask(artifact, data, limits), artifact, data).outcome)
 
 
-def run(job, roles, path, exchange, *, order, checkpoint=0, previous=None):
+def run(job, roles, path, exchange, *, order, checkpoint=0, previous=None,
+        placement=None, retry_worker=None):
     history = c.decode(previous.read_bytes()) if previous else ()
     journal = Journal(job, path, history)
     if previous:
         journal.add("HANDOFF", epoch=journal.epoch + 1)
     else:
         journal.add("START", execution=job.execution)
+    if placement is None:
+        placement = assignments(roles, len(job.tasks))
     while journal.ready():
         slot = next(slot for slot in order if slot in journal.ready())
-        worker, verifier = assignments(roles, len(job.tasks))[slot]
+        worker, verifier = placement[slot]
         attempt = 1
         while True:
             request = journal.frame(slot, attempt, "SOLVE")
@@ -87,7 +90,8 @@ def run(job, roles, path, exchange, *, order, checkpoint=0, previous=None):
                 if attempt == 2:
                     return journal, "NO_REPLY"
                 attempt += 1
-                worker = next(role for role in roles if role not in (worker, verifier))
+                worker = (retry_worker(worker) if retry_worker is not None else
+                          next(role for role in roles if role not in (worker, verifier)))
                 continue
             journal.add("ANSWER", slot=slot, attempt=attempt, response=response)
             answer = journal.attempts[slot, attempt]["answer"]
@@ -106,7 +110,7 @@ def wire_name(raw):
     return f'{value["epoch"]}-{value["slot"]}-{value["attempt"]}-{value["action"]}'
 
 
-def serve(role, port, executor, output, *, drop_first_b):
+def serve(role, port, executor, output, *, drop_first_b, sort_job=None):
     """Serve the authenticated-by-topology peer in this trusted VM experiment."""
     seen = set()
     with closing(socket.create_server((guest_ip(role), port))) as listener:
@@ -125,13 +129,19 @@ def serve(role, port, executor, output, *, drop_first_b):
                 seen.add(key)
                 name = wire_name(raw)
                 (output / f"{name}-request.cbor").write_bytes(raw)
-                response = handle(raw, executor)
-                (output / f"{name}-response.cbor").write_bytes(response)
-                if not (drop_first_b and name == "0-1-1-SOLVE"):
-                    send(connection, response)
+                drop = drop_first_b and name == "0-1-1-SOLVE"
+                response_path = output / f"{name}-response.cbor"
+                if sort_job is None:
+                    response = handle(raw, executor)
+                    response_path.write_bytes(response)
+                    if not drop:
+                        send(connection, response)
+                else:
+                    from sort_contract import respond
+                    respond(sort_job, raw, connection, response_path, drop=drop)
 
 
-def replay(job, roots, executor, previous=()):
+def replay(job, roots, executor, previous=(), *, check_response=None):
     """Check all requests and recompute the retained peer responses before replaying."""
     journal_path = roots["A"] / "journal.cbor"
     events = c.decode(journal_path.read_bytes())
@@ -151,8 +161,7 @@ def replay(job, roots, executor, previous=()):
         expected["A"].add(request_file)
         for endpoint in {role, "A"}:
             c.need((roots[endpoint] / request_file).read_bytes() == raw, "peer request differs")
-        response = handle(raw, executor)
-        c.need((roots[role] / response_file).read_bytes() == response, "peer response differs")
+        response = (roots[role] / response_file).read_bytes()
         received = event["response"] if kind == "ACCEPT" else None
         if kind == "RESERVE":
             outcome = [e for e in events if e["kind"] in ("ANSWER", "NO_REPLY")
@@ -162,6 +171,10 @@ def replay(job, roots, executor, previous=()):
                 received = outcome[0]["response"]
             else:
                 c.need(name == "0-1-1-SOLVE" and role == "B", "unexpected missing reply")
+        if check_response is None:
+            c.need(response == handle(raw, executor), "peer response differs")
+        else:
+            check_response(raw, response, roots[role], received is None)
         if received is not None:
             expected["A"].add(response_file)
             c.need(received == response == (roots["A"] / response_file).read_bytes(),

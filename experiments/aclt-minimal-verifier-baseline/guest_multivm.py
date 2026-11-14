@@ -14,7 +14,9 @@ import time
 
 sys.path[:0] = ["/repo", "/repo/experiments/aclt-minimal-verifier-baseline"]
 
+import capacity_sort
 from dualhost import fixture
+import sort_contract
 import general_vm
 from lan import TIMEOUT, handle_request, run_job, serve
 from multivm_job import IncompleteExchange, assignments, guest_ip, guest_roles, label, peer_operations, run_many
@@ -196,22 +198,32 @@ def run_general(role, port, budget, report, pairs):
     output = EVIDENCE / role
     output.mkdir(mode=0o700)
     drop = pairs.get("aclt_general_drop") == "1"
+    nonce = bytes.fromhex(pairs["aclt_execution_nonce"])
+    sort_job = sort_contract.SortJob(nonce) if pairs.get("aclt_capacity_sort") == "1" else None
+    if sort_job is not None:
+        if pairs.get("aclt_handoff") == "control":
+            capacity_sort.single(output)
+            report["general_status"] = "CAPACITY_EXHAUSTED"
+            (output / "guest.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
+            return 0
     if role != "A":
-        report.update(general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop))
+        report.update(general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop, sort_job=sort_job))
     else:
         roles = guest_roles(int(pairs["aclt_guests"]))
-        job = general_vm.fixture(bytes.fromhex(pairs["aclt_execution_nonce"]), budget,
+        job = sort_job or general_vm.fixture(nonce, budget,
                                  flat=pairs.get("aclt_general_flat") == "1")
         order = tuple(int(slot) for slot in pairs["aclt_general_order"])
         previous = HANDOFF_INPUT / "journal.cbor" if pairs.get("aclt_handoff") == "after" else None
 
         report["connections"] = {}
 
-        def remote(owner, raw, *, reply=True):
+        def remote(owner, raw, *, reply=True, stored=None):
             with connect(guest_ip(owner), port) as connection:
                 connection.settimeout(general_vm.TIMEOUT)
                 report["connections"][owner] = dict(local_ip=connection.getsockname()[0],
                                                      peer_ip=connection.getpeername()[0])
+                if stored is not None:
+                    return sort_contract.exchange_payload(connection, raw, stored)
                 send(connection, raw)
                 if reply:
                     return receive(connection)
@@ -219,16 +231,30 @@ def run_general(role, port, budget, report, pairs):
         def exchange(owner, raw):
             name = general_vm.wire_name(raw)
             (output / f"{name}-request.cbor").write_bytes(raw)
-            result = (general_vm.handle(raw, EXECUTOR) if owner == role else remote(owner, raw))
+            if sort_job is None:
+                result = general_vm.handle(raw, EXECUTOR) if owner == role else remote(owner, raw)
+            else:
+                result = remote(owner, raw, stored=stored)
             (output / f"{name}-response.cbor").write_bytes(result)
             return result
 
         # Finish the operation stream even on a blocked budget or checkpoint.
         try:
-            journal, status = general_vm.run(
-                job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
-                checkpoint=int(pairs.get("aclt_general_checkpoint", "0")),
-            )
+            checkpoint = int(pairs.get("aclt_general_checkpoint", "0"))
+            with ExitStack() as resources:
+                placement = retry_worker = None
+                if sort_job is not None:
+                    stored = resources.enter_context(capacity_sort.memory_file())
+                    placement = sort_contract.PLACEMENT
+                    retry_worker = sort_contract.retry_on_same_worker
+                    if previous:
+                        retained = general_vm.Journal(job, previous, codec.decode(previous.read_bytes()))
+                        sort_contract.verify_retained(
+                            job, retained, lambda request: HANDOFF_INPUT / "delivery.img")
+                journal, status = general_vm.run(
+                    job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
+                    checkpoint=checkpoint, placement=placement, retry_worker=retry_worker,
+                )
         finally:
             for peer in roles[1:]:
                 remote(peer, general_vm.STOP, reply=False)

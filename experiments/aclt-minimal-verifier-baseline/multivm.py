@@ -27,6 +27,7 @@ import time
 
 from baseline import ROOT, ask, solve
 import general_vm
+import sort_contract
 from dualhost import fixture, snapshot
 from job import JOB_TAG, admit_stats_root, merge_job, prepare_job
 from lan import decode_answer, handle_request, operations, request
@@ -97,7 +98,7 @@ def ldd_closure(binary: Path) -> list[Path]:
     return sorted(paths)
 
 
-def build_runtime(destination: Path) -> Path:
+def build_runtime(destination: Path, *, capacity_sort=False) -> Path:
     """Assemble a minimal guest root from the host toolchain."""
     busybox = shutil.which("busybox")
     python = shutil.which("python3")
@@ -124,6 +125,17 @@ def build_runtime(destination: Path) -> Path:
     shutil.copy2(interpreter, root / "usr/bin/python3")
     shutil.copy2(interpreter, root / "usr/bin" / interpreter.name)
     libraries = set(ldd_closure(interpreter))
+    if capacity_sort:
+        (root / "usr/sbin").mkdir()
+        for name in ("mkfs.ext4", "debugfs", "dumpe2fs"):
+            binary = shutil.which(name)
+            if not binary:
+                raise RunError(f"missing sort tool: {name}")
+            shutil.copy2(binary, root / "usr/sbin" / name)
+            libraries.update(ldd_closure(Path(binary)))
+        config = Path("/etc/mke2fs.conf")
+        if config.is_file():
+            shutil.copy2(config, root / "etc" / config.name)
     for module in sorted(Path(sysconfig.get_paths()["stdlib"]).glob("lib-dynload/*.so")):
         libraries.update(ldd_closure(module))
     for library in sorted(libraries):
@@ -256,6 +268,8 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
                  "-kernel", str(kernel), "-initrd", str(initramfs), "-append", " ".join(options),
                  "-drive", f"file={disk},format=raw,if=virtio"]
     device = "virtio-net-pci,netdev=n0"
+    if handoff == "control":
+        netdev = f"socket,id=n0,listen=127.0.0.1:{link}"
     if links is not None:
         device += f",mac=52:54:00:ac:17:{ord(role):02x}"
         if role == "A":
@@ -555,6 +569,20 @@ def replay_handoff(before: dict[str, Path], after: dict[str, Path], executor: Pa
 
 
 def run_general(job, args, boot, executor, image, output, record, successor_image):
+    is_sort = isinstance(job, sort_contract.SortJob)
+
+    def check_sort_response(raw, response, root, unanswered):
+        sort_contract.replay_response(job, raw, response, root, unanswered)
+
+    if is_sort:
+        control, serial = boot(output / "control", image, "control")
+        if "GUEST_EXIT=0" not in serial["A"].splitlines() or "Traceback" in serial["A"]:
+            raise RunError("capacity control guest failed")
+        result = json.loads((control["A"] / "result.json").read_bytes())
+        if result["status"] != "CAPACITY_EXHAUSTED":
+            raise RunError("single guest did not demonstrate capacity exhaustion")
+        record["single_guest_control"] = result
+
     def phase(directory, image, handoff=None, history=()):
         roots, serial = boot(directory, image, handoff)
         if any("GUEST_EXIT=0" not in log.splitlines() or "Traceback" in log for log in serial.values()):
@@ -564,7 +592,8 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         for name in ("declaration", "plan", "execution"):
             if (roots["A"] / f"{name}.cbor").read_bytes() != getattr(job, name):
                 raise RunError(f"guest changed frozen {name}")
-        journal = general_vm.replay(job, roots, executor, history)
+        journal = general_vm.replay(job, roots, executor, history,
+                                    check_response=check_sort_response if is_sort else None)
         publication = roots["A"] / "publication.cbor"
         if journal.final is None:
             if publication.exists():
@@ -575,6 +604,7 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
 
     history = ()
     before_guests = None
+    before = {}
     if args.general_checkpoint:
         before, before_guests, journal = phase(output / "before", image, "before")
         if (before_guests["A"]["general_status"] != "CHECKPOINT"
@@ -582,8 +612,13 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
                 or journal.reserved):
             raise RunError("guest did not reach the requested quiescent checkpoint")
         history = journal.events
-        image = successor_image(image, (before["A"] / "journal.cbor",))
-    _, guests, journal = phase(output / "after" if history else output, image,
+        files = [before["A"] / "journal.cbor"]
+        if is_sort:
+            owner, = (entry["worker"] for entry in journal.attempts.values()
+                      if entry["state"] == "ACCEPTED")
+            files.append(before[owner] / "delivery.img")
+        image = successor_image(image, files)
+    roots, guests, journal = phase(output / "after" if history else output, image,
                                "after" if history else None, history)
     if history and (journal.events[len(history)] != {"kind": "HANDOFF", "epoch": 1}
                     or {g["boot_id"] for g in guests.values()} & {g["boot_id"] for g in before_guests.values()}):
@@ -595,10 +630,15 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         if not args.general_drop or journal.charged + sum(
                 cap for slot, cap in enumerate(job.caps) if slot not in journal.accepted) <= job.budget:
             raise RunError("guest reported a budget block with enough remaining gas")
+    if is_sort:
+        sort_contract.verify_retained(
+            job, journal, lambda request: (before if history and request["epoch"] == 0 else roots)
+            [sort_contract.PLACEMENT[request["slot"]][0]] / "delivery.img")
     return dict(status="PASS" if journal.final else "FAIL", general_status=result,
                 declaration_id=job.declaration_id.hex(), plan_id=job.plan_id.hex(),
-                execution_id=job.execution_id.hex(), charged_gas=journal.charged,
-                output=journal.final["output"] if journal.final else None,
+                execution_id=job.execution_id.hex(), **{job.charge_field: journal.charged},
+                output=json.loads(json.dumps(journal.final["output"], default=bytes.hex))
+                if journal.final else None,
                 solve_order=[event["slot"] for event in journal.events if event["kind"] == "RESERVE"],
                 acceptance_order=list(journal.accepted),
                 handoff=bool(history), before_guests=before_guests,
@@ -613,15 +653,22 @@ def run(args: argparse.Namespace) -> dict:
                                                 ("output_limit", args.root_output_limit))
                  if value is not None}
     general = getattr(args, "general", False)
+    is_sort = getattr(args, "capacity_sort", False)
     job = None
     execution = None
     if general:
         if not many or args.handoff or args.interrupt or args.retry_solve or args.leaves or root_caps:
             raise RunError("general job requires at least three guests and its own fault and handoff options")
-        leaves = len(general_vm.CAPS)
-        budget = args.solve_budget if args.solve_budget is not None else general_vm.DEFAULT_BUDGET
-        args.solve_budget = budget
-        execution = general_vm.fixture(os.urandom(32), budget, flat=args.general_flat)
+        if is_sort:
+            if len(roles) != 3 or args.solve_budget is not None:
+                raise RunError("capacity sort requires three guests and a frozen record budget")
+            execution = sort_contract.SortJob(os.urandom(32))
+            leaves = len(execution.tasks)
+        else:
+            leaves = len(general_vm.CAPS)
+            budget = args.solve_budget if args.solve_budget is not None else general_vm.DEFAULT_BUDGET
+            args.solve_budget = budget
+            execution = general_vm.fixture(os.urandom(32), budget, flat=args.general_flat)
     elif root_caps and not many:
         raise RunError("explicit whole-task limits require three or more guests")
     elif many:
@@ -663,7 +710,7 @@ def run(args: argparse.Namespace) -> dict:
     subprocess.run(COMPILE + [str(executor)], cwd=staging / "repo", check=True, capture_output=True)
     executor.chmod(0o755)
     runtime = (args.runtime_root.resolve() if args.runtime_root
-               else build_runtime(work / "runtime"))
+               else build_runtime(work / "runtime", capacity_sort=is_sort))
     runtime_archive = work / "runtime.cpio"
     write_cpio(runtime, runtime_archive)
     guest_archive = pack_guest(staging, executor)
@@ -682,6 +729,8 @@ def run(args: argparse.Namespace) -> dict:
               "runtime_files": sum(1 for _ in runtime.rglob("*")),
               "environment": environment(accel), "solve_budget": args.solve_budget,
               "recursive": recursive, "guest_count": len(roles)}
+    if is_sort:
+        record.update(solve_unit="records", solve_budget_records=execution.budget)
     links = guest_links(roles)
     record["planned_leaves"] = leaves
     if many:
@@ -691,8 +740,9 @@ def run(args: argparse.Namespace) -> dict:
                               "transport": "QEMU hub with host-loopback socket links"}
     def boot(directory: Path, image: Path, handoff: str | None = None) -> tuple[dict[str, Path], dict[str, str]]:
         directory.mkdir(exist_ok=True)
-        logs = {role: directory / f"{role}-serial.log" for role in roles}
-        disks = {role: work / f"{directory.name}-{role}.img" for role in roles}
+        active = ("A",) if handoff == "control" else roles
+        logs = {role: directory / f"{role}-serial.log" for role in active}
+        disks = {role: work / f"{directory.name}-{role}.img" for role in active}
         for disk in disks.values():
             make_disk(disk)
         processes = {}
@@ -701,18 +751,19 @@ def run(args: argparse.Namespace) -> dict:
         if general:
             general_options = (
                 f'aclt_execution_nonce={codec.decode(execution.execution)["nonce"].hex()}',
+                f"aclt_capacity_sort={int(is_sort)}",
                 f'aclt_general_order={args.general_order}',
                 f'aclt_general_drop={int(args.general_drop)}',
                 f'aclt_general_flat={int(args.general_flat)}',
                 f'aclt_general_checkpoint={args.general_checkpoint if handoff == "before" else 0}',
             )
         try:
-            for role in (*roles[1:], roles[0]):
-                if role == roles[0]:
+            for role in (*active[1:], active[0]):
+                if role == active[0] and len(active) > 1:
                     time.sleep(1)
                 processes[role] = launch(boot_arguments(
                     role, kernel, image, disks[role], logs[role], accel, args.memory, links[roles[1]],
-                    commit, args.solve_budget, recursive, leaves, links if many else None,
+                    commit, args.solve_budget, recursive, leaves, links if len(active) > 1 and many else None,
                     args.interrupt if role == target else None, args.retry_solve, root_caps, handoff,
                     general_options))
             deadline = started + BOOT_TIMEOUT
@@ -727,7 +778,7 @@ def run(args: argparse.Namespace) -> dict:
             for process in processes.values():
                 terminate(process)
         roots = {}
-        for role in roles:
+        for role in active:
             disk_root = directory / role
             extract(disks[role], disk_root)
             roots[role] = disk_root / role
@@ -866,8 +917,9 @@ def main() -> None:
     runner.add_argument("--memory", type=int, default=1024)
     runner.add_argument("--handoff", action="store_true", help="replace the coordinator after the first accepted leaf")
     runner.add_argument("--keep-work", action="store_true")
-    runner.add_argument("--general", action="store_true", help="run the distributed job contract fixture")
-    runner.add_argument("--general-order", choices=("0123", "3102", "1023"), default="0123",
+    runner.add_argument("--general", action="store_true", help="run the integer-vector contract fixture")
+    runner.add_argument("--capacity-sort", action="store_true", help="run the fixed capacity-sort contract fixture")
+    runner.add_argument("--general-order", choices=("0123", "3102", "1023", "01", "10"), default="0123",
                         help="priority by slot; dependencies always gate dispatch")
     runner.add_argument("--general-drop", action="store_true", help="drop B's first solve reply")
     runner.add_argument("--general-flat", action="store_true", help="use the alternative flat merge plan")
@@ -878,11 +930,21 @@ def main() -> None:
     runner.add_argument("--interrupt", nargs=2, metavar=("MODE", "OPERATION"),
                         help="inject worker-exit or disconnect after receiving SOLVE-i or VERIFY-i")
     args = parser.parse_args()
+    if args.capacity_sort:
+        if args.general or args.general_flat or args.general_checkpoint > 1:
+            runner.error("capacity sort has its own fixed plan and one-slot checkpoint")
+        args.general = True
+        if args.general_order == "0123":
+            args.general_order = "10" if args.general_drop else "01"
+        if args.general_order not in ("01", "10"):
+            runner.error("capacity sort order must be 01 or 10")
+    elif args.general_order in ("01", "10"):
+        runner.error("two-slot order requires --capacity-sort")
     if not args.general and (args.general_drop or args.general_flat or args.general_checkpoint
                              or args.general_order != "0123"):
         runner.error("general scenario options require --general")
     if args.general_drop and args.general_checkpoint and not args.general_order.startswith("1"):
-        runner.error("for a combined scenario, choose --general-order 1023 to drop before handoff")
+        runner.error("start with slot 1 to drop before handoff")
     if args.interrupt is not None and args.interrupt[0] not in ("worker-exit", "disconnect", "drop-reply"):
         runner.error("interruption mode must be worker-exit, disconnect, or drop-reply")
     try:
@@ -891,7 +953,7 @@ def main() -> None:
         print(json.dumps({"status": "FAIL", "error": str(error)}, indent=2))
         raise SystemExit(1)
     if args.general:
-        print(json.dumps({key: record[key] for key in ("status", "execution_id", "charged_gas",
+        print(json.dumps({key: record[key] for key in ("status", "execution_id", "charged_records" if args.capacity_sort else "charged_gas",
                                                        "output", "seconds")}, indent=2))
         raise SystemExit(0 if record["status"] == "PASS" else 1)
     if record["status"] == "FAIL":
