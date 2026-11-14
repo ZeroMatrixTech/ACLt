@@ -68,11 +68,15 @@
 | 一项超出单节点资源的负载在通用契约下被验收 | 部分满足 | [双物理机容量受限排序](../testing/DUALHOST-CAPACITY-SORT-20261114.md)已证明负载超出单节点交付容量，但它走独立入口。条目 M2：把排序任务族接入契约的尝试账、接纳与交接，再在契约下重新验收 |
 | 以上实验的本地回归全部纳入 `make test` | 未满足 | `capacity_sort.py` 尚无回归测试。条目 M1：补缩小规模的正例与删除分区、改字节两个负例，并纳入 `make test-minimal-verifier` |
 
-每项证据的实跑提交，都必须能从 `main` 或 `evidence/*` 标签到达（[PARALLEL-1 §6.3](../08-governance/parallel-workflow.md#63-证据提交与标签)）。2026-11-14 核对时，以下三个提交只存在于本地分支和 GitHub 的 PR 引用中，尚未打标签，因此这项仍待补：
+每项证据的实跑提交，都必须能从 `main` 或 `evidence/*` 标签到达（[PARALLEL-1 §6.3](../08-governance/parallel-workflow.md#63-证据提交与标签)）。2026-11-14 核对时，以下三个提交只存在于本地分支和 GitHub 的 PR 引用中。经维护者确认，当天已为它们打上附注标签并推送：
 
-- 通用契约联合验收的 `75827bc9057bc8a228b5f2a5c6d85099e72d45b6`
-- 容量排序的 `58b3022f4a35aaa456818659dbcd15fb1f879d2c`
-- 双来宾第 1 轮摘要 `source_revision` 的 `15df3fc1fa1ae8837c0963a4b3f0936a47ee6480`
+| 证据 | 提交 | 标签 |
+|---|---|---|
+| 双来宾第 1 轮摘要的 `source_revision` | `15df3fc1fa1ae8837c0963a4b3f0936a47ee6480` | `evidence/20261112-multivm-round1` |
+| 通用契约联合验收 | `75827bc9057bc8a228b5f2a5c6d85099e72d45b6` | `evidence/20261113-general-job` |
+| 容量排序 | `58b3022f4a35aaa456818659dbcd15fb1f879d2c` | `evidence/20261114-capacity-sort` |
+
+其他测试报告中钉住的提交尚未盘点，按 PARALLEL-1 §8 第 4 步另行处理。
 
 闭合后的工作按下节第 3 步推进。
 
