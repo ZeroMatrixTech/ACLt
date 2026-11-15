@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+"""Regression tests for the SPDX/REUSE source coverage check."""
+import importlib.util
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPT = ROOT / "scripts/check-license-coverage.py"
+
+
+def _load_checker():
+    spec = importlib.util.spec_from_file_location("check_license_coverage", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+CHECKER = _load_checker()
+
+
+class LicenseCoverageTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.write_reuse("version = 1\n")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def write(self, relative, text):
+        path = self.root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+    def write_reuse(self, text):
+        (self.root / "REUSE.toml").write_text(text, encoding="utf-8")
+
+    def declaration(self, path, license="Apache-2.0"):
+        return (
+            "[[annotations]]\n"
+            f'path = "{path}"\n'
+            'SPDX-FileCopyrightText = "2026 Example"\n'
+            f'SPDX-License-Identifier = "{license}"\n'
+        )
+
+    def assert_rejected(self, fragment):
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root)
+        self.assertIn(fragment, str(context.exception))
+
+    def test_repository_tree_is_covered(self):
+        result = CHECKER.check_coverage(ROOT)
+        self.assertEqual(
+            (result.source, result.headers, result.declared, result.missing),
+            (320, 241, 79, 0),
+        )
+
+    def test_header_covers_source(self):
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
+        result = CHECKER.check_coverage(self.root)
+        self.assertEqual((result.source, result.headers, result.declared, result.missing), (1, 1, 0, 0))
+
+    def test_explicit_declaration_covers_source(self):
+        self.write("example.py", "print(1)\n")
+        self.write_reuse("version = 1\n" + self.declaration("example.py"))
+        result = CHECKER.check_coverage(self.root)
+        self.assertEqual((result.source, result.headers, result.declared, result.missing), (1, 0, 1, 0))
+
+    def test_undeclared_source_is_rejected(self):
+        self.write("example.py", "print(1)\n")
+        self.assert_rejected("missing source licenses")
+
+    def test_missing_declared_path_is_rejected(self):
+        self.write_reuse("version = 1\n" + self.declaration("missing.py"))
+        self.assert_rejected("declared path does not exist")
+
+    def test_non_source_declaration_is_rejected(self):
+        self.write("README.md", "text\n")
+        self.write_reuse("version = 1\n" + self.declaration("README.md"))
+        self.assert_rejected("not a source file")
+
+    def test_parent_escape_is_rejected(self):
+        self.write_reuse("version = 1\n" + self.declaration("../outside.py"))
+        self.assert_rejected("unsafe declared path")
+
+    def test_duplicate_declaration_is_rejected(self):
+        self.write("example.py", "print(1)\n")
+        self.write_reuse(
+            "version = 1\n"
+            + self.declaration("example.py")
+            + self.declaration("example.py")
+        )
+        self.assert_rejected("duplicate declared path")
+
+    def test_unknown_header_license_is_rejected(self):
+        self.write("example.py", "# SPDX-License-Identifier: MIT\n")
+        self.assert_rejected("unsupported SPDX license")
+
+    def test_too_late_header_is_rejected(self):
+        self.write("example.py", "\n" * 10 + "# SPDX-License-Identifier: Apache-2.0\n")
+        self.assert_rejected("missing source licenses")
+
+
+if __name__ == "__main__":
+    unittest.main()
