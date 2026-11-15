@@ -761,6 +761,39 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
         prior = trace[pauses[0] - 1] if pauses[0] else {}
         if prior.get("kind") != "WRITE_REQUEST" or prior.get("owner") != conflicting:
             violations.append("overlap: conflict did not immediately precede the pause")
+        elif c.uint(prior.get("message", {}).get("epoch", -1)) != c.uint(
+                paused.get("conflicting_epoch", -1)):
+            violations.append("overlap: conflicting intent epoch does not match the pause")
+        committed = [(index, event) for index, event in enumerate(trace)
+                     if event.get("kind") == "WRITE_COMMITTED"]
+        expected_commits = len(requests) - 1
+        if len(committed) != expected_commits:
+            violations.append(
+                f"overlap: trace records {len(committed)} successful writes, "
+                f"not {expected_commits}")
+        after_pause = [index for index, _ in committed if index > pauses[0]]
+        if after_pause:
+            violations.append(
+                f"overlap: successful write after pause at trace events {after_pause}")
+        for index, event in committed:
+            if event.get("owner") != active:
+                violations.append(
+                    f"overlap: successful write at trace event {index} has another owner")
+        if len(committed) != len(host.events):
+            violations.append(
+                f"overlap: {len(committed)} successful writes but "
+                f"{len(host.events)} journal events")
+        else:
+            for position, (commit, recorded) in enumerate(zip(committed, host.events)):
+                index, event = commit
+                if event.get("event") != recorded.get("kind"):
+                    violations.append(
+                        f"overlap: successful write {position} is {event.get('event')}, "
+                        f"not {recorded.get('kind')}")
+                if "writer_epoch" in recorded and c.uint(
+                        event.get("epoch", -1)) != c.uint(recorded["writer_epoch"]):
+                    violations.append(
+                        f"overlap: successful write {position} used a different epoch")
     if status["outcome"] != "PAUSED":
         violations.append(f"overlap: outcome {status['outcome']} is not PAUSED")
     if not status.get("paused"):
@@ -956,8 +989,13 @@ def main(argv: list[str] | None = None) -> int:
         result = check_campaign(args.output, args.executor)
         reproducible = None
         if args.compare is not None:
+            second = check_campaign(args.compare, args.executor)
+            result["violations"].extend(
+                f"compare campaign: {item}" for item in second["violations"])
             reproducible, differences = compare_campaigns(args.output, args.compare)
             result["violations"].extend(differences)
+            if result["violations"]:
+                reproducible = False
         print(format_report(result, reproducible))
         return 0 if not result["violations"] else 1
 

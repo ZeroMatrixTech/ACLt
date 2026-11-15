@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Regression tests for the seeded safety-layer Monte Carlo driver."""
 
+import contextlib
 import hashlib
+import io
 import json
 import shutil
 import sys
@@ -17,6 +19,12 @@ from general_job import Journal, c
 from general_vm import CAPS, DEFAULT_BUDGET, fixture
 
 SEED = 20261115
+
+
+def write_trace(path, events):
+    path.write_bytes(b"".join(
+        len(raw).to_bytes(4, "big") + raw
+        for raw in (c.encode(event) for event in events)))
 
 
 class MonteCarloRegressionTests(unittest.TestCase):
@@ -73,6 +81,21 @@ class MonteCarloRegressionTests(unittest.TestCase):
         self.assertTrue(equal, differences)
         self.assertEqual(differences, [])
 
+    def test_compare_rejects_an_incomplete_second_campaign(self):
+        second = Path(self.tmp.name) / "incomplete"
+        shutil.copytree(self.base, second)
+        overlap = next(spec for spec in self.schedule(second)["runs"]
+                       if spec["fault"] == "overlap")
+        (second / f"run-{overlap['index']:04d}" / "trace.cbor").unlink()
+        self.assertTrue(montecarlo.check_campaign(second)["violations"])
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = montecarlo.main(["check", "--output", str(self.root),
+                                    "--compare", str(second)])
+        self.assertEqual(code, 1)
+        self.assertIn("reproducible=no", output.getvalue())
+        self.assertNotIn("violations=0", output.getvalue())
+
     def test_report_has_only_seeded_run_counts(self):
         result = montecarlo.check_campaign(self.root)
         self.assertEqual(result["violations"], [])
@@ -93,14 +116,48 @@ class MonteCarloRegressionTests(unittest.TestCase):
         montecarlo._check_result(job, fake, run_dir, "wrong-output", violations)
         self.assertTrue(any("published output differs" in item for item in violations), violations)
 
-    def test_checker_rejects_repeated_accept(self):
+    def test_checker_rejects_repeated_accept_without_the_engine_guard(self):
         _, run_dir = self.run_dir("tcp_disconnect", published=True)
         events = c.decode((run_dir / "journal.cbor").read_bytes())
         index = next(index for index, event in enumerate(events) if event["kind"] == "ACCEPT")
         events.insert(index + 1, dict(events[index]))
         (run_dir / "journal.cbor").write_bytes(c.encode(events))
-        violations = montecarlo.check_campaign(self.root)["violations"]
+        original = Journal.apply_event
+
+        def lenient(journal, event, recorded):
+            if event["kind"] == "ACCEPT" and event.get("slot") in journal.accepted:
+                return
+            return original(journal, event, recorded)
+
+        Journal.apply_event = lenient
+        try:
+            violations = montecarlo.check_campaign(self.root)["violations"]
+        finally:
+            Journal.apply_event = original
         self.assertTrue(any("accepted 2 times" in item for item in violations), violations)
+        self.assertFalse(
+            any("slot cannot accept this attempt" in item for item in violations), violations)
+
+    def test_checker_rejects_repeated_publish_without_the_engine_guard(self):
+        _, run_dir = self.run_dir("tcp_disconnect", published=True)
+        events = c.decode((run_dir / "journal.cbor").read_bytes())
+        events.append(dict(next(event for event in events if event["kind"] == "PUBLISH")))
+        (run_dir / "journal.cbor").write_bytes(c.encode(events))
+        original = Journal.apply_event
+
+        def lenient(journal, event, recorded):
+            if event["kind"] == "PUBLISH" and journal.final is not None:
+                return
+            return original(journal, event, recorded)
+
+        Journal.apply_event = lenient
+        try:
+            violations = montecarlo.check_campaign(self.root)["violations"]
+        finally:
+            Journal.apply_event = original
+        self.assertTrue(any("more than one PUBLISH" in item for item in violations), violations)
+        self.assertFalse(
+            any("execution already published" in item for item in violations), violations)
 
     def test_checker_rejects_truncated_drop_log_without_result(self):
         _, run_dir = self.run_dir("tcp_disconnect", published=True)
@@ -254,13 +311,55 @@ class MonteCarloRegressionTests(unittest.TestCase):
         trace = montecarlo._trace_events(trace_path)
         paused = next(event for event in trace if event["kind"] == "PAUSED")
         paused["conflicting_epoch"] = paused["active_epoch"]
-        trace_path.write_bytes(b"".join(
-            len(raw).to_bytes(4, "big") + raw
-            for raw in (c.encode(event) for event in trace)))
+        write_trace(trace_path, trace)
         job = montecarlo._job_from_bundle((run_dir / "job.cbor").read_bytes())
         violations = []
         montecarlo._check_overlap(job, spec, run_dir, violations)
         self.assertTrue(any("conflicting epoch" in item for item in violations), violations)
+
+    def test_overlap_checker_binds_the_conflicting_request_epoch(self):
+        spec, run_dir = self.run_dir("overlap")
+        trace_path = run_dir / "trace.cbor"
+        trace = montecarlo._trace_events(trace_path)
+        pause_index = next(index for index, event in enumerate(trace)
+                           if event["kind"] == "PAUSED")
+        paused = trace[pause_index]
+        conflict = trace[pause_index - 1]
+        self.assertEqual(conflict["kind"], "WRITE_REQUEST")
+        conflict["message"]["epoch"] = paused["active_epoch"]
+        write_trace(trace_path, trace)
+        job = montecarlo._job_from_bundle((run_dir / "job.cbor").read_bytes())
+        violations = []
+        montecarlo._check_overlap(job, spec, run_dir, violations)
+        self.assertTrue(any("conflicting intent epoch" in item for item in violations),
+                        violations)
+
+    def test_overlap_checker_rejects_a_successful_write_after_pause(self):
+        spec, run_dir = self.run_dir("overlap")
+        trace_path = run_dir / "trace.cbor"
+        trace = montecarlo._trace_events(trace_path)
+        pause_index = next(index for index, event in enumerate(trace)
+                           if event["kind"] == "PAUSED")
+        assigned = next(event for event in trace if event["kind"] == "ASSIGNED")
+        active = assigned["owner"]
+        active_epoch = c.uint(assigned["epoch"])
+        pending = [event for event in trace[:pause_index]
+                   if event.get("kind") == "WRITE_REQUEST" and event.get("owner") == active][-1]
+        extra = {"kind": pending["message"]["event"],
+                 **pending["message"]["fields"],
+                 "writer_epoch": active_epoch}
+        for name in ("host.cbor", "guest.cbor"):
+            path = run_dir / name
+            events = c.decode(path.read_bytes())
+            events.append(dict(extra))
+            path.write_bytes(c.encode(events))
+        trace.append({"kind": "WRITE_COMMITTED", "owner": active,
+                      "epoch": active_epoch, "event": pending["message"]["event"]})
+        write_trace(trace_path, trace)
+        job = montecarlo._job_from_bundle((run_dir / "job.cbor").read_bytes())
+        violations = []
+        montecarlo._check_overlap(job, spec, run_dir, violations)
+        self.assertTrue(any("after pause" in item for item in violations), violations)
 
     def test_drop_checker_reads_the_injection_point_from_the_journal(self):
         spec, run_dir = self.run_dir("no_reply")
