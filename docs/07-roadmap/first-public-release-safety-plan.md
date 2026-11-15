@@ -125,9 +125,9 @@ R4 只验收**安全层**：在固定的可信双机 LAN、固定种子和固定
 
 | 故障类 | R4 触发方式 | 安全路径 | 不计入的情形 |
 |---|---|---|---|
-| <code>no_reply</code>（无答复/丢答复） | 工作来宾 VM 收到请求后，协调者 VM 未收到答复；按种子分别覆盖首算丢失（重试成功）和两次均丢失（终态 <code>NO_REPLY</code>） | 首算丢失时按契约计入并补算；两次均丢失时安全停止，不发布 | 只在协调者 VM 内丢弃帧、仅修改状态文件、没有原始请求/答复 |
-| <code>worker_exit</code>（远端工作进程退出） | 工作来宾 VM 内的工作进程在读取请求后以非零码退出，协调者 VM 观察到连接失败 | 该尝试按无答复计入，不产生接纳；由调度决定补算或安全停止 | 只杀协调者 VM 内的子进程、只杀协调器、用异常替代远端退出 |
-| <code>tcp_disconnect</code>（TCP 断连） | 工作来宾 VM 一侧的 TCP 端点在接受请求后关闭连接，不发答复 | 与无答复相同的账目路径；不把断连解释为执行未发生 | 同一 VM 内的回环连接、仅断 SSH、把管理连接断开当作作业故障 |
+| <code>no_reply</code>（无答复/丢答复） | 工作来宾 VM 完成请求并生成答复，但不发送，协调者 VM 未收到答复；按种子分别覆盖首算丢失（重试成功）和两次均丢失（终态 <code>NO_REPLY</code>） | 首算丢失时按契约计入并补算；两次均丢失时安全停止，不发布 | 只在协调者 VM 内丢弃帧、仅修改状态文件、没有原始请求/答复 |
+| <code>worker_exit</code>（远端工作进程退出） | 工作来宾 VM 内的工作进程在读取请求后、生成答复前以非零码退出，协调者 VM 观察到连接失败 | 该尝试按无答复计入，不产生接纳；由调度决定补算或安全停止 | 只杀协调者 VM 内的子进程、只杀协调器、用异常替代远端退出 |
+| <code>tcp_disconnect</code>（TCP 断连） | 工作来宾 VM 一侧的 TCP 端点在接受请求后、生成答复前关闭连接 | 与无答复相同的账目路径；不把断连解释为执行未发生 | 同一 VM 内的回环连接、仅断 SSH、把管理连接断开当作作业故障 |
 | <code>handoff</code>（静止点交接） | 在 1 或 2 个 slot 已接纳且无在途尝试时，旧协调者 VM 退出，另一次启动的协调者 VM 以新 epoch 追加 <code>HANDOFF</code> | checkpoint 前缀保留，旧账重放，已接纳证据复用，最终正常发布或按预算停止 | 有在途尝试的自动接手、跨宿主自动选主、用重启实例丢弃原账、同一 VM 实例内重启进程冒充继任者 |
 | <code>overlap</code>（重叠写入） | 活动 owner（协调者 VM）已提交若干写意图后，一个不同于该 VM 的写者以冲突 epoch 向同一宿主仲裁入口提交写入意图 | 宿主留证、撤销未提交意图、<code>PAUSED</code>，暂停后无提交、无发布 | 仅在本地复制两个目录、用引擎异常代替真实重叠、暂停后继续写入 |
 
@@ -186,7 +186,20 @@ T1 的 caps 和预算与 R3 回归一致：<code>sum(caps) + 8232 = 41170</code>
 
 分片由 <code>job.cbor</code> 的声明、计划和依赖冻结；叶到角色的具体指派（首算者、验证者、补算者）按 5.2 的工作来宾轮转规则由 profile 层给出，传给通用作业引擎，并写入每个 run 的 <code>topology.json</code>；检查端按 5.2 独立重建该指派，并与 <code>topology.json</code> 和 journal 中实际的 worker/verifier 逐槽比较。任何 SOLVE 或 VERIFY 由协调者服务，或与重建的指派不一致，均为 violation。
 
-**服务方绑定。** 角色字段本身不能证明请求由谁实际服务，因此检查端还必须把 journal 中每次已派发的 SOLVE（首算和补算）和每次 VERIFY，与服务方 VM 一侧保存的原始帧逐一绑定。以 <code>(run, slot, attempt, action)</code> 为键：服务方一侧的请求帧必须存在，位于 5.2 指派角色的帧目录中，并与协调者一侧发出的请求帧及 journal 记录的请求逐字节一致；该角色在 <code>topology.json</code> 的放置和 <code>metadata.json</code> 的来宾启动标识中都有对应记录。有答复的尝试，服务方一侧的答复帧必须与 journal 记录的答复逐字节一致；被注入的尝试，服务方一侧只有请求帧、没有答复帧。服务方帧缺失、位于协调者或其他角色的目录、字节不一致、启动标识缺失或相互矛盾，均为 violation。该绑定以可信双机内各 VM 如实写帧为前提，不针对恶意 VM。R3 进程内后端自身的指派规则不变。同一拓扑在两遍 campaign 中必须使用相同的叶序、依赖、caps、预算和 placement 规则；不得为了改变结果而重排叶或更换角色分布。
+**服务方绑定。** 角色字段本身不能证明请求由谁实际服务，因此检查端还必须把每次已派发的 SOLVE（首算和补算）和每次 VERIFY，与服务方 VM 一侧保存的原始帧逐一绑定。以 <code>(run, slot, attempt, action)</code> 为键，服务方一侧的请求帧必须存在，位于 5.2 指派角色的帧目录中，并与协调者一侧发出的请求帧逐字节一致；该角色在 <code>topology.json</code> 的放置和 <code>metadata.json</code> 的来宾启动标识中都有对应记录。答复帧按下表区分“服务方已生成”“服务方已发送”“协调者已收到”三个环节：
+
+| 情形 | 服务方已生成答复 | 已发送 | 协调者已收到 | 服务方一侧的帧 | 协调者一侧的帧 | journal 与注入记录 |
+|---|---|---|---|---|---|---|
+| 正常 SOLVE / VERIFY | 是 | 是 | 是 | 请求 + 答复 | 请求 + 答复，两侧答复逐字节一致 | 对应的 <code>ANSWER</code> 或 <code>ACCEPT</code> 记录的请求/答复与帧逐字节一致 |
+| <code>no_reply</code> 注入 | 是 | 否 | 否 | 请求 + 答复 | 只有请求 | 该尝试为 <code>NO_REPLY</code>；<code>fault.cbor</code> 有对应注入记录 |
+| <code>worker_exit</code> 注入 | 否 | 否 | 否 | 只有请求 | 只有请求 | 该尝试为 <code>NO_REPLY</code>；注入记录与工作进程非零退出观测都存在 |
+| <code>tcp_disconnect</code> 注入 | 否 | 否 | 否 | 只有请求 | 只有请求 | 该尝试为 <code>NO_REPLY</code>；注入记录与服务方关闭连接的观测都存在 |
+
+注入只作用于 SOLVE。journal 中的每个 <code>NO_REPLY</code> 必须与一条注入记录一一对应，没有注入记录的 <code>NO_REPLY</code> 说明出现了调度外的故障，该 run 失败。<code>no_reply</code> 的服务方答复帧证明“已生成”，协调者一侧没有答复帧、journal 没有对应 <code>ANSWER</code> 证明“未收到”；<code>worker_exit</code> 与 <code>tcp_disconnect</code> 的服务方一侧不得有答复帧。所有情形都保留原判据：无答复按全额计入，不产生接纳，不得出现完整输出。
+
+**VERIFY 的绑定。** 引擎在收到 VERIFY 答复后立即把该次 VERIFY 的请求和答复写入 <code>ACCEPT</code>。因此每次已派发的 VERIFY 必须绑定到一条已提交的 <code>ACCEPT</code>（请求、答复与两侧帧逐字节一致）。唯一例外是 overlap run：若 <code>ACCEPT</code> 的写意图恰是 <code>trace.cbor</code> 中那条被暂停撤销的悬挂意图，则该 VERIFY 绑定到这条意图携带的字段（同样逐字节一致），且其后不得再有提交或发布。除此之外，VERIFY 已派发却既没有已提交的 <code>ACCEPT</code>、也不是上述悬挂意图，说明出现了故障矩阵以外的中断（R4 不向 VERIFY 注入故障），该 run 失败；检查器不得用状态字符串补齐，也不得构造 <code>ACCEPT</code>。SOLVE 同理：overlap run 中已收到答复但 <code>ANSWER</code> 写意图被暂停撤销的尝试，绑定到该悬挂意图。
+
+服务方帧缺失或多出、位于协调者或其他角色的目录、字节不一致、启动标识缺失或相互矛盾，以及不符合上表或上述 VERIFY 规则，均为 violation。该绑定以可信双机内各 VM 如实写帧为前提，不针对恶意 VM。
 
 #### 5.3.1 冻结的 seed 到拓扑的 job 映射
 
@@ -266,7 +279,7 @@ R4 只有在以下条件全部满足时才通过；缺一项即失败，不得�
    - 写入 epoch 缺失；
    - 提交前缺少意图；
    - 暂停后仍提交或发布；
-   - 服务方绑定失败：计划、topology 和 journal 都按 5.2 正确，但服务方一侧的帧位于协调者或其他角色目录、或缺失；SOLVE 首算、SOLVE 补算和 VERIFY 三个分支各至少一个用例。
+   - 服务方绑定失败：计划、topology 和 journal 都按 5.2 正确，但服务方证据与 5.3 不符。至少分别覆盖：服务方帧位于协调者或其他角色目录、或缺失（SOLVE 首算、SOLVE 补算、VERIFY 各一例）；<code>no_reply</code> 缺少服务方答复帧；<code>worker_exit</code> 或 <code>tcp_disconnect</code> 出现服务方答复帧；没有注入记录的 <code>NO_REPLY</code>；VERIFY 已派发但既无已提交 <code>ACCEPT</code>、也不是 overlap 的悬挂意图。
    检查器不得依赖被测引擎的预算、接纳或发布守卫。
 4. **两遍可复现。** 两个独立 pass 使用相同的源码 SHA、执行器、种子、拓扑、预算和 placement 规则；每个 pass 先各自通过 5.5 的归档完整性和 S1–S7 全量检查（含 <code>trace.cbor</code>），再对每个种子运行 <code>check --compare</code> 并返回 <code>reproducible=yes</code>：<code>schedule.cbor</code> 和 5.5 的确定性比较投影逐字节或逐字段一致，pass 汇总层确认两个种子均为 yes。<code>report.json</code>、<code>pass-report.json</code>、<code>trace.cbor</code> 和 <code>metadata.json</code> 的起止时间不参与该比较，但 trace 仍须各自通过 S6。任何投影差异、环境差异或执行器差异均为失败。不得通过重跑到“看起来一致”来替代首次差异的保留和解释。
 5. **终态覆盖。** 在 R4 的两个 pass 合计中，<code>BUDGET_BLOCKED</code>、<code>PAUSED</code> 和安全停止（<code>SAFE_STOP</code> 或无答复安全终态）各至少出现一次；这些 run 均无 <code>PUBLISH</code>、无 <code>result.cbor</code>、无完整输出。若固定种子没有产生某一类终态，R4 失败，不得改种子、增加 run 或降低预算来补齐。
@@ -290,7 +303,7 @@ R4a（[#151](https://github.com/ZeroMatrixTech/ACLt/issues/151)）负责把 R3 �
 
 **理论缺口。** TG-6（[#123](https://github.com/ZeroMatrixTech/ACLt/issues/123)）关于故障过程模型的问题保持 <code>OPEN</code>。本规格不估计故障率、不推导重试预算、不给出概率上界，也不把“每 pass 两个固定种子的 32 次运行、违反 0 次”解释为覆盖率。若审计认为“固定种子抽取本身需要统计模型”，按 [PARALLEL-1 §5.6](../08-governance/parallel-workflow.md#56-理论缺口) 登记为 theory-gap，并停止相应概率性结论；R4 的默认报告不产生这类结论。
 
-**协调者假设（修订 1，维护者批准）。** R4 采用两条假设，不对其建模或推导：
+**协调者假设（修订 1，维护者于 2026-11-15 批准，记录于 #150）。** R4 采用两条假设，不对其建模或推导：
 
 1. **固定派活。** 协调者严格按 5.2 的轮转规则派活：首算 <code>W[i mod 3]</code>、验证 <code>W[(i+1) mod 3]</code>、补算 <code>W[(i+2) mod 3]</code>，不按负载、收益或其他因素调整，也不把任何 SOLVE 或 VERIFY 派给自己。检查端按 5.3 独立重建指派，并核对服务方绑定。
 2. **协调者可信。** 协调者不会为自身利益偏离上述规则。自利或恶意协调者是否会、以及如何偏离规则，不在 R4 范围内；R4 不对此作任何结论。若后续阶段需要覆盖，须先按 PARALLEL-1 §5.6 登记理论缺口，由维护者建模。
@@ -307,4 +320,4 @@ R4a（[#151](https://github.com/ZeroMatrixTech/ACLt/issues/151)）负责把 R3 �
 
 | 修订 | 日期 | 原因 | 变更 |
 |---|---|---|---|
-| 修订 1 | 2026-11-15 | R4a 物理双机冒烟（[PR #156](https://github.com/ZeroMatrixTech/ACLt/pull/156)）发现原 5.2 布局与 4、5.3.1、7.3 无法同时满足：A 兼任求解、C 在物理 A，引擎按轮转派活，冻结槽位规则下种子 <code>20261115</code>、<code>20261116</code> 的丢答复类 run 分别有 6/10、8/10 的目标尝试不经跨主机链路；其中由协调者 A 自己服务的槽位在任何口径下都不是远端交互。T1 两次均丢失时的补算也只能落回 A。R4 将确定性失败。 | ① 采用“协调者只协调、工作来宾全在物理 B”布局，T1 改为四来宾（5.2）；② 故障判据改为跨 VM 口径，物理分离不作为判据，并写明 handoff/overlap 的触发方、链路和证据（4）；③ 指派由检查端独立重建，并增加服务方帧绑定（5.3）；④ 已派发尝试才可注入，预算闸门拒绝的补算记为 <code>BUDGET_BLOCKED</code>（5.2）；⑤ profile 版本改为 <code>r4-profile-v2</code>（5.3.1）；⑥ 负例增至 12 类（6.3）；⑦ 写明“固定派活、协调者可信”两条假设（8）；7.2、7.3、第 8 节相应更新。种子、次数、叶数、caps、预算、槽位规则、故障类和 S1–S7 判据不变。批准：拓扑与 T1 四来宾见[维护者批准记录](https://github.com/ZeroMatrixTech/ACLt/pull/158#issuecomment-6898985713)；跨 VM 口径由维护者于 2026-11-15 决定，记录于 #150。修订时 R4 尚未开始；R4a 在原布局下的冒烟证据（含失败）在仓库外保留为历史，不计入 R4。 |
+| 修订 1 | 2026-11-15 | R4a 物理双机冒烟（[PR #156](https://github.com/ZeroMatrixTech/ACLt/pull/156)）发现原 5.2 布局与 4、5.3.1、7.3 无法同时满足：A 兼任求解、C 在物理 A，引擎按轮转派活，冻结槽位规则下种子 <code>20261115</code>、<code>20261116</code> 的丢答复类 run 分别有 6/10、8/10 的目标尝试不经跨主机链路；其中由协调者 A 自己服务的槽位在任何口径下都不是远端交互。T1 两次均丢失时的补算也只能落回 A。R4 将确定性失败。 | ① 采用“协调者只协调、工作来宾全在物理 B”布局，T1 改为四来宾（5.2）；② 故障判据改为跨 VM 口径，物理分离不作为判据，并写明 handoff/overlap 的触发方、链路和证据（4）；③ 指派由检查端独立重建，并增加服务方帧绑定，逐类区分答复的生成、发送与接收，规定 VERIFY 的绑定来源（5.3）；④ 已派发尝试才可注入，预算闸门拒绝的补算记为 <code>BUDGET_BLOCKED</code>（5.2）；⑤ profile 版本改为 <code>r4-profile-v2</code>（5.3.1）；⑥ 负例增至 12 类（6.3）；⑦ 写明“固定派活、协调者可信”两条假设（8）；7.2、7.3、第 8 节相应更新。种子、次数、叶数、caps、预算、槽位规则、故障类和 S1–S7 判据不变。批准：拓扑与 T1 四来宾见[维护者批准记录](https://github.com/ZeroMatrixTech/ACLt/pull/158#issuecomment-6898985713)；跨 VM 口径由维护者于 2026-11-15 决定，记录于 #150。修订时 R4 尚未开始；R4a 在原布局下的冒烟证据（含失败）在仓库外保留为历史，不计入 R4。 |
