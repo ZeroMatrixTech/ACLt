@@ -662,10 +662,12 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         raise RunError("successor did not take over after the checkpoint")
     result = guests["A"]["general_status"]
     expected = ("COORDINATION_PAUSED",) if scenario == "overlap" else ("PUBLISHED", "BUDGET_BLOCKED")
+    if args.general_inject:
+        expected += ("NO_REPLY",)
     if result not in expected or (result == "PUBLISHED") != (journal.final is not None):
         raise RunError(f"unexpected terminal state: {result}")
     if result == "BUDGET_BLOCKED":
-        if not args.general_drop or journal.charged + sum(
+        if not (args.general_drop or args.general_inject) or journal.charged + sum(
                 cap for slot, cap in enumerate(job.caps) if slot not in journal.accepted) <= job.budget:
             raise RunError("guest reported a budget block with enough remaining gas")
     if is_sort:
@@ -673,7 +675,7 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
             job, journal, lambda request: (before if history and request["epoch"] == 0 else roots)
             [sort_contract.PLACEMENT[request["slot"]][0]] / "delivery.img")
     overlap = scenario == "overlap"
-    if overlap and (not authority.paused or len(journal.events) != len(history) + 1):
+    if overlap and (not authority.paused or journal.final is not None):
         raise RunError("overlap did not stop both dispatch and publication")
     if source is not None:
         if (job.declaration_id != source.job.declaration_id or job.plan_id == source.job.plan_id
@@ -689,8 +691,11 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
                 if journal.final else None,
                 solve_order=[event["slot"] for event in journal.events if event["kind"] == "RESERVE"],
                 acceptance_order=list(journal.accepted),
-                handoff=bool(history), before_guests=before_guests,
-                guests=guests, claim="Guest-level trusted execution on one physical host")
+                handoff=bool(history), before_guests=before_guests, guests=guests,
+                claim=("Guest-level trusted execution on two physical hosts of one operator; "
+                       "the hosts are not independent failure domains"
+                       if getattr(args, "dualhost_config", None) else
+                       "Guest-level trusted execution on one physical host"))
 
 
 def run(args: argparse.Namespace) -> dict:
@@ -701,6 +706,8 @@ def run(args: argparse.Namespace) -> dict:
                                                 ("output_limit", args.root_output_limit))
                  if value is not None}
     general = getattr(args, "general", False)
+    general_six = bool(getattr(args, "general_six", False))
+    general_inject = getattr(args, "general_inject", None)
     is_sort = getattr(args, "capacity_sort", False)
     job = None
     execution = None
@@ -713,10 +720,29 @@ def run(args: argparse.Namespace) -> dict:
             execution = sort_contract.SortJob(os.urandom(32))
             leaves = len(execution.tasks)
         else:
-            leaves = len(general_vm.CAPS)
-            budget = args.solve_budget if args.solve_budget is not None else general_vm.DEFAULT_BUDGET
+            leaves = len(general_vm.caps(general_six))
+            default = general_vm.DEFAULT_BUDGET_SIX if general_six else general_vm.DEFAULT_BUDGET
+            budget = args.solve_budget if args.solve_budget is not None else default
             args.solve_budget = budget
-            execution = general_vm.fixture(os.urandom(32), budget, flat=args.general_flat)
+            nonce = os.urandom(32)
+            if getattr(args, "general_nonce", None):
+                try:
+                    nonce = bytes.fromhex(args.general_nonce)
+                except ValueError as error:
+                    raise RunError("general nonce must be hexadecimal") from error
+                if len(nonce) != 32:
+                    raise RunError("general nonce must be 32 bytes")
+            execution = general_vm.fixture(nonce, budget, flat=args.general_flat,
+                                           six=general_six)
+        if general_inject is not None:
+            if args.general_drop or args.m9 or args.general_checkpoint:
+                raise RunError("an injected fault cannot be combined with the drop, M9 or checkpoint scenarios")
+            try:
+                injection = general_vm.Injection.parse(general_inject)
+            except ValueError as error:
+                raise RunError(str(error)) from None
+            if injection.slot >= leaves:
+                raise RunError(f"injected slot must be below {leaves}")
     elif root_caps and not many:
         raise RunError("explicit whole-task limits require three or more guests")
     elif many:
@@ -741,8 +767,8 @@ def run(args: argparse.Namespace) -> dict:
             raise RunError("interruption scenarios require three or more guests")
         target, _ = fault_target(roles, leaves, args.interrupt[1])
     settings = getattr(args, "dualhost_config", None)
-    if settings and (not many or general or args.handoff):
-        raise RunError("dual-host mode requires the nVM statistics runner with three or more guests")
+    if settings and (not many or args.handoff):
+        raise RunError("dual-host mode requires three or more guests and no nVM handoff mode")
     if bool(settings) != bool(getattr(args, "host_b_roles", None)):
         raise RunError("dual-host configuration and placement must be supplied together")
     output = args.output.resolve()
@@ -836,6 +862,8 @@ def run(args: argparse.Namespace) -> dict:
                 f'aclt_general_order={args.general_order}',
                 f'aclt_general_drop={int(args.general_drop)}',
                 f'aclt_general_flat={int(not is_sort and codec.decode(phase_job.plan)["tree"] == list(range(leaves)))}',
+                f'aclt_general_six={int(general_six)}',
+                f'aclt_general_inject={args.general_inject or ""}',
                 f'aclt_coordinated={int(guard is not None)}',
                 f'aclt_general_checkpoint={args.general_checkpoint if handoff == "before" else 0}',
             )
@@ -874,8 +902,13 @@ def run(args: argparse.Namespace) -> dict:
                 def admission():
                     with connection, connection.makefile("rb") as reader, connection.makefile("wb") as writer:
                         inject = None
-                        if getattr(args, "m9", None) == "overlap" and handoff == "after":
-                            inject = lambda: coordination.conflicting_intent(guard)
+                        intents = 0
+                        if getattr(args, "m9", None) == "overlap":
+                            def inject():
+                                nonlocal intents
+                                intents += 1
+                                if intents == 5:
+                                    coordination.conflicting_intent(guard, future=True)
                         coordination.serve(guard, coordinator, reader, writer, on_intent=inject)
 
                 admission_result = pool.submit(admission)
@@ -1096,10 +1129,14 @@ def main() -> None:
     runner.add_argument("--m9", choices=("reuse", "handoff", "overlap"), help="run a contract closure scenario")
     runner.add_argument("--general", action="store_true", help="run the integer-vector contract fixture")
     runner.add_argument("--capacity-sort", action="store_true", help="run the fixed capacity-sort contract fixture")
-    runner.add_argument("--general-order", choices=("0123", "3102", "1023", "01", "10"), default="0123",
-                        help="priority by slot; dependencies always gate dispatch")
+    runner.add_argument("--general-order", choices=("0123", "3102", "1023", "012345", "543210", "01", "10"),
+                        default="0123", help="priority by slot; dependencies always gate dispatch")
     runner.add_argument("--general-drop", action="store_true", help="drop B's first solve reply")
     runner.add_argument("--general-flat", action="store_true", help="use the alternative flat merge plan")
+    runner.add_argument("--general-six", action="store_true", help="use the four-guest six-leaf contract fixture")
+    runner.add_argument("--general-nonce", metavar="HEX", help="frozen 32-byte general execution nonce")
+    runner.add_argument("--general-inject", metavar="MODE:SLOT:LOSS",
+                        help="abort a remote SOLVE reply: no_reply, worker_exit or tcp_disconnect")
     runner.add_argument("--general-checkpoint", choices=(0, 1, 2), type=int, default=0,
                         help="handoff after this many accepted slots")
     runner.add_argument("--retry-solve", action="store_true",
@@ -1116,11 +1153,12 @@ def main() -> None:
         print(json.dumps(result, indent=2))
         return
     if args.m9:
-        if args.capacity_sort or args.general_drop or args.general_flat or args.general_checkpoint:
+        if (args.capacity_sort or args.general_drop or args.general_flat or args.general_checkpoint
+                or args.general_inject):
             runner.error("M9 scenarios choose their own family, plan and checkpoint")
         args.general = True
         args.general_flat = args.m9 == "reuse"
-        args.general_checkpoint = int(args.m9 != "reuse")
+        args.general_checkpoint = int(args.m9 == "handoff")
     if args.capacity_sort:
         if args.general or args.general_flat or args.general_checkpoint > 1:
             runner.error("capacity sort has its own fixed plan and one-slot checkpoint")
@@ -1132,8 +1170,21 @@ def main() -> None:
     elif args.general_order in ("01", "10"):
         runner.error("two-slot order requires --capacity-sort")
     if not args.general and (args.general_drop or args.general_flat or args.general_checkpoint
+                             or args.general_six or args.general_inject is not None
                              or args.general_order != "0123"):
         runner.error("general scenario options require --general")
+    if args.general_six:
+        if args.general_order in ("01", "10"):
+            runner.error("six leaves require a general order, not the capacity-sort order")
+        if len(args.general_order) != 6:
+            runner.error("six leaves require a six-slot --general-order such as 012345")
+    elif args.general_order in ("012345", "543210"):
+        runner.error("a six-slot order requires --general-six")
+    if args.general_inject is not None:
+        try:
+            general_vm.Injection.parse(args.general_inject)
+        except ValueError as error:
+            runner.error(str(error))
     if args.general_drop and args.general_checkpoint and not args.general_order.startswith("1"):
         runner.error("start with slot 1 to drop before handoff")
     if args.interrupt is not None and args.interrupt[0] not in ("worker-exit", "disconnect", "drop-reply"):

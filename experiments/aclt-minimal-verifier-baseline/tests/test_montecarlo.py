@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import montecarlo
 from general_job import Journal, c
-from general_vm import CAPS, DEFAULT_BUDGET, fixture
+from general_vm import CAPS, CAPS_SIX, DEFAULT_BUDGET, Injection, fixture
 
 SEED = 20261115
 
@@ -455,6 +455,74 @@ class MonteCarloRegressionTests(unittest.TestCase):
         (run_dir / "journal.cbor").write_bytes(c.encode(events))
         violations = montecarlo.check_campaign(self.root)["violations"]
         self.assertTrue(any("seeded drops" in item for item in violations), violations)
+
+    def test_t1_schedule_keeps_the_r3_shape(self):
+        schedule = montecarlo.generate_schedule(SEED, 10)
+        self.assertNotIn("topology", schedule)
+        self.assertNotIn("backend", schedule)
+        for spec in schedule["runs"]:
+            self.assertNotIn("topology", spec)
+            self.assertEqual(spec["budget"], DEFAULT_BUDGET)
+
+    def test_t2_schedule_uses_six_leaves(self):
+        schedule = montecarlo.generate_schedule(SEED, 10, topology="t2")
+        self.assertEqual(schedule["topology"], "t2")
+        self.assertEqual({spec["fault"] for spec in schedule["runs"]}, set(montecarlo.FAULTS))
+        for spec in schedule["runs"]:
+            self.assertEqual(spec["topology"], "t2")
+            self.assertEqual(spec["budget"], montecarlo.DEFAULT_BUDGET_SIX)
+            if spec["fault"] in montecarlo.DROPS:
+                self.assertIn(spec["slot"], (0, 1, 2, 3, 4, 5))
+
+    def test_t2_in_process_campaign_checks_clean(self):
+        root = Path(self.tmp.name) / "t2"
+        result = montecarlo.run_campaign(SEED, 5, root, self.executor, topology="t2")
+        self.assertEqual({row["fault"] for row in result["rows"]}, set(montecarlo.FAULTS))
+        check = montecarlo.check_campaign(root, self.executor)
+        self.assertEqual(check["violations"], [])
+
+    def test_injection_parser_and_six_leaf_fixture(self):
+        injection = Injection.parse("tcp_disconnect:5:first")
+        self.assertEqual((injection.mode, injection.slot, injection.loss),
+                         ("tcp_disconnect", 5, "first"))
+        request = {"action": "SOLVE", "slot": 5, "attempt": 1}
+        self.assertTrue(injection.matches(request))
+        with self.assertRaises(ValueError):
+            Injection.parse("no_such_fault:0:first")
+        job = fixture(hashlib.sha256(b"six").digest(), montecarlo.DEFAULT_BUDGET_SIX, six=True)
+        self.assertEqual(len(job.tasks), 6)
+        self.assertEqual(job.caps, CAPS_SIX)
+
+    def test_redacted_topology_still_cross_checks(self):
+        source = {"guest_ips": {"A": "10.1.2.3", "B": "10.1.2.4"},
+                  "placement": {"A": "A", "B": "B", "C": "A", "D": "B"},
+                  "lan_links": {role: {"A": {"local": ["A-LAN", 40000 + index],
+                                             "peer": ["B-LAN", 5300 + index]},
+                                       "B": {"local": ["B-LAN", 5300 + index],
+                                             "peer": ["A-LAN", 40000 + index]}}
+                                for index, role in enumerate(("B", "D"))}}
+        redacted = montecarlo._redact_topology(source)
+        self.assertNotIn("10.1.2.3", json.dumps(redacted))
+        montecarlo.dualhost_multivm.check_lan(
+            {"topology": dict(redacted, host_a_lock="held",
+                              host_b_environment={"lock": "held"},
+                              host_b_boot_hashes={"kernel": "k", "guest.cpio.gz": "i"}),
+             "kernel_sha256": "k", "initramfs_sha256": "i"},
+            ("A", "B", "C", "D"), ("B", "D"))
+
+    def test_dualhost_rejects_a_drop_served_on_host_a(self):
+        job = fixture(hashlib.sha256(b"placement").digest(), montecarlo.DEFAULT_BUDGET_SIX, six=True)
+        spec = {"index": 0, "fault": "no_reply", "slot": 0, "attempt": 1, "loss": "both",
+                "budget": montecarlo.DEFAULT_BUDGET_SIX, "topology": "t2"}
+        run_dir = Path(self.tmp.name) / "wrong-placement"
+        run_dir.mkdir()
+        (run_dir / "job.cbor").write_bytes(montecarlo._job_bundle(job))
+        montecarlo._run_guest(job, spec, run_dir, backend="dualhost", topology="t2",
+                              config=Path("config.json"), kernel=Path("kernel"),
+                              placement="B,D", accel="tcg", timeout=1)
+        status = c.decode((run_dir / "status.cbor").read_bytes())
+        self.assertEqual(status["outcome"], "ERROR")
+        self.assertIn("served on host A", status["error"])
 
     def test_no_reply_both_drops_no_complete_output(self):
         job = fixture(hashlib.sha256(b"no-reply-both").digest(), DEFAULT_BUDGET)

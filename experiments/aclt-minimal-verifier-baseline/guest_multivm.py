@@ -203,6 +203,8 @@ def run_general(role, port, budget, report, pairs):
     output = EVIDENCE / role
     output.mkdir(mode=0o700)
     drop = pairs.get("aclt_general_drop") == "1"
+    six = pairs.get("aclt_general_six") == "1"
+    inject = general_vm.Injection.parse(pairs.get("aclt_general_inject"))
     nonce = bytes.fromhex(pairs["aclt_execution_nonce"])
     sort_job = sort_contract.SortJob(nonce) if pairs.get("aclt_capacity_sort") == "1" else None
     if sort_job is not None:
@@ -212,17 +214,31 @@ def run_general(role, port, budget, report, pairs):
             (output / "guest.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
             return 0
     if role != "A":
-        report.update(general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop, sort_job=sort_job))
+        while True:
+            try:
+                report.update(general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop,
+                                               sort_job=sort_job, inject=inject))
+                break
+            except general_vm.WorkerExit as exc:
+                # The worker aborted after reading one request.  The guest supervisor keeps
+                # serving so the coordinator sees a real remote EOF and can retry elsewhere.
+                report.setdefault("worker_exits", []).append(exc.name)
+                report.update(local_socket_ip=exc.local, peer_socket_ip=exc.peer)
+                print(f"GUEST_WORKER_EXIT role={role} request={exc.name}", flush=True)
+        report["fault_triggered"] = len(inject.hits) if inject is not None else 0
+        if inject is not None:
+            report["injection"] = inject.hits
     else:
         roles = guest_roles(int(pairs["aclt_guests"]))
         job = sort_job or general_vm.fixture(nonce, budget,
-                                 flat=pairs.get("aclt_general_flat") == "1")
+                                 flat=pairs.get("aclt_general_flat") == "1", six=six)
         reuse = None
         source = None
         if pairs.get("aclt_handoff") == "reuse":
             source_path = HANDOFF_INPUT / "source.cbor"
             source_execution = codec.decode(codec.decode(source_path.read_bytes())[0]["execution"])
-            source_job = general_vm.fixture(source_execution["nonce"], source_execution["budget"])
+            source_job = general_vm.fixture(source_execution["nonce"], source_execution["budget"],
+                                            six=six)
             source = general_vm.source_journal(source_job, source_path, EXECUTOR)
             reuse = {slot: slot for slot in range(len(job.tasks))}
         order = tuple(int(slot) for slot in pairs["aclt_general_order"])
@@ -276,11 +292,15 @@ def run_general(role, port, budget, report, pairs):
                     journal, status = general_vm.run(
                         job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
                         checkpoint=checkpoint, placement=placement, retry_worker=retry_worker,
-                        source=source, reuse=reuse, journal_factory=journal_factory,
+                        retry_remote=inject is not None, source=source, reuse=reuse,
+                        journal_factory=journal_factory,
                     )
                 except coordination.CoordinationError:
-                    journal = general_vm.Journal(job, output / "journal.cbor",
-                                                 codec.decode((output / "journal.cbor").read_bytes()))
+                    path = output / "journal.cbor"
+                    events = codec.decode(path.read_bytes()) if path.is_file() else ()
+                    journal = general_vm.Journal(job, path, events)
+                    if not path.is_file():
+                        path.write_bytes(codec.encode(events))
                     status = "COORDINATION_PAUSED"
         finally:
             for peer in roles[1:]:

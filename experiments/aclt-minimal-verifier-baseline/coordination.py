@@ -172,11 +172,12 @@ def serve(authority, process, reader, writer, *, on_intent=None):
             send(writer, {} if result is None else {"result": result})
 
 
-def conflicting_intent(authority):
-    """Test-only stale coordinator process with a separate write request."""
+def conflicting_intent(authority, *, future=False):
+    """Test-only competing coordinator process with a separate write request."""
     script = ("import signal, sys; "
               "sys.stdout.buffer.write(sys.stdin.buffer.read()); sys.stdout.flush(); signal.pause()")
-    message = dict(epoch=authority.epoch - 1, event="PUBLISH", fields={})
+    epoch = authority.epoch + 1 if future else authority.epoch - 1
+    message = dict(epoch=epoch, event="PUBLISH", fields={})
     with subprocess.Popen([sys.executable, "-c", script], stdin=subprocess.PIPE,
                           stdout=subprocess.PIPE) as stale:
         send(stale.stdin, message)

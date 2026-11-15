@@ -30,28 +30,44 @@ from pathlib import Path
 from typing import Any
 
 from baseline import PROBE, ROOT
+import dualhost_multivm
 from coordination import Coordinator, CoordinationError, GuestJournal, serve
 from general_job import INT, Job, Journal, c, handle, response_for
-from general_vm import DEFAULT_BUDGET, fixture, run, standalone_probe
+from general_vm import DEFAULT_BUDGET, DEFAULT_BUDGET_SIX, fixture, run, standalone_probe
+from multivm_job import assignments
 from lan import decode_answer
 from tools.formal_migration.s2_transport import receive as s2_receive, send as s2_send
 
 FAULTS = ("no_reply", "worker_exit", "tcp_disconnect", "handoff", "overlap")
 DROPS = ("no_reply", "worker_exit", "tcp_disconnect")
 ROLES = ("A", "B", "C")
+ROLES_SIX = ("A", "B", "C", "D")
 ORDER = (0, 1, 2, 3)
+ORDER_SIX = (0, 1, 2, 3, 4, 5)
+TOPOLOGIES = {
+    "t1": {"guests": 3, "leaves": 4, "roles": ROLES, "order": ORDER,
+           "budget": DEFAULT_BUDGET},
+    "t2": {"guests": 4, "leaves": 6, "roles": ROLES_SIX, "order": ORDER_SIX,
+           "budget": DEFAULT_BUDGET_SIX},
+}
+BACKENDS = ("inprocess", "local", "dualhost")
 DEFAULT_SEED = 20261115
 DEFAULT_RUNS = 32
 SOCKET_TIMEOUT = 15
 
 
-def build_executor(destination: Path) -> Path:
-    """Build the independent Rust executor used by the in-process peers."""
+def build_executor(destination: Path, *, static: bool = False) -> Path:
+    """Build the independent Rust executor used by the in-process peers.
+
+    The cross-host harness compiles a statically linked executor from the same source,
+    so a static build keeps the campaign environment digest comparable with the guest.
+    """
     source = PROBE / "src/independent_executor.rs"
     destination = Path(destination)
+    options = ["-C", "target-feature=+crt-static"] if static else []
     subprocess.run(
         [os.environ.get("RUSTC") or "rustc", "--edition=2021", "-D", "warnings",
-         "-C", "overflow-checks=yes", "-O", str(source), "-o", str(destination)],
+         "-C", "overflow-checks=yes", "-O", *options, str(source), "-o", str(destination)],
         check=True, timeout=90, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     )
     return destination
@@ -105,10 +121,12 @@ def _parameter_rng(seed: int, index: int) -> random.Random:
     return random.Random(f"aclt-montecarlo/{seed}/{index}/parameters")
 
 
-def generate_schedule(seed: int, runs: int) -> dict[str, Any]:
+def generate_schedule(seed: int, runs: int, *, topology: str = "t1") -> dict[str, Any]:
     """Build a deterministic schedule in which every five-run block covers all classes."""
     c.need(type(seed) is int and seed >= 0, "seed must be a non-negative integer")
     c.need(type(runs) is int and runs >= 1, "runs must be a positive integer")
+    c.need(topology in TOPOLOGIES, f"unknown topology {topology}")
+    shape = TOPOLOGIES[topology]
     specs = []
     for index in range(runs):
         block = index // len(FAULTS)
@@ -121,10 +139,10 @@ def generate_schedule(seed: int, runs: int) -> dict[str, Any]:
             "index": index,
             "fault": fault,
             "nonce": nonce.hex(),
-            "budget": DEFAULT_BUDGET,
+            "budget": shape["budget"],
         }
         if fault in DROPS:
-            spec["slot"] = rng.choice(ORDER)
+            spec["slot"] = rng.choice(shape["order"])
             spec["attempt"] = 1
             spec["loss"] = rng.choice(("first", "both"))
         elif fault == "handoff":
@@ -132,7 +150,12 @@ def generate_schedule(seed: int, runs: int) -> dict[str, Any]:
         else:
             spec["overlap_after"] = 5
         specs.append(spec)
-    return {"version": 1, "seed": seed, "runs": specs}
+    schedule = {"version": 1, "seed": seed, "runs": specs}
+    if topology != "t1":
+        schedule["topology"] = topology
+        for spec in specs:
+            spec["topology"] = topology
+    return schedule
 
 
 def _job_bundle(job: Job) -> bytes:
@@ -274,7 +297,8 @@ def _should_drop(raw: bytes, spec: dict[str, Any]) -> bool:
     return attempt in (1, 2)
 
 
-def _run_drop(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) -> None:
+def _run_drop(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
+              roles: tuple[str, ...] = ROLES, order: tuple[int, ...] = ORDER) -> None:
     triggered = 0
 
     def exchange(worker: str, raw: bytes) -> bytes:
@@ -296,8 +320,7 @@ def _run_drop(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) -> 
         return handle(raw, executor)
 
     try:
-        journal, outcome = run(job, ROLES, run_dir / "journal.cbor", exchange,
-                               order=(0, 1, 2, 3))
+        journal, outcome = run(job, roles, run_dir / "journal.cbor", exchange, order=order)
         _write_status(run_dir, spec, outcome, triggered=triggered,
                       accepted=len(journal.accepted), final=journal.final is not None)
         _write_fault(run_dir, spec, triggered=triggered)
@@ -307,7 +330,8 @@ def _run_drop(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) -> 
         _write_fault(run_dir, spec, triggered=triggered)
 
 
-def _run_handoff(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) -> None:
+def _run_handoff(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
+                 roles: tuple[str, ...] = ROLES, order: tuple[int, ...] = ORDER) -> None:
     checkpoint = spec["checkpoint"]
 
     def exchange(worker: str, raw: bytes) -> bytes:
@@ -315,8 +339,8 @@ def _run_handoff(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) 
 
     try:
         checkpoint_journal, checkpoint_outcome = run(
-            job, ROLES, run_dir / "checkpoint.cbor", exchange,
-            order=(0, 1, 2, 3), checkpoint=checkpoint,
+            job, roles, run_dir / "checkpoint.cbor", exchange,
+            order=order, checkpoint=checkpoint,
         )
         if checkpoint_outcome != "CHECKPOINT":
             _write_status(run_dir, spec, "ERROR", checkpoint=checkpoint,
@@ -324,8 +348,8 @@ def _run_handoff(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) 
             _write_fault(run_dir, spec, triggered=0)
             return
         journal, outcome = run(
-            job, ROLES, run_dir / "journal.cbor", exchange,
-            order=(0, 1, 2, 3), previous=run_dir / "checkpoint.cbor",
+            job, roles, run_dir / "journal.cbor", exchange,
+            order=order, previous=run_dir / "checkpoint.cbor",
         )
         _write_status(run_dir, spec, outcome, checkpoint=checkpoint,
                       checkpoint_events=len(checkpoint_journal.events),
@@ -337,7 +361,8 @@ def _run_handoff(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) 
         _write_fault(run_dir, spec, triggered=0)
 
 
-def _run_overlap(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) -> None:
+def _run_overlap(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
+                 roles: tuple[str, ...] = ROLES, order: tuple[int, ...] = ORDER) -> None:
     authority = Coordinator(job, run_dir / "host.cbor", run_dir / "trace.cbor")
     owner = _spawn_idle()
     conflicting = _spawn_idle()
@@ -369,8 +394,8 @@ def _run_overlap(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) 
             serving = pool.submit(serve, authority, owner, host_reader, host_writer,
                                   on_intent=on_intent)
             try:
-                _, outcome = run(job, ROLES, run_dir / "guest.cbor", exchange,
-                                 order=(0, 1, 2, 3), journal_factory=factory)
+                _, outcome = run(job, roles, run_dir / "guest.cbor", exchange,
+                                 order=order, journal_factory=factory)
             except CoordinationError as exc:
                 error = str(exc)
             finally:
@@ -395,40 +420,263 @@ def _run_overlap(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) 
     _write_fault(run_dir, spec, triggered=1 if authority.paused else 0, intents=intents)
 
 
-def _run_one(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path) -> None:
+def _run_one(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
+             topology: str = "t1") -> None:
+    shape = TOPOLOGIES[topology]
+    roles, order = shape["roles"], shape["order"]
     if spec["fault"] in DROPS:
-        _run_drop(job, spec, run_dir, executor)
+        _run_drop(job, spec, run_dir, executor, roles=roles, order=order)
     elif spec["fault"] == "handoff":
-        _run_handoff(job, spec, run_dir, executor)
+        _run_handoff(job, spec, run_dir, executor, roles=roles, order=order)
     elif spec["fault"] == "overlap":
-        _run_overlap(job, spec, run_dir, executor)
+        _run_overlap(job, spec, run_dir, executor, roles=roles, order=order)
     else:
         raise c.CodecError(f"unknown fault class {spec['fault']}")
 
 
-def run_campaign(seed: int, runs: int, root: Path, executor: Path) -> dict[str, Any]:
+def _topology_for(spec: dict[str, Any], default: str) -> str:
+    return spec.get("topology", default)
+
+
+def _phase_root(raw: Path, phase: str = "") -> Path:
+    root = raw / phase if phase else raw
+    return root / "A" / "A"
+
+
+def _copy(source: Path, destination: Path) -> None:
+    c.need(source.is_file(), f"missing guest evidence {source.name}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(source.read_bytes())
+
+
+def _redact_topology(topology: dict[str, Any]) -> dict[str, Any]:
+    """Record the observed shape without the operator's physical addresses.
+
+    The link records hold only the fixed A-LAN/B-LAN labels and TCP ports, which
+    the cross-check needs.  Guest addresses are synthesized by the QEMU user
+    network, but are still replaced so that a future configuration cannot leak a
+    host address through the evidence tree.
+    """
+    value = json.loads(json.dumps(topology))
+    for role in value.get("guest_ips", {}):
+        value["guest_ips"][role] = f"<{role}_GUEST_IP>"
+    return value
+
+
+def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Path,
+                         result: dict[str, Any], *, backend: str, topology: str) -> None:
+    """Turn one multivm evidence tree into the R3 checker's per-run layout."""
+    fault = spec["fault"]
+    handoff = fault == "handoff"
+    overlap = fault == "overlap"
+    phase = "after" if (raw / "after").is_dir() else ""
+    root = _phase_root(raw, phase)
+    journal = _load_journal(job, root / "journal.cbor")
+    _copy(root / "journal.cbor", run_dir / "journal.cbor")
+    guest = result.get("guests", {})
+    triggered = 1 if handoff or overlap else sum(int(row.get("fault_triggered", 0))
+                                                 for row in guest.values())
+    worker_exits = sum(len(row.get("worker_exits", ())) for row in guest.values())
+    extra: dict[str, Any] = {}
+    if fault in DROPS:
+        extra = {"triggered": triggered, "accepted": len(journal.accepted),
+                 "final": journal.final is not None}
+    elif handoff:
+        before_root = _phase_root(raw, "before")
+        checkpoint = _load_journal(job, before_root / "journal.cbor")
+        _copy(before_root / "journal.cbor", run_dir / "checkpoint.cbor")
+        extra = {"triggered": 1, "checkpoint": spec["checkpoint"],
+                 "checkpoint_events": len(checkpoint.events),
+                 "accepted": len(journal.accepted),
+                 "final": journal.final is not None}
+    else:
+        _copy(raw / "host-journal.cbor", run_dir / "host.cbor")
+        _copy(raw / "coordination.trace", run_dir / "trace.cbor")
+        _copy(root / "journal.cbor", run_dir / "guest.cbor")
+        extra = {"triggered": 1, "paused": True, "intents": spec["overlap_after"],
+                 "error": "overlapping coordinator epochs"}
+    outcome = "PAUSED" if overlap else result["general_status"]
+    _write_status(run_dir, spec, outcome, **extra)
+    _write_fault(run_dir, spec, triggered=triggered)
+    if journal.final is not None:
+        _copy(root / "publication.cbor", run_dir / "result.cbor")
+    observed = result.get("topology", {})
+    if not observed.get("placement"):
+        observed = dict(observed, placement={role: "A" for role in guest})
+    _copy_json(run_dir / "topology.json", _redact_topology(observed))
+    frames = run_dir / "frames"
+    phases = ([("before", result.get("before_guests", {})), ("after", guest)]
+              if handoff else [("after", guest)] if phase else [("", guest)])
+    for label, rows in phases:
+        for role in rows:
+            source = (raw / label / role / role) if label else (raw / role / role)
+            if not source.is_dir():
+                continue
+            destination = frames / label / role if label else frames / role
+            for path in sorted(source.glob("*-*.cbor")):
+                _copy(path, destination / path.name)
+    metadata = {
+        "backend": backend,
+        "topology": topology,
+        "source_commit": result.get("commit"),
+        "source_manifest_sha256": result.get("source_manifest_sha256"),
+        "executor_sha256": result.get("executor_sha256"),
+        "kernel_sha256": result.get("kernel_sha256"),
+        "initramfs_sha256": result.get("initramfs_sha256"),
+        "placement": _redact_topology(observed).get("placement"),
+        "remote_roles": sorted(observed.get("lan_links", {})),
+        "guest_boot_ids": {role: row.get("boot_id") for role, row in guest.items()},
+        "before_guest_boot_ids": ({role: row.get("boot_id")
+                                   for role, row in result.get("before_guests", {}).items()}
+                                  if handoff else {}),
+        "triggered": triggered,
+        "worker_exits": worker_exits,
+    }
+    _copy_json(run_dir / "metadata.json", metadata)
+
+
+def _copy_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+
+
+def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
+               topology: str, config: Path | None, kernel: Path, placement: str | None,
+               accel: str, timeout: int) -> None:
+    shape = TOPOLOGIES[topology]
+    remote_roles = tuple(role for role in (placement or "").split(",") if role)
+    roles = shape["roles"]
+    if spec["fault"] in DROPS and backend == "dualhost":
+        worker, _ = assignments(roles, len(job.tasks))[spec["slot"]]
+        if worker not in remote_roles:
+            _write_status(run_dir, spec, "ERROR",
+                          error=f"injected slot {spec['slot']} is served on host A")
+            _write_fault(run_dir, spec, triggered=0)
+            return
+    raw = run_dir / "raw"
+    order = "".join(str(slot) for slot in shape["order"])
+    command = [sys.executable, "-B", str(Path(__file__).with_name("multivm.py")), "run",
+               "--general", "--guests", str(shape["guests"]), "--kernel", str(kernel),
+               "--output", str(raw), "--solve-budget", str(spec["budget"]),
+               "--general-order", order, "--general-nonce", spec["nonce"],
+               "--accel", accel]
+    if topology == "t2":
+        command.append("--general-six")
+    if backend == "dualhost":
+        c.need(config is not None and placement, "dual-host campaign needs config and placement")
+        command += ["--dualhost-config", str(config), "--host-b-roles", placement]
+    if spec["fault"] in DROPS:
+        command += ["--general-inject",
+                    f"{spec['fault']}:{spec['slot']}:{spec['loss']}"]
+    elif spec["fault"] == "handoff":
+        command += ["--general-checkpoint", str(spec["checkpoint"])]
+    else:
+        command += ["--m9", "overlap"]
+    try:
+        completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True,
+                                   timeout=timeout)
+    except subprocess.TimeoutExpired:
+        _write_status(run_dir, spec, "ERROR", error=f"guest harness exceeded {timeout}s")
+        _write_fault(run_dir, spec, triggered=0)
+        return
+    (run_dir / "multivm.log").write_text(completed.stdout + completed.stderr, encoding="utf-8")
+    result_path = raw / "result.json"
+    if not result_path.is_file():
+        _write_status(run_dir, spec, "ERROR",
+                      error=(completed.stderr.strip().splitlines() or ["guest harness failed"])[-1][:300])
+        _write_fault(run_dir, spec, triggered=0)
+        return
+    result = json.loads(result_path.read_text())
+    if backend == "dualhost":
+        expected_placement = {role: "B" if role in remote_roles else "A" for role in roles}
+        c.need(result.get("topology", {}).get("placement") == expected_placement,
+               "guest harness recorded a different placement")
+    if completed.returncode != 0:
+        safe = ("BUDGET_BLOCKED", "NO_REPLY", "COORDINATION_PAUSED")
+        if completed.returncode != 1 or result.get("general_status") not in safe:
+            _write_status(run_dir, spec, "ERROR",
+                          error=(completed.stderr.strip().splitlines() or ["guest harness failed"])[-1][:300])
+            _write_fault(run_dir, spec, triggered=0)
+            return
+    _normalize_guest_run(job, spec, run_dir, raw, result, backend=backend, topology=topology)
+
+
+def _manifest(root: Path) -> None:
+    rows = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(root).as_posix()
+        if relative in ("report.json", "manifest.sha256") or relative.startswith("raw/"):
+            continue
+        if "/raw/" in relative or relative.endswith("trace.cbor") or relative.endswith("multivm.log"):
+            continue
+        rows.append(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {relative}")
+    (root / "manifest.sha256").write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+
+def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None, *,
+                 backend: str = "inprocess", topology: str = "t1",
+                 config: Path | None = None, kernel: Path | None = None,
+                 placement: str | None = None, accel: str = "kvm",
+                 timeout: int = 1800) -> dict[str, Any]:
     """Execute one deterministic campaign and retain inspectable per-run evidence."""
+    c.need(backend in BACKENDS, f"unknown backend {backend}")
+    c.need(topology in TOPOLOGIES, f"unknown topology {topology}")
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
     c.need(not any(root.iterdir()), "campaign output directory must be empty")
-    schedule = generate_schedule(seed, runs)
+    if backend != "inprocess":
+        c.need(kernel is not None and Path(kernel).is_file(), "cross-host campaign needs a kernel")
+        if backend == "dualhost":
+            c.need(config is not None, "dual-host campaign needs a placement file")
+            c.need(placement, "dual-host campaign needs a B placement")
+        if executor is None:
+            executor = build_executor(root / "executor", static=True)
+    c.need(executor is not None, "in-process campaign needs an executor")
+    schedule = generate_schedule(seed, runs, topology=topology)
     environment = _environment(Path(executor))
+    if backend != "inprocess":
+        environment = dict(environment, backend=backend, topology=topology)
+        schedule["backend"] = backend
     schedule["environment"] = environment
     (root / "schedule.cbor").write_bytes(c.encode(schedule))
+    if backend != "inprocess":
+        (root / "environment.json").write_text(
+            json.dumps(environment, indent=2, sort_keys=True) + "\n")
     rows = []
     for spec in schedule["runs"]:
         run_dir = root / f"run-{spec['index']:04d}"
         run_dir.mkdir()
-        job = fixture(bytes.fromhex(spec["nonce"]), spec["budget"])
+        spec_topology = _topology_for(spec, topology)
+        job = fixture(bytes.fromhex(spec["nonce"]), spec["budget"],
+                      six=spec_topology == "t2")
         (run_dir / "job.cbor").write_bytes(_job_bundle(job))
         _write_fault(run_dir, spec)
-        _run_one(job, spec, run_dir, Path(executor))
+        if backend == "inprocess":
+            _run_one(job, spec, run_dir, Path(executor), topology=spec_topology)
+        else:
+            _run_guest(job, spec, run_dir, backend=backend, topology=spec_topology,
+                       config=config, kernel=Path(kernel), placement=placement,
+                       accel=accel, timeout=timeout)
         status = c.decode((run_dir / "status.cbor").read_bytes())
-        rows.append({"index": spec["index"], "fault": spec["fault"],
-                     "outcome": status["outcome"]})
-    (root / "report.json").write_text(json.dumps(
-        {"seed": seed, "runs": rows, "environment": environment},
-        indent=2, sort_keys=True) + "\n")
+        row = {"index": spec["index"], "fault": spec["fault"], "outcome": status["outcome"]}
+        if backend != "inprocess":
+            row["topology"] = spec_topology
+            row["triggered"] = int(status.get("triggered", 0))
+        rows.append(row)
+    report = {"seed": seed, "runs": rows, "environment": environment}
+    if backend != "inprocess":
+        report.update(backend=backend, topology=topology)
+        first = root / "run-0000" / "metadata.json"
+        if first.is_file():
+            meta = json.loads(first.read_text())
+            topology_record = json.loads((root / "run-0000" / "topology.json").read_text())
+            topology_record.update(kernel_sha256=meta.get("kernel_sha256"),
+                                   initramfs_sha256=meta.get("initramfs_sha256"))
+            _copy_json(root / "topology.json", topology_record)
+        _manifest(root)
+    (root / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     return {"root": str(root), "seed": seed, "runs": runs, "rows": rows}
 
 
@@ -503,6 +751,7 @@ def _check_budget(job: Job, events: list[dict[str, Any]], label: str,
 
 def _expected_drop_outcome(job: Job, spec: dict[str, Any],
                            events: tuple[dict[str, Any], ...] = (),
+                           order: tuple[int, ...] = ORDER,
                            ) -> tuple[str, list[tuple[int, int]], int]:
     """Derive the drop outcome from caps and recorded answer charges."""
     caps = job.caps
@@ -526,7 +775,7 @@ def _expected_drop_outcome(job: Job, spec: dict[str, Any],
             gas[key] = c.uint(outcome["gas_used"])
 
     def ready() -> list[int]:
-        return [slot for slot in ORDER if slot not in accepted
+        return [slot for slot in order if slot not in accepted
                 and (slot not in dependencies or dependencies[slot] in accepted)]
 
     def reserve(slot: int, number: int) -> bool:
@@ -646,11 +895,11 @@ def _check_result(job: Job, journal: Journal, run_dir: Path, label: str,
 
 
 def _check_drop(job: Job, spec: dict[str, Any], run_dir: Path,
-                violations: list[str]) -> None:
+                violations: list[str], *, order: tuple[int, ...] = ORDER) -> None:
     raw_events = c.decode((run_dir / "journal.cbor").read_bytes())
     _check_budget(job, raw_events, "journal", violations)
     _check_accept_slots(raw_events, "journal", violations)
-    expected, drops, accepted_count = _expected_drop_outcome(job, spec, tuple(raw_events))
+    expected, drops, accepted_count = _expected_drop_outcome(job, spec, tuple(raw_events), order)
     actual_drops = [(c.uint(event["slot"]), c.uint(event["attempt"]))
                     for event in raw_events if event.get("kind") == "NO_REPLY"]
     if actual_drops != drops:
@@ -853,22 +1102,40 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
         violations.append("overlap: paused run retained a complete output")
 
 
-def _check_run(spec: dict[str, Any], run_dir: Path) -> list[str]:
+def _check_run(spec: dict[str, Any], run_dir: Path, *,
+               backend: str = "inprocess") -> list[str]:
     violations: list[str] = []
     for name in ("job.cbor", "status.cbor", "fault.cbor"):
         if not (run_dir / name).exists():
             violations.append(f"missing {name}")
     if violations:
         return violations
+    topology = spec.get("topology", "t1")
+    shape = TOPOLOGIES[topology]
     raw = (run_dir / "job.cbor").read_bytes()
-    expected = _job_bundle(fixture(bytes.fromhex(spec["nonce"]), spec["budget"]))
+    expected = _job_bundle(fixture(bytes.fromhex(spec["nonce"]), spec["budget"],
+                                  six=topology == "t2"))
     if raw != expected:
         return ["job differs from the seeded schedule"]
     job = _job_from_bundle(raw)
+    if backend != "inprocess":
+        metadata_path = run_dir / "metadata.json"
+        if not metadata_path.is_file():
+            violations.append("missing per-run metadata")
+        else:
+            metadata = json.loads(metadata_path.read_text())
+            if metadata.get("backend") != backend:
+                violations.append(f"metadata: backend {metadata.get('backend')} is not {backend}")
+            if metadata.get("topology") != topology:
+                violations.append(
+                    f"metadata: topology {metadata.get('topology')} is not {topology}")
+            status = c.decode((run_dir / "status.cbor").read_bytes())
+            if c.uint(metadata.get("triggered", -1)) != c.uint(status.get("triggered", -1)):
+                violations.append("metadata: triggered count differs from status")
     fault = spec["fault"]
     try:
         if fault in DROPS:
-            _check_drop(job, spec, run_dir, violations)
+            _check_drop(job, spec, run_dir, violations, order=shape["order"])
         elif fault == "handoff":
             _check_handoff(job, spec, run_dir, violations)
         elif fault == "overlap":
@@ -903,6 +1170,71 @@ def _check_environment(schedule: dict[str, Any], report: dict[str, Any],
         violations.append("environment: source revision is not recorded")
 
 
+def _check_campaign_topology(root: Path, schedule: dict[str, Any], backend: str,
+                             topology: str, violations: list[str]) -> None:
+    path = root / "topology.json"
+    if not path.is_file():
+        violations.append("topology: campaign has no topology record")
+        return
+    record = json.loads(path.read_text())
+    roles = TOPOLOGIES[topology]["roles"]
+    if backend == "local":
+        if "lan_links" in record:
+            violations.append("topology: local campaign recorded physical links")
+        return
+    placement = record.get("placement")
+    if type(placement) is not dict:
+        violations.append("topology: missing guest placement")
+        return
+    remote = tuple(role for role, host in placement.items() if host == "B")
+    if not remote:
+        violations.append("topology: dual-host campaign placed no guest on B")
+        return
+    try:
+        dualhost_multivm.check_lan(
+            {"topology": record, "kernel_sha256": record.get("kernel_sha256"),
+             "initramfs_sha256": record.get("initramfs_sha256")},
+            roles, remote)
+    except Exception as error:
+        violations.append(f"topology: {error}")
+    for spec in schedule["runs"]:
+        metadata_path = root / f"run-{spec['index']:04d}" / "metadata.json"
+        if not metadata_path.is_file():
+            continue
+        metadata = json.loads(metadata_path.read_text())
+        if metadata.get("kernel_sha256") != record.get("kernel_sha256"):
+            violations.append(f"run-{spec['index']:04d}: kernel digest differs from topology")
+        if metadata.get("initramfs_sha256") != record.get("initramfs_sha256"):
+            violations.append(f"run-{spec['index']:04d}: initramfs digest differs from topology")
+
+
+def _check_manifest(root: Path, violations: list[str]) -> None:
+    path = root / "manifest.sha256"
+    if not path.is_file():
+        violations.append("manifest: campaign has no evidence manifest")
+        return
+    recorded = {}
+    for line in path.read_text().splitlines():
+        if not line:
+            continue
+        digest, _, name = line.partition("  ")
+        recorded[name] = digest
+    expected = {}
+    for file in sorted(root.rglob("*")):
+        if not file.is_file():
+            continue
+        relative = file.relative_to(root).as_posix()
+        if (relative in ("report.json", "manifest.sha256") or relative.startswith("raw/")
+                or "/raw/" in relative or relative.endswith("trace.cbor")
+                or relative.endswith("multivm.log")):
+            continue
+        expected[relative] = hashlib.sha256(file.read_bytes()).hexdigest()
+    if recorded != expected:
+        for name in sorted(set(recorded) | set(expected)):
+            if recorded.get(name) != expected.get(name):
+                violations.append(f"manifest: {name} differs from the recorded digest")
+
+
 def check_campaign(root: Path, executor: Path | None = None) -> dict[str, Any]:
     """Replay every run and check the safety-layer invariants without trusting the driver."""
     root = Path(root)
@@ -911,13 +1243,22 @@ def check_campaign(root: Path, executor: Path | None = None) -> dict[str, Any]:
         schedule = c.decode((root / "schedule.cbor").read_bytes())
         specs = schedule["runs"]
         seed = schedule["seed"]
-        rebuilt = generate_schedule(seed, len(specs))
+        backend = schedule.get("backend", "inprocess")
+        topology = schedule.get("topology", "t1")
+        c.need(backend in BACKENDS, f"unknown backend {backend}")
+        c.need(topology in TOPOLOGIES, f"unknown topology {topology}")
+        rebuilt = generate_schedule(seed, len(specs), topology=topology)
         for key in ("version", "seed", "runs"):
             c.need(schedule.get(key) == rebuilt.get(key),
                    f"schedule {key} differs from the seeded generator")
         report = json.loads((root / "report.json").read_text())
         c.need(type(report) is dict, "report is not an object")
+        if executor is None and (root / "executor").is_file():
+            executor = root / "executor"
         _check_environment(schedule, report, executor, violations)
+        if backend != "inprocess":
+            _check_campaign_topology(root, schedule, backend, topology, violations)
+            _check_manifest(root, violations)
     except Exception as error:
         return {"runs": 0, "seed": None, "violations": [f"schedule: {error}"]}
     for spec in specs:
@@ -926,7 +1267,7 @@ def check_campaign(root: Path, executor: Path | None = None) -> dict[str, Any]:
             violations.append(f"run-{spec['index']:04d}: missing directory")
             continue
         try:
-            violations.extend(_check_run(spec, run_dir))
+            violations.extend(_check_run(spec, run_dir, backend=backend))
         except Exception as error:
             violations.append(f"run-{spec['index']:04d}: {error}")
     return {"runs": len(specs), "seed": seed, "violations": violations}
@@ -938,7 +1279,9 @@ def _evidence_hashes(root: Path) -> dict[str, str]:
         if not path.is_file():
             continue
         relative = path.relative_to(root).as_posix()
-        if relative in ("report.json",) or relative.endswith("trace.cbor"):
+        if (relative in ("report.json",) or relative.endswith("trace.cbor")
+                or relative.endswith("multivm.log") or relative.startswith("raw/")
+                or "/raw/" in relative):
             continue
         hashes[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
     return hashes
@@ -1021,6 +1364,13 @@ def main(argv: list[str] | None = None) -> int:
     run_parser.add_argument("--runs", type=int, default=DEFAULT_RUNS)
     run_parser.add_argument("--output", type=Path, required=True)
     run_parser.add_argument("--executor", type=Path)
+    run_parser.add_argument("--backend", choices=BACKENDS, default="inprocess")
+    run_parser.add_argument("--topology", choices=tuple(TOPOLOGIES), default="t1")
+    run_parser.add_argument("--config", type=Path)
+    run_parser.add_argument("--kernel", type=Path)
+    run_parser.add_argument("--placement")
+    run_parser.add_argument("--accel", choices=("kvm", "tcg"), default="kvm")
+    run_parser.add_argument("--timeout", type=int, default=1800)
 
     check_parser = subparsers.add_parser("check", help="replay and check one campaign")
     check_parser.add_argument("--output", type=Path, required=True)
@@ -1042,10 +1392,12 @@ def main(argv: list[str] | None = None) -> int:
         print(format_report(result, reproducible))
         return 0 if not result["violations"] else 1
 
-    if args.executor is not None:
-        executor = args.executor
-        run_campaign(args.seed, args.runs, args.output, executor)
-        result = check_campaign(args.output, executor)
+    if args.backend != "inprocess" or args.executor is not None:
+        run_campaign(args.seed, args.runs, args.output, args.executor,
+                     backend=args.backend, topology=args.topology, config=args.config,
+                     kernel=args.kernel, placement=args.placement, accel=args.accel,
+                     timeout=args.timeout)
+        result = check_campaign(args.output, args.executor)
         print(format_report(result))
         return 0 if not result["violations"] else 1
     with tempfile.TemporaryDirectory(prefix="aclt-montecarlo-executor-") as temporary:

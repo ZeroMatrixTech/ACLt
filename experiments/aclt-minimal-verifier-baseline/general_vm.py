@@ -13,9 +13,68 @@ from tools.verification_profile import codec as c
 from wasm import artifact as encode_artifact
 
 CAPS = [8232, 8232, 8242, 8232]
+CAPS_SIX = [8232, 8232, 8242, 8232, 8232, 8242]
 DEFAULT_BUDGET = sum(CAPS) + CAPS[1]
+DEFAULT_BUDGET_SIX = sum(CAPS_SIX) + CAPS_SIX[1]
+TASKS = [{"literal": 2}, {"literal": 3}, {"double": 0}, {"literal": 11}]
+TASKS_SIX = TASKS + [{"literal": 2}, {"double": 4}]
+DROP_MODES = ("no_reply", "worker_exit", "tcp_disconnect")
 STOP = c.encode({"action": "STOP"})
 TIMEOUT = 30
+
+
+def caps(six=False):
+    return list(CAPS_SIX if six else CAPS)
+
+
+class WorkerExit(RuntimeError):
+    """The serving worker aborted after reading a request; the guest remains up."""
+
+    def __init__(self, role, name, local, peer):
+        super().__init__(f"worker {role} exited after {name}")
+        self.role = role
+        self.name = name
+        self.local = local
+        self.peer = peer
+
+
+class Injection:
+    """One seeded remote-worker failure, applied at the TCP request boundary."""
+
+    def __init__(self, mode, slot, loss):
+        self.mode = mode
+        self.slot = slot
+        self.loss = loss
+        self.hits = []
+
+    @classmethod
+    def parse(cls, value):
+        if not value:
+            return None
+        parts = value.split(":")
+        if len(parts) != 3:
+            raise ValueError("injection must be MODE:SLOT:LOSS")
+        mode, slot, loss = parts
+        if mode not in DROP_MODES:
+            raise ValueError("injection mode must be no_reply, worker_exit or tcp_disconnect")
+        if loss not in ("first", "both"):
+            raise ValueError("injection loss must be first or both")
+        try:
+            slot = int(slot)
+        except ValueError:
+            raise ValueError("injection slot must be an integer") from None
+        if slot < 0:
+            raise ValueError("injection slot must be non-negative")
+        return cls(mode, slot, loss)
+
+    def matches(self, request):
+        if request["action"] != "SOLVE" or request["slot"] != self.slot:
+            return False
+        return self.loss == "both" or request["attempt"] == 1
+
+    def hit(self, request):
+        self.hits.append({"mode": self.mode, "slot": request["slot"],
+                          "attempt": request["attempt"], "loss": self.loss})
 
 
 def artifact_module():
@@ -31,17 +90,19 @@ def program(module, instructions):
     return encode_artifact(module.canonical())
 
 
-def fixture(nonce, budget, *, flat=False):
+def fixture(nonce, budget, *, flat=False, six=False):
     module = artifact_module()
     read = [(0x41, 0), (0x42, 0), (0x41, 0), (0x41, 8), (0x10, 2)]
     double = [(0x41, 0), (0x41, 0), (0x29, 3, 0), (0x42, 2), (0x7e,), (0x37, 3, 0)]
     write = [(0x41, 0), (0x41, 8), (0x10, 3)]
     artifacts = {op: program(module, read + middle + write)
                  for op, middle in (("copy", []), ("double", double))}
-    declaration = c.encode(dict(family=FAMILY, tasks=[{"literal": 2}, {"literal": 3},
-                                                     {"double": 0}, {"literal": 11}]))
-    plan = c.encode(dict(family=FAMILY, tree=[0, 1, 2, 3] if flat else [[0, 1], [2, 3]],
-                         dependencies={2: 0}, caps=CAPS,
+    tasks = TASKS_SIX if six else TASKS
+    tree = ([[0, 1], [2, 3], [4, 5]] if six else [[0, 1], [2, 3]])
+    declaration = c.encode(dict(family=FAMILY, tasks=tasks))
+    plan = c.encode(dict(family=FAMILY,
+                         tree=list(range(len(tasks))) if flat else tree,
+                         dependencies={2: 0, 5: 4} if six else {2: 0}, caps=caps(six),
                          artifacts={op: c.domain_hash(ARTIFACT_TAG, raw) for op, raw in artifacts.items()}))
     execution = c.encode(dict(declaration_id=digest("Declaration", declaration), plan_id=digest("Plan", plan),
                               nonce=nonce, budget=budget))
@@ -51,6 +112,17 @@ def fixture(nonce, budget, *, flat=False):
 def standalone_probe(job, gas_limit):
     """Run the same whole problem as an external single-machine control."""
     tasks = job.tasks
+    if len(tasks) == 6:
+        c.need(tasks[2] == {"double": 0} and tasks[5] == {"double": 4},
+               "unexpected standalone fixture dependency")
+        values = []
+        for task in tasks:
+            if "literal" in task:
+                values.append(task["literal"])
+            else:
+                c.need(task["double"] < len(values), "standalone dependency is not earlier")
+                values.append(2 * values[task["double"]])
+        return {"outcome": "OK", "output": b"".join(INT.pack(value) for value in values)}
     c.need(tasks[2] == {"double": 0}, "unexpected standalone fixture dependency")
     data = b"".join(INT.pack(tasks[slot]["literal"]) for slot in (0, 1, 3))
     artifact = program(artifact_module(), [
@@ -64,7 +136,8 @@ def standalone_probe(job, gas_limit):
 
 
 def run(job, roles, path, exchange, *, order, checkpoint=0, previous=None,
-        placement=None, retry_worker=None, source=None, reuse=None, journal_factory=Journal):
+        placement=None, retry_worker=None, retry_remote=False, source=None, reuse=None,
+        journal_factory=Journal):
     c.need(reuse is None or source is not None, "reuse needs verified source evidence")
     history = c.decode(previous.read_bytes()) if previous else ()
     journal = journal_factory(job, path, history, source=source)
@@ -102,8 +175,14 @@ def run(job, roles, path, exchange, *, order, checkpoint=0, previous=None,
                 if attempt == 2:
                     return journal, "NO_REPLY"
                 attempt += 1
-                worker = (retry_worker(worker) if retry_worker is not None else
-                          next(role for role in roles if role not in (worker, verifier)))
+                if retry_worker is not None:
+                    worker = retry_worker(worker)
+                elif retry_remote:
+                    candidates = [role for role in roles[1:] if role not in (worker, verifier)]
+                    worker = candidates[0] if candidates else next(
+                        role for role in roles if role not in (worker, verifier))
+                else:
+                    worker = next(role for role in roles if role not in (worker, verifier))
                 continue
             journal.add("ANSWER", slot=slot, attempt=attempt, response=response)
             answer = journal.attempts[slot, attempt]["answer"]
@@ -122,7 +201,7 @@ def wire_name(raw):
     return f'{value["epoch"]}-{value["slot"]}-{value["attempt"]}-{value["action"]}'
 
 
-def serve(role, port, executor, output, *, drop_first_b, sort_job=None):
+def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=None):
     """Serve the authenticated-by-topology peer in this trusted VM experiment."""
     seen = set()
     with closing(socket.create_server((guest_ip(role), port))) as listener:
@@ -141,6 +220,16 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None):
                 seen.add(key)
                 name = wire_name(raw)
                 (output / f"{name}-request.cbor").write_bytes(raw)
+                if inject is not None and inject.matches(request):
+                    inject.hit(request)
+                    if inject.mode == "worker_exit":
+                        raise WorkerExit(role, name, connection.getsockname()[0], address[0])
+                    if inject.mode == "tcp_disconnect":
+                        try:
+                            connection.shutdown(socket.SHUT_RDWR)
+                        except OSError:
+                            pass
+                    continue
                 drop = drop_first_b and name == "0-1-1-SOLVE"
                 response_path = output / f"{name}-response.cbor"
                 if sort_job is None:
@@ -169,11 +258,9 @@ def replay(job, roots, executor, previous=(), *, check_response=None, source=Non
         name = wire_name(raw)
         request_file = f"{name}-request.cbor"
         response_file = f"{name}-response.cbor"
-        expected[role].update((request_file, response_file))
         expected["A"].add(request_file)
         for endpoint in {role, "A"}:
             c.need((roots[endpoint] / request_file).read_bytes() == raw, "peer request differs")
-        response = (roots[role] / response_file).read_bytes()
         received = event["response"] if kind == "ACCEPT" else None
         if kind == "RESERVE":
             outcome = [e for e in events if e["kind"] in ("ANSWER", "NO_REPLY")
@@ -182,7 +269,12 @@ def replay(job, roots, executor, previous=(), *, check_response=None, source=Non
             if outcome[0]["kind"] == "ANSWER":
                 received = outcome[0]["response"]
             else:
-                c.need(name == "0-1-1-SOLVE" and role == "B", "unexpected missing reply")
+                expected[role].add(request_file)
+                c.need(not (roots[role] / response_file).exists(),
+                       "missing reply has a response frame")
+                continue
+        expected[role].update((request_file, response_file))
+        response = (roots[role] / response_file).read_bytes()
         if check_response is None:
             c.need(response == handle(raw, executor), "peer response differs")
         else:

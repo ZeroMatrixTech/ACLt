@@ -58,6 +58,21 @@ class DistributedJobTests(unittest.TestCase):
         self.assertEqual(standalone_probe(self.job, max(CAPS))["outcome"], "TRAP_GAS_EXHAUSTED")
         self.assertEqual(standalone_probe(self.job, DEFAULT_BUDGET)["outcome"], "OK")
 
+    def test_remote_retry_uses_another_remote_worker(self):
+        roles = ("A", "B", "C", "D")
+
+        def drop_once(role, raw):
+            value = c.decode(raw)
+            if role == "B" and (value["action"], value["slot"], value["attempt"]) == ("SOLVE", 1, 1):
+                raise ConnectionError("simulated missing reply")
+            return handle(raw, self.executor)
+
+        journal, status = run(self.job, roles, self.root / "remote", drop_once,
+                              order=(0, 1, 2, 3), retry_remote=True)
+        self.assertEqual(status, "PUBLISHED")
+        self.assertEqual(journal.attempts[1, 2]["worker"], "D")
+        self.assertEqual(journal.final["output"], [2, 3, 4, 11])
+
     def test_recovery_carries_retry_and_unblocks_dependencies(self):
         for count in (1, 2):
             with self.subTest(count=count):
