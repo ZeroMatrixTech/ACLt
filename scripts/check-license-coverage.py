@@ -22,8 +22,11 @@ Covered (needs an SPDX header or an explicit REUSE.toml path):
 Excluded, with the reason recorded per class in OQ-01
 (docs/07-roadmap/open-questions.md):
 
-- Markdown, data JSON, plain-text logs and captured outputs, Cargo lock
-  files (by exact name), archives and the root LICENSE. The repository-wide
+- Markdown, data JSON, plain-text logs and captured outputs, files named
+  exactly `Cargo.lock`, `SHA256SUMS` or `*-SHA256SUMS`, archives and the root
+  `LICENSE` (by exact relative path). The table in OQ-01 lists these classes
+  and their counts; a `package.lock`, a `tool.pySHA256SUMS` or a nested
+  `LICENSE` is not one of them and fails as `unclassified tracked file`. The repository-wide
   statement in README ("开源与许可") and the root LICENSE cover them; most are
   historical evidence kept byte-for-byte.
 
@@ -55,8 +58,9 @@ CONFIG_PATHS = frozenset({"DELIVERY-SCOPE.json", ".aclt-flow/template.json"})
 # Classified as excluded, not silently skipped: a file whose class is absent
 # here and in the covered sets fails as `unclassified tracked file`.
 EXCLUDED_SUFFIXES = frozenset({".md", ".json", ".txt", ".tsv", ".log", ".gz", ".cbor", ".docx"})
-EXCLUDED_NAMES = frozenset({"license", "cargo.lock"})
-EXCLUDED_NAME_ENDINGS = ("sha256sums",)
+EXCLUDED_NAMES = frozenset({"cargo.lock", "sha256sums"})
+EXCLUDED_NAME_ENDINGS = ("-sha256sums",)
+EXCLUDED_PATHS = frozenset({"LICENSE"})
 DEFAULT_LICENSE = "Apache-2.0"
 UNICODE_LICENSE = "Unicode-3.0"
 UNICODE_DATA_PATHS = frozenset({"tools/verification_profile/rust/unicode_data.rs"})
@@ -94,7 +98,8 @@ def _is_excluded(relative):
     path = PurePosixPath(relative)
     name = path.name.lower()
     return (
-        path.suffix.lower() in EXCLUDED_SUFFIXES
+        relative in EXCLUDED_PATHS
+        or path.suffix.lower() in EXCLUDED_SUFFIXES
         or name in EXCLUDED_NAMES
         or name.endswith(EXCLUDED_NAME_ENDINGS)
     )

@@ -97,11 +97,13 @@ class LicenseCoverageTests(unittest.TestCase):
         self.write("src/b.py", "print(1)\n")
         self.write("notes.md", "text\n")
         self.write("Cargo.lock", "lock\n")
+        self.write("SINGLEHOST-SHA256SUMS", "digest\n")
+        self.write("LICENSE", "license\n")
         self.write_reuse("version = 1\n" + self.declaration("src/b.py"))
         result = self.result()
         self.assertEqual(
             (result.covered, result.headers, result.declared, result.excluded, result.missing),
-            (3, 2, 1, 2, 0),
+            (3, 2, 1, 4, 0),
         )
 
     def test_git_inventory_unavailable_falls_back_to_walk(self):
@@ -268,7 +270,15 @@ class LicenseCoverageTests(unittest.TestCase):
         self.assertEqual(self.result().headers, 2)
 
     def test_unclassified_tracked_file_is_rejected(self):
-        for relative in ("tool.ts", "Dockerfile", "run", "other.lock"):
+        for relative in (
+            "tool.ts",
+            "Dockerfile",
+            "run",
+            "other.lock",
+            "audit/package.lock",
+            "audit/tool.pySHA256SUMS",
+            "audit/LICENSE",
+        ):
             with self.subTest(relative=relative):
                 self.write(relative, "text\n")
                 self.assert_rejected(f"unclassified tracked file: {relative}")
