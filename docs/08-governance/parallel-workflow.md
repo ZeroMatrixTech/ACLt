@@ -120,7 +120,7 @@ git worktree add --no-track -b <type>/<topic> .claude/worktrees/<名称> origin/
 - **文件范围：** 只修改计划卡文件集内的文件。需要扩大时，先更新 Issue 中的计划卡，再通知调度会话，由调度会话重新判定并行冲突。
 - **热点文件：** 对热点文件的修改集中在最后一个提交里，便于合并前同步时单独处理。
 - **测试：** 测试结果必须来自本次执行，写明命令、退出码和基线。不得用历史通过记录代替。
-- **提交：** 提交说明使用 CONTRIBUTING §6 模板，并逐个添加文件。
+- **提交：** 提交说明使用 CONTRIBUTING §6 模板，并逐个添加文件。代理不加 `Signed-off-by`，DCO 由维护者在合并时签署（CONTRIBUTING §11）。
 - **证据标签：** 证据摘要钉住的提交，在推送前打标签（第 6.3 节）。
 - **PR：** 推送后创建 draft PR，正文写 `Closes #<Issue>`，并通知调度会话。
 
@@ -146,7 +146,7 @@ git worktree add --no-track -b <type>/<topic> .claude/worktrees/<名称> origin/
 
 ### 5.5 合并与收尾
 
-维护者在 GitHub 上 squash 合并。之后由调度会话收尾：
+维护者在 GitHub 上 squash 合并，并在合并提交说明末尾加上自己的 `Signed-off-by`（DCO，CONTRIBUTING §11）。之后由调度会话收尾：
 
 1. 通知其他在途条目 `main` 已经前进。它们在轮到自己合并时再同步，不需要立即同步。
 2. 确认 Issue 已由 `Closes` 关闭，证据标签已在远端。

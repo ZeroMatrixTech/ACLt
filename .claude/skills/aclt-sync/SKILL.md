@@ -49,7 +49,7 @@ git merge --no-ff --no-commit origin/main
 ## 5. 提交与推送
 
 1. 逐个 `git add` 重新生成的清单。
-2. 运行 `git commit`。说明写 `Merge origin/main into <分支>`，正文列出解决的冲突文件，以及本次运行的命令与退出码。
+2. 运行 `git commit`。说明写 `Merge origin/main into <分支>`，正文列出解决的冲突文件，以及本次运行的命令与退出码。不加 `Signed-off-by`：DCO 由维护者在 squash 合并时签署（CONTRIBUTING §11）。
 3. 运行 `git push`（普通推送）。
 4. 用 `gh pr checks <PR>` 确认 CI 通过。
 

@@ -39,3 +39,4 @@ Closes #
 - [ ] PARALLEL-1 审计没有未关闭的 `BLOCKER` / `MAJOR`
 - [ ] 已用 `/aclt-sync` 与最新 `main` 同步，本次重跑通过
 - [ ] CI 通过
+- [ ] DCO：外部贡献的每个提交都已签署；本仓库分支的 PR 由维护者在 squash 合并时于提交说明末尾加 `Signed-off-by`（CONTRIBUTING §11）
