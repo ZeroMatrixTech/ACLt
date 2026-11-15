@@ -11,6 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -480,6 +481,19 @@ class MonteCarloRegressionTests(unittest.TestCase):
         self.assertEqual({row["fault"] for row in result["rows"]}, set(montecarlo.FAULTS))
         check = montecarlo.check_campaign(root, self.executor)
         self.assertEqual(check["violations"], [])
+
+    def test_default_cli_keeps_the_requested_topology(self):
+        argv = sys.argv
+        try:
+            sys.argv = ["montecarlo.py", "run", "--seed", "1", "--runs", "1",
+                        "--output", str(Path(self.tmp.name) / "cli"), "--topology", "t2"]
+            with mock.patch.object(montecarlo, "build_executor", return_value=Path("executor")), \
+                    mock.patch.object(montecarlo, "run_campaign", side_effect=RuntimeError("stop")) as campaign:
+                with self.assertRaises(RuntimeError):
+                    montecarlo.main()
+        finally:
+            sys.argv = argv
+        self.assertEqual(campaign.call_args.kwargs["topology"], "t2")
 
     def test_injection_parser_and_six_leaf_fixture(self):
         injection = Injection.parse("tcp_disconnect:5:first")
