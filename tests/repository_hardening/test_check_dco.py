@@ -103,5 +103,72 @@ class CheckDcoTests(unittest.TestCase):
         self.assertIn(unsigned[:12], result.stdout)
 
 
+WORKFLOW = ROOT / ".github" / "workflows" / "dco.yml"
+
+
+class DcoWorkflowTrustTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.workflow = WORKFLOW.read_text()
+
+    def step(self, name):
+        lines = self.workflow.splitlines()
+        start = next(i for i, line in enumerate(lines) if line.strip() == f"- name: {name}")
+        block = []
+        for line in lines[start:]:
+            if block and line.startswith("      - "):
+                break
+            block.append(line)
+        return "\n".join(block)
+
+    def run_commands(self):
+        lines = self.workflow.splitlines()
+        commands = []
+        for i, line in enumerate(lines):
+            if not line.lstrip().startswith("run:"):
+                continue
+            value = line.split("run:", 1)[1].strip()
+            if value in ("|", ">"):
+                indent = len(line) - len(line.lstrip())
+                block = []
+                for following in lines[i + 1:]:
+                    if following.strip() and len(following) - len(following.lstrip()) <= indent:
+                        break
+                    block.append(following.strip())
+                value = "\n".join(block).strip()
+            commands.append(value)
+        return commands
+
+    def test_trusted_checkout_uses_the_target_commit(self):
+        step = self.step("Checkout the trusted checker")
+        refs = [line.strip() for line in step.splitlines() if line.strip().startswith("ref:")]
+        self.assertEqual(refs, ["ref: ${{ github.sha }}"])
+        self.assertIn("path: trusted", step)
+        self.assertIn("persist-credentials: false", step)
+        self.assertNotIn("if:", step)
+        self.assertNotRegex(step, r"\$\{\{\s*github\.event")
+
+    def test_pull_request_is_checked_out_as_data_only(self):
+        self.assertEqual(self.workflow.count("uses: actions/checkout@"), 2)
+        step = self.step("Checkout pull request commits as data")
+        self.assertIn("if: github.event_name == 'pull_request_target'", step)
+        self.assertIn("ref: refs/pull/${{ github.event.pull_request.number }}/head", step)
+        self.assertIn("path: pr", step)
+        self.assertIn("persist-credentials: false", step)
+        self.assertNotIn("path: trusted", step)
+
+        commands = self.run_commands()
+        self.assertEqual(len(commands), 2)
+        for command in commands:
+            self.assertRegex(command, r"^python3 -B trusted/scripts/check-dco\.py(?:\s|$)")
+        self.assertNotIn("pr/", "\n".join(commands))
+        self.assertNotIn("working-directory: pr", self.workflow)
+
+    def test_header_explains_why_the_target_commit_is_trusted(self):
+        header = self.workflow.split("on:", 1)[0]
+        self.assertIn("github.sha", header)
+        self.assertIn("not use github.event.pull_request.base.sha", header)
+
+
 if __name__ == "__main__":
     unittest.main()
