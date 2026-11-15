@@ -579,30 +579,74 @@ def _check_accept_slots(events: list[dict[str, Any]], label: str,
             violations.append(f"{label}: slot {slot} accepted {count} times")
 
 
+def _last_event(journal: Journal) -> dict[str, Any] | None:
+    if not journal.events:
+        return None
+    return journal.events[-1]
+
+
 def _check_result(job: Job, journal: Journal, run_dir: Path, label: str,
-                  violations: list[str]) -> None:
+                  violations: list[str], expected: str = "PUBLISHED",
+                  drops: tuple[tuple[int, int], ...] = ()) -> None:
     result_path = run_dir / "result.cbor"
-    if journal.final is None:
-        if result_path.exists():
-            violations.append(f"{label}: complete output exists without PUBLISH")
+    last = _last_event(journal)
+    if expected == "PUBLISHED":
+        if journal.final is None:
+            if result_path.exists():
+                violations.append(f"{label}: complete output exists without PUBLISH")
+            else:
+                violations.append(f"{label}: missing published result (journal ends before PUBLISH)")
+            return
+        if last is None or last.get("kind") != "PUBLISH":
+            kind = "empty journal" if last is None else str(last.get("kind"))
+            violations.append(f"{label}: journal ends with {kind}, not PUBLISH")
+        if not result_path.exists():
+            violations.append(f"{label}: missing published result")
+            return
+        if result_path.read_bytes() != c.encode(journal.final):
+            violations.append(f"{label}: result differs from journal final")
+        reference = standalone_probe(job, job.budget)
+        if reference.get("outcome") != "OK":
+            violations.append(f"{label}: standalone reference did not succeed")
+            return
+        output = b"".join(INT.pack(value) for value in journal.final["output"])
+        if output != reference["output"]:
+            violations.append(f"{label}: published output differs from standalone reference")
         return
-    if not result_path.exists():
-        violations.append(f"{label}: missing published result")
-        return
-    if result_path.read_bytes() != c.encode(journal.final):
-        violations.append(f"{label}: result differs from journal final")
-    reference = standalone_probe(job, job.budget)
-    if reference.get("outcome") != "OK":
-        violations.append(f"{label}: standalone reference did not succeed")
-        return
-    output = b"".join(INT.pack(value) for value in journal.final["output"])
-    if output != reference["output"]:
-        violations.append(f"{label}: published output differs from standalone reference")
+    if journal.final is not None:
+        violations.append(f"{label}: {expected} run published")
+    if result_path.exists():
+        violations.append(f"{label}: {expected} run retained a complete output")
+    if expected == "NO_REPLY":
+        if not drops:
+            violations.append(f"{label}: no seeded drop for a NO_REPLY run")
+            return
+        slot, attempt = drops[-1]
+        if last is None or last.get("kind") != "NO_REPLY":
+            kind = "empty journal" if last is None else str(last.get("kind"))
+            violations.append(f"{label}: journal ends with {kind}, not the final NO_REPLY")
+        elif (c.uint(last.get("slot")), c.uint(last.get("attempt"))) != (slot, attempt):
+            violations.append(
+                f"{label}: final NO_REPLY is slot {last.get('slot')} "
+                f"attempt {last.get('attempt')}, not {slot}/{attempt}")
+    elif expected == "BUDGET_BLOCKED":
+        if not drops:
+            violations.append(f"{label}: no seeded drop for a blocked run")
+            return
+        slot, attempt = drops[-1]
+        if last is None or last.get("kind") != "NO_REPLY":
+            kind = "empty journal" if last is None else str(last.get("kind"))
+            violations.append(f"{label}: journal ends with {kind}, not the blocking NO_REPLY")
+        elif (c.uint(last.get("slot")), c.uint(last.get("attempt"))) != (slot, attempt):
+            violations.append(
+                f"{label}: blocking NO_REPLY is slot {last.get('slot')} "
+                f"attempt {last.get('attempt')}, not {slot}/{attempt}")
+    else:
+        violations.append(f"{label}: unknown terminal state {expected}")
 
 
 def _check_drop(job: Job, spec: dict[str, Any], run_dir: Path,
                 violations: list[str]) -> None:
-    status = c.decode((run_dir / "status.cbor").read_bytes())
     raw_events = c.decode((run_dir / "journal.cbor").read_bytes())
     _check_budget(job, raw_events, "journal", violations)
     _check_accept_slots(raw_events, "journal", violations)
@@ -613,8 +657,6 @@ def _check_drop(job: Job, spec: dict[str, Any], run_dir: Path,
         violations.append(
             f"journal: no-reply events {actual_drops} do not match seeded drops {drops}")
     journal = _load_journal(job, run_dir / "journal.cbor")
-    if status["outcome"] != expected:
-        violations.append(f"journal: outcome {status['outcome']} is not {expected}")
     if len(journal.accepted) != accepted_count:
         violations.append(
             f"journal: accepted {len(journal.accepted)} slots but expected {accepted_count}")
@@ -622,17 +664,12 @@ def _check_drop(job: Job, spec: dict[str, Any], run_dir: Path,
         violations.append("journal: more than one PUBLISH")
     if _count_events(journal.events, "ACCEPT") > len(job.tasks):
         violations.append("journal: too many ACCEPT events")
-    _check_result(job, journal, run_dir, "journal", violations)
-    if expected != "PUBLISHED":
-        if journal.final is not None:
-            violations.append(f"journal: {expected} run published")
-        if (run_dir / "result.cbor").exists():
-            violations.append(f"journal: {expected} run retained a complete output")
+    _check_result(job, journal, run_dir, "journal", violations,
+                  expected, tuple(drops))
 
 
 def _check_handoff(job: Job, spec: dict[str, Any], run_dir: Path,
                    violations: list[str]) -> None:
-    status = c.decode((run_dir / "status.cbor").read_bytes())
     checkpoint_raw = c.decode((run_dir / "checkpoint.cbor").read_bytes())
     journal_raw = c.decode((run_dir / "journal.cbor").read_bytes())
     _check_budget(job, checkpoint_raw, "handoff-checkpoint", violations)
@@ -640,8 +677,6 @@ def _check_handoff(job: Job, spec: dict[str, Any], run_dir: Path,
     _check_accept_slots(journal_raw, "handoff", violations)
     checkpoint = _load_journal(job, run_dir / "checkpoint.cbor")
     journal = _load_journal(job, run_dir / "journal.cbor")
-    if status["outcome"] != "PUBLISHED":
-        violations.append(f"handoff: outcome {status['outcome']} is not PUBLISHED")
     if len(checkpoint.accepted) != spec["checkpoint"]:
         violations.append(
             f"handoff: checkpoint accepted {len(checkpoint.accepted)} slots, "
@@ -663,7 +698,7 @@ def _check_handoff(job: Job, spec: dict[str, Any], run_dir: Path,
         violations.append("handoff: more than one PUBLISH")
     if _count_events(journal.events, "ACCEPT") > len(job.tasks):
         violations.append("handoff: too many ACCEPT events")
-    _check_result(job, journal, run_dir, "handoff", violations)
+    _check_result(job, journal, run_dir, "handoff", violations, "PUBLISHED")
 
 
 def _trace_events(path: Path) -> list[dict[str, Any]]:

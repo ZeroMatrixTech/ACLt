@@ -86,7 +86,8 @@ class MonteCarloRegressionTests(unittest.TestCase):
         job = fixture(hashlib.sha256(b"wrong-output").digest(), DEFAULT_BUDGET)
         run_dir = Path(self.tmp.name) / "wrong-output"
         run_dir.mkdir()
-        fake = SimpleNamespace(final={"output": [0, 0, 0, 0]})
+        fake = SimpleNamespace(final={"output": [0, 0, 0, 0]},
+                               events=[{"kind": "PUBLISH"}])
         (run_dir / "result.cbor").write_bytes(c.encode(fake.final))
         violations = []
         montecarlo._check_result(job, fake, run_dir, "wrong-output", violations)
@@ -101,14 +102,16 @@ class MonteCarloRegressionTests(unittest.TestCase):
         violations = montecarlo.check_campaign(self.root)["violations"]
         self.assertTrue(any("accepted 2 times" in item for item in violations), violations)
 
-    def test_checker_rejects_missing_publish(self):
+    def test_checker_rejects_truncated_drop_log_without_result(self):
         _, run_dir = self.run_dir("tcp_disconnect", published=True)
-        events = [event for event in c.decode((run_dir / "journal.cbor").read_bytes())
-                  if event["kind"] != "PUBLISH"]
-        (run_dir / "journal.cbor").write_bytes(c.encode(events))
+        events = c.decode((run_dir / "journal.cbor").read_bytes())
+        publish = next(index for index, event in enumerate(events)
+                       if event["kind"] == "PUBLISH")
+        (run_dir / "journal.cbor").write_bytes(c.encode(events[:publish]))
+        (run_dir / "result.cbor").unlink()
         violations = montecarlo.check_campaign(self.root)["violations"]
-        self.assertTrue(any("complete output" in item or "published" in item.lower()
-                            for item in violations), violations)
+        self.assertTrue(any("missing published result" in item for item in violations),
+                        violations)
 
     def test_checker_rejects_over_budget_without_the_journal_guard(self):
         spec, run_dir = self.run_dir("tcp_disconnect", published=True)
@@ -144,6 +147,23 @@ class MonteCarloRegressionTests(unittest.TestCase):
         violations = []
         montecarlo._check_drop(job, spec, run_dir, violations)
         self.assertEqual(violations, [])
+
+    def test_drop_checker_requires_the_second_no_reply(self):
+        job = fixture(hashlib.sha256(b"no-reply-terminal").digest(), DEFAULT_BUDGET)
+        spec = {"index": 0, "fault": "no_reply", "slot": 0, "attempt": 1, "loss": "both"}
+        run_dir = Path(self.tmp.name) / "no-reply-terminal"
+        run_dir.mkdir()
+        (run_dir / "job.cbor").write_bytes(montecarlo._job_bundle(job))
+        montecarlo._write_fault(run_dir, spec)
+        montecarlo._run_drop(job, spec, run_dir, self.executor)
+        events = c.decode((run_dir / "journal.cbor").read_bytes())
+        self.assertEqual(events[-1]["kind"], "NO_REPLY")
+        self.assertEqual(events[-1]["attempt"], 2)
+        (run_dir / "journal.cbor").write_bytes(c.encode(events[:-1]))
+        violations = []
+        montecarlo._check_drop(job, spec, run_dir, violations)
+        self.assertTrue(any("not the final NO_REPLY" in item for item in violations),
+                        violations)
 
     def test_handoff_has_one_quiescent_boundary(self):
         spec, run_dir = self.run_dir("handoff", published=True)
@@ -216,6 +236,17 @@ class MonteCarloRegressionTests(unittest.TestCase):
         violations = montecarlo.check_campaign(self.root)["violations"]
         self.assertTrue(any("handoff records" in item or "checkpoint accepted" in item
                             for item in violations), violations)
+
+    def test_handoff_checker_rejects_truncated_log_without_result(self):
+        _, run_dir = self.run_dir("handoff", published=True)
+        events = c.decode((run_dir / "journal.cbor").read_bytes())
+        publish = next(index for index, event in enumerate(events)
+                       if event["kind"] == "PUBLISH")
+        (run_dir / "journal.cbor").write_bytes(c.encode(events[:publish]))
+        (run_dir / "result.cbor").unlink()
+        violations = montecarlo.check_campaign(self.root)["violations"]
+        self.assertTrue(any("missing published result" in item for item in violations),
+                        violations)
 
     def test_overlap_checker_reads_the_conflict_from_the_trace(self):
         spec, run_dir = self.run_dir("overlap")
