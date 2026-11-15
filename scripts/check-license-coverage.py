@@ -10,6 +10,7 @@ through git when the directory is a checkout; an unpacked source tree is walked.
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 import tomllib
@@ -69,14 +70,23 @@ def _tracked_source_files(root):
 
 def _walk_source_files(root):
     files = []
-    for path in sorted(root.rglob("*")):
-        relative = path.relative_to(root)
-        if any(part in EXCLUDED_DIRS for part in relative.parts):
-            continue
-        if path.is_symlink():
-            raise CoverageError(f"unsafe symlink source: {relative.as_posix()}")
-        if path.is_file() and path.suffix in SOURCE_SUFFIXES:
-            files.append(relative.as_posix())
+    for directory, dirnames, filenames in os.walk(root):
+        directory_path = Path(directory)
+        # Prune excluded directories before descending. A tracked checkout can
+        # carry a large .git or target tree even though none of it is source.
+        dirnames[:] = sorted(name for name in dirnames if name not in EXCLUDED_DIRS)
+        for name in dirnames:
+            path = directory_path / name
+            if path.is_symlink():
+                relative = path.relative_to(root)
+                raise CoverageError(f"unsafe symlink source: {relative.as_posix()}")
+        for name in sorted(filenames):
+            path = directory_path / name
+            relative = path.relative_to(root)
+            if path.is_symlink():
+                raise CoverageError(f"unsafe symlink source: {relative.as_posix()}")
+            if path.is_file() and path.suffix in SOURCE_SUFFIXES:
+                files.append(relative.as_posix())
     return sorted(files)
 
 

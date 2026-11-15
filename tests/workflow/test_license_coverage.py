@@ -64,6 +64,11 @@ class LicenseCoverageTests(unittest.TestCase):
         result = CHECKER.check_coverage(self.root)
         self.assertEqual((result.source, result.headers, result.declared, result.missing), (1, 1, 0, 0))
 
+    def test_symlinked_directory_is_rejected(self):
+        self.write("real/example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
+        (self.root / "link").symlink_to(self.root / "real", target_is_directory=True)
+        self.assert_rejected("unsafe symlink source: link")
+
     def test_header_covers_source(self):
         self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
         result = CHECKER.check_coverage(self.root)
