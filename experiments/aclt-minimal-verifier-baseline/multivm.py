@@ -279,10 +279,15 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
         if role == "A":
             netdev = "hubport,id=n0,hubid=0"
             for peer_role, port in links.items():
-                commands.extend(["-netdev", f"socket,id=link{peer_role},connect={lan_links.get(peer_role, '127.0.0.1')}:{port}",
+                backend = (f"stream,id=link{peer_role},server=off,addr.type=inet,"
+                           f"addr.host={lan_links[peer_role]},addr.port={port}" if peer_role in lan_links else
+                           f"socket,id=link{peer_role},connect=127.0.0.1:{port}")
+                commands.extend(["-netdev", backend,
                                  "-netdev", f"hubport,id=hub{peer_role},hubid=0,netdev=link{peer_role}"])
+        elif role in lan_links:
+            netdev = f"stream,id=n0,server=on,addr.type=inet,addr.host={lan_links[role]},addr.port={links[role]}"
         else:
-            netdev = f"socket,id=n0,listen={lan_links.get(role, '127.0.0.1')}:{links[role]}"
+            netdev = f"socket,id=n0,listen=127.0.0.1:{links[role]}"
     if coordination_port is not None:
         commands.extend(["-device", "virtio-serial-pci",
                          "-chardev", f"socket,id=control,host=127.0.0.1,port={coordination_port}",
