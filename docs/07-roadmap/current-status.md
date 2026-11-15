@@ -159,7 +159,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 ### P0 — 阻断公开发布
 
 1. 完成 **ACLt Protocol** 名称冲突检索。
-2. 保持根目录 Apache License 2.0 `LICENSE` 不被改写。缺 SPDX 的源码按维护者 2026-11-15 的决定，改由文件外机器可读许可声明覆盖，由 P1-a 落实（#128）。
+2. 根目录 Apache License 2.0 `LICENSE` 保持不被改写。缺 SPDX 的源码按维护者 2026-11-15 的决定（#128）由文件外机器可读许可声明覆盖；P1-a（#145）已落实 `REUSE.toml`（79 个无头源码与 2 个历史 `Cargo.toml`）及接入 `make check` 的 `scripts/check-license-coverage.py`，该待办已解决。
 3. 决定名称、商标和兼容性声明的使用政策。规范、文档与研究文稿已于 2026-11-14 决定沿用 Apache-2.0。
 4. 贡献者许可机制已于 2026-11-15 决定采用 DCO（[CONTRIBUTING §11](../../CONTRIBUTING.md#11-许可)，`dco.yml` 检查）。仓库公开后，须用一次 fork PR 实测 DCO 门禁能否阻止合并；在此之前，外部 PR 的检查结果只作提示，由维护者在合并前本地核验。第三方代码接受规则仍待确定。
 5. 安全漏洞报告渠道见 [`SECURITY.md`](../../SECURITY.md)；仓库公开后，维护者须启用 GitHub 私密漏洞报告（AUD-20261115-002）。
@@ -203,6 +203,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-15 | v0.5 | P1-a（#145）已落实无头源码的文件外许可声明与覆盖检查，§7 的许可待办标记为已解决；OQ-01 将 README 成熟度声明改记为 P1-c（#148）的已决证据 | [OQ-01](open-questions.md#3-oq-01--名称分层许可与发布章程)、#145、#148 | 公开发布 |
 | 2026-11-15 | v0.5 | 接受 R1 首次公开阶段安全层与 R4 验收规格：S1–S7、五类跨主机故障、固定种子/拓扑/证据和统计口径；仅文档，不改变协议或结论 | [R1 规格](first-public-release-safety-plan.md)、#150、#151 | 不变 |
 | 2026-11-15 | v0.5 | README 加入统一成熟度声明（draft / research baseline；当前没有可部署软件）与 #101 证据边界；发行说明改写为首次公开发行说明，计入 M3、容量排序与 R2，并将 R4 列为发布前置 | [README](../../README.md)、[发行说明](../releases/PREVIEW-20261106.md)、#137 | 公开发布 |
 | 2026-11-15 | v0.5 | 维护者决定：保留 Git 历史，接受其中的主机名、本地路径与作者邮箱随仓库公开；首次公开发行说明由 `PREVIEW-20261106.md` 改写（名称 `research-preview-1`）。DCO 决定另见其日志行 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)、[公开发布准备审计](../08-governance/audits/audit-20261115-01-public-release.md) | 公开发布 |
