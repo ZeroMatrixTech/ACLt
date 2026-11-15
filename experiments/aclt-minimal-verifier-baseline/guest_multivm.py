@@ -262,7 +262,7 @@ def run_general(role, port, budget, report, pairs):
             name = general_vm.wire_name(raw)
             (output / f"{name}-request.cbor").write_bytes(raw)
             if inject is not None and owner == role and inject.matches(c.decode(raw)):
-                inject.hit(raw)
+                inject.hit(c.decode(raw))
                 raise ConnectionError(f"injected {inject.mode} on the coordinator")
             if sort_job is None:
                 result = general_vm.handle(raw, EXECUTOR) if owner == role else remote(owner, raw)
