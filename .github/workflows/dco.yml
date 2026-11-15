@@ -1,9 +1,11 @@
 name: DCO sign-off
 # Trust boundary: for pull requests this uses pull_request_target, so the
-# workflow and scripts/check-dco.py come from the base branch, never from the
-# pull request. The pull request is checked out into pr/ as data only;
-# nothing from it is executed, no secrets are used, and the token is
-# read-only and not persisted.
+# workflow and scripts/check-dco.py come from the target branch's current
+# commit (github.sha), never from the pull request. The pull request's
+# recorded base commit may predate this script, so the trusted checkout must
+# not use github.event.pull_request.base.sha. The pull request is checked out
+# into pr/ as data only; nothing from it is executed, no secrets are used, and
+# the token is read-only and not persisted.
 # Until a fork pull request has shown on the public repository that this check
 # blocks merging when a sign-off is missing and passes on the fixed head, its
 # result for external pull requests is advisory; the maintainer verifies
@@ -25,7 +27,7 @@ jobs:
       - name: Checkout the trusted checker
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.base.sha || github.sha }}
+          ref: ${{ github.sha }}
           path: trusted
           fetch-depth: 0
           persist-credentials: false
