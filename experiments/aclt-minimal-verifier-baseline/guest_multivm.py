@@ -215,20 +215,53 @@ def run_general(role, port, budget, report, pairs):
             (output / "guest.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
             return 0
     if role != "A":
-        while True:
-            try:
-                report.update(general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop,
-                                               sort_job=sort_job, inject=inject))
-                break
-            except general_vm.WorkerExit as exc:
-                # The worker aborted after reading one request.  The guest supervisor keeps
-                # serving so the coordinator sees a real remote EOF and can retry elsewhere.
-                report.setdefault("worker_exits", []).append(exc.name)
-                report.update(local_socket_ip=exc.local, peer_socket_ip=exc.peer)
-                print(f"GUEST_WORKER_EXIT role={role} request={exc.name}", flush=True)
-        report["fault_triggered"] = len(inject.hits) if inject is not None else 0
+        # The worker serves in a child process so that worker_exit is a real non-zero
+        # process exit (R1 section 4).  Injection records and serving-side observations
+        # are written durably by the child before it acts; this supervisor restarts it.
+        hits_path = output / "injection.jsonl"
+        observed_path = output / "observations.jsonl"
+        bounds_path = output / "serve-bounds.json"
         if inject is not None:
-            report["injection"] = inject.hits
+            inject.log_path = hits_path
+            inject.observation_path = observed_path
+        while True:
+            seen = len(general_vm.read_lines(hits_path))
+            child = os.fork()
+            if child == 0:
+                code = 0
+                try:
+                    bounds = general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop,
+                                              sort_job=sort_job, inject=inject, exit_on_fault=True)
+                    bounds_path.write_text(json.dumps(bounds) + "\n", encoding="utf-8")
+                except BaseException:
+                    import traceback
+                    traceback.print_exc()
+                    code = 1
+                finally:
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    os._exit(code)
+            _, status = os.waitpid(child, 0)
+            code = os.waitstatus_to_exitcode(status)
+            if code == general_vm.WORKER_EXIT_CODE:
+                hits = general_vm.read_lines(hits_path)
+                if len(hits) != seen + 1 or hits[-1]["mode"] != "worker_exit":
+                    raise RuntimeError("worker exited without exactly one recorded injection")
+                last = hits[-1]
+                report.setdefault("worker_exits", []).append(
+                    {"role": role, "slot": last["slot"], "attempt": last["attempt"],
+                     "exit_status": code})
+                print(f"GUEST_WORKER_EXIT role={role} status={code}", flush=True)
+                continue
+            if code != 0:
+                raise RuntimeError(f"worker process failed with status {code}")
+            break
+        report.update(json.loads(bounds_path.read_text(encoding="utf-8")))
+        hits = general_vm.read_lines(hits_path)
+        report["fault_triggered"] = len(hits)
+        if inject is not None:
+            report["injection"] = hits
+            report["observations"] = general_vm.read_lines(observed_path)
     else:
         roles = guest_roles(int(pairs["aclt_guests"]))
         job = sort_job or general_vm.fixture(nonce, budget,

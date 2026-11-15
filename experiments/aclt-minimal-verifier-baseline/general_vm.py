@@ -4,7 +4,9 @@
 from contextlib import closing
 import hashlib
 import json
+import os
 import socket
+import sys
 from pathlib import Path
 
 from baseline import ARTIFACT_TAG, PROBE, QUESTION_TAG, ask, solve, validate
@@ -22,6 +24,7 @@ TASKS = [{"literal": 2}, {"literal": 3}, {"double": 0}, {"literal": 11}]
 TASKS_SIX = TASKS + [{"literal": 2}, {"double": 4}]
 DROP_MODES = ("no_reply", "worker_exit", "tcp_disconnect")
 STOP = c.encode({"action": "STOP"})
+WORKER_EXIT_CODE = 7
 TIMEOUT = 30
 
 
@@ -48,6 +51,8 @@ class Injection:
         self.slot = slot
         self.loss = loss
         self.hits = []
+        self.log_path = None
+        self.observation_path = None
 
     @classmethod
     def parse(cls, value):
@@ -88,6 +93,29 @@ class Injection:
         if response is not None:
             row["response_sha256"] = hashlib.sha256(response).hexdigest()
         self.hits.append(row)
+        _append_line(self.log_path, row)
+
+    def observe(self, request, role, event):
+        """Record what the serving side did after the injection (closed, ...)."""
+        _append_line(self.observation_path, {"event": event, "role": role,
+                                             "slot": request["slot"], "attempt": request["attempt"]})
+
+
+def _append_line(path, row):
+    """Persist one record durably so it survives a worker process exit."""
+    if path is None:
+        return
+    with open(path, "a", encoding="utf-8") as stream:
+        stream.write(json.dumps(row, sort_keys=True) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+def read_lines(path):
+    path = Path(path)
+    if not path.is_file():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
 def coordinator_only(workers, leaf_count):
@@ -232,7 +260,8 @@ def wire_name(raw):
     return f'{value["epoch"]}-{value["slot"]}-{value["attempt"]}-{value["action"]}'
 
 
-def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=None):
+def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=None,
+          exit_on_fault=False):
     """Serve the authenticated-by-topology peer in this trusted VM experiment."""
     seen = set()
     with closing(socket.create_server((guest_ip(role), port))) as listener:
@@ -260,12 +289,19 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                         continue
                     inject.hit(request, raw, role)
                     if inject.mode == "worker_exit":
+                        if exit_on_fault:
+                            # A real non-zero exit of the worker process (R1 section 4); the
+                            # kernel closes its sockets and the supervisor observes the status.
+                            sys.stdout.flush()
+                            os._exit(WORKER_EXIT_CODE)
                         raise WorkerExit(role, name, connection.getsockname()[0], address[0])
                     if inject.mode == "tcp_disconnect":
                         try:
                             connection.shutdown(socket.SHUT_RDWR)
                         except OSError:
                             pass
+                        connection.close()
+                        inject.observe(request, role, "closed")
                     continue
                 drop = drop_first_b and name == "0-1-1-SOLVE"
                 response_path = output / f"{name}-response.cbor"

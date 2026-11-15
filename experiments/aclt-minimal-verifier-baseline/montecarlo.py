@@ -576,7 +576,12 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
     guest = result.get("guests", {})
     triggered = 1 if handoff or overlap else sum(int(row.get("fault_triggered", 0))
                                                  for row in guest.values())
-    worker_exits = sum(len(row.get("worker_exits", ())) for row in guest.values())
+    worker_exits = sorted((dict(row) for item in guest.values() for row in item.get("worker_exits", ())
+                           if type(row) is dict),
+                          key=lambda row: (row["slot"], row["attempt"], row["role"]))
+    serving_observations = sorted(
+        (dict(row) for item in guest.values() for row in item.get("observations", ())),
+        key=lambda row: (row["slot"], row["attempt"], row["role"], row["event"]))
     extra: dict[str, Any] = {}
     if fault in DROPS:
         extra = {"triggered": triggered, "accepted": len(journal.accepted),
@@ -669,6 +674,7 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
                                   if handoff else {}),
         "triggered": triggered,
         "worker_exits": worker_exits,
+        "serving_observations": serving_observations,
     }
     _copy_json(run_dir / "metadata.json", metadata)
 
@@ -893,6 +899,20 @@ def _check_serving(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path
                     f"serving: no_reply record {key} does not bind the withheld reply")
         elif "response_sha256" in row:
             violations.append(f"serving: {fault} record {key} claims a generated reply")
+        target = {"role": disposition["worker"], "slot": key[0], "attempt": key[1]}
+        if fault == "worker_exit":
+            exits = [item for item in metadata.get("worker_exits", ())
+                     if type(item) is dict and all(item.get(k) == v for k, v in target.items())]
+            if len(exits) != 1 or exits[0].get("exit_status") in (None, 0):
+                violations.append(
+                    f"serving: worker_exit {key} has no non-zero worker process exit observation")
+        elif fault == "tcp_disconnect":
+            closed = [item for item in metadata.get("serving_observations", ())
+                      if type(item) is dict and item.get("event") == "closed"
+                      and all(item.get(k) == v for k, v in target.items())]
+            if len(closed) != 1:
+                violations.append(
+                    f"serving: tcp_disconnect {key} has no serving-side close observation")
     for key in sorted(set(no_replies) - matched):
         violations.append(f"serving: NO_REPLY at slot/attempt {key} has no injection record")
 

@@ -665,6 +665,7 @@ class MonteCarloRegressionTests(unittest.TestCase):
         for role in montecarlo.PROFILE_ROLES:
             (frames / role).mkdir(parents=True)
         inject = Injection(fault, slot, loss) if fault in montecarlo.DROPS else None
+        exits, closed = [], []
 
         def exchange(worker, raw):
             wire = general_vm.wire_name(raw)
@@ -678,6 +679,11 @@ class MonteCarloRegressionTests(unittest.TestCase):
                     inject.hit(request, raw, worker, withheld)
                 else:
                     inject.hit(request, raw, worker)
+                event = {"role": worker, "slot": request["slot"], "attempt": request["attempt"]}
+                if fault == "worker_exit":
+                    exits.append(dict(event, exit_status=general_vm.WORKER_EXIT_CODE))
+                elif fault == "tcp_disconnect":
+                    closed.append(dict(event, event="closed"))
                 raise ConnectionError("injected")
             response = handle(raw, self.executor)
             for role in ("A", worker):
@@ -693,7 +699,8 @@ class MonteCarloRegressionTests(unittest.TestCase):
         (run_dir / "fault.cbor").write_bytes(c.encode(
             dict(spec, injections=inject.hits if inject is not None else [])))
         (run_dir / "metadata.json").write_text(json.dumps(
-            {"guest_boot_ids": {role: f"boot-{role}" for role in montecarlo.PROFILE_ROLES}}))
+            {"guest_boot_ids": {role: f"boot-{role}" for role in montecarlo.PROFILE_ROLES},
+             "worker_exits": exits, "serving_observations": closed}))
         return job, spec, run_dir
 
     def serving(self, job, spec, run_dir):
@@ -791,6 +798,22 @@ class MonteCarloRegressionTests(unittest.TestCase):
                 handle(request.read_bytes(), self.executor))
             self.assertTrue(any("has a serving-side reply" in item
                                 for item in self.serving(job, spec, run_dir)), fault)
+
+    def test_exit_and_disconnect_need_their_serving_observation(self):
+        for fault, slot, key, message in (
+                ("worker_exit", 1, "worker_exits", "non-zero worker process exit"),
+                ("tcp_disconnect", 2, "serving_observations", "serving-side close")):
+            job, spec, run_dir = self.guest_evidence(fault, slot, "first", f"observed-{fault}")
+            path = run_dir / "metadata.json"
+            metadata = json.loads(path.read_text())
+            self.assertEqual(len(metadata[key]), 1)
+            if fault == "worker_exit":
+                metadata[key][0]["exit_status"] = 0
+            else:
+                metadata[key] = []
+            path.write_text(json.dumps(metadata))
+            self.assertTrue(any(message in item for item in self.serving(job, spec, run_dir)),
+                            fault)
 
     def test_dispatched_verify_without_accept_is_rejected(self):
         job, spec, run_dir = self.guest_evidence("worker_exit", 1, "first", "stray-verify")
