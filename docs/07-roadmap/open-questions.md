@@ -43,7 +43,7 @@
 
 | ID | 问题组 | 优先级 | 状态 | 主要阻断 |
 |---|---|---:|---|---|
-| OQ-01 | 名称、分层许可与发布章程 | P0 | OPEN（仓库工件许可已决定） | 公开发布 |
+| OQ-01 | 名称、分层许可与发布章程 | P0 | OPEN（仓库工件许可与 DCO 已决定；源码覆盖已建立） | 公开发布 |
 | OQ-02 | 规范对象、编码与版本演进 | P0 | OPEN | G0 |
 | OQ-03 | Principal、签名与控制关系 | P0 | OPEN | G0 |
 | OQ-04 | WorkPlan、准入与 Assignment 合法性 | P0 | OPEN | G0 |
@@ -69,12 +69,12 @@
 3. 协议规范与项目文档：**2026-11-14 决定采用 Apache-2.0**，与代码相同；不再在 CC BY 4.0、CC BY-SA 4.0、独立开放规范条款或保留版权之间保持开放。
 4. 研究论文：仓库内文稿采用 Apache-2.0；投稿时出版方另有条款的，单独处理。
 5. 名称、商标与兼容性：不设独立政策；建立名称/商标使用政策；另设兼容性声明或认证政策。
-6. 贡献许可：仅依项目许可证；Developer Certificate of Origin（DCO）；Contributor License Agreement（CLA）。
+6. 贡献许可：**2026-11-15 阶段 #128 决定采用 Developer Certificate of Origin（DCO）**，贡献仅依项目许可证；保留并接受历史提交；CLA 不再采用。签署与 CI 检查由 P1-b 落地。
 7. 发布标记：research preview；draft specification；experimental implementation；release candidate。
 
-**当前建议。** 保留名称但完成法律与生态检索；根目录已经包含未经修改的 Apache License 2.0 英文全文，后续应保持该文件，并为未来适用源码使用 `SPDX-License-Identifier: Apache-2.0`；只有存在归属或第三方通知要求时才增加相应 `NOTICE` 内容。规范、文档与仓库内研究文稿沿用 Apache-2.0；该许可不授予名称或商标使用权（第 6 条），名称、商标与兼容性政策另行决定。v0.5 公开时标为 draft/research baseline；贡献机制根据维护主体、来源证明和再许可需求在仅项目许可证、DCO 与 CLA 之间选择。
+**当前建议。** 保留名称但完成法律与生态检索；根目录 `LICENSE` 为 Apache License 2.0 英文全文，条款正文（第 1–176 行）与标准文本逐字一致，开头有空行差异（本机标准副本比仓库文件多一行），附录示例的版权行已填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`；后续保持该文件。源码使用 `SPDX-License-Identifier: Apache-2.0`；无文件头的 79 个源码与 2 个历史交付目录的 `Cargo.toml`（state1/state2）由 `REUSE.toml` 的显式路径声明覆盖，其中被历史证据钉住字节的文件不修改。规范、文档与仓库内研究文稿沿用 Apache-2.0；该许可不授予名称或商标使用权（第 6 条），名称、商标与兼容性政策另行决定。v0.5 公开时标为 draft/research baseline。2026-11-15 阶段 #128 决定贡献机制采用 DCO，保留并接受历史提交；签署与检查由 P1-b 落地。
 
-**关闭证据。** 代码许可证选择及根目录 `LICENSE` 已经完成；规范、文档与研究文稿的许可声明已于 2026-11-14 写入 README 与 CONTRIBUTING。其余关闭证据为未来源码 SPDX 检查、按需 `NOTICE`、第三方许可清单、名称与商标检索、贡献规则、README 中统一的成熟度声明，以及必要的法律意见。
+**关闭证据。** 代码许可证选择及根目录 `LICENSE` 已经完成；规范、文档与研究文稿的许可声明已于 2026-11-14 写入 README 与 CONTRIBUTING。2026-11-15 P1-a 已建立 `REUSE.toml` 文件外声明（79 个无头源码；另有 2 个历史交付目录的 `Cargo.toml`）与 `scripts/check-license-coverage.py` 覆盖检查，后者接入 `make check`，在 checkout 中要求读取 git 跟踪清单，Git 不可用时失败；第三方材料与依赖清单见 `docs/08-governance/third-party-materials.md`；当前 state3 的 `Cargo.toml` 已声明 `license = "Apache-2.0"`，state1/state2 的历史 `Cargo.toml` 保持基线字节并由 `REUSE.toml` 外部声明覆盖。同日阶段 #128 决定采用 DCO，保留并接受历史提交；签署与检查由 P1-b 落地。NOTICE 核对结论为：在本次核对的材料与依赖范围内，未识别出 Apache-2.0 第 4(d) 条要求随附的第三方 `NOTICE`；依据见第三方材料清单，不是法律意见。仍 OPEN：名称与商标检索、README 中统一的成熟度声明、必要的法律意见；OQ-01 不关闭。上述覆盖检查是项目内检查，不宣称官方 REUSE 认证。
 
 **依赖。** OQ-13 的维护主体与发布权限。
 
