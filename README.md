@@ -4,7 +4,9 @@
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-11-11**
+> **最后更新：2026-11-15**
+>
+> **成熟度：draft / research baseline。** v0.5 是研究与规范基线；当前没有可部署的软件、节点或服务，也不是生产系统或主网系统。
 
 ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现中立协议。`ACLt` 是受 *accurate* 启发形成的臆造名称，不是首字母缩写。
 
@@ -12,7 +14,9 @@ ACLt Protocol 是一套面向异构、无许可分布式计算的开放、实现
 
 ## 当前结论
 
-ACLt Protocol 已形成一套完整的候选协议架构，但**尚未证明整体鲁棒性**。当前可以支持的严格表述是：
+ACLt Protocol 已形成一套完整的候选协议架构，但**尚未证明整体鲁棒性**。这一结论有明确边界（[#101](https://github.com/ZeroMatrixTech/ACLt/issues/101)，仍为 `OPEN`）：“无许可”是设计目标，不是当前已实现的属性。现有实验使用固定协调器、固定角色与固定对端地址；同宿主多 VM 证据只支持来宾级结论；物理故障域分离、无许可协调与统计独立性尚未建立。下文关于已实现能力和证据的表述都限于这一范围。
+
+当前可以支持的严格表述是：
 
 - 系统只保留 `Requester` 与 `Provider` 两类不可再约减的 Principal；
 - Planner、Verifier、Scheduler 等职能被压缩为 permissionless functions；
@@ -129,10 +133,10 @@ make workflow    # 按指纹执行并收集各组证据
 
 截至 2026-11-09，已有两条工程路线的候选实现和证据：
 
-- [ADR-0007](docs/05-decisions/ADR-0007-formal-object-migration-foundation.md) 与 [ADR-0008](docs/05-decisions/ADR-0008-fm-s3-interface-decisions.md) 下的候选 FM-S3 audit-only 路径已覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态，双物理机证据见[收尾](docs/testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](docs/testing/FM-S3-TASK-TRAP-20261106.md)和[终态与历史矩阵](docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md)。24 套公开快照可只用仓库复核，见[证据归档收尾](docs/testing/FM-EVIDENCE-CLOSEOUT-20261107.md)。
+- [ADR-0007](docs/05-decisions/ADR-0007-formal-object-migration-foundation.md) 与 [ADR-0008](docs/05-decisions/ADR-0008-fm-s3-interface-decisions.md) 下的候选 FM-S3 audit-only 路径已覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态，双物理机证据见[收尾](docs/testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](docs/testing/FM-S3-TASK-TRAP-20261106.md)和[终态与历史矩阵](docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md)。2026-11-07 收尾时 24 套公开快照可只用仓库复核，见[证据归档收尾](docs/testing/FM-EVIDENCE-CLOSEOUT-20261107.md)；`docs/testing/public-evidence/` 现有 27 个归档，公开范围见[首次公开发行说明](docs/releases/PREVIEW-20261106.md)。
 - P0-1B 的 Profile 规则按 R1–R11 切片实现，Type A 为 80 implemented / 36 partial / 3 not implemented；[R8](docs/testing/PROFILE-COMMITMENTS-R8-20261108.md)补 Claim/快照/承诺绑定，18 个摘要 owner 的现行公式与投影已实现。[R9](docs/testing/PROFILE-RUNTIME-R9-20261108.md)补运行期绑定/冻结与阶段守卫；TEST imports、7 项适用性和完整阶段/来源验收仍有缺口。[R10](docs/testing/PROFILE-DECISION-R10-20261109.md)实现 audit-only Phase D 测试重放。[R11](docs/testing/PROFILE-AUTHORITY-R11-20261109.md)从已验证的 FM-S3 日志前缀复算判决并核对结算。
 
-正式接口、FM-A 正式验收与准入保持 `OPEN`；P0-1B 保持 `STARTED / NOT CLOSED`。开发者预览的范围、复现方式与已知限制见[发行说明草案](docs/releases/PREVIEW-20261106.md)。
+正式接口、FM-A 正式验收与准入保持 `OPEN`；P0-1B 保持 `STARTED / NOT CLOSED`。首次公开发行的范围、复现方式与已知限制见[首次公开发行说明](docs/releases/PREVIEW-20261106.md)（发行名 `research-preview-1`）。
 
 state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifier-state3/README.md)）。[2026-10-03 集成报告](docs/testing/INTEGRATION-FIX.md)记录 265 个实验场景、13 项模型测试、24 项验证配置测试及 22 项流程/集成测试通过；这是已保存的历史证据，不是本次全量重跑结果。
 
@@ -195,9 +199,9 @@ state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifi
 
 本仓库的全部工件采用 **Apache License 2.0**，SPDX 标识为 `Apache-2.0`，范围包括代码与参考实现、协议规范、项目文档、仓库内的研究文稿、测试向量与证据。代码许可于 2026-08-17 确定；2026-11-14 维护者决定规范、文档与研究文稿沿用同一许可。
 
-另有标注的第三方材料保留其原许可。目前为 `tools/verification_profile/rust/unicode_data.rs`：该文件由 Unicode 字符数据库生成，适用 `Unicode-3.0`，全文见同目录 `UNICODE-LICENSE.txt`。Apache-2.0 第 6 条不授予名称或商标使用权，ACLt 的名称、商标与兼容性声明政策另行决定，见下节。贡献许可机制（仅依项目许可证、DCO 或 CLA）仍待决定。
+另有标注的第三方材料保留其原许可。目前为 `tools/verification_profile/rust/unicode_data.rs`：该文件由 Unicode 字符数据库生成，适用 `Unicode-3.0`，全文见同目录 `UNICODE-LICENSE.txt`。Apache-2.0 第 6 条不授予名称或商标使用权，ACLt 的名称、商标与兼容性声明政策另行决定，见下节。贡献采用 Developer Certificate of Origin（DCO），不使用 CLA；外部 fork PR 的每个提交须带与作者一致的 `Signed-off-by`，内部代理提交由维护者在合并时签署，细则见 [CONTRIBUTING §11](CONTRIBUTING.md#11-许可)。安全漏洞不要先公开细节，按 [SECURITY.md](SECURITY.md) 报告。
 
-仓库根目录 `LICENSE` 为 Apache License 2.0 英文全文；2026-11-06 起，文末附录示例中的版权行填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`，许可条款正文未改。源码文件使用 SPDX 标识，尚缺标识的源码仍需补齐；Markdown 等文档由本节与根目录 `LICENSE` 覆盖。存在归属声明或第三方通知要求时再维护 `NOTICE`。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
+仓库根目录 `LICENSE` 为 Apache License 2.0 英文全文；2026-11-06 起，文末附录示例中的版权行填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`，许可条款正文未改。源码由文件头 SPDX 标识或 [REUSE.toml](REUSE.toml) 显式路径声明覆盖，由 `make check` 中的覆盖检查核对；第三方材料见 [docs/08-governance/third-party-materials.md](docs/08-governance/third-party-materials.md)；Markdown 等文档由本节与根目录 `LICENSE` 覆盖。存在归属声明或第三方通知要求时再维护 `NOTICE`。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
 
 ## 名称说明
 
