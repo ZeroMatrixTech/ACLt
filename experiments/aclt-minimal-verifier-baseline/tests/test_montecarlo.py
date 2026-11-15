@@ -475,6 +475,45 @@ class MonteCarloRegressionTests(unittest.TestCase):
             if spec["fault"] in montecarlo.DROPS:
                 self.assertIn(spec["slot"], (0, 1, 2, 3, 4, 5))
 
+    def test_r4_profile_maps_t1_and_t2_and_binds_the_job(self):
+        base = montecarlo.generate_schedule(SEED, 16)
+        for index in (0, 7, 8, 15):
+            profile = montecarlo.r4_profile(SEED, index)
+            self.assertEqual(profile["profile_version"], "r4-profile-v1")
+            self.assertEqual(profile["topology"], "t1" if index < 8 else "t2")
+            self.assertEqual(profile["job_id"], "r4-t1-v1" if index < 8 else "r4-t2-v1")
+            self.assertEqual(profile["budget"],
+                             montecarlo.DEFAULT_BUDGET if index < 8
+                             else montecarlo.DEFAULT_BUDGET_SIX)
+            self.assertEqual(profile["nonce"], base["runs"][index]["nonce"])
+            job = montecarlo._profile_job(profile)
+            self.assertEqual(profile["job_sha256"],
+                             hashlib.sha256(montecarlo._job_bundle(job)).hexdigest())
+            if profile["fault"] in montecarlo.DROPS:
+                expected_slot = base["runs"][index]["slot"] + (2 if index >= 8 else 0)
+                self.assertEqual(profile["slot"], expected_slot)
+        # The R3 schedule bytes are unchanged; the profile is a separate artifact.
+        self.assertNotIn("topology", base)
+        self.assertNotIn("backend", base)
+
+    def test_profile_in_process_campaign_checks_clean(self):
+        root = Path(self.tmp.name) / "profile"
+        result = montecarlo.run_campaign(SEED, 16, root, self.executor, profile=True)
+        self.assertEqual(len(result["rows"]), 16)
+        self.assertEqual({row["topology"] for row in result["rows"]}, {"t1", "t2"})
+        check = montecarlo.check_campaign(root, self.executor)
+        self.assertEqual(check["violations"], [])
+
+    def test_profile_checker_rejects_a_changed_profile(self):
+        root = Path(self.tmp.name) / "profile-tamper"
+        montecarlo.run_campaign(SEED, 16, root, self.executor, profile=True)
+        path = root / "run-0000" / "profile.cbor"
+        profile = c.decode(path.read_bytes())
+        profile["budget"] += 1
+        path.write_bytes(c.encode(profile))
+        violations = montecarlo.check_campaign(root, self.executor)["violations"]
+        self.assertTrue(any("profile.cbor differs" in item for item in violations), violations)
+
     def test_t2_in_process_campaign_checks_clean(self):
         root = Path(self.tmp.name) / "t2"
         result = montecarlo.run_campaign(SEED, 5, root, self.executor, topology="t2")

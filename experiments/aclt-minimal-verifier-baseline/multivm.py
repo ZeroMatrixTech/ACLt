@@ -901,7 +901,8 @@ def run(args: argparse.Namespace) -> dict:
             if remote:
                 record["topology"]["lan_links"] = remote.observe(
                     processes["A"], {role: phase_links[role] for role in remote_roles})
-                write_json(output / "host-topology.json", record["topology"])
+                write_json(output / f"host-topology-{handoff or 'run'}.json",
+                           record["topology"])
             if guard:
                 coordinator = processes["A"]
                 guard.assign(coordinator)

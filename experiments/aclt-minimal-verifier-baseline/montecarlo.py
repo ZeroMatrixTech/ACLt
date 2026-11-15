@@ -26,6 +26,7 @@ import sys
 import tempfile
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -53,6 +54,8 @@ TOPOLOGIES = {
            "budget": DEFAULT_BUDGET_SIX},
 }
 BACKENDS = ("inprocess", "local", "dualhost")
+PROFILE_VERSION = "r4-profile-v1"
+PROFILE_RUNS = 16
 DEFAULT_SEED = 20261115
 DEFAULT_RUNS = 32
 SOCKET_TIMEOUT = 15
@@ -158,6 +161,62 @@ def generate_schedule(seed: int, runs: int, *, topology: str = "t1") -> dict[str
         for spec in specs:
             spec["topology"] = topology
     return schedule
+
+
+def r4_profile(seed: int, index: int) -> dict[str, Any]:
+    """Return the frozen R4 profile for one (seed, index) pair.
+
+    This is the only topology/job selector shared by the runner and the checker.
+    The R3 schedule remains the source of the fault class and nonce; the profile
+    adds the fixed T1/T2 mapping and the T2 slot offset.
+    """
+    c.need(type(seed) is int and seed >= 0, "seed must be a non-negative integer")
+    c.need(type(index) is int and 0 <= index < PROFILE_RUNS,
+           "profile index must be in 0..15")
+    base = generate_schedule(seed, PROFILE_RUNS)["runs"][index]
+    topology = "t1" if index < 8 else "t2"
+    budget = TOPOLOGIES[topology]["budget"]
+    fault = base["fault"]
+    profile: dict[str, Any] = {
+        "profile_version": PROFILE_VERSION,
+        "seed": seed,
+        "index": index,
+        "topology": topology,
+        "job_id": "r4-t1-v1" if topology == "t1" else "r4-t2-v1",
+        "budget": budget,
+        "fault": fault,
+        "nonce": base["nonce"],
+    }
+    if fault in DROPS:
+        profile.update(attempt=base["attempt"], loss=base["loss"],
+                       slot=base["slot"] + (2 if topology == "t2" else 0))
+    elif fault == "handoff":
+        profile["checkpoint"] = base["checkpoint"]
+    else:
+        profile["overlap_after"] = base["overlap_after"]
+    job = _profile_job(profile)
+    profile["job_sha256"] = hashlib.sha256(_job_bundle(job)).hexdigest()
+    return profile
+
+
+def _profile_job(profile: dict[str, Any]) -> Job:
+    return fixture(bytes.fromhex(profile["nonce"]), profile["budget"],
+                   six=profile["topology"] == "t2")
+
+
+def _profile_spec(base: dict[str, Any], profile: dict[str, Any]) -> dict[str, Any]:
+    """Overlay the frozen profile on the R3 schedule record for execution/checking."""
+    merged = dict(base)
+    for key in ("index", "topology", "budget", "fault", "nonce"):
+        merged[key] = profile[key]
+    for key in ("attempt", "loss", "slot", "checkpoint", "overlap_after"):
+        if key in profile:
+            merged[key] = profile[key]
+    return merged
+
+
+def _profile_placement(topology: str) -> str:
+    return "B,D" if topology == "t2" else "B"
 
 
 def _job_bundle(job: Job) -> bytes:
@@ -465,6 +524,19 @@ def _redact_topology(topology: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
+def _phase_topologies(raw: Path, fallback: dict[str, Any]) -> list[dict[str, Any]]:
+    """Read every per-phase topology record the dual-host harness retained."""
+    records = []
+    for label in ("before", "after", "run"):
+        path = raw / f"host-topology-{label}.json"
+        if path.is_file():
+            records.append({"phase": label,
+                            "topology": _redact_topology(json.loads(path.read_text()))})
+    if not records and fallback:
+        records.append({"phase": "run", "topology": _redact_topology(fallback)})
+    return records
+
+
 def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Path,
                          result: dict[str, Any], *, backend: str, topology: str) -> None:
     """Turn one multivm evidence tree into the R3 checker's per-run layout."""
@@ -502,10 +574,11 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
     _write_fault(run_dir, spec, triggered=triggered)
     if journal.final is not None:
         _copy(root / "publication.cbor", run_dir / "result.cbor")
-    observed = result.get("topology", {})
-    if not observed.get("placement"):
-        observed = dict(observed, placement={role: "A" for role in guest})
-    _copy_json(run_dir / "topology.json", _redact_topology(observed))
+    phase_records = _phase_topologies(raw, result.get("topology", {}))
+    observed = phase_records[-1]["topology"]
+    topology_doc = dict(observed)
+    topology_doc["phases"] = phase_records
+    _copy_json(run_dir / "topology.json", topology_doc)
     frames = run_dir / "frames"
     phases = ([("before", result.get("before_guests", {})), ("after", guest)]
               if handoff else [("after", guest)] if phase else [("", guest)])
@@ -519,6 +592,29 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
                 _copy(path, destination / path.name)
     initial_image = result.get("initramfs_sha256")
     boot_image = (result.get("successor_initramfs_sha256") if handoff else None) or initial_image
+    timing_path = raw / "timing.json"
+    timing = json.loads(timing_path.read_text()) if timing_path.is_file() else {}
+    phase_images = {"before": initial_image, "after": boot_image, "run": boot_image}
+    phase_meta = []
+    locks = []
+    for record in phase_records:
+        item = record["topology"]
+        phase_meta.append({
+            "phase": record["phase"],
+            "initramfs_sha256": phase_images.get(record["phase"]),
+            "placement": item.get("placement"),
+            "remote_roles": sorted(item.get("lan_links", {})),
+        })
+        state_a = item.get("host_a_lock", "missing")
+        state_b = item.get("host_b_environment", {}).get("lock", "missing")
+        locks.append({"host": "A", "phase": record["phase"], "state": state_a,
+                      "run_index": spec["index"], "observed_at": timing.get("started_at")})
+        locks.append({"host": "B", "phase": record["phase"], "state": state_b,
+                      "run_index": spec["index"], "observed_at": timing.get("started_at")})
+        locks.append({"host": "A", "phase": record["phase"], "state": "released",
+                      "run_index": spec["index"], "observed_at": timing.get("ended_at")})
+        locks.append({"host": "B", "phase": record["phase"], "state": "released",
+                      "run_index": spec["index"], "observed_at": timing.get("ended_at")})
     metadata = {
         "backend": backend,
         "topology": topology,
@@ -528,7 +624,13 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
         "kernel_sha256": result.get("kernel_sha256"),
         "initramfs_sha256": boot_image,
         "initial_initramfs_sha256": initial_image,
-        "placement": _redact_topology(observed).get("placement"),
+        "phases": phase_meta,
+        "locks": locks,
+        "final_state": outcome,
+        "failure_reason": extra.get("error"),
+        "started_at": timing.get("started_at"),
+        "ended_at": timing.get("ended_at"),
+        "placement": observed.get("placement"),
         "remote_roles": sorted(observed.get("lan_links", {})),
         "guest_boot_ids": {role: row.get("boot_id") for role, row in guest.items()},
         "before_guest_boot_ids": ({role: row.get("boot_id")
@@ -585,6 +687,7 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
             _write_fault(run_dir, spec, triggered=0)
             return
     raw = run_dir / "raw"
+    started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     order = "".join(str(slot) for slot in shape["order"])
     command = [sys.executable, "-B", str(Path(__file__).with_name("multivm.py")), "run",
                "--general", "--guests", str(shape["guests"]), "--kernel", str(kernel),
@@ -631,6 +734,8 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
                           error=(completed.stderr.strip().splitlines() or ["guest harness failed"])[-1][:300])
             _write_fault(run_dir, spec, triggered=0)
             return
+    ended_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    _copy_json(raw / "timing.json", {"started_at": started_at, "ended_at": ended_at})
     _normalize_guest_run(job, spec, run_dir, raw, result, backend=backend, topology=topology)
     shutil.rmtree(raw, ignore_errors=True)
 
@@ -649,13 +754,19 @@ def _manifest(root: Path) -> None:
 
 
 def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None, *,
-                 backend: str = "inprocess", topology: str = "t1",
+                 backend: str = "inprocess", topology: str | None = "t1",
+                 profile: bool = False,
                  config: Path | None = None, kernel: Path | None = None,
                  placement: str | None = None, accel: str = "kvm",
                  timeout: int = 1800) -> dict[str, Any]:
     """Execute one deterministic campaign and retain inspectable per-run evidence."""
     c.need(backend in BACKENDS, f"unknown backend {backend}")
-    c.need(topology in TOPOLOGIES, f"unknown topology {topology}")
+    if profile:
+        c.need(topology in (None, "t1"), "profile mode derives T1/T2 from the run index")
+        topology = None
+        c.need(runs == PROFILE_RUNS, f"profile campaign needs {PROFILE_RUNS} runs")
+    else:
+        c.need(topology in TOPOLOGIES, f"unknown topology {topology}")
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
     c.need(not any(root.iterdir()), "campaign output directory must be empty")
@@ -663,54 +774,74 @@ def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None,
         c.need(kernel is not None and Path(kernel).is_file(), "cross-host campaign needs a kernel")
         if backend == "dualhost":
             c.need(config is not None, "dual-host campaign needs a placement file")
-            c.need(placement, "dual-host campaign needs a B placement")
+            if not profile:
+                c.need(placement, "dual-host campaign needs a B placement")
         if executor is None:
             executor = build_executor(root / "executor", static=True)
     c.need(executor is not None, "in-process campaign needs an executor")
-    schedule = generate_schedule(seed, runs, topology=topology)
+    schedule = (generate_schedule(seed, PROFILE_RUNS) if profile
+                else generate_schedule(seed, runs, topology=topology))
     environment = _environment(Path(executor))
     if backend != "inprocess":
-        environment = dict(environment, backend=backend, topology=topology)
-        schedule["backend"] = backend
-    schedule["environment"] = environment
+        environment = dict(environment, backend=backend,
+                           topology="profile" if profile else topology)
+        if not profile:
+            schedule["backend"] = backend
+    if not profile:
+        schedule["environment"] = environment
     (root / "schedule.cbor").write_bytes(c.encode(schedule))
     if backend != "inprocess":
         (root / "environment.json").write_text(
             json.dumps(environment, indent=2, sort_keys=True) + "\n")
     rows = []
-    for spec in schedule["runs"]:
+    for base_spec in schedule["runs"]:
+        spec = _profile_spec(base_spec, r4_profile(seed, base_spec["index"])) if profile else base_spec
         run_dir = root / f"run-{spec['index']:04d}"
         run_dir.mkdir()
-        spec_topology = _topology_for(spec, topology)
+        spec_topology = _topology_for(spec, topology or "t1")
         job = fixture(bytes.fromhex(spec["nonce"]), spec["budget"],
                       six=spec_topology == "t2")
         (run_dir / "job.cbor").write_bytes(_job_bundle(job))
+        if profile:
+            (run_dir / "profile.cbor").write_bytes(c.encode(r4_profile(seed, spec["index"])))
         _write_fault(run_dir, spec)
         if backend == "inprocess":
             _run_one(job, spec, run_dir, Path(executor), topology=spec_topology)
         else:
+            run_placement = (_profile_placement(spec_topology) if profile else placement)
             _run_guest(job, spec, run_dir, backend=backend, topology=spec_topology,
-                       config=config, kernel=Path(kernel), placement=placement,
+                       config=config, kernel=Path(kernel), placement=run_placement,
                        accel=accel, timeout=timeout, executor=Path(executor))
         status = c.decode((run_dir / "status.cbor").read_bytes())
         row = {"index": spec["index"], "fault": spec["fault"], "outcome": status["outcome"]}
-        if backend != "inprocess":
+        if backend != "inprocess" or profile:
             row["topology"] = spec_topology
+        if backend != "inprocess":
             row["triggered"] = int(status.get("triggered", 0))
         rows.append(row)
     report = {"seed": seed, "runs": rows, "environment": environment}
+    if profile:
+        report["profile"] = True
     if backend != "inprocess":
-        report.update(backend=backend, topology=topology)
-        first_spec = next((spec for spec in schedule["runs"] if spec["fault"] != "handoff"),
-                          schedule["runs"][0])
-        first = root / f"run-{first_spec['index']:04d}"
-        if (first / "metadata.json").is_file():
-            meta = json.loads((first / "metadata.json").read_text())
-            topology_record = json.loads((first / "topology.json").read_text())
-            topology_record.update(kernel_sha256=meta.get("kernel_sha256"),
-                                   initramfs_sha256=meta.get("initial_initramfs_sha256")
-                                   or meta.get("initramfs_sha256"))
-            _copy_json(root / "topology.json", topology_record)
+        report.update(backend=backend, topology="profile" if profile else topology)
+        if profile:
+            _copy_json(root / "topology.json", {
+                "profile": True,
+                "topologies": ["t1", "t2"],
+                "placements": {"t1": "B", "t2": "B,D"},
+                "run_count": len(rows),
+            })
+        else:
+            first_spec = next((spec for spec in schedule["runs"] if spec["fault"] != "handoff"),
+                              schedule["runs"][0])
+            first = root / f"run-{first_spec['index']:04d}"
+            if (first / "metadata.json").is_file():
+                meta = json.loads((first / "metadata.json").read_text())
+                topology_record = json.loads((first / "topology.json").read_text())
+                topology_record.update(kernel_sha256=meta.get("kernel_sha256"),
+                                       initramfs_sha256=meta.get("initial_initramfs_sha256")
+                                       or meta.get("initramfs_sha256"))
+                _copy_json(root / "topology.json", topology_record)
     (root / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     if backend != "inprocess":
         _manifest(root)
@@ -1140,18 +1271,26 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
 
 
 def _check_run(spec: dict[str, Any], run_dir: Path, *, executor: Path | None = None,
-               backend: str = "inprocess") -> list[str]:
+               backend: str = "inprocess", profile: dict[str, Any] | None = None) -> list[str]:
     violations: list[str] = []
     for name in ("job.cbor", "status.cbor", "fault.cbor"):
         if not (run_dir / name).exists():
             violations.append(f"missing {name}")
     if violations:
         return violations
+    if profile is not None:
+        profile_path = run_dir / "profile.cbor"
+        if not profile_path.is_file():
+            return ["profile: run has no profile.cbor"]
+        if profile_path.read_bytes() != c.encode(profile):
+            return ["profile: profile.cbor differs from the rebuilt profile"]
+        spec = _profile_spec(spec, profile)
     topology = spec.get("topology", "t1")
     shape = TOPOLOGIES[topology]
     raw = (run_dir / "job.cbor").read_bytes()
-    expected = _job_bundle(fixture(bytes.fromhex(spec["nonce"]), spec["budget"],
-                                  six=topology == "t2"))
+    expected_job = _profile_job(profile) if profile is not None else fixture(
+        bytes.fromhex(spec["nonce"]), spec["budget"], six=topology == "t2")
+    expected = _job_bundle(expected_job)
     if raw != expected:
         return ["job differs from the seeded schedule"]
     job = _job_from_bundle(raw)
@@ -1192,9 +1331,9 @@ def _check_run(spec: dict[str, Any], run_dir: Path, *, executor: Path | None = N
 
 def _check_environment(schedule: dict[str, Any], report: dict[str, Any],
                       executor: Path | None, violations: list[str]) -> None:
-    recorded = schedule.get("environment")
+    recorded = schedule.get("environment") or report.get("environment")
     if type(recorded) is not dict:
-        violations.append("environment: schedule has no environment record")
+        violations.append("environment: no environment record")
         return
     if report.get("environment") != recorded:
         violations.append("environment: report and schedule records differ")
@@ -1214,43 +1353,108 @@ def _check_environment(schedule: dict[str, Any], report: dict[str, Any],
 
 
 def _check_campaign_topology(root: Path, schedule: dict[str, Any], backend: str,
-                             topology: str, violations: list[str]) -> None:
+                             topology: str | None, violations: list[str],
+                             *, profile: bool = False) -> None:
+    """Check every run and every handoff phase, not only the campaign summary."""
     path = root / "topology.json"
     if not path.is_file():
         violations.append("topology: campaign has no topology record")
         return
-    record = json.loads(path.read_text())
-    roles = TOPOLOGIES[topology]["roles"]
-    if backend == "local":
-        if "lan_links" in record:
-            violations.append("topology: local campaign recorded physical links")
-        return
-    placement = record.get("placement")
-    if type(placement) is not dict:
-        violations.append("topology: missing guest placement")
-        return
-    remote = tuple(role for role, host in placement.items() if host == "B")
-    if not remote:
-        violations.append("topology: dual-host campaign placed no guest on B")
-        return
-    try:
-        dualhost_multivm.check_lan(
-            {"topology": record, "kernel_sha256": record.get("kernel_sha256"),
-             "initramfs_sha256": record.get("initramfs_sha256")},
-            roles, remote)
-    except Exception as error:
-        violations.append(f"topology: {error}")
     for spec in schedule["runs"]:
-        metadata_path = root / f"run-{spec['index']:04d}" / "metadata.json"
+        index = spec["index"]
+        label = f"run-{index:04d}"
+        run_dir = root / label
+        metadata_path = run_dir / "metadata.json"
         if not metadata_path.is_file():
+            violations.append(f"{label}: missing per-run metadata")
             continue
         metadata = json.loads(metadata_path.read_text())
-        if metadata.get("kernel_sha256") != record.get("kernel_sha256"):
-            violations.append(f"run-{spec['index']:04d}: kernel digest differs from topology")
-        run_topology = json.loads((root / f"run-{spec['index']:04d}" / "topology.json").read_text())
-        boot = run_topology.get("host_b_boot_hashes", {}).get("guest.cpio.gz")
-        if boot is not None and metadata.get("initramfs_sha256") != boot:
-            violations.append(f"run-{spec['index']:04d}: initramfs digest differs from topology")
+        expected_topology = (r4_profile(schedule["seed"], index)["topology"]
+                             if profile else topology)
+        if not expected_topology:
+            violations.append(f"{label}: no topology selected")
+            continue
+        if metadata.get("topology") != expected_topology:
+            violations.append(f"{label}: metadata topology is not {expected_topology}")
+        topology_path = run_dir / "topology.json"
+        if not topology_path.is_file():
+            violations.append(f"{label}: missing per-run topology")
+            continue
+        document = json.loads(topology_path.read_text())
+        records = document.get("phases")
+        if type(records) is not list or not records:
+            violations.append(f"{label}: no per-phase topology records")
+            continue
+        phases = {}
+        for item in records:
+            if type(item) is dict and type(item.get("phase")) is str:
+                phases[item["phase"]] = item
+        expected_phases = (("before", "after") if spec["fault"] == "handoff"
+                           else ("run",))
+        if set(phases) != set(expected_phases):
+            violations.append(
+                f"{label}: phases {sorted(phases)} are not {sorted(expected_phases)}")
+            continue
+        meta_phases = {item.get("phase"): item
+                       for item in metadata.get("phases", []) if type(item) is dict}
+        for phase in expected_phases:
+            item = phases[phase].get("topology")
+            if type(item) is not dict:
+                violations.append(f"{label}/{phase}: topology is not an object")
+                continue
+            if backend == "local":
+                if "lan_links" in item:
+                    violations.append(f"{label}/{phase}: local run recorded physical links")
+                continue
+            placement = item.get("placement")
+            if type(placement) is not dict:
+                violations.append(f"{label}/{phase}: missing guest placement")
+                continue
+            remote = tuple(sorted(role for role, host in placement.items() if host == "B"))
+            if profile:
+                expected = _profile_placement(expected_topology)
+            else:
+                expected = metadata.get("placement")
+            if tuple(sorted(role for role in (expected or "").split(",") if role)) != remote:
+                violations.append(f"{label}/{phase}: B placement differs from the campaign")
+                continue
+            phase_meta = meta_phases.get(phase, {})
+            image = phase_meta.get("initramfs_sha256")
+            if not isinstance(image, str):
+                violations.append(f"{label}/{phase}: no boot image digest in metadata")
+                continue
+            try:
+                dualhost_multivm.check_lan(
+                    {"topology": item, "kernel_sha256": metadata.get("kernel_sha256"),
+                     "initramfs_sha256": image},
+                    TOPOLOGIES[expected_topology]["roles"], remote)
+            except Exception as error:
+                violations.append(f"{label}/{phase}: {error}")
+        if backend == "dualhost":
+            locks = metadata.get("locks")
+            if type(locks) is not list:
+                violations.append(f"{label}: no lock observations")
+            else:
+                for phase in expected_phases:
+                    for host in ("A", "B"):
+                        held = any(row.get("host") == host and row.get("phase") == phase
+                                   and row.get("state") == "held" for row in locks)
+                        released = any(row.get("host") == host and row.get("phase") == phase
+                                       and row.get("state") == "released" for row in locks)
+                        if not held or not released:
+                            violations.append(
+                                f"{label}/{phase}: host {host} lock is not recorded held and released")
+        if spec["fault"] == "handoff":
+            before = meta_phases.get("before", {}).get("initramfs_sha256")
+            after = meta_phases.get("after", {}).get("initramfs_sha256")
+            if metadata.get("initial_initramfs_sha256") != before:
+                violations.append(f"{label}: initial image differs from the before phase")
+            if metadata.get("initramfs_sha256") != after:
+                violations.append(f"{label}: final image differs from the after phase")
+        else:
+            run_image = meta_phases.get("run", {}).get("initramfs_sha256")
+            if metadata.get("initramfs_sha256") != run_image:
+                violations.append(f"{label}: image differs from the run phase")
 
 
 def _check_manifest(root: Path, violations: list[str]) -> None:
@@ -1286,21 +1490,30 @@ def check_campaign(root: Path, executor: Path | None = None) -> dict[str, Any]:
         schedule = c.decode((root / "schedule.cbor").read_bytes())
         specs = schedule["runs"]
         seed = schedule["seed"]
-        backend = schedule.get("backend", "inprocess")
-        topology = schedule.get("topology", "t1")
+        report = json.loads((root / "report.json").read_text())
+        c.need(type(report) is dict, "report is not an object")
+        profile_mode = bool(report.get("profile"))
+        if profile_mode:
+            c.need(len(specs) == PROFILE_RUNS,
+                   f"profile campaign needs {PROFILE_RUNS} runs")
+            backend = report.get("backend", "inprocess")
+            topology = None
+        else:
+            backend = schedule.get("backend", "inprocess")
+            topology = schedule.get("topology", "t1")
+            c.need(topology in TOPOLOGIES, f"unknown topology {topology}")
         c.need(backend in BACKENDS, f"unknown backend {backend}")
-        c.need(topology in TOPOLOGIES, f"unknown topology {topology}")
-        rebuilt = generate_schedule(seed, len(specs), topology=topology)
+        rebuilt = (generate_schedule(seed, PROFILE_RUNS) if profile_mode
+                   else generate_schedule(seed, len(specs), topology=topology))
         for key in ("version", "seed", "runs"):
             c.need(schedule.get(key) == rebuilt.get(key),
                    f"schedule {key} differs from the seeded generator")
-        report = json.loads((root / "report.json").read_text())
-        c.need(type(report) is dict, "report is not an object")
         if executor is None and (root / "executor").is_file():
             executor = root / "executor"
         _check_environment(schedule, report, executor, violations)
         if backend != "inprocess":
-            _check_campaign_topology(root, schedule, backend, topology, violations)
+            _check_campaign_topology(root, schedule, backend, topology, violations,
+                                     profile=profile_mode)
             _check_manifest(root, violations)
     except Exception as error:
         return {"runs": 0, "seed": None, "violations": [f"schedule: {error}"]}
@@ -1310,7 +1523,9 @@ def check_campaign(root: Path, executor: Path | None = None) -> dict[str, Any]:
             violations.append(f"run-{spec['index']:04d}: missing directory")
             continue
         try:
-            violations.extend(_check_run(spec, run_dir, executor=executor, backend=backend))
+            profile = r4_profile(seed, spec["index"]) if profile_mode else None
+            violations.extend(_check_run(spec, run_dir, executor=executor,
+                                         backend=backend, profile=profile))
         except Exception as error:
             violations.append(f"run-{spec['index']:04d}: {error}")
     return {"runs": len(specs), "seed": seed, "violations": violations}
@@ -1409,6 +1624,8 @@ def main(argv: list[str] | None = None) -> int:
     run_parser.add_argument("--executor", type=Path)
     run_parser.add_argument("--backend", choices=BACKENDS, default="inprocess")
     run_parser.add_argument("--topology", choices=tuple(TOPOLOGIES), default="t1")
+    run_parser.add_argument("--profile", action="store_true",
+                            help="use the frozen R4 16-run T1/T2 profile")
     run_parser.add_argument("--config", type=Path)
     run_parser.add_argument("--kernel", type=Path)
     run_parser.add_argument("--placement")
@@ -1435,20 +1652,21 @@ def main(argv: list[str] | None = None) -> int:
         print(format_report(result, reproducible))
         return 0 if not result["violations"] else 1
 
+    topology = None if args.profile else args.topology
     if args.backend != "inprocess" or args.executor is not None:
         run_campaign(args.seed, args.runs, args.output, args.executor,
-                     backend=args.backend, topology=args.topology, config=args.config,
-                     kernel=args.kernel, placement=args.placement, accel=args.accel,
-                     timeout=args.timeout)
+                     backend=args.backend, topology=topology, profile=args.profile,
+                     config=args.config, kernel=args.kernel,
+                     placement=args.placement, accel=args.accel, timeout=args.timeout)
         result = check_campaign(args.output, args.executor)
         print(format_report(result))
         return 0 if not result["violations"] else 1
     with tempfile.TemporaryDirectory(prefix="aclt-montecarlo-executor-") as temporary:
         executor = build_executor(Path(temporary) / "executor")
         run_campaign(args.seed, args.runs, args.output, executor,
-                     backend=args.backend, topology=args.topology, config=args.config,
-                     kernel=args.kernel, placement=args.placement, accel=args.accel,
-                     timeout=args.timeout)
+                     backend=args.backend, topology=topology, profile=args.profile,
+                     config=args.config, kernel=args.kernel,
+                     placement=args.placement, accel=args.accel, timeout=args.timeout)
         result = check_campaign(args.output, executor)
     print(format_report(result))
     return 0 if not result["violations"] else 1
