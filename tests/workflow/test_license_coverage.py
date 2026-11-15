@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Regression tests for the SPDX/REUSE source coverage check."""
+"""Regression tests for the SPDX/REUSE code and configuration coverage check."""
 import importlib.util
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -37,7 +38,11 @@ class LicenseCoverageTests(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
 
     def write_reuse(self, text):
-        (self.root / "REUSE.toml").write_text(text, encoding="utf-8")
+        # The fixture REUSE.toml is itself a covered .toml file, so it carries
+        # a header and shows up in the counts below.
+        (self.root / "REUSE.toml").write_text(
+            "# SPDX-License-Identifier: Apache-2.0\n" + text, encoding="utf-8"
+        )
 
     def declaration(self, path, license="Apache-2.0"):
         return (
@@ -52,41 +57,132 @@ class LicenseCoverageTests(unittest.TestCase):
             CHECKER.check_coverage(self.root)
         self.assertIn(fragment, str(context.exception))
 
-    def test_repository_tree_is_covered(self):
-        result = CHECKER.check_coverage(ROOT)
-        self.assertEqual(result.missing, 0)
-        self.assertEqual(result.declared, 79)
-        self.assertEqual(result.external, 2)
-        self.assertEqual(result.source, result.headers + result.declared)
+    def result(self):
+        return CHECKER.check_coverage(self.root)
 
-    def test_git_inventory_unavailable_falls_back_to_walk(self):
-        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
-        (self.root / ".git").mkdir()
-        result = CHECKER.check_coverage(self.root)
-        self.assertEqual(
-            (result.source, result.headers, result.declared, result.external, result.missing),
-            (1, 1, 0, 0, 0),
+    def init_git(self):
+        subprocess.run(
+            ["git", "init", "-q", str(self.root)],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
 
-    def test_require_git_rejects_unusable_git(self):
+    def git_add(self, *paths):
+        subprocess.run(
+            ["git", "-C", str(self.root), "add", "--", *paths],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def test_repository_tree_is_classified(self):
+        # The live tree may legitimately gain headed files, so this checks the
+        # classification invariants rather than a frozen total.
+        inventory = CHECKER._inventory(ROOT, require_git=(ROOT / ".git").exists())
+        result = CHECKER.check_coverage(ROOT)
+        self.assertEqual(result.missing, 0)
+        self.assertEqual(result.covered, result.headers + result.declared)
+        self.assertEqual(result.covered + result.excluded, len(inventory))
+        unclassified = [
+            relative
+            for relative in inventory
+            if not CHECKER._is_covered(relative) and not CHECKER._is_excluded(relative)
+        ]
+        self.assertEqual(unclassified, [])
+
+    def test_closed_classification_snapshot(self):
+        # Fixed snapshot: covered/declared/excluded counts on a known tree.
+        self.write("src/a.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        self.write("src/b.py", "print(1)\n")
+        self.write("notes.md", "text\n")
+        self.write("Cargo.lock", "lock\n")
+        self.write("SINGLEHOST-SHA256SUMS", "digest\n")
+        self.write("LICENSE", "license\n")
+        self.write_reuse("version = 1\n" + self.declaration("src/b.py"))
+        result = self.result()
+        self.assertEqual(
+            (result.covered, result.headers, result.declared, result.excluded, result.missing),
+            (3, 2, 1, 4, 0),
+        )
+
+    def test_unusable_git_is_rejected_in_default_mode(self):
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
+        (self.root / ".git").mkdir()
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root)
+        self.assertIn("cannot read git inventory", str(context.exception))
+
+    def test_unusable_git_is_rejected_with_require_git(self):
         self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\n")
         (self.root / ".git").mkdir()
         with self.assertRaises(CHECKER.CoverageError) as context:
             CHECKER.check_coverage(self.root, require_git=True)
         self.assertIn("cannot read git inventory", str(context.exception))
 
+    def test_require_git_rejects_a_tree_without_git(self):
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn("is not a checkout", str(context.exception))
+
+    def test_cli_passes_on_an_unpacked_tree(self):
+        # An unpacked source archive has no .git and the release notes verify
+        # it by running the coverage target, so the CLI has to pass there.
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(Path(CHECKER.__file__)),
+                "--root",
+                str(self.root),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn(
+            "PASS: covered=2 headers=2 declared=0 excluded=0 missing=0",
+            completed.stdout,
+        )
+
+    def test_cli_require_git_rejects_an_unpacked_tree(self):
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(Path(CHECKER.__file__)),
+                "--root",
+                str(self.root),
+                "--require-git",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 1)
+        self.assertIn("is not a checkout", completed.stderr)
+
     def test_walk_includes_build_source_without_git(self):
         self.write("build/probe.py", "# SPDX-License-Identifier: Apache-2.0\n")
-        result = CHECKER.check_coverage(self.root)
-        self.assertEqual(
-            (result.source, result.headers, result.declared, result.external, result.missing),
-            (1, 1, 0, 0, 0),
-        )
+        self.assertEqual(self.result().covered, 2)
 
     def test_walk_reports_build_source_without_header(self):
         self.write("build/probe.py", "print(1)\n")
-        (self.root / ".git").mkdir()
         self.assert_rejected("build/probe.py")
+
+    def test_symlinked_parent_directory_is_rejected(self):
+        self.write("real/tracked.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        self.init_git()
+        self.git_add("real/tracked.py")
+        (self.root / "real").rename(self.root / "aside")
+        (self.root / "real").symlink_to(self.root / "aside", target_is_directory=True)
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn("unsafe symlink directory in tracked path", str(context.exception))
 
     def test_symlinked_directory_is_rejected(self):
         self.write("real/example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
@@ -95,61 +191,112 @@ class LicenseCoverageTests(unittest.TestCase):
 
     def test_header_covers_source(self):
         self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
-        result = CHECKER.check_coverage(self.root)
-        self.assertEqual(
-            (result.source, result.headers, result.declared, result.external, result.missing),
-            (1, 1, 0, 0, 0),
-        )
+        self.assertEqual(self.result().headers, 2)
 
     def test_explicit_declaration_covers_source(self):
         self.write("example.py", "print(1)\n")
         self.write_reuse("version = 1\n" + self.declaration("example.py"))
-        result = CHECKER.check_coverage(self.root)
-        self.assertEqual(
-            (result.source, result.headers, result.declared, result.external, result.missing),
-            (1, 0, 1, 0, 0),
-        )
+        result = self.result()
+        self.assertEqual((result.covered, result.headers, result.declared), (2, 1, 1))
 
-    def test_cargo_manifest_may_be_declared_externally(self):
+    def test_cargo_manifest_is_covered_and_declarable(self):
         self.write("Cargo.toml", '[package]\nname = "example"\n')
+        self.assert_rejected("Cargo.toml")
         self.write_reuse("version = 1\n" + self.declaration("Cargo.toml"))
-        result = CHECKER.check_coverage(self.root)
-        self.assertEqual(
-            (result.source, result.headers, result.declared, result.external, result.missing),
-            (0, 0, 0, 1, 0),
-        )
+        self.assertEqual((self.result().covered, self.result().declared), (2, 1))
 
-    def test_non_cargo_toml_declaration_is_rejected(self):
+    def test_javascript_mjs_and_cjs_are_covered_alike(self):
+        for suffix in (".cjs", ".js", ".mjs"):
+            with self.subTest(suffix=suffix):
+                self.write("tool" + suffix, "console.log(1)\n")
+                self.assert_rejected("tool" + suffix)
+                (self.root / ("tool" + suffix)).unlink()
+
+    def test_html_is_covered(self):
+        self.write("page.html", "<!doctype html>\n<p>hi</p>\n")
+        self.assert_rejected("page.html")
+        self.write("page.html", "<!-- SPDX-License-Identifier: Apache-2.0 -->\n<!doctype html>\n")
+        self.assertEqual(self.result().headers, 2)
+
+    def test_makefile_is_covered(self):
+        self.write("Makefile", "all:\n\t@true\n")
+        self.assert_rejected("Makefile")
+        self.write("Makefile", "# SPDX-License-Identifier: Apache-2.0\nall:\n\t@true\n")
+        self.assertEqual(self.result().headers, 2)
+
+    def test_yaml_is_covered_and_declarable(self):
+        self.write("ci.yml", "name: example\n")
+        self.assert_rejected("ci.yml")
+        self.write_reuse("version = 1\n" + self.declaration("ci.yml"))
+        self.assertEqual((self.result().covered, self.result().declared), (2, 1))
+
+    def test_gitignore_is_covered_and_declarable(self):
+        self.write(".gitignore", "build/\n")
+        self.assert_rejected(".gitignore")
+        self.write_reuse("version = 1\n" + self.declaration(".gitignore"))
+        self.assertEqual((self.result().covered, self.result().declared), (2, 1))
+
+    def test_config_json_requires_declaration(self):
+        self.write("DELIVERY-SCOPE.json", '{"source_directories": []}\n')
+        self.assert_rejected("DELIVERY-SCOPE.json")
+        self.write_reuse("version = 1\n" + self.declaration("DELIVERY-SCOPE.json"))
+        self.assertEqual((self.result().covered, self.result().declared), (2, 1))
+
+    def test_data_json_stays_outside_boundary(self):
+        self.write("results.json", '{"value": 1}\n')
+        self.write("README.md", "text\n")
+        self.assertEqual(self.result().covered, 1)
+
+    def test_toml_is_covered(self):
         self.write("settings.toml", "value = 1\n")
-        self.write_reuse("version = 1\n" + self.declaration("settings.toml"))
-        self.assert_rejected("not a source file or Cargo manifest")
+        self.assert_rejected("settings.toml")
 
-    def test_js_and_html_are_outside_source_boundary(self):
-        self.write("tool.js", "// SPDX-License-Identifier: Apache-2.0\n")
-        self.write("page.html", "<!-- SPDX-License-Identifier: Apache-2.0 -->\n")
-        self.write("Makefile", "# SPDX-License-Identifier: Apache-2.0\n")
-        result = CHECKER.check_coverage(self.root)
-        self.assertEqual(
-            (result.source, result.headers, result.declared, result.external, result.missing),
-            (0, 0, 0, 0, 0),
+    def test_declaring_covered_file_with_header_is_rejected(self):
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        self.write_reuse("version = 1\n" + self.declaration("example.py"))
+        self.assert_rejected("already has an SPDX header")
+
+    def test_non_covered_declaration_is_rejected(self):
+        self.write("README.md", "text\n")
+        self.write_reuse("version = 1\n" + self.declaration("README.md"))
+        self.assert_rejected("not a code or configuration file")
+
+    def test_unicode_license_is_limited_to_generated_data(self):
+        self.write(
+            "tools/verification_profile/rust/unicode_data.rs",
+            "// SPDX-License-Identifier: Unicode-3.0\npub const DATA: u32 = 0;\n",
         )
+        self.assertEqual(self.result().headers, 2)
+        self.write("tools/probe_uni.py", "# SPDX-License-Identifier: Unicode-3.0\n")
+        self.assert_rejected("only allowed for tools/verification_profile/rust/unicode_data.rs")
 
-    def test_undeclared_source_is_rejected(self):
+    def test_unicode_header_cannot_be_replaced_by_declaration(self):
+        self.write(
+            "tools/verification_profile/rust/unicode_data.rs",
+            "// SPDX-License-Identifier: Unicode-3.0\npub const DATA: u32 = 0;\n",
+        )
+        self.write_reuse(
+            "version = 1\n"
+            + self.declaration("tools/verification_profile/rust/unicode_data.rs")
+        )
+        self.assert_rejected("already has an SPDX header")
+
+    def test_unicode_external_declaration_is_rejected(self):
         self.write("example.py", "print(1)\n")
-        self.assert_rejected("missing source licenses")
+        self.write_reuse("version = 1\n" + self.declaration("example.py", "Unicode-3.0"))
+        self.assert_rejected("unsupported external license")
+
+    def test_undeclared_covered_file_is_rejected(self):
+        self.write("example.py", "print(1)\n")
+        self.assert_rejected("missing licenses")
 
     def test_string_literal_is_not_a_header(self):
         self.write("example.py", 'value = "# SPDX-License-Identifier: Apache-2.0"\n')
-        self.assert_rejected("missing source licenses")
+        self.assert_rejected("missing licenses")
 
     def test_missing_declared_path_is_rejected(self):
         self.write_reuse("version = 1\n" + self.declaration("missing.py"))
         self.assert_rejected("declared path does not exist")
-
-    def test_non_source_declaration_is_rejected(self):
-        self.write("README.md", "text\n")
-        self.write_reuse("version = 1\n" + self.declaration("README.md"))
-        self.assert_rejected("not a source file or Cargo manifest")
 
     def test_parent_escape_is_rejected(self):
         self.write_reuse("version = 1\n" + self.declaration("../outside.py"))
@@ -170,7 +317,93 @@ class LicenseCoverageTests(unittest.TestCase):
 
     def test_too_late_header_is_rejected(self):
         self.write("example.py", "\n" * 10 + "# SPDX-License-Identifier: Apache-2.0\n")
-        self.assert_rejected("missing source licenses")
+        self.assert_rejected("missing licenses")
+
+    def test_uppercase_suffix_is_covered(self):
+        self.write("PAGE.HTML", "<!doctype html>\n<p>hi</p>\n")
+        self.assert_rejected("missing licenses")
+        self.write("PAGE.HTML", "<!-- SPDX-License-Identifier: Apache-2.0 -->\n<p>hi</p>\n")
+        self.assertEqual(self.result().headers, 2)
+
+    def test_unclassified_tracked_file_is_rejected(self):
+        for relative in (
+            "tool.ts",
+            "Dockerfile",
+            "run",
+            "other.lock",
+            "audit/package.lock",
+            "audit/tool.pySHA256SUMS",
+            "audit/LICENSE",
+            "CARGO.LOCK",
+            "NOTES.MD",
+            "tools-foo-SHA256SUMS",
+        ):
+            with self.subTest(relative=relative):
+                self.write(relative, "text\n")
+                self.assert_rejected(f"unclassified tracked file: {relative}")
+                (self.root / relative).unlink()
+
+    def test_excluded_classes_do_not_need_headers(self):
+        for relative in (
+            "notes.md",
+            "data.json",
+            "output.txt",
+            "table.tsv",
+            "run.log",
+            "Cargo.lock",
+            "bundle.tar.gz",
+            "artifact.cbor",
+            "report.docx",
+            "SHA256SUMS",
+            "LICENSE",
+            "SINGLEHOST-SHA256SUMS",
+            "WORKFLOW-SHA256SUMS",
+        ):
+            self.write(relative, "text\n")
+        result = self.result()
+        self.assertEqual((result.covered, result.excluded, result.missing), (1, 13, 0))
+
+    def test_untracked_declared_file_is_rejected(self):
+        self.write("scratch.py", "print(1)\n")
+        self.write_reuse("version = 1\n" + self.declaration("scratch.py"))
+        self.init_git()
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn(
+            "declared path is not an included code or configuration file: scratch.py",
+            str(context.exception),
+        )
+
+    def test_untracked_declared_file_with_header_is_rejected(self):
+        self.write("scratch.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
+        self.write_reuse("version = 1\n" + self.declaration("scratch.py"))
+        self.init_git()
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn("not an included code or configuration file", str(context.exception))
+        self.assertNotIn("already has an SPDX header", str(context.exception))
+
+    def test_tracked_file_missing_from_working_tree_is_rejected(self):
+        self.write("notes.md", "text\n")
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        self.init_git()
+        self.git_add("notes.md", "example.py")
+        (self.root / "notes.md").unlink()
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn(
+            "tracked file is missing from the working tree:",
+            str(context.exception),
+        )
+        self.assertIn("notes.md", str(context.exception))
+
+    def test_tracked_declared_file_passes(self):
+        self.write("scratch.py", "print(1)\n")
+        self.write_reuse("version = 1\n" + self.declaration("scratch.py"))
+        self.init_git()
+        self.git_add("scratch.py")
+        result = CHECKER.check_coverage(self.root, require_git=True)
+        self.assertEqual((result.covered, result.headers, result.declared), (1, 0, 1))
 
 
 if __name__ == "__main__":

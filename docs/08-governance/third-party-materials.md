@@ -12,7 +12,7 @@
 
 | 材料 | 位置与使用方式 | 许可或权利状态 | 处理与备注 |
 |---|---|---|---|
-| Unicode 16.0.0 规范分解数据（生成数据） | `tools/verification_profile/rust/unicode_data.rs`；由 `generate_unicode.py` 从 CPython 3.14.4 `unicodedata` 的 Unicode 16.0.0 数据生成 | `Unicode-3.0`；`unicode_data.rs` 文件头带 SPDX 标识；同目录 `UNICODE-LICENSE.txt` 保存许可全文 | 数据随源码包分发，许可全文与数据同目录；生成器中的字符串也记录 `Unicode-3.0`。未把该数据改标为 Apache-2.0。 |
+| Unicode 16.0.0 规范分解数据（生成数据） | `tools/verification_profile/rust/unicode_data.rs`；由 `generate_unicode.py` 从 CPython 3.14.4 `unicodedata` 的 Unicode 16.0.0 数据生成 | `Unicode-3.0`；`unicode_data.rs` 文件头带 SPDX 标识；同目录 `UNICODE-LICENSE.txt` 保存许可全文 | 数据随源码包分发，许可全文与数据同目录。`generate_unicode.py` 自身是 `Apache-2.0`；它第 23 行的字符串只把 `Unicode-3.0` 写进生成文件的文件头，不改变生成器的许可。`check-license-coverage` 只接受 `unicode_data.rs` 一处 `Unicode-3.0` 头。未把该数据改标为 Apache-2.0。 |
 | Google Fonts：Press Start 2P、ZCOOL KuaiLe、Noto Sans SC | `docs/00-overview/aclt-theater.html` 通过 `fonts.googleapis.com` 的样式表在运行时加载 | 字体文件未纳入仓库，也不随交付物分发；页面使用系统字体作为回退 | 打开该页面会向 Google 发出网络请求。这里不复制字体文件，也不声称已满足字体再分发相关的全部条件；若将来本地化或打包字体，需重新核对许可并更新本文件。 |
 | Linux 内核启动输出 | MULTIVM 证据包中的来宾串口日志 | 运行日志；本仓库不随交付物分发内核源码或内核二进制 | 作为实验证据原样保留。日志中的内核版本和配置以对应证据包为准；本文件不改变内核自身的许可。 |
 | 外部审计原文（DeepSeek 输出） | `docs/08-governance/audits/external/AUDIT-20261105-01.original.txt` | 按 `README.md` 的仓库范围声明，仓库内工件采用 Apache-2.0；AI 产出的权利状态不在本轮判断范围 | 作为历史审计证据保留，不重写原文。若未来需要再分发或改编，应单独确认权利状态。 |
@@ -24,7 +24,7 @@
 
 | 依赖类别 | 当前状态 | 许可处理 |
 |---|---|---|
-| Rust crates | 3 个 `Cargo.lock` 都只包含本仓库的 crate，没有外部 crate；当前 state3 的 `Cargo.toml` 声明 `license = "Apache-2.0"`；state1/state2 的历史 `Cargo.toml` 保持基线字节，由 `REUSE.toml` 外部声明覆盖 | 不产生第三方 crate 的 NOTICE 义务；Cargo 元数据可解析当前 state3 的许可，历史清单由外置声明覆盖。 |
+| Rust crates | 3 个 `Cargo.lock` 都只包含本仓库的 crate，没有外部 crate；当前 state3 的 `Cargo.toml` 声明 `license = "Apache-2.0"`；state1/state2 的历史 `Cargo.toml` 保持基线字节，由 `REUSE.toml` 外部声明覆盖 | 本次核对未发现外部 crate，因此本次核对范围内不涉及第三方 crate 的归属声明；Cargo 元数据可解析当前 state3 的许可，历史清单由外置声明覆盖。将来引入外部 crate 时按 §3 重新核对。 |
 | Python | 只使用标准库和仓库内本地模块；没有第三方 Python 包，也没有 vendored 的 Python 依赖 | 不产生第三方 Python 包许可文件；本地模块按仓库许可处理。 |
 | Node 脚本 | `.cjs` 文件只使用 Node 内置模块 | 不产生第三方 npm 包许可文件。 |
 | 外部工具链 | rustc/cargo、g++、OpenSSL CLI、Python、e2fsprogs、QEMU、Node 等由环境提供，不随仓库再分发 | 工具链自身的许可不因本仓库的源码交付而改变；环境版本要求见 `environment-standard.md`。 |
@@ -32,7 +32,7 @@
 
 ## 3. NOTICE 判断
 
-Apache License 2.0 第 4(d) 条规定：如果被再分发的作品包含 `NOTICE` 文本文件，则任何再分发的 Derivative Work 必须在以下至少一处包含该 `NOTICE` 中适用于该作品的归属声明：随附的 `NOTICE` 文件、随作品提供的源码或文档、或作品生成的显示（且该显示通常出现第三方声明之处）；该条还允许在再分发作品中添加自己的归属声明，只要不修改许可。因此，是否存在该条义务，取决于是否实际分发包含 `NOTICE` 的第三方作品，而不取决于本仓库采用 Apache-2.0。
+Apache License 2.0 第 4(d) 条规定：如果被再分发的作品包含 `NOTICE` 文本文件，则任何被再分发的 Derivative Work 必须在以下至少一处包含该 `NOTICE` 中适用于该作品的归属声明的**可读副本（readable copy）**，并排除与 Derivative Work 任何部分都无关的声明：随附的 `NOTICE` 文件、随作品提供的源码或文档、或作品生成的显示（若此类第三方声明通常出现）。该条还说明 `NOTICE` 文件的内容仅供参考，不修改许可；并允许在再分发作品中添加自己的归属声明，前提是这些附加归属声明不能被解释为修改许可。因此，是否存在该条义务，取决于是否实际分发包含 `NOTICE` 的第三方作品，而不取决于本仓库采用 Apache-2.0。
 
 就本轮核对的范围：
 
