@@ -189,7 +189,7 @@ Signed-off-by: 姓名 <邮箱>
 
 维护者于 2026-11-15 决定采用 [Developer Certificate of Origin 1.1](https://developercertificate.org/)（DCO）作为贡献许可机制，不使用 CLA。签署表示你按 DCO 的条款，确认有权以本仓库的许可证提交该贡献。
 
-- **外部贡献**（来自 fork 的 PR）：每个提交都要在提交说明末尾的 trailer 区带有 `Signed-off-by: 姓名 <邮箱>`，邮箱与提交作者一致，合并提交也不例外；写在正文中间的签署行不算数。用 `git commit -s` 即可自动添加。`.github/workflows/dco.yml` 在 PR 上检查，检查脚本与工作流取自目标分支，不会运行 PR 中的任何内容。
+- **外部贡献**（来自 fork 的 PR）：每个提交都要在提交说明末尾的 trailer 区带有 `Signed-off-by: 姓名 <邮箱>`，邮箱与提交作者一致，合并提交也不例外；写在正文中间的签署行不算数。用 `git commit -s` 即可自动添加。`.github/workflows/dco.yml` 在 PR 上检查，检查脚本与工作流取自目标分支，不会运行 PR 中的任何内容。**在仓库公开后用一次 fork PR 实测确认“缺签时合并受阻、补签后最新头部通过”之前，这项检查对外部 PR 只作提示**；维护者合并外部 PR 前，须在本地独立核验：`python3 -B scripts/check-dco.py pr --base <目标分支提交> --head <PR 头部提交> --fork true`（需要先 `git fetch origin pull/<编号>/head`）。
 - **本仓库分支上的工作**（维护者与 AI 代理）：代理产生的提交不加 `Signed-off-by`。维护者在 squash 合并时，在合并提交说明末尾加上自己的 `Signed-off-by`，代为签署。`dco.yml` 在推送到 `main` 时检查。
 - **起算点：** 自引入 `scripts/check-dco.py` 的提交之后开始检查，此前的历史提交不追溯，也不改写。
 

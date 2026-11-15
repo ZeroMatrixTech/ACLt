@@ -4,6 +4,10 @@ name: DCO sign-off
 # pull request. The pull request is checked out into pr/ as data only;
 # nothing from it is executed, no secrets are used, and the token is
 # read-only and not persisted.
+# Until a fork pull request has shown on the public repository that this check
+# blocks merging when a sign-off is missing and passes on the fixed head, its
+# result for external pull requests is advisory; the maintainer verifies
+# locally before merging (CONTRIBUTING section 11).
 on:
   pull_request_target:
   push:
