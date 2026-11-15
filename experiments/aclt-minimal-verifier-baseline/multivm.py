@@ -28,6 +28,7 @@ import time
 
 from baseline import ROOT, ask, solve
 import coordination
+import dualhost_multivm
 import general_vm
 import sort_contract
 from dualhost import fixture, snapshot
@@ -238,7 +239,8 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
                    recursive: bool, leaves: int, links: dict[str, int] | None = None,
                    interrupt: tuple[str, str] | None = None, retry_solve: bool = False,
                    root_caps: dict | None = None, handoff: str | None = None,
-                   general_options: tuple[str, ...] = (), coordination_port: int | None = None) -> list[str]:
+                   general_options: tuple[str, ...] = (), coordination_port: int | None = None, lan_links: dict[str, str] | None = None) -> list[str]:
+    lan_links = lan_links or {}
     ip = GUEST_A if role == "A" else GUEST_B
     peer = GUEST_B if role == "A" else GUEST_A
     if links is not None:
@@ -277,8 +279,13 @@ def boot_arguments(role: str, kernel: Path, initramfs: Path, disk: Path, log: Pa
         if role == "A":
             netdev = "hubport,id=n0,hubid=0"
             for peer_role, port in links.items():
-                commands.extend(["-netdev", f"socket,id=link{peer_role},connect=127.0.0.1:{port}",
+                backend = (f"stream,id=link{peer_role},server=off,addr.type=inet,"
+                           f"addr.host={lan_links[peer_role]},addr.port={port}" if peer_role in lan_links else
+                           f"socket,id=link{peer_role},connect=127.0.0.1:{port}")
+                commands.extend(["-netdev", backend,
                                  "-netdev", f"hubport,id=hub{peer_role},hubid=0,netdev=link{peer_role}"])
+        elif role in lan_links:
+            netdev = f"stream,id=n0,server=on,addr.type=inet,addr.host={lan_links[role]},addr.port={links[role]}"
         else:
             netdev = f"socket,id=n0,listen=127.0.0.1:{links[role]}"
     if coordination_port is not None:
@@ -430,7 +437,7 @@ def environment(accel: str) -> dict:
             "accel": accel}
 
 
-def check_topology(guests: dict, record: dict) -> None:
+def check_topology(guests: dict, record: dict, *, incomplete=False) -> None:
     roles = guest_roles(len(guests))
     if set(guests) != set(roles):
         raise RunError("unexpected guest identity inventory")
@@ -449,6 +456,8 @@ def check_topology(guests: dict, record: dict) -> None:
                 raise RunError(f"guest {role} {field} differs from the host snapshot")
     for peer in roles[1:]:
         guest = guests[peer]
+        if incomplete and guest.get("transport_stopped") and guest["local_socket_ip"] is None:
+            continue
         if (guest["local_socket_ip"], guest["peer_socket_ip"]) != (guest_ip(peer), guest_ip("A")):
             raise RunError(f"guest {peer} reported unexpected TCP addresses")
     expected = {peer: dict(local_ip=guest_ip("A"), peer_ip=guest_ip(peer)) for peer in roles[1:]}
@@ -731,10 +740,25 @@ def run(args: argparse.Namespace) -> dict:
         if not many:
             raise RunError("interruption scenarios require three or more guests")
         target, _ = fault_target(roles, leaves, args.interrupt[1])
+    settings = getattr(args, "dualhost_config", None)
+    if settings and (not many or general or args.handoff):
+        raise RunError("dual-host mode requires the nVM statistics runner with three or more guests")
+    if bool(settings) != bool(getattr(args, "host_b_roles", None)):
+        raise RunError("dual-host configuration and placement must be supplied together")
     output = args.output.resolve()
     if output.exists():
         raise RunError(f"output directory already exists: {output}")
     output.mkdir(mode=0o700)
+    args.owns_output = True
+    remote_roles = ()
+    if settings:
+        if settings.resolve().is_relative_to(ROOT):
+            raise RunError("dual-host configuration must be kept outside the repository")
+        settings, remote_roles = dualhost_multivm.config(settings, roles, args.host_b_roles)
+    if many and not general and not args.handoff:
+        write_json(output / "run-input.json", dict(schema="aclt.nvm-input/1", guests=len(roles), leaves=leaves,
+                   budget=args.solve_budget, retry=bool(args.retry_solve), fault=args.interrupt,
+                   host_b_roles=list(remote_roles), root_caps=root_caps))
     commit, archive, pins = snapshot()
     (output / "commit.txt").write_text(commit + "\n", encoding="utf-8")
     (output / "source-sha256.json").write_text(json.dumps(pins, indent=2) + "\n", encoding="utf-8")
@@ -777,14 +801,31 @@ def run(args: argparse.Namespace) -> dict:
             record["root_limits"] = job[2]
         record["topology"] = {"coordinator": "A", "guest_ips": {role: guest_ip(role) for role in roles},
                               "transport": "QEMU hub with host-loopback socket links"}
-    def boot(directory: Path, image: Path, handoff: str | None = None, *,
-             phase_job=execution, guard=None) -> tuple[dict[str, Path], dict[str, str]]:
+    def boot(directory: Path, image: Path, handoff: str | None = None, *, phase_job=execution, guard=None):
+        if settings:
+            with dualhost_multivm.experiment_lock(), dualhost_multivm.Remote(settings, remote_roles, output) as remote:
+                return boot_guests(directory, image, handoff, phase_job=phase_job, guard=guard, remote=remote)
+        return boot_guests(directory, image, handoff, phase_job=phase_job, guard=guard)
+
+    def boot_guests(directory, image, handoff, *, phase_job, guard, remote=None):
         directory.mkdir(exist_ok=True)
         active = ("A",) if handoff == "control" else roles
         logs = {role: directory / f"{role}-serial.log" for role in active}
         disks = {role: work / f"{directory.name}-{role}.img" for role in active}
-        for disk in disks.values():
-            make_disk(disk)
+        for role in active:
+            if role not in remote_roles:
+                make_disk(disks[role])
+        phase_links = dict(links)
+        lan_links = {}
+        if remote:
+            hashes = remote.stage(kernel, image)
+            phase_links.update(remote.call(action="ports"))
+            lan_links = dict.fromkeys(remote_roles, settings["host_b_lan"])
+            record["topology"].update(
+                transport="QEMU hub with physical LAN and local socket links",
+                placement={role: "B" if role in remote_roles else "A" for role in roles},
+                host_b_environment=remote.environment, host_a_lock="held", host_b_boot_hashes=hashes)
+
         processes = {}
         started = time.monotonic()
         general_options = ()
@@ -805,12 +846,25 @@ def run(args: argparse.Namespace) -> dict:
                 listener.settimeout(30)
             for role in (*active[1:], active[0]):
                 if role == active[0] and len(active) > 1:
+                    if remote:
+                        remote.wait_ready()
                     time.sleep(1)
-                processes[role] = launch(boot_arguments(
-                    role, kernel, image, disks[role], logs[role], accel, args.memory, links[roles[1]],
-                    commit, args.solve_budget, recursive, leaves, links if len(active) > 1 and many else None,
+                on_b = role in remote_roles
+                argv = boot_arguments(
+                    role, Path("kernel") if on_b else kernel, Path("guest.cpio.gz") if on_b else image,
+                    Path(f"{role}.img") if on_b else disks[role],
+                    Path(f"{role}-serial.log") if on_b else logs[role], accel, args.memory, phase_links[roles[1]],
+                    commit, args.solve_budget, recursive, leaves, phase_links if len(active) > 1 and many else None,
                     args.interrupt if role == target else None, args.retry_solve, root_caps, handoff,
-                    general_options, listener.getsockname()[1] if listener and role == "A" else None))
+                    general_options, listener.getsockname()[1] if listener and role == "A" else None, lan_links)
+                if on_b:
+                    remote.call(action="launch", role=role, argv=argv, disk_size=DISK_BYTES)
+                else:
+                    processes[role] = launch(argv)
+            if remote:
+                record["topology"]["lan_links"] = remote.observe(
+                    processes["A"], {role: phase_links[role] for role in remote_roles})
+                write_json(output / "host-topology.json", record["topology"])
             if guard:
                 coordinator = processes["A"]
                 guard.assign(coordinator)
@@ -833,6 +887,9 @@ def run(args: argparse.Namespace) -> dict:
                     raise RunError(f"guest {role} did not finish within {BOOT_TIMEOUT}s")
                 if process.returncode:
                     raise RunError(f"guest {role} exited {process.returncode}")
+            if remote:
+                for role in remote_roles:
+                    remote.collect(role, disks[role], logs[role], deadline)
             if pool:
                 admission_result.result(timeout=10)
         finally:
@@ -958,16 +1015,70 @@ def run(args: argparse.Namespace) -> dict:
     record["status"] = "PASS"
     record["claim"] = (f"{len(roles)} guests, one physical host: guest-level protocol and role split only; "
                        "not physical host separation, not statistical independence")
+    if settings:
+        record["claim"] = "Two trusted physical hosts, QEMU guest traffic over the observed LAN links"
     (output / "result.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     if not args.keep_work:
         shutil.rmtree(work, ignore_errors=True)
     return record
 
 
+def write_json(path, value):
+    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+
+def replay_fixed(output, executor):
+    """Recompute the fixed nVM case using only retained artifacts and the pinned executor."""
+    inputs = json.loads((output / "run-input.json").read_bytes())
+    codec.need(inputs["schema"] == "aclt.nvm-input/1", "unknown nVM evidence input")
+    roles = guest_roles(inputs["guests"])
+    roots = {role: output / role / role for role in roles}
+    ledger_path = roots["A"] / "solve-attempts.json"
+    report = output / "result.json"
+    retained = json.loads((report if report.exists() else output / "failure.json").read_bytes())
+    codec.need(sha256(executor) == retained["executor_sha256"], "replay executor digest differs")
+    codec.need((output / "commit.txt").read_text().strip() == retained["commit"], "source revision differs")
+    pins = json.loads((output / "source-sha256.json").read_bytes())
+    manifest = "".join(f"{digest}  {name}\n" for name, digest in pins.items()).encode()
+    codec.need(hashlib.sha256(manifest).hexdigest() == retained["source_manifest_sha256"],
+               "source manifest digest differs")
+    fault = inputs["fault"]
+    recovered = (roots["A"] / "result.json").is_file()
+    guests = {role: json.loads((root / "guest.json").read_bytes()) for role, root in roots.items()}
+    check_topology(guests, retained, incomplete=not recovered)
+    dualhost_multivm.check_lan(retained, roles, inputs["host_b_roles"])
+    budget, root_caps = inputs["budget"], inputs["root_caps"]
+    leaves = inputs["leaves"]
+    with TemporaryDirectory(prefix="aclt-nvm-replay-") as scratch:
+        if fault:
+            logs = {role: (output / f"{role}-serial.log").read_text() for role in roles}
+            replayed = check_interruption(roots, logs, executor, Path(scratch), leaves, budget, *fault,
+                                          retry_solve=inputs["retry"], recovered=recovered,
+                                          account=True, root_caps=root_caps)
+        else:
+            codec.need(recovered, "unplanned stop has no verified publication")
+            replayed = replay_many(roots, leaves, executor, Path(scratch), solve_budget=budget,
+                                   retry_solve=inputs["retry"], account=True, root_caps=root_caps)
+    codec.need((replayed.get("status") != "FAIL") == recovered, "publication disagrees with replay")
+    ledger = json.loads(ledger_path.read_bytes()) if ledger_path.exists() else None
+    return dict(schema="aclt.nvm-outcome/1", status="PUBLISHED" if recovered else "SAFE_STOP",
+                requested_fault=fault, triggered_fault=fault, output_published=recovered,
+                accounting=ledger, job_id=replayed["job_id"], output_sha256=replayed.get("output_sha256"),
+                evidence={"run_input": "run-input.json", "transcript_roots": {
+                          role: f"{role}/{role}" for role in roles},
+                          "report": "result.json" if recovered else "failure.json"})
+
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     command = parser.add_subparsers(dest="command", required=True)
+    replay = command.add_parser("replay")
+    replay.add_argument("--evidence", type=Path, required=True)
+    replay.add_argument("--executor", type=Path, required=True)
     runner = command.add_parser("run")
+    runner.add_argument("--dualhost-config", type=Path)
+    runner.add_argument("--host-b-roles")
     runner.add_argument("--kernel", required=True, type=Path, help="guest bzImage")
     runner.add_argument("--output", required=True, type=Path, help="new evidence directory")
     runner.add_argument("--runtime-root", type=Path,
@@ -996,6 +1107,14 @@ def main() -> None:
     runner.add_argument("--interrupt", nargs=2, metavar=("MODE", "OPERATION"),
                         help="inject worker-exit or disconnect after receiving SOLVE-i or VERIFY-i")
     args = parser.parse_args()
+    if args.command == "replay":
+        try:
+            result = replay_fixed(args.evidence, args.executor)
+        except (RuntimeError, OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
+            print(json.dumps(dict(status="RUN_ERROR", reason=str(error))))
+            raise SystemExit(2)
+        print(json.dumps(result, indent=2))
+        return
     if args.m9:
         if args.capacity_sort or args.general_drop or args.general_flat or args.general_checkpoint:
             runner.error("M9 scenarios choose their own family, plan and checkpoint")
@@ -1021,9 +1140,17 @@ def main() -> None:
         runner.error("interruption mode must be worker-exit, disconnect, or drop-reply")
     try:
         record = run(args)
-    except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as error:
+        if (args.output / "run-input.json").is_file():
+            outcome = replay_fixed(args.output, args.output / "executor")
+            write_json(args.output / "outcome.json", outcome)
+    except (RuntimeError, OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
+        if getattr(args, "owns_output", False) and args.guests >= 3 and not args.general and not args.handoff:
+            write_json(args.output / "outcome.json", dict(schema="aclt.nvm-outcome/1", status="RUN_ERROR",
+                       requested_fault=args.interrupt, triggered_fault=None, output_published=None,
+                       reason=type(error).__name__))
+
         print(json.dumps({"status": "FAIL", "error": str(error)}, indent=2))
-        raise SystemExit(1)
+        raise SystemExit(2 if args.guests >= 3 and not args.general and not args.handoff else 1)
     if args.general:
         print(json.dumps({key: record[key] for key in ("status", "execution_id", "charged_records" if args.capacity_sort else "charged_gas",
                                                        "output", "seconds")}, indent=2))
