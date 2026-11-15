@@ -770,6 +770,15 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
         elif c.uint(prior.get("message", {}).get("epoch", -1)) != c.uint(
                 paused.get("conflicting_epoch", -1)):
             violations.append("overlap: conflicting intent epoch does not match the pause")
+        if pauses[0] < 2:
+            violations.append("overlap: no pending active intent before the conflict")
+        else:
+            pending = trace[pauses[0] - 2]
+            if pending.get("kind") != "WRITE_REQUEST" or pending.get("owner") != active:
+                violations.append(
+                    f"overlap: trace event {pauses[0] - 2} is not the pending active intent")
+            elif c.uint(pending.get("message", {}).get("epoch", -1)) != active_epoch:
+                violations.append("overlap: pending active intent used a different epoch")
         committed = [(index, event) for index, event in enumerate(trace)
                      if event.get("kind") == "WRITE_COMMITTED"]
         expected_commits = len(requests) - 1
@@ -819,7 +828,13 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
                     violations.append(
                         f"overlap: successful write {position} is {event.get('event')}, "
                         f"not {recorded.get('kind')}")
-                if event.get("epoch") != recorded.get("writer_epoch"):
+                try:
+                    writer_epoch = c.uint(recorded.get("writer_epoch", -1))
+                except c.CodecError:
+                    violations.append(
+                        f"overlap: successful write {position} has an invalid writer epoch")
+                    continue
+                if c.uint(event.get("epoch", -1)) != writer_epoch:
                     violations.append(
                         f"overlap: successful write {position} used a different epoch")
     if status["outcome"] != "PAUSED":

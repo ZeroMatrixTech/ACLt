@@ -394,6 +394,42 @@ class MonteCarloRegressionTests(unittest.TestCase):
         self.assertTrue(any("does not use the active epoch" in item for item in violations),
                         violations)
 
+    def test_overlap_checker_requires_pending_intent_before_conflict(self):
+        spec, run_dir = self.run_dir("overlap")
+        trace_path = run_dir / "trace.cbor"
+        trace = montecarlo._trace_events(trace_path)
+        pause_index = next(index for index, event in enumerate(trace)
+                           if event["kind"] == "PAUSED")
+        pending = trace[pause_index - 2]
+        self.assertEqual(pending["kind"], "WRITE_REQUEST")
+        trace.pop(pause_index - 2)
+        last_commit = max(index for index, event in enumerate(trace)
+                          if event["kind"] == "WRITE_COMMITTED")
+        trace.insert(last_commit - 1, pending)
+        write_trace(trace_path, trace)
+        job = montecarlo._job_from_bundle((run_dir / "job.cbor").read_bytes())
+        violations = []
+        montecarlo._check_overlap(job, spec, run_dir, violations)
+        self.assertTrue(
+            any("not the pending active intent" in item for item in violations), violations)
+
+    def test_overlap_checker_rejects_publish_as_pending_intent(self):
+        spec, run_dir = self.run_dir("overlap")
+        trace_path = run_dir / "trace.cbor"
+        trace = montecarlo._trace_events(trace_path)
+        pause_index = next(index for index, event in enumerate(trace)
+                           if event["kind"] == "PAUSED")
+        pending = trace[pause_index - 2]
+        self.assertEqual(pending["kind"], "WRITE_REQUEST")
+        pending["kind"] = "PUBLISH"
+        pending["epoch"] = pending["message"]["epoch"]
+        write_trace(trace_path, trace)
+        job = montecarlo._job_from_bundle((run_dir / "job.cbor").read_bytes())
+        violations = []
+        montecarlo._check_overlap(job, spec, run_dir, violations)
+        self.assertTrue(
+            any("not the pending active intent" in item for item in violations), violations)
+
     def test_overlap_checker_pairs_commits_with_intents(self):
         spec, run_dir = self.run_dir("overlap")
         trace_path = run_dir / "trace.cbor"
