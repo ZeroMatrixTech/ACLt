@@ -599,6 +599,8 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         record["single_guest_control"] = result
 
     scenario = getattr(args, "m9", None)
+    suppressed_reply = bool(getattr(args, "general_inject", None)) and \
+        general_vm.Injection.parse(args.general_inject).mode == "no_reply"
     authority = None
     if scenario in ("handoff", "overlap"):
         authority = coordination.Coordinator(job, output / "host-journal.cbor",
@@ -614,7 +616,8 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
             if (roots["A"] / f"{name}.cbor").read_bytes() != getattr(phase_job, name):
                 raise RunError(f"guest changed frozen {name}")
         journal = general_vm.replay(phase_job, roots, executor, history, source=source,
-                                    check_response=check_sort_response if is_sort else None)
+                                    check_response=check_sort_response if is_sort else None,
+                                    suppressed_reply=suppressed_reply)
         if guard and guard.journal.events != journal.events:
             raise RunError("guest evidence differs from authoritative host journal")
         publication = roots["A"] / "publication.cbor"
@@ -873,6 +876,7 @@ def run(args: argparse.Namespace) -> dict:
                 f'aclt_general_flat={int(not is_sort and codec.decode(phase_job.plan)["tree"] == list(range(leaves)))}',
                 f'aclt_general_six={int(general_six)}',
                 f'aclt_general_inject={args.general_inject or ""}',
+                f'aclt_general_workers={getattr(args, "general_workers", None) or ""}',
                 f'aclt_coordinated={int(guard is not None)}',
                 f'aclt_general_checkpoint={args.general_checkpoint if handoff == "before" else 0}',
             )
@@ -1161,6 +1165,8 @@ def main() -> None:
     runner.add_argument("--general-nonce", metavar="HEX", help="frozen 32-byte general execution nonce")
     runner.add_argument("--general-inject", metavar="MODE:SLOT:LOSS",
                         help="abort a remote SOLVE reply: no_reply, worker_exit or tcp_disconnect")
+    runner.add_argument("--general-workers", metavar="ROLES",
+                        help="coordinator-only layout: the worker roles in rotation order, e.g. BCD")
     runner.add_argument("--general-checkpoint", choices=(0, 1, 2), type=int, default=0,
                         help="handoff after this many accepted slots")
     runner.add_argument("--retry-solve", action="store_true",
@@ -1209,6 +1215,11 @@ def main() -> None:
             general_vm.Injection.parse(args.general_inject)
         except ValueError as error:
             runner.error(str(error))
+    if args.general_workers is not None:
+        workers = args.general_workers
+        if (not args.general or args.capacity_sort or len(workers) < 3 or len(set(workers)) != len(workers)
+                or "A" in workers or not set(workers) <= set(guest_roles(args.guests))):
+            runner.error("--general-workers needs --general and three distinct non-coordinator guest roles")
     if args.general_drop and args.general_checkpoint and not args.general_order.startswith("1"):
         runner.error("start with slot 1 to drop before handoff")
     if args.interrupt is not None and args.interrupt[0] not in ("worker-exit", "disconnect", "drop-reply"):

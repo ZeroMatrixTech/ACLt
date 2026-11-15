@@ -2,6 +2,7 @@
 """Local multi-VM acceptance for the experimental integer-vector job family."""
 
 from contextlib import closing
+import hashlib
 import json
 import socket
 from pathlib import Path
@@ -73,9 +74,38 @@ class Injection:
             return False
         return self.loss == "both" or request["attempt"] == 1
 
-    def hit(self, request):
-        self.hits.append({"mode": self.mode, "slot": request["slot"],
-                          "attempt": request["attempt"], "loss": self.loss})
+    def hit(self, request, raw, role, response=None):
+        """Record one injection before it is applied (R1 5.3, per-attempt record).
+
+        The record binds the execution, slot, attempt, serving role, fault class and
+        request digest; a suppressed ``no_reply`` also binds the reply it withheld.
+        It carries no wall clock, endpoint, PID or path.
+        """
+        row = {"mode": self.mode, "slot": request["slot"], "attempt": request["attempt"],
+               "loss": self.loss, "role": role,
+               "execution_id": bytes(request["execution_id"]).hex(),
+               "request_sha256": hashlib.sha256(raw).hexdigest()}
+        if response is not None:
+            row["response_sha256"] = hashlib.sha256(response).hexdigest()
+        self.hits.append(row)
+
+
+def coordinator_only(workers, leaf_count):
+    """R1 5.2 placement: the coordinator serves nothing; workers rotate by slot."""
+    workers = tuple(workers)
+    c.need(len(workers) >= 3 and len(set(workers)) == len(workers),
+           "coordinator-only placement needs three distinct workers")
+    return tuple((workers[slot % len(workers)], workers[(slot + 1) % len(workers)])
+                 for slot in range(leaf_count))
+
+
+def retry_after(workers):
+    """R1 5.2 retry: the unique worker that neither solved nor verifies the slot."""
+    workers = tuple(workers)
+
+    def choose(worker):
+        return workers[(workers.index(worker) + 2) % len(workers)]
+    return choose
 
 
 def artifact_module():
@@ -222,7 +252,13 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                 name = wire_name(raw)
                 (output / f"{name}-request.cbor").write_bytes(raw)
                 if inject is not None and inject.matches(request):
-                    inject.hit(request)
+                    if inject.mode == "no_reply":
+                        # Generate and keep the reply, record the suppression, never send it.
+                        response = handle(raw, executor)
+                        (output / f"{name}-response.cbor").write_bytes(response)
+                        inject.hit(request, raw, role, response)
+                        continue
+                    inject.hit(request, raw, role)
                     if inject.mode == "worker_exit":
                         raise WorkerExit(role, name, connection.getsockname()[0], address[0])
                     if inject.mode == "tcp_disconnect":
@@ -244,7 +280,7 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
 
 
 def replay(job, roots, executor, previous=(), *, check_response=None, source=None,
-           journal_path=None):
+           journal_path=None, suppressed_reply=False):
     """Check all requests and recompute the retained peer responses before replaying."""
     journal_path = Path(journal_path) if journal_path is not None else roots["A"] / "journal.cbor"
     events = c.decode(journal_path.read_bytes())
@@ -272,8 +308,18 @@ def replay(job, roots, executor, previous=(), *, check_response=None, source=Non
                 received = outcome[0]["response"]
             else:
                 expected[role].add(request_file)
-                c.need(not (roots[role] / response_file).exists(),
-                       "missing reply has a response frame")
+                c.need(not (roots["A"] / response_file).exists(),
+                       "coordinator retained a reply it did not receive")
+                if suppressed_reply and role != "A":
+                    # no_reply: the worker generated the reply and withheld it.
+                    expected[role].add(response_file)
+                    c.need((roots[role] / response_file).is_file(),
+                           "suppressed reply was not retained by the worker")
+                    c.need((roots[role] / response_file).read_bytes() == handle(raw, executor),
+                           "suppressed reply differs from the recomputed reply")
+                else:
+                    c.need(not (roots[role] / response_file).exists(),
+                           "missing reply has a response frame")
                 continue
         expected[role].update((request_file, response_file))
         response = (roots[role] / response_file).read_bytes()

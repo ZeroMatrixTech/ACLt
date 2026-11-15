@@ -258,11 +258,15 @@ def run_general(role, port, budget, report, pairs):
                 if reply:
                     return receive(connection)
 
+        workers = tuple(pairs.get("aclt_general_workers", ""))
+
         def exchange(owner, raw):
             name = general_vm.wire_name(raw)
+            if workers and owner == role:
+                raise RuntimeError("coordinator-only layout asked the coordinator to serve")
             (output / f"{name}-request.cbor").write_bytes(raw)
             if inject is not None and owner == role and inject.matches(c.decode(raw)):
-                inject.hit(c.decode(raw))
+                inject.hit(c.decode(raw), raw, role)
                 raise ConnectionError(f"injected {inject.mode} on the coordinator")
             if sort_job is None:
                 result = general_vm.handle(raw, EXECUTOR) if owner == role else remote(owner, raw)
@@ -276,6 +280,9 @@ def run_general(role, port, budget, report, pairs):
             checkpoint = int(pairs.get("aclt_general_checkpoint", "0"))
             with ExitStack() as resources:
                 placement = retry_worker = None
+                if workers:
+                    placement = general_vm.coordinator_only(workers, len(job.tasks))
+                    retry_worker = general_vm.retry_after(workers)
                 if sort_job is not None:
                     stored = resources.enter_context(capacity_sort.memory_file())
                     placement = sort_contract.PLACEMENT
@@ -296,7 +303,7 @@ def run_general(role, port, budget, report, pairs):
                     journal, status = general_vm.run(
                         job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
                         checkpoint=checkpoint, placement=placement, retry_worker=retry_worker,
-                        retry_remote=inject is not None, source=source, reuse=reuse,
+                        retry_remote=inject is not None and not workers, source=source, reuse=reuse,
                         journal_factory=journal_factory,
                     )
                 except coordination.CoordinationError:

@@ -15,8 +15,9 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import general_vm
 import montecarlo
-from general_job import Journal, c
+from general_job import Journal, c, handle
 from general_vm import CAPS, CAPS_SIX, DEFAULT_BUDGET, Injection, fixture
 
 SEED = 20261115
@@ -479,7 +480,7 @@ class MonteCarloRegressionTests(unittest.TestCase):
         base = montecarlo.generate_schedule(SEED, 16)
         for index in (0, 7, 8, 15):
             profile = montecarlo.r4_profile(SEED, index)
-            self.assertEqual(profile["profile_version"], "r4-profile-v1")
+            self.assertEqual(profile["profile_version"], "r4-profile-v2")
             self.assertEqual(profile["topology"], "t1" if index < 8 else "t2")
             self.assertEqual(profile["job_id"], "r4-t1-v1" if index < 8 else "r4-t2-v1")
             self.assertEqual(profile["budget"],
@@ -653,6 +654,176 @@ class MonteCarloRegressionTests(unittest.TestCase):
         violations = []
         montecarlo._check_drop(job, spec, run_dir, violations)
         self.assertEqual(violations, [])
+
+    # R1 amendment 1: coordinator-only layout and serving-side binding (5.2, 5.3, 6.3 class 12).
+
+    def guest_evidence(self, fault, slot, loss, name):
+        """Emulate a guest-backend profile run: coordinator and worker VMs keep frames."""
+        job = fixture(hashlib.sha256(name.encode()).digest(), DEFAULT_BUDGET)
+        run_dir = Path(self.tmp.name) / name
+        frames = run_dir / "frames"
+        for role in montecarlo.PROFILE_ROLES:
+            (frames / role).mkdir(parents=True)
+        inject = Injection(fault, slot, loss) if fault in montecarlo.DROPS else None
+
+        def exchange(worker, raw):
+            wire = general_vm.wire_name(raw)
+            for role in ("A", worker):
+                (frames / role / f"{wire}-request.cbor").write_bytes(raw)
+            request = c.decode(raw)
+            if inject is not None and inject.matches(request):
+                if fault == "no_reply":
+                    withheld = handle(raw, self.executor)
+                    (frames / worker / f"{wire}-response.cbor").write_bytes(withheld)
+                    inject.hit(request, raw, worker, withheld)
+                else:
+                    inject.hit(request, raw, worker)
+                raise ConnectionError("injected")
+            response = handle(raw, self.executor)
+            for role in ("A", worker):
+                (frames / role / f"{wire}-response.cbor").write_bytes(response)
+            return response
+
+        workers = montecarlo.PROFILE_WORKERS
+        general_vm.run(job, montecarlo.PROFILE_ROLES, run_dir / "journal.cbor", exchange,
+                       order=montecarlo.ORDER,
+                       placement=general_vm.coordinator_only(workers, len(job.tasks)),
+                       retry_worker=general_vm.retry_after(workers))
+        spec = {"fault": fault, "slot": slot, "attempt": 1, "loss": loss, "topology": "t1"}
+        (run_dir / "fault.cbor").write_bytes(c.encode(
+            dict(spec, injections=inject.hits if inject is not None else [])))
+        (run_dir / "metadata.json").write_text(json.dumps(
+            {"guest_boot_ids": {role: f"boot-{role}" for role in montecarlo.PROFILE_ROLES}}))
+        return job, spec, run_dir
+
+    def serving(self, job, spec, run_dir):
+        violations = []
+        montecarlo._check_serving(job, spec, run_dir, self.executor, violations)
+        return violations
+
+    def test_profile_assignment_is_coordinator_only(self):
+        self.assertEqual(montecarlo.PROFILE_VERSION, "r4-profile-v2")
+        self.assertEqual([montecarlo._profile_worker(slot, 1) for slot in range(6)],
+                         ["B", "C", "D", "B", "C", "D"])
+        self.assertEqual([montecarlo._profile_verifier(slot) for slot in range(6)],
+                         ["C", "D", "B", "C", "D", "B"])
+        self.assertEqual([montecarlo._profile_worker(slot, 2) for slot in range(6)],
+                         ["D", "B", "C", "D", "B", "C"])
+        for slot in range(6):
+            roles = {montecarlo._profile_worker(slot, 1), montecarlo._profile_verifier(slot),
+                     montecarlo._profile_worker(slot, 2)}
+            self.assertEqual(roles, set(montecarlo.PROFILE_WORKERS))
+        root = Path(self.tmp.name) / "profile-layout"
+        montecarlo.run_campaign(SEED, 16, root, self.executor, profile=True)
+        for run_dir in sorted(root.glob("run-*")):
+            for name in ("journal.cbor", "host.cbor"):
+                if (run_dir / name).is_file():
+                    events = c.decode((run_dir / name).read_bytes())
+                    self.assertFalse(any(event.get("worker") == "A" or event.get("verifier") == "A"
+                                         for event in events), run_dir)
+        self.assertEqual(montecarlo.check_campaign(root, self.executor)["violations"], [])
+
+    def test_assignment_check_rejects_a_coordinator_solve(self):
+        root = Path(self.tmp.name) / "profile-assign"
+        montecarlo.run_campaign(SEED, 16, root, self.executor, profile=True)
+        run_dir = next(path for path in sorted(root.glob("run-*"))
+                       if (path / "journal.cbor").is_file())
+        events = c.decode((run_dir / "journal.cbor").read_bytes())
+        reserve = next(event for event in events if event["kind"] == "RESERVE")
+        reserve["worker"] = "A"
+        violations = []
+        montecarlo._check_assignment(events, "journal", violations)
+        self.assertTrue(any("went to A" in item for item in violations), violations)
+
+    def test_serving_binding_accepts_each_drop_class(self):
+        for fault, slot, loss in (("no_reply", 0, "both"), ("worker_exit", 1, "first"),
+                                  ("tcp_disconnect", 2, "first")):
+            job, spec, run_dir = self.guest_evidence(fault, slot, loss, f"clean-{fault}")
+            self.assertEqual(self.serving(job, spec, run_dir), [], fault)
+
+    def test_serving_binding_rejects_misplaced_or_missing_frames(self):
+        # SOLVE first attempt, SOLVE retry and VERIFY each have their own branch.
+        job, spec, run_dir = self.guest_evidence("no_reply", 0, "first", "misplaced")
+        frames = run_dir / "frames"
+        first = frames / "B" / "0-0-1-SOLVE-request.cbor"
+        retry = frames / "D" / "0-0-2-SOLVE-request.cbor"
+        verify = frames / "C" / "0-0-2-VERIFY-request.cbor"
+        self.assertTrue(first.is_file() and retry.is_file() and verify.is_file())
+        # Move each serving frame to a worker that did not serve it, then drop it
+        # so only the coordinator copy remains.
+        for path, target in ((first, "C"), (retry, "B"), (verify, "D")):
+            moved = frames / target / path.name
+            path.rename(moved)
+            violations = self.serving(job, spec, run_dir)
+            self.assertTrue(any(path.name.removesuffix("-request.cbor") in item
+                                for item in violations), violations)
+            moved.rename(path)
+            path.unlink()
+            violations = self.serving(job, spec, run_dir)
+            self.assertTrue(violations, path)
+            path.write_bytes((frames / "A" / path.name).read_bytes())
+            self.assertEqual(self.serving(job, spec, run_dir), [])
+
+    def test_no_reply_needs_the_withheld_reply_and_its_record(self):
+        job, spec, run_dir = self.guest_evidence("no_reply", 0, "both", "withheld")
+        withheld = run_dir / "frames" / "B" / "0-0-1-SOLVE-response.cbor"
+        raw = withheld.read_bytes()
+        withheld.unlink()
+        self.assertTrue(any("no generated serving-side reply" in item
+                            for item in self.serving(job, spec, run_dir)))
+        withheld.write_bytes(raw)
+        record = c.decode((run_dir / "fault.cbor").read_bytes())
+        record["injections"][0]["response_sha256"] = "00" * 32
+        (run_dir / "fault.cbor").write_bytes(c.encode(record))
+        self.assertTrue(any("does not bind the withheld reply" in item
+                            for item in self.serving(job, spec, run_dir)))
+        record["injections"] = record["injections"][1:]
+        (run_dir / "fault.cbor").write_bytes(c.encode(record))
+        self.assertTrue(any("has no injection record" in item
+                            for item in self.serving(job, spec, run_dir)))
+
+    def test_exit_and_disconnect_must_not_generate_a_reply(self):
+        for fault, slot in (("worker_exit", 1), ("tcp_disconnect", 2)):
+            job, spec, run_dir = self.guest_evidence(fault, slot, "first", f"generated-{fault}")
+            worker = montecarlo._profile_worker(slot, 1)
+            request = run_dir / "frames" / worker / f"0-{slot}-1-SOLVE-request.cbor"
+            (request.parent / f"0-{slot}-1-SOLVE-response.cbor").write_bytes(
+                handle(request.read_bytes(), self.executor))
+            self.assertTrue(any("has a serving-side reply" in item
+                                for item in self.serving(job, spec, run_dir)), fault)
+
+    def test_dispatched_verify_without_accept_is_rejected(self):
+        job, spec, run_dir = self.guest_evidence("worker_exit", 1, "first", "stray-verify")
+        events = c.decode((run_dir / "journal.cbor").read_bytes())
+        accept = next(event for event in events if event["kind"] == "ACCEPT")
+        stray = dict(c.decode(accept["request"]), attempt=7)
+        raw = c.encode(stray)
+        name = general_vm.wire_name(raw)
+        for role in ("A", accept["verifier"]):
+            (run_dir / "frames" / role / f"{name}-request.cbor").write_bytes(raw)
+        self.assertTrue(any("unbound frame" in item for item in self.serving(job, spec, run_dir)))
+
+    def test_overlap_pause_must_hold_an_uncommitted_reserve(self):
+        run_dir = Path(self.tmp.name) / "pending"
+        (run_dir / "frames" / "B").mkdir(parents=True)
+        job = fixture(hashlib.sha256(b"pending").digest(), DEFAULT_BUDGET)
+        journal = Journal(job, run_dir / "unused.cbor", ())
+        journal.add("START", execution=job.execution)
+        request = journal.frame(1, 1, "SOLVE")
+        pending = {"kind": "WRITE_REQUEST", "message": {
+            "epoch": 0, "event": "RESERVE",
+            "fields": {"slot": 1, "attempt": 1, "worker": "C", "request": request}}}
+        violations = []
+        montecarlo._check_pending_reserve(pending, run_dir, violations)
+        self.assertEqual(violations, [])
+        name = general_vm.wire_name(request)
+        (run_dir / "frames" / "B" / f"{name}-request.cbor").write_bytes(request)
+        montecarlo._check_pending_reserve(pending, run_dir, violations)
+        self.assertTrue(any("was dispatched" in item for item in violations), violations)
+        pending["message"]["event"] = "ACCEPT"
+        violations = []
+        montecarlo._check_pending_reserve(pending, run_dir, violations)
+        self.assertTrue(any("not an uncommitted RESERVE" in item for item in violations))
 
 
 if __name__ == "__main__":

@@ -54,7 +54,10 @@ TOPOLOGIES = {
            "budget": DEFAULT_BUDGET_SIX},
 }
 BACKENDS = ("inprocess", "local", "dualhost")
-PROFILE_VERSION = "r4-profile-v1"
+PROFILE_VERSION = "r4-profile-v2"
+# R1 amendment 1 (5.2): guest A only coordinates; workers rotate in this order.
+PROFILE_ROLES = ("A", "B", "C", "D")
+PROFILE_WORKERS = ("B", "C", "D")
 PROFILE_RUNS = 16
 DEFAULT_SEED = 20261115
 DEFAULT_RUNS = 32
@@ -216,7 +219,18 @@ def _profile_spec(base: dict[str, Any], profile: dict[str, Any]) -> dict[str, An
 
 
 def _profile_placement(topology: str) -> str:
-    return "B,D" if topology == "t2" else "B"
+    """Both profile topologies keep coordinator A on host A and B, C, D on host B."""
+    c.need(topology in TOPOLOGIES, f"unknown topology {topology}")
+    return ",".join(PROFILE_WORKERS)
+
+
+def _profile_worker(slot: int, attempt: int) -> str:
+    """R1 5.2: first solve W[i], retry W[i+2] (the verifier is W[i+1])."""
+    return PROFILE_WORKERS[(slot + (0 if attempt == 1 else 2)) % len(PROFILE_WORKERS)]
+
+
+def _profile_verifier(slot: int) -> str:
+    return PROFILE_WORKERS[(slot + 1) % len(PROFILE_WORKERS)]
 
 
 def _job_bundle(job: Job) -> bytes:
@@ -359,7 +373,9 @@ def _should_drop(raw: bytes, spec: dict[str, Any]) -> bool:
 
 
 def _run_drop(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
-              roles: tuple[str, ...] = ROLES, order: tuple[int, ...] = ORDER) -> None:
+              roles: tuple[str, ...] = ROLES, order: tuple[int, ...] = ORDER,
+              layout: dict[str, Any] | None = None) -> None:
+    layout = layout or {}
     triggered = 0
 
     def exchange(worker: str, raw: bytes) -> bytes:
@@ -381,7 +397,8 @@ def _run_drop(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
         return handle(raw, executor)
 
     try:
-        journal, outcome = run(job, roles, run_dir / "journal.cbor", exchange, order=order)
+        journal, outcome = run(job, roles, run_dir / "journal.cbor", exchange, order=order,
+                               **layout)
         _write_status(run_dir, spec, outcome, triggered=triggered,
                       accepted=len(journal.accepted), final=journal.final is not None)
         _write_fault(run_dir, spec, triggered=triggered)
@@ -392,7 +409,9 @@ def _run_drop(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
 
 
 def _run_handoff(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
-                 roles: tuple[str, ...] = ROLES, order: tuple[int, ...] = ORDER) -> None:
+                 roles: tuple[str, ...] = ROLES, order: tuple[int, ...] = ORDER,
+                 layout: dict[str, Any] | None = None) -> None:
+    layout = layout or {}
     checkpoint = spec["checkpoint"]
 
     def exchange(worker: str, raw: bytes) -> bytes:
@@ -401,7 +420,7 @@ def _run_handoff(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, 
     try:
         checkpoint_journal, checkpoint_outcome = run(
             job, roles, run_dir / "checkpoint.cbor", exchange,
-            order=order, checkpoint=checkpoint,
+            order=order, checkpoint=checkpoint, **layout,
         )
         if checkpoint_outcome != "CHECKPOINT":
             _write_status(run_dir, spec, "ERROR", checkpoint=checkpoint,
@@ -410,7 +429,7 @@ def _run_handoff(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, 
             return
         journal, outcome = run(
             job, roles, run_dir / "journal.cbor", exchange,
-            order=order, previous=run_dir / "checkpoint.cbor",
+            order=order, previous=run_dir / "checkpoint.cbor", **layout,
         )
         _write_status(run_dir, spec, outcome, checkpoint=checkpoint,
                       checkpoint_events=len(checkpoint_journal.events),
@@ -423,7 +442,9 @@ def _run_handoff(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, 
 
 
 def _run_overlap(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
-                 roles: tuple[str, ...] = ROLES, order: tuple[int, ...] = ORDER) -> None:
+                 roles: tuple[str, ...] = ROLES, order: tuple[int, ...] = ORDER,
+                 layout: dict[str, Any] | None = None) -> None:
+    layout = layout or {}
     authority = Coordinator(job, run_dir / "host.cbor", run_dir / "trace.cbor")
     owner = _spawn_idle()
     conflicting = _spawn_idle()
@@ -456,7 +477,7 @@ def _run_overlap(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, 
                                   on_intent=on_intent)
             try:
                 _, outcome = run(job, roles, run_dir / "guest.cbor", exchange,
-                                 order=order, journal_factory=factory)
+                                 order=order, journal_factory=factory, **layout)
             except CoordinationError as exc:
                 error = str(exc)
             finally:
@@ -482,15 +503,20 @@ def _run_overlap(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, 
 
 
 def _run_one(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path, *,
-             topology: str = "t1") -> None:
+             topology: str = "t1", profile: bool = False) -> None:
     shape = TOPOLOGIES[topology]
     roles, order = shape["roles"], shape["order"]
+    layout = None
+    if profile:
+        roles = PROFILE_ROLES
+        layout = {"placement": general_vm.coordinator_only(PROFILE_WORKERS, len(job.tasks)),
+                  "retry_worker": general_vm.retry_after(PROFILE_WORKERS)}
     if spec["fault"] in DROPS:
-        _run_drop(job, spec, run_dir, executor, roles=roles, order=order)
+        _run_drop(job, spec, run_dir, executor, roles=roles, order=order, layout=layout)
     elif spec["fault"] == "handoff":
-        _run_handoff(job, spec, run_dir, executor, roles=roles, order=order)
+        _run_handoff(job, spec, run_dir, executor, roles=roles, order=order, layout=layout)
     elif spec["fault"] == "overlap":
-        _run_overlap(job, spec, run_dir, executor, roles=roles, order=order)
+        _run_overlap(job, spec, run_dir, executor, roles=roles, order=order, layout=layout)
     else:
         raise c.CodecError(f"unknown fault class {spec['fault']}")
 
@@ -571,7 +597,12 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
                  "error": "overlapping coordinator epochs"}
     outcome = "PAUSED" if overlap else result["general_status"]
     _write_status(run_dir, spec, outcome, **extra)
-    _write_fault(run_dir, spec, triggered=triggered)
+    if fault in DROPS:
+        injections = sorted((dict(row) for item in guest.values() for row in item.get("injection", ())),
+                            key=lambda row: (row["slot"], row["attempt"], row["role"]))
+        _write_fault(run_dir, spec, triggered=triggered, injections=injections)
+    else:
+        _write_fault(run_dir, spec, triggered=triggered)
     if journal.final is not None:
         _copy(root / "publication.cbor", run_dir / "result.cbor")
     phase_records = _phase_topologies(raw, result.get("topology", {}))
@@ -663,9 +694,207 @@ def _check_frames(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path 
         else:
             general_vm.replay(
                 job, {role: frames / role for role in roles}, executor,
-                journal_path=run_dir / "journal.cbor")
+                journal_path=run_dir / "journal.cbor",
+                suppressed_reply=spec["fault"] == "no_reply")
     except Exception as error:
         violations.append(f"frames: {error}")
+
+
+def _check_assignment(events: list[dict[str, Any]], label: str,
+                      violations: list[str]) -> None:
+    """R1 5.2/5.3: rebuild the coordinator-only assignment and compare each slot."""
+    for position, event in enumerate(events):
+        kind = event.get("kind")
+        if kind == "RESERVE":
+            expected = _profile_worker(c.uint(event["slot"]), c.uint(event["attempt"]))
+            if event.get("worker") != expected:
+                violations.append(
+                    f"{label}: event {position} solve slot {event['slot']} attempt "
+                    f"{event['attempt']} went to {event.get('worker')}, not {expected}")
+        elif kind == "ACCEPT":
+            expected = _profile_verifier(c.uint(event["slot"]))
+            if event.get("verifier") != expected:
+                violations.append(
+                    f"{label}: event {position} verify slot {event['slot']} went to "
+                    f"{event.get('verifier')}, not {expected}")
+
+
+def _sha256(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _check_serving(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path | None,
+                   violations: list[str]) -> None:
+    """R1 5.3 serving-side binding for profile evidence from a guest backend.
+
+    Every dispatched SOLVE (first and retry) and VERIFY is bound by
+    (run, slot, attempt, action) to the raw frames retained by the coordinator and
+    by the serving worker VM; replies are split into generated, sent and received.
+    """
+    fault = spec["fault"]
+    frames = run_dir / "frames"
+    if not frames.is_dir():
+        violations.append("serving: run retained no request/response frames")
+        return
+    metadata_path = run_dir / "metadata.json"
+    metadata = json.loads(metadata_path.read_text()) if metadata_path.is_file() else {}
+    try:
+        journal_events = c.decode((run_dir / "journal.cbor").read_bytes())
+    except Exception as error:
+        violations.append(f"serving: unreadable journal: {error}")
+        return
+    if fault == "handoff":
+        try:
+            checkpoint_events = c.decode((run_dir / "checkpoint.cbor").read_bytes())
+        except Exception as error:
+            violations.append(f"serving: unreadable checkpoint: {error}")
+            return
+        phases = [("before", checkpoint_events, 0, metadata.get("before_guest_boot_ids")),
+                  ("after", journal_events, len(checkpoint_events),
+                   metadata.get("guest_boot_ids"))]
+    else:
+        phases = [("", journal_events, 0, metadata.get("guest_boot_ids"))]
+    injections = []
+    try:
+        recorded_fault = c.decode((run_dir / "fault.cbor").read_bytes())
+        injections = recorded_fault.get("injections", [])
+    except Exception as error:
+        violations.append(f"serving: unreadable fault record: {error}")
+    if type(injections) is not list:
+        violations.append("serving: fault injections are not a list")
+        injections = []
+    no_replies: dict[tuple[int, int], dict[str, Any]] = {}
+    for label, events, prefix, boot_ids in phases:
+        where = f"serving/{label}" if label else "serving"
+        root = frames / label if label else frames
+        present: dict[str, set[str]] = {}
+        if root.is_dir():
+            for child in root.iterdir():
+                if child.is_dir():
+                    present[child.name] = {path.name for path in child.glob("*")}
+                else:
+                    violations.append(f"{where}: unexpected frame file {child.name}")
+        for role in sorted(set(present) - set(PROFILE_ROLES)):
+            violations.append(f"{where}: frames for unknown role {role}")
+        expected: dict[str, set[str]] = {role: set() for role in PROFILE_ROLES}
+        boot_ids = boot_ids if type(boot_ids) is dict else {}
+
+        def frame(role: str, name: str) -> bytes | None:
+            path = root / role / name
+            return path.read_bytes() if path.is_file() else None
+
+        def bind(role: str, name: str, raw: bytes, what: str) -> None:
+            if role == "A" or role not in PROFILE_WORKERS:
+                violations.append(f"{where}: {what} {name} was served by {role}, not a worker")
+                return
+            if not isinstance(boot_ids.get(role), str) or not boot_ids.get(role):
+                violations.append(f"{where}: serving role {role} has no boot identifier")
+            for endpoint in ("A", role):
+                expected[endpoint].add(f"{name}-request.cbor")
+                if frame(endpoint, f"{name}-request.cbor") != raw:
+                    violations.append(
+                        f"{where}: {what} {name} request frame at {endpoint} is missing or differs")
+
+        later = events[prefix:]
+        for position, event in enumerate(later, start=prefix):
+            kind = event.get("kind")
+            if kind == "RESERVE":
+                slot, attempt = c.uint(event["slot"]), c.uint(event["attempt"])
+                raw, worker = event["request"], event.get("worker")
+                name = general_vm.wire_name(raw)
+                bind(worker, name, raw, "solve")
+                outcome = [item for item in later if item.get("kind") in ("ANSWER", "NO_REPLY")
+                           and (c.uint(item["slot"]), c.uint(item["attempt"])) == (slot, attempt)]
+                if len(outcome) != 1:
+                    violations.append(f"{where}: dispatched solve {name} has no unique disposition")
+                    continue
+                response_name = f"{name}-response.cbor"
+                if outcome[0]["kind"] == "ANSWER":
+                    response = outcome[0]["response"]
+                    for endpoint in ("A", worker):
+                        expected[endpoint].add(response_name)
+                        if frame(endpoint, response_name) != response:
+                            violations.append(
+                                f"{where}: solve {name} reply at {endpoint} is missing or differs")
+                    if executor is not None and handle(raw, executor) != response:
+                        violations.append(f"{where}: solve {name} reply differs from recomputation")
+                    continue
+                if frame("A", response_name) is not None:
+                    violations.append(
+                        f"{where}: coordinator holds a reply for undelivered solve {name}")
+                served = frame(worker, response_name)
+                if fault == "no_reply":
+                    expected[worker].add(response_name)
+                    if served is None:
+                        violations.append(
+                            f"{where}: no_reply solve {name} has no generated serving-side reply")
+                    elif executor is not None and handle(raw, executor) != served:
+                        violations.append(
+                            f"{where}: withheld reply for {name} differs from recomputation")
+                elif served is not None:
+                    violations.append(
+                        f"{where}: {fault} solve {name} has a serving-side reply")
+                no_replies[(slot, attempt)] = {"worker": worker, "request": raw,
+                                               "response": served}
+            elif kind == "ACCEPT":
+                raw, verifier = event["request"], event.get("verifier")
+                name = general_vm.wire_name(raw)
+                bind(verifier, name, raw, "verify")
+                response_name = f"{name}-response.cbor"
+                for endpoint in ("A", verifier):
+                    expected.setdefault(endpoint, set()).add(response_name)
+                    if frame(endpoint, response_name) != event["response"]:
+                        violations.append(
+                            f"{where}: verify {name} reply at {endpoint} is missing or differs")
+                if executor is not None and handle(raw, executor) != event["response"]:
+                    violations.append(f"{where}: verify {name} reply differs from recomputation")
+        for role in PROFILE_ROLES:
+            actual = present.get(role, set())
+            for name in sorted(actual - expected[role]):
+                violations.append(f"{where}: unbound frame {role}/{name}")
+            for name in sorted(expected[role] - actual):
+                if not any(name in item for item in violations):
+                    violations.append(f"{where}: missing frame {role}/{name}")
+    if fault not in DROPS:
+        if injections:
+            violations.append(f"serving: {fault} run recorded drop injections")
+        return
+    matched: set[tuple[int, int]] = set()
+    for row in injections:
+        if type(row) is not dict:
+            violations.append("serving: injection record is not a map")
+            continue
+        try:
+            key = (c.uint(row.get("slot", -1)), c.uint(row.get("attempt", -1)))
+        except c.CodecError:
+            violations.append("serving: injection record has no slot/attempt")
+            continue
+        if key in matched:
+            violations.append(f"serving: duplicate injection record for slot/attempt {key}")
+            continue
+        matched.add(key)
+        disposition = no_replies.get(key)
+        if disposition is None:
+            violations.append(f"serving: injection record {key} has no NO_REPLY attempt")
+            continue
+        if row.get("mode") != fault:
+            violations.append(f"serving: injection record {key} is {row.get('mode')}, not {fault}")
+        if row.get("role") != disposition["worker"]:
+            violations.append(f"serving: injection record {key} names {row.get('role')}, "
+                              f"not the serving worker {disposition['worker']}")
+        if row.get("execution_id") != job.execution_id.hex():
+            violations.append(f"serving: injection record {key} names another execution")
+        if row.get("request_sha256") != _sha256(disposition["request"]):
+            violations.append(f"serving: injection record {key} request digest differs")
+        if fault == "no_reply":
+            served = disposition["response"]
+            if served is None or row.get("response_sha256") != _sha256(served):
+                violations.append(
+                    f"serving: no_reply record {key} does not bind the withheld reply")
+        elif "response_sha256" in row:
+            violations.append(f"serving: {fault} record {key} claims a generated reply")
+    for key in sorted(set(no_replies) - matched):
+        violations.append(f"serving: NO_REPLY at slot/attempt {key} has no injection record")
 
 
 def _copy_json(path: Path, value: Any) -> None:
@@ -675,12 +904,14 @@ def _copy_json(path: Path, value: Any) -> None:
 
 def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
                topology: str, config: Path | None, kernel: Path, placement: str | None,
-               accel: str, timeout: int, executor: Path | None = None) -> None:
+               accel: str, timeout: int, executor: Path | None = None,
+               profile: bool = False) -> None:
     shape = TOPOLOGIES[topology]
     remote_roles = tuple(role for role in (placement or "").split(",") if role)
-    roles = shape["roles"]
+    roles = PROFILE_ROLES if profile else shape["roles"]
     if spec["fault"] in DROPS and backend == "dualhost":
-        worker, _ = assignments(roles, len(job.tasks))[spec["slot"]]
+        worker = (_profile_worker(spec["slot"], 1) if profile
+                  else assignments(roles, len(job.tasks))[spec["slot"]][0])
         if worker not in remote_roles:
             _write_status(run_dir, spec, "ERROR",
                           error=f"injected slot {spec['slot']} is served on host A")
@@ -690,7 +921,7 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
     started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     order = "".join(str(slot) for slot in shape["order"])
     command = [sys.executable, "-B", str(Path(__file__).with_name("multivm.py")), "run",
-               "--general", "--guests", str(shape["guests"]), "--kernel", str(kernel),
+               "--general", "--guests", str(len(roles)), "--kernel", str(kernel),
                "--output", str(raw), "--solve-budget", str(spec["budget"]),
                "--general-order", order, "--general-nonce", spec["nonce"],
                "--accel", accel]
@@ -698,6 +929,8 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
         command += ["--executor", str(executor)]
     if topology == "t2":
         command.append("--general-six")
+    if profile:
+        command += ["--general-workers", "".join(PROFILE_WORKERS)]
     if backend == "dualhost":
         c.need(config is not None and placement, "dual-host campaign needs config and placement")
         command += ["--dualhost-config", str(config), "--host-b-roles", placement]
@@ -806,12 +1039,12 @@ def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None,
             (run_dir / "profile.cbor").write_bytes(c.encode(r4_profile(seed, spec["index"])))
         _write_fault(run_dir, spec)
         if backend == "inprocess":
-            _run_one(job, spec, run_dir, Path(executor), topology=spec_topology)
+            _run_one(job, spec, run_dir, Path(executor), topology=spec_topology, profile=profile)
         else:
             run_placement = (_profile_placement(spec_topology) if profile else placement)
             _run_guest(job, spec, run_dir, backend=backend, topology=spec_topology,
                        config=config, kernel=Path(kernel), placement=run_placement,
-                       accel=accel, timeout=timeout, executor=Path(executor))
+                       accel=accel, timeout=timeout, executor=Path(executor), profile=profile)
         status = c.decode((run_dir / "status.cbor").read_bytes())
         row = {"index": spec["index"], "fault": spec["fault"], "outcome": status["outcome"]}
         if backend != "inprocess" or profile:
@@ -828,7 +1061,10 @@ def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None,
             _copy_json(root / "topology.json", {
                 "profile": True,
                 "topologies": ["t1", "t2"],
-                "placements": {"t1": "B", "t2": "B,D"},
+                "profile_version": PROFILE_VERSION,
+                "roles": list(PROFILE_ROLES),
+                "workers": list(PROFILE_WORKERS),
+                "placements": {name: _profile_placement(name) for name in ("t1", "t2")},
                 "run_count": len(rows),
             })
         else:
@@ -1135,7 +1371,7 @@ def _trace_events(path: Path) -> list[dict[str, Any]]:
 
 
 def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
-                   violations: list[str]) -> None:
+                   violations: list[str], *, profile: bool = False) -> None:
     status = c.decode((run_dir / "status.cbor").read_bytes())
     host_raw = c.decode((run_dir / "host.cbor").read_bytes())
     guest_raw = c.decode((run_dir / "guest.cbor").read_bytes())
@@ -1196,6 +1432,8 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
                     f"overlap: trace event {pauses[0] - 2} is not the pending active intent")
             elif c.uint(pending.get("message", {}).get("epoch", -1)) != active_epoch:
                 violations.append("overlap: pending active intent used a different epoch")
+            elif profile:
+                _check_pending_reserve(pending, run_dir, violations)
         committed = [(index, event) for index, event in enumerate(trace)
                      if event.get("kind") == "WRITE_COMMITTED"]
         expected_commits = len(requests) - 1
@@ -1270,6 +1508,24 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
         violations.append("overlap: paused run retained a complete output")
 
 
+def _check_pending_reserve(pending: dict[str, Any], run_dir: Path,
+                           violations: list[str]) -> None:
+    """R1 5.3: the paused intent is the uncommitted RESERVE, never dispatched."""
+    message = pending.get("message", {})
+    if message.get("event") != "RESERVE":
+        violations.append(
+            f"overlap: paused intent is {message.get('event')}, not an uncommitted RESERVE")
+        return
+    request = (message.get("fields") or {}).get("request")
+    if not isinstance(request, bytes):
+        violations.append("overlap: paused RESERVE carries no request")
+        return
+    name = general_vm.wire_name(request)
+    frames = run_dir / "frames"
+    if frames.is_dir() and any(path.name.startswith(f"{name}-") for path in frames.rglob("*")):
+        violations.append(f"overlap: paused RESERVE {name} was dispatched")
+
+
 def _check_run(spec: dict[str, Any], run_dir: Path, *, executor: Path | None = None,
                backend: str = "inprocess", profile: dict[str, Any] | None = None) -> list[str]:
     violations: list[str] = []
@@ -1313,15 +1569,26 @@ def _check_run(spec: dict[str, Any], run_dir: Path, *, executor: Path | None = N
                 if metadata.get("executor_sha256") != digest:
                     violations.append("metadata: guest executor differs from campaign executor")
     if backend != "inprocess":
-        _check_frames(job, spec, run_dir, executor, violations)
+        if profile is not None:
+            _check_serving(job, spec, run_dir, executor, violations)
+        else:
+            _check_frames(job, spec, run_dir, executor, violations)
     fault = spec["fault"]
+    if profile is not None:
+        for name in ("journal.cbor", "checkpoint.cbor", "host.cbor"):
+            if (run_dir / name).is_file():
+                try:
+                    _check_assignment(c.decode((run_dir / name).read_bytes()),
+                                      f"assignment/{name}", violations)
+                except Exception as error:
+                    violations.append(f"assignment/{name}: {error}")
     try:
         if fault in DROPS:
             _check_drop(job, spec, run_dir, violations, order=shape["order"])
         elif fault == "handoff":
             _check_handoff(job, spec, run_dir, violations)
         elif fault == "overlap":
-            _check_overlap(job, spec, run_dir, violations)
+            _check_overlap(job, spec, run_dir, violations, profile=profile is not None)
         else:
             violations.append(f"unknown fault class {fault}")
     except Exception as error:
@@ -1427,7 +1694,7 @@ def _check_campaign_topology(root: Path, schedule: dict[str, Any], backend: str,
                 dualhost_multivm.check_lan(
                     {"topology": item, "kernel_sha256": metadata.get("kernel_sha256"),
                      "initramfs_sha256": image},
-                    TOPOLOGIES[expected_topology]["roles"], remote)
+                    PROFILE_ROLES if profile else TOPOLOGIES[expected_topology]["roles"], remote)
             except Exception as error:
                 violations.append(f"{label}/{phase}: {error}")
         if backend == "dualhost":
