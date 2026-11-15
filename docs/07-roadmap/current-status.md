@@ -15,6 +15,7 @@
 | 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 乌托邦基线已于 2026-11-15 经维护者确认闭合（[闭合确认](minimal-verifier-baseline.md#闭合确认2026-11-15)）。下一阶段为首次公开发行（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)）：双机 nVM 安全层蒙特卡洛与公开条件综合检查 |
 | 本地双来宾验证 | [第 1 轮报告](../testing/MULTIVM-20261112.md)：同一作业在单宿主两个 QEMU 来宾上跑平坦两片、显式预算两片与树归并三片，两端角色切分、逐片交叉验证和归并输出均通过校验 | 只算来宾级证据；[DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md) 的物理双机条件与 G2/G3、P0-1B 仍未关闭 |
 | 本地可配置多来宾验证 | [n VM 验收](../testing/MULTIVM-N-20261112.md)：三来宾三片、四来宾六片均通过角色轮换、原始帧重放与成功输出等价验收 | 已验证[来宾工作进程退出与 TCP 断连](../testing/MULTIVM-N-FAULTS-20261113.md)时停止归并与留证，并验证[显式预算内的单次求解补算](../testing/MULTIVM-N-RETRY-20261113.md)；固定统计工件的[整题资源准入](../testing/MULTIVM-ROOT-LIMITS-20261113.md)已验收；并行调度、一般恢复、经济性与原 Gate 各自待验收；完整单机 trap 等价用于明确声明该要求的任务 |
+| 双宿主多来宾验证 | [R2 双机 nVM](../testing/DUALHOST-MULTIVM-R2-20261115.md)完成三来宾与四来宾跨物理 LAN 作业、远端断连安全停止和丢答复补算 | 可信双机与固定用例。R4 用同一入口执行安全层蒙特卡洛 |
 | 可信宿主下的协调器交接 | [M9 来宾验收](../testing/MULTIVM-CONTRACT-CLOSURE-20261114.md)验证同一执行的轮次交接、双写停止与跨计划证据复用。本地回归覆盖孤立旧轮次写入拒绝 | 适用可信单宿主与无在途检查点。在途恢复、自动选主与抗回滚待验收 |
 | 单节点交付容量对照 | [物理双机固定容量排序](../testing/DUALHOST-CAPACITY-SORT-20261114.md)已通过：单个 6 MiB 镜像无法完整交付 8 MiB，双机各用同规格镜像完成并可重放 | 将排序任务族接到通用契约的统一尝试账、接纳与交接入口 |
 | B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
@@ -158,9 +159,10 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 ### P0 — 阻断公开发布
 
 1. 完成 **ACLt Protocol** 名称冲突检索。
-2. 保持根目录 Apache License 2.0 `LICENSE` 不被改写，并给未来适用源码加入 `SPDX-License-Identifier: Apache-2.0`。
+2. 保持根目录 Apache License 2.0 `LICENSE` 不被改写。缺 SPDX 的源码按维护者 2026-11-15 的决定，改由文件外机器可读许可声明覆盖，由 P1-a 落实（#128）。
 3. 决定名称、商标和兼容性声明的使用政策。规范、文档与研究文稿已于 2026-11-14 决定沿用 Apache-2.0。
-4. 决定贡献者许可机制（仅项目许可证、DCO 或 CLA）及第三方代码接受规则。
+4. 贡献者许可机制已于 2026-11-15 决定采用 DCO（[CONTRIBUTING §11](../../CONTRIBUTING.md#11-许可)，`dco.yml` 检查）。仓库公开后，须用一次 fork PR 实测 DCO 门禁能否阻止合并；在此之前，外部 PR 的检查结果只作提示，由维护者在合并前本地核验。第三方代码接受规则仍待确定。
+5. 安全漏洞报告渠道见 [`SECURITY.md`](../../SECURITY.md)；仓库公开后，维护者须启用 GitHub 私密漏洞报告（AUD-20261115-002）。
 
 ### P1 — 阻断 G1/G2 的可信推进
 
@@ -204,6 +206,8 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | 2026-11-15 | v0.5 | 维护者决定：保留 Git 历史，接受其中的主机名、本地路径与作者邮箱随仓库公开；首次公开发行说明由 `PREVIEW-20261106.md` 改写（名称 `research-preview-1`）。DCO 决定另见其日志行 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)、[公开发布准备审计](../08-governance/audits/audit-20261115-01-public-release.md) | 公开发布 |
 | 2026-11-15 | v0.5 | 维护者决定：首次公开发行阶段的蒙特卡洛只做安全层，只报告“N 次带种子运行、违反 0 次、可复现”，不报告概率上界或置信度；量化层延后，TG-6（#123）与 TG-7（#124）保持开启 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128) | 不变 |
 | 2026-11-15 | v0.5 | 维护者授权整个首次公开发行阶段占用物理 A、B 机，按 DUALHOST-SSH-1 与 PARALLEL-1 §6.4 执行，阶段结束即终止 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)、[ENV-1](../08-governance/environment-standard.md#本地多虚拟机验证2026-11-12) | 不变 |
+| 2026-11-15 | v0.5 | 维护者决定采用 DCO 作为贡献许可机制，代理提交由维护者在合并时签署；新增安全政策与 DCO 检查 | `CONTRIBUTING.md` §11、`SECURITY.md`、`.github/workflows/dco.yml`、#128 | 公开发布 |
+| 2026-11-15 | v0.5 | R2 完成两台物理宿主上的 nVM 实跑与离线重放，覆盖两种来宾分布、远端安全停止及一次补算 | [R2 验收报告](../testing/DUALHOST-MULTIVM-R2-20261115.md)、OQ-04、OQ-05、OQ-06 | 不变 |
 | 2026-11-15 | v0.5 | 维护者确认最简验证机乌托邦基线闭合：五项闭合条件均满足，证据层级为本地、同宿主来宾级与物理双机各有分布；协调规则限可信单宿主 | [闭合确认](minimal-verifier-baseline.md#闭合确认2026-11-15)、#128 | 不变 |
 | 2026-11-14 | v0.5 | M9 补齐通用契约 §6 在可信单宿主的跨计划复用与双写停止，证据为来宾级 | [M9 验收报告](../testing/MULTIVM-CONTRACT-CLOSURE-20261114.md)、OQ-04、OQ-06 | 不变 |
 | 2026-11-14 | v0.5 | M2 在同宿主三来宾完成通用契约下的固定容量排序，含记录数记账、补算及无在途协调器交接。单来宾对照实际写入失败，证据为来宾级 | [M2 验收报告](../testing/MULTIVM-SORT-CONTRACT-20261114.md)、OQ-04、OQ-05、OQ-06 | 不变 |
