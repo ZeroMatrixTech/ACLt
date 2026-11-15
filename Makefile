@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 PYTHON ?= python3
 REPORT_DIR ?= $(CURDIR)/artifacts/multinode
 PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip

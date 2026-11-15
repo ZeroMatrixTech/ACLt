@@ -1,15 +1,29 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Check that every source file has an SPDX license or a REUSE declaration.
+"""Check that every tracked code and configuration file has an SPDX license.
 
-The checked source boundary matches A7.3: Python, Rust, shell, C++, and Node
-scripts (.py, .rs, .sh, .cpp, .cjs). `.js`, Makefile, TOML, YAML, HTML,
-Markdown, JSON and data files are outside source coverage. An SPDX identifier must stand
-alone in a leading comment line; the same text inside a string or code line is
-not a file header. A source file is covered by a header in its first ten lines
-or, for Apache-2.0 only, by an explicit REUSE.toml path. Cargo manifests may be
-declared externally, but they are not counted as source. Tracked files are read
-through git when the directory is a checkout; an unpacked tree is walked.
+The covered boundary is every tracked file whose contents carry code or
+configuration: the code suffixes (.py, .rs, .sh, .cpp, .cjs, .js, .mjs, .html,
+.htm), the configuration suffixes (.yml, .yaml, .toml), the build and VCS files
+named Makefile, GNUmakefile, makefile or .gitignore, and the explicit strict
+JSON configuration paths in CONFIG_PATHS. JSON has no comment syntax and strict
+parsers reject comments, so those two files can only be declared externally.
+`.js`, `.mjs` and `.cjs` are treated the same.
+
+Markdown, data JSON, plain-text logs and captured outputs, lock files, archives
+and the root LICENSE are outside the boundary. The repository-wide statement in
+README ("开源与许可") and the root LICENSE cover them; most are historical
+evidence kept byte-for-byte. OQ-01 in docs/07-roadmap/open-questions.md carries
+the exclusion table with a reason per class.
+
+An SPDX identifier must stand alone in a leading comment line; the same text
+inside a string or code line is not a file header. A covered file is covered by
+a header in its first ten lines or by an explicit REUSE.toml path declaring
+Apache-2.0. A declaration for a path outside the boundary, for a missing path,
+or for a file that already carries a header is an error. Unicode-3.0 headers are
+accepted only on UNICODE_DATA_PATHS; every other file must be Apache-2.0.
+Tracked files are read through git when the directory is a checkout; an
+unpacked tree is walked.
 """
 from __future__ import annotations
 
@@ -21,10 +35,13 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-SOURCE_SUFFIXES = frozenset({".py", ".rs", ".sh", ".cpp", ".cjs"})
-NON_SOURCE_DECLARATION_NAMES = frozenset({"Cargo.toml"})
-HEADER_LICENSES = frozenset({"Apache-2.0", "Unicode-3.0"})
-EXTERNAL_LICENSE = "Apache-2.0"
+CODE_SUFFIXES = frozenset({".py", ".rs", ".sh", ".cpp", ".cjs", ".js", ".mjs", ".html", ".htm"})
+CONFIG_SUFFIXES = frozenset({".yml", ".yaml", ".toml"})
+CONFIG_NAMES = frozenset({"Makefile", "GNUmakefile", "makefile", ".gitignore"})
+CONFIG_PATHS = frozenset({"DELIVERY-SCOPE.json", ".aclt-flow/template.json"})
+DEFAULT_LICENSE = "Apache-2.0"
+UNICODE_LICENSE = "Unicode-3.0"
+UNICODE_DATA_PATHS = frozenset({"tools/verification_profile/rust/unicode_data.rs"})
 HEADER_LINES = 10
 COMMENT_PREFIXES = ("#", "//", "/*", "*", "<!--")
 # Only VCS metadata is skipped during a fallback walk. Other directories can
@@ -33,16 +50,25 @@ EXCLUDED_DIRS = frozenset({".git"})
 
 
 class CoverageError(Exception):
-    """The source tree is not fully covered by file headers or declarations."""
+    """The tree is not fully covered by file headers or declarations."""
 
 
 @dataclass(frozen=True)
 class Coverage:
-    source: int
+    covered: int
     headers: int
     declared: int
-    external: int
     missing: int
+
+
+def _is_covered(relative):
+    path = PurePosixPath(relative)
+    return (
+        path.suffix in CODE_SUFFIXES
+        or path.suffix in CONFIG_SUFFIXES
+        or path.name in CONFIG_NAMES
+        or relative in CONFIG_PATHS
+    )
 
 
 def _run_git(root, *arguments):
@@ -60,16 +86,16 @@ def _run_git(root, *arguments):
         raise CoverageError(f"cannot read git inventory: {detail or exc}") from exc
 
 
-def _tracked_source_files(root):
+def _tracked_covered_files(root):
     names = _run_git(root, "ls-files", "-z").stdout.split(b"\0")
     files = []
     for raw in names:
         if not raw:
             continue
         relative = raw.decode("utf-8")
-        path = root / relative
-        if path.suffix not in SOURCE_SUFFIXES:
+        if not _is_covered(relative):
             continue
+        path = root / relative
         if path.is_symlink():
             raise CoverageError(f"unsafe symlink source: {relative}")
         if path.is_file():
@@ -77,7 +103,7 @@ def _tracked_source_files(root):
     return sorted(files)
 
 
-def _walk_source_files(root):
+def _walk_covered_files(root):
     files = []
     for directory, dirnames, filenames in os.walk(root):
         directory_path = Path(directory)
@@ -95,12 +121,12 @@ def _walk_source_files(root):
             relative = path.relative_to(root)
             if path.is_symlink():
                 raise CoverageError(f"unsafe symlink source: {relative.as_posix()}")
-            if path.is_file() and path.suffix in SOURCE_SUFFIXES:
+            if path.is_file() and _is_covered(relative.as_posix()):
                 files.append(relative.as_posix())
     return sorted(files)
 
 
-def _source_files(root, require_git=False):
+def _covered_files(root, require_git=False):
     if (root / ".git").exists():
         try:
             top = _run_git(root, "rev-parse", "--show-toplevel").stdout.decode("utf-8").strip()
@@ -111,13 +137,13 @@ def _source_files(root, require_git=False):
             if Path(top).resolve() != root.resolve():
                 raise CoverageError(f"not a git checkout root: {root}")
             try:
-                return _tracked_source_files(root)
+                return _tracked_covered_files(root)
             except CoverageError:
                 # Git metadata can be present but unusable, for example a
                 # container checkout rejected by Git's dubious-ownership check.
                 if require_git:
                     raise
-    return _walk_source_files(root)
+    return _walk_covered_files(root)
 
 
 def _comment_body(line):
@@ -195,10 +221,10 @@ def _load_declarations(root):
         license_value = annotation.get("SPDX-License-Identifier")
         if not isinstance(license_value, str) or not license_value:
             raise CoverageError(f"REUSE.toml annotation {index} has no SPDX license")
-        if license_value != EXTERNAL_LICENSE:
+        if license_value != DEFAULT_LICENSE:
             raise CoverageError(
                 f"REUSE.toml annotation {index} uses unsupported external license "
-                f"{license_value!r}; only {EXTERNAL_LICENSE} is allowed"
+                f"{license_value!r}; only {DEFAULT_LICENSE} is allowed"
             )
         copyright_value = annotation.get("SPDX-FileCopyrightText")
         copyright_values = copyright_value if isinstance(copyright_value, list) else [copyright_value]
@@ -226,17 +252,16 @@ def check_coverage(root, require_git=False):
         raise CoverageError(f"not a directory: {root}")
 
     declarations = _load_declarations(root)
-    source = _source_files(root, require_git=require_git)
+    covered = _covered_files(root, require_git=require_git)
     headers = {}
     errors = []
-    for relative in source:
+    for relative in covered:
         try:
             headers[relative] = _header_license(root / relative, relative)
         except CoverageError as exc:
             errors.append(str(exc))
 
-    source_declarations = {}
-    external_declarations = {}
+    declared = {}
     for relative in declarations:
         path = root / relative
         if path.is_symlink():
@@ -248,42 +273,47 @@ def check_coverage(root, require_git=False):
         if not path.is_file():
             errors.append(f"declared path is not a file: {relative}")
             continue
-        if path.suffix in SOURCE_SUFFIXES:
-            source_declarations[relative] = declarations[relative]
-            if relative not in headers:
-                errors.append(f"declared path is not an included source file: {relative}")
-            elif headers[relative] is not None:
-                errors.append(f"declared path already has an SPDX header: {relative}")
-        elif path.name in NON_SOURCE_DECLARATION_NAMES:
-            external_declarations[relative] = declarations[relative]
-        else:
-            errors.append(
-                f"declared path is not a source file or Cargo manifest: {relative}"
-            )
+        if not _is_covered(relative):
+            errors.append(f"declared path is not a code or configuration file: {relative}")
+            continue
+        license_value = headers.get(relative)
+        if license_value is not None:
+            errors.append(f"declared path already has an SPDX header: {relative}")
+            continue
+        declared[relative] = declarations[relative]
 
     missing = []
-    for relative in source:
+    for relative in covered:
         license_value = headers.get(relative)
         if license_value is None:
-            if relative not in source_declarations:
+            if relative not in declared:
                 missing.append(relative)
-        elif license_value not in HEADER_LICENSES:
-            errors.append(f"{relative}: unsupported SPDX license {license_value!r}")
+            continue
+        if license_value == DEFAULT_LICENSE:
+            continue
+        if license_value == UNICODE_LICENSE:
+            if relative in UNICODE_DATA_PATHS:
+                continue
+            errors.append(
+                f"{relative}: {UNICODE_LICENSE} is only allowed for "
+                + ", ".join(sorted(UNICODE_DATA_PATHS))
+            )
+            continue
+        errors.append(f"{relative}: unsupported SPDX license {license_value!r}")
 
     if errors:
         raise CoverageError("\n".join(errors))
     if missing:
         raise CoverageError(
-            "missing source licenses (add an SPDX header or an explicit REUSE.toml path):\n"
+            "missing licenses (add an SPDX header or an explicit REUSE.toml path):\n"
             + "\n".join(missing)
         )
 
     header_count = sum(value is not None for value in headers.values())
     return Coverage(
-        source=len(source),
+        covered=len(covered),
         headers=header_count,
-        declared=len(source_declarations),
-        external=len(external_declarations),
+        declared=len(declared),
         missing=0,
     )
 
@@ -308,9 +338,8 @@ def main(argv=None):
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
     print(
-        f"PASS: source={result.source} headers={result.headers} "
-        f"declared={result.declared} external={result.external} "
-        f"missing={result.missing}"
+        f"PASS: covered={result.covered} headers={result.headers} "
+        f"declared={result.declared} missing={result.missing}"
     )
     return 0
 

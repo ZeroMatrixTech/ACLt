@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 name: DCO sign-off
 # Trust boundary: for pull requests this uses pull_request_target, so the
 # workflow and scripts/check-dco.py come from the target branch's current
