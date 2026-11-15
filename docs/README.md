@@ -50,6 +50,7 @@
 
 - [ACLt 最简验证机](07-roadmap/minimal-verifier-baseline.md)：当前开发重心、切片验证内核与可信多机验收。
 - [通用分布式作业契约](07-roadmap/distributed-job-contract.md)：整题声明、分片计划和执行实例的绑定，以及通用验收规则。
+- [首次公开阶段安全层与 R4 验收规格](07-roadmap/first-public-release-safety-plan.md)：S1–S7、五类跨主机故障、固定种子与证据要求，是 R4 的唯一验收依据。
 
 - [2026-10-14 工程维护记录](08-governance/audits/audit-20261014-01-repository-maintenance.md)：统一入口、交付完整性及连续重跑修复。
 
