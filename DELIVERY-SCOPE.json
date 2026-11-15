@@ -17,6 +17,7 @@
     "CONTRIBUTING.md",
     "CONTRIBUTORS.md",
     "LICENSE",
+    "REUSE.toml",
     "Makefile",
     ".gitignore",
     "AGENTS.md",
