@@ -1,7 +1,7 @@
 # ACLt 最简验证机 · 首次公开阶段安全层与 R4 验收规格
 
-> 文档状态：已接受的 R4 验收依据（R1）<br>
-> 日期：2026-11-15<br>
+> 文档状态：已接受的 R4 验收依据（R1，含修订 1）<br>
+> 日期：2026-11-15；修订 1：2026-11-15（见第 9 节修订记录）<br>
 > 关联：[阶段 #128](https://github.com/ZeroMatrixTech/ACLt/issues/128)、[R1 #150](https://github.com/ZeroMatrixTech/ACLt/issues/150)、[R4a #151](https://github.com/ZeroMatrixTech/ACLt/issues/151)<br>
 > 适用范围：首次公开阶段的 R4 跨物理机安全层验收，以及 R4a 的实现接口。本文不改变协议语义、ADR、OQ 或 Gate。
 
@@ -26,7 +26,8 @@ R4 只验收**安全层**：在固定的可信双机 LAN、固定种子和固定
 | **PUBLISH** | 唯一一次最终发布事件；发布后不得再有写入。 |
 | **standalone reference** | 对同一 run 的 job（由冻结模板、nonce 和 profile 预算重建）在单机执行的参照输出；用于逐字节比较。 |
 | **violation** | 离线检查器返回的非空违规项；任意一项即失败，不以警告处理。 |
-| **T1 / T2** | 三来宾四叶 / 四来宾六叶拓扑；定义见第 5 节。 |
+| **T1 / T2** | 四来宾四叶 / 四来宾六叶拓扑；两者来宾布局相同，只在叶数、依赖和预算上不同；定义见第 5 节。 |
+| **协调者 / 工作来宾** | 来宾 A 是唯一协调者，只做 journal 写入、派发、接纳和发布，不服务任何 SOLVE 或 VERIFY 请求；其余来宾为工作来宾，按 5.2 全部位于物理 B。 |
 
 ## 3. 安全层 S1–S7
 
@@ -129,6 +130,8 @@ R4 只验收**安全层**：在固定的可信双机 LAN、固定种子和固定
 | <code>handoff</code>（静止点交接） | 在 1 或 2 个 slot 已接纳且无在途尝试时，旧协调器退出，继任者以新 epoch 追加 <code>HANDOFF</code> | checkpoint 前缀保留，旧账重放，已接纳证据复用，最终正常发布或按预算停止 | 有在途尝试的自动接手、跨宿主自动选主、用重启实例丢弃原账 |
 | <code>overlap</code>（重叠写入） | 活动 owner 已提交若干写意图后，另一写者以冲突 epoch 向同一宿主仲裁入口提交写入意图 | 宿主留证、撤销未提交意图、<code>PAUSED</code>，暂停后无提交、无发布 | 仅在本地复制两个目录、用引擎异常代替真实重叠、暂停后继续写入 |
 
+丢答复类（<code>no_reply</code>/<code>worker_exit</code>/<code>tcp_disconnect</code>）的首算和补算都由物理 B 上的工作来宾服务（见 5.2），因此被注入的请求必然经过真实 LAN。若某次注入的目标尝试不由物理 B 上的工作来宾服务，该 run 失败（fail closed），不得改为本地注入，也不得改选槽位。
+
 **在途协调器崩溃（M4）**只做一个 fail-closed 探针：已提交 <code>START</code> 和一个 <code>RESERVE</code> 后终止 owner，下一次指派必须被 <code>handoff needs a quiescent journal</code> 拒绝；断言无发布、无完整输出。该探针不是第六类故障，不进入种子表，不计入五类覆盖，也不声称恢复。
 
 不在 R4 范围：真实断电、网络分区、宿主回滚、恶意 worker、跨宿主自动恢复、自动选主、对抗性网络和主网状态。发现实际只有一台主机、共享状态目录、控制关系或拓扑变化时，暂停对应结论并重新验收。
@@ -150,10 +153,16 @@ R4 的种子在首次 R4 实跑前固定为：
 
 | 拓扑 | 来宾（角色） | 物理 A 上的来宾 | 物理 B 上的来宾 | 叶数 | 协调者 |
 |---|---|---|---:|---:|---|
-| T1 | A、B、C | A、C | B | 4 | 来宾 A |
-| T2 | A、B、C、D | A、C | B、D | 6 | 来宾 A |
+| T1 | A、B、C、D | A | B、C、D | 4 | 来宾 A |
+| T2 | A、B、C、D | A | B、C、D | 6 | 来宾 A |
 
-物理分布沿用 [R2 双机 nVM 报告](../testing/DUALHOST-MULTIVM-R2-20261115.md)：三来宾场景 A、C 在物理 A，B 在物理 B；四来宾场景 A、C 在物理 A，B、D 在物理 B；A 是协调者。R2 使用的是 nVM 统计运行器，不是通用作业契约引擎，因此 R2 只能作为拓扑和历史证据，不能作为 R4 的验收结果。
+**协调者只协调。** 来宾 A 是唯一协调者，不服务任何 SOLVE 或 VERIFY 请求。工作来宾按固定顺序 <code>W = (B, C, D)</code> 排列，全部位于物理 B。叶 <code>i</code> 的首算由 <code>W[i mod 3]</code> 服务，验证由 <code>W[(i+1) mod 3]</code> 服务；补算（<code>attempt=2</code>）由既非首算者也非验证者的唯一工作来宾 <code>W[(i+2) mod 3]</code> 服务。于是每一次 SOLVE/VERIFY 请求都从物理 A 经真实 LAN 到达物理 B；任一槽位的任一次尝试都可以作为丢答复类故障的注入点，槽位规则（5.3.1）不需要按物理位置过滤。
+
+T1 使用四个来宾而不是三个：补算必须换到第三个工作来宾，只有两个工作来宾时补算只能落回协调者或验证者。因此 T1 与 T2 的来宾布局相同，只在叶数、依赖和预算上不同。
+
+该布局不同于 [R2 双机 nVM 报告](../testing/DUALHOST-MULTIVM-R2-20261115.md)（R2 中 A、C 在物理 A，且 A 兼任求解）。R2 使用的是 nVM 统计运行器，不是通用作业契约引擎，只作为历史证据，既不是 R4 的拓扑依据，也不是 R4 的验收结果。
+
+**范围后果。** R4 只覆盖“协调者不兼任工作者”的布局：物理 A 上没有求解或验证环节，R4 不检查发生在协调者本地求解/验证环节上的故障，也不把结论推广到协调者兼任工作者的布局。
 
 每个种子的 run 索引 <code>0–7</code> 分配给 T1，<code>8–15</code> 分配给 T2；于是每个拓扑在每个 pass 中得到 16 个 run（两个种子各 8 个）。R3 的调度生成器每 5 个 run 覆盖五类故障，因此每个种子的每个 8-run 拓扑块至少包含五类各一次；如果实际调度不满足这一点，R4 失败，而不是通过增加 run 来补齐。
 
@@ -168,11 +177,11 @@ R4 的种子在首次 R4 实跑前固定为：
 
 T1 的 caps 和预算与 R3 回归一致：<code>sum(caps) + 8232 = 41170</code>。T2 的预算为 <code>sum(caps) + 8232 = 57644</code>；这允许一次重试，但不保证某个 run 一定进入预算阻止。预算不得在 R4 实跑中调整。
 
-分片由 <code>job.cbor</code> 的声明、计划和依赖冻结；叶到角色的具体指派由通用作业引擎的 placement 生成，并写入每个 run 的 <code>topology.json</code>。同一拓扑在两遍 campaign 中必须使用相同的叶序、依赖、caps、预算和 placement 规则；不得为了改变结果而重排叶或更换角色分布。
+分片由 <code>job.cbor</code> 的声明、计划和依赖冻结；叶到角色的具体指派（首算者、验证者、补算者）按 5.2 的工作来宾轮转规则由 profile 层给出，传给通用作业引擎，并写入每个 run 的 <code>topology.json</code>；检查端按 5.2 独立重建该指派，并与 <code>topology.json</code> 和 journal 中实际的 worker/verifier 逐槽比较。任何 SOLVE 或 VERIFY 由协调者或物理 A 上的来宾服务，或与重建的指派不一致，均为 violation。R3 进程内后端自身的指派规则不变。同一拓扑在两遍 campaign 中必须使用相同的叶序、依赖、caps、预算和 placement 规则；不得为了改变结果而重排叶或更换角色分布。
 
 #### 5.3.1 冻结的 seed 到拓扑的 job 映射
 
-运行端和检查端必须调用同一个纯函数 <code>r4_profile(seed, index)</code>（profile 版本 <code>r4-profile-v1</code>）。它的输入只有固定种子和 0–15 的 run 索引，不得读取时间、端点、运行结果或上一次 pass 的证据。<code>schedule.cbor</code> 保存 R3 <code>generate_schedule(seed, 16)</code> 的原样输出；profile 是 R3 调度之上的 R4 层，不是对 R3 调度的改写。执行实例预算以 profile 的 <code>budget</code> 为准：T1 必须等于 <code>41170</code>，T2 必须等于 <code>57644</code>，且必须与 <code>job.cbor</code> 声明的预算一致；<code>schedule.cbor</code> 中 R3 记录的 budget 字段只保留为来源，不用于 T2 执行或 R4 验收。
+运行端和检查端必须调用同一个纯函数 <code>r4_profile(seed, index)</code>（profile 版本 <code>r4-profile-v2</code>；v2 与 v1 的差别只在 5.2 的来宾布局与指派规则，槽位规则、<code>profile.cbor</code> 字段集合和冻结 job 模板不变；检查端把 <code>r4-profile-v1</code> 证据按未知版本处理）。它的输入只有固定种子和 0–15 的 run 索引，不得读取时间、端点、运行结果或上一次 pass 的证据。<code>schedule.cbor</code> 保存 R3 <code>generate_schedule(seed, 16)</code> 的原样输出；profile 是 R3 调度之上的 R4 层，不是对 R3 调度的改写。执行实例预算以 profile 的 <code>budget</code> 为准：T1 必须等于 <code>41170</code>，T2 必须等于 <code>57644</code>，且必须与 <code>job.cbor</code> 声明的预算一致；<code>schedule.cbor</code> 中 R3 记录的 budget 字段只保留为来源，不用于 T2 执行或 R4 验收。
 
 | run 索引 | 拓扑 | job id | 预算 | 丢答复槽位域 | 丢答复 <code>slot</code> |
 |---|---|---|---:|---|---|
@@ -236,7 +245,7 @@ R4 只有在以下条件全部满足时才通过；缺一项即失败，不得�
 
 1. **授权与拓扑。** 运行处于 [#128 决定 2](https://github.com/ZeroMatrixTech/ACLt/issues/128) 的首次公开阶段授权内，并遵守 [DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md)：A、B 是两台独立物理主机；B 通过严格主机密钥校验的 SSH 管理；实际拓扑、来宾分布、两端端点（脱敏）和镜像摘要记录在 <code>topology.json</code>。两端在 QEMU 启动、运行、退出和证据回收期间持有 [PARALLEL-1 §6.4](../08-governance/parallel-workflow.md#64-共享实验资源) 的宿主锁；锁的获取/释放记录按 5.5 写入 <code>metadata.json.locks[]</code>，由 A 侧编排进程的同一 UTC 时钟记录，B 侧锁状态由 A 在操作前后通过 SSH 确认。发现单主机、共享目录或拓扑变化时停止并失败。
 2. **实际执行与证据。** 完成 2 个种子 × 每种子 16 个 run × 2 个 pass 的实跑，拓扑映射遵守 5.2 和 5.3.1；五类故障均至少实际触发一次；在途协调器崩溃只运行 4 节的 fail-closed 探针，不混入五类计数。所有 run 都有完整证据目录（含 <code>profile.cbor</code>）；没有用本地 R3 campaign、R2 统计运行器、模拟或跳过项替代。源码 SHA、源码清单摘要、执行器摘要、两端环境和 B 侧镜像摘要均已记录且与证据一致。实际运行提交必须可从 <code>main</code> 或 <code>evidence/*</code> 标签到达；证据包有 <code>evidence/*</code> 标签和 SHA-256。
-3. **S1–S7 离线检查。** 使用与证据提交绑定的检查器版本重放全部 64 个 run；每个 run 的 S1–S7 均无 violation，汇总 violation 为 0。检查器自身的负例测试必须逐项覆盖下列 11 类反例，每类至少一个独立用例，并断言非空 violation 与非零退出码；缺任一类或任一负例被静默接受即失败：
+3. **S1–S7 离线检查。** 使用与证据提交绑定的检查器版本重放全部 64 个 run；每个 run 的 S1–S7 均无 violation，汇总 violation 为 0。检查器自身的负例测试必须逐项覆盖下列 12 类反例，每类至少一个独立用例，并断言非空 violation 与非零退出码；缺任一类或任一负例被静默接受即失败：
    - 冻结清单或摘要被篡改；
    - 输出被替换；
    - 预算前缀超限；
@@ -247,7 +256,8 @@ R4 只有在以下条件全部满足时才通过；缺一项即失败，不得�
    - <code>PUBLISHED</code> run 缺失 <code>result.cbor</code>；
    - 写入 epoch 缺失；
    - 提交前缺少意图；
-   - 暂停后仍提交或发布。
+   - 暂停后仍提交或发布；
+   - SOLVE 或 VERIFY 由协调者或物理 A 上的来宾服务，或丢答复类注入的首算/补算不在 5.2 指派的物理 B 工作来宾上。
    检查器不得依赖被测引擎的预算、接纳或发布守卫。
 4. **两遍可复现。** 两个独立 pass 使用相同的源码 SHA、执行器、种子、拓扑、预算和 placement 规则；每个 pass 先各自通过 5.5 的归档完整性和 S1–S7 全量检查（含 <code>trace.cbor</code>），再对每个种子运行 <code>check --compare</code> 并返回 <code>reproducible=yes</code>：<code>schedule.cbor</code> 和 5.5 的确定性比较投影逐字节或逐字段一致，pass 汇总层确认两个种子均为 yes。<code>report.json</code>、<code>pass-report.json</code>、<code>trace.cbor</code> 和 <code>metadata.json</code> 的起止时间不参与该比较，但 trace 仍须各自通过 S6。任何投影差异、环境差异或执行器差异均为失败。不得通过重跑到“看起来一致”来替代首次差异的保留和解释。
 5. **终态覆盖。** 在 R4 的两个 pass 合计中，<code>BUDGET_BLOCKED</code>、<code>PAUSED</code> 和安全停止（<code>SAFE_STOP</code> 或无答复安全终态）各至少出现一次；这些 run 均无 <code>PUBLISH</code>、无 <code>result.cbor</code>、无完整输出。若固定种子没有产生某一类终态，R4 失败，不得改种子、增加 run 或降低预算来补齐。
@@ -260,8 +270,8 @@ R4 只有在以下条件全部满足时才通过；缺一项即失败，不得�
 R4a（[#151](https://github.com/ZeroMatrixTech/ACLt/issues/151)）负责把 R3 的调度与检查器接到跨主机 nVM 后端；R4a 不是 R4 验收结果，R4a 的冒烟测试不进入第 6 节计数。
 
 1. **后端。** 以“跨主机 nVM”后端驱动 R3 的 <code>generate_schedule</code> 和 S1–S7 检查器；在 R2 harness 上运行通用作业契约引擎，不使用 nVM 统计运行器作为验收后端。
-2. **拓扑。** 同时支持 T1（三来宾四叶）和 T2（四来宾六叶）；叶序、依赖、caps、预算和 placement 按 5.3 固化，索引/拓扑/job 的唯一映射按 5.3.1 的 <code>r4_profile</code> 固化。T2 的六叶 fixture、六叶 standalone reference、证据写入和检查器扩展由 R4a 提供。两种拓扑必须通过同一个 <code>r4_profile</code> 入口；运行端和检查端分别重建 profile，不得由运行端单方面决定映射。
-3. **故障注入。** 五类故障都通过真实物理跨主机路径触发：远端进程退出、真实 LAN TCP 断连、无答复/丢答复、静止点交接和宿主仲裁入口的重叠写入。每类记录实际触发事件；无法注入时 R4 失败，不得 skip 或降级为本地模拟。M4 崩溃探针单独实现，只断言 fail closed。
+2. **拓扑。** 同时支持 T1（四来宾四叶）和 T2（四来宾六叶），两者都按 5.2 的“协调者只协调、工作来宾全在物理 B”布局；叶序、依赖、caps、预算和 placement 按 5.3 固化，索引/拓扑/job 的唯一映射按 5.3.1 的 <code>r4_profile</code> 固化。T2 的六叶 fixture、六叶 standalone reference、证据写入和检查器扩展由 R4a 提供。两种拓扑必须通过同一个 <code>r4_profile</code> 入口；运行端和检查端分别重建 profile，不得由运行端单方面决定映射。
+3. **故障注入。** 五类故障都通过真实物理跨主机路径触发：远端进程退出、真实 LAN TCP 断连、无答复/丢答复、静止点交接和宿主仲裁入口的重叠写入。丢答复类的首算和补算都在物理 B 的工作来宾上注入。每类记录实际触发事件；无法注入或目标尝试不在物理 B 上时 R4 失败，不得 skip 或降级为本地模拟。M4 崩溃探针单独实现，只断言 fail closed。
 4. **配置与凭据。** 使用仓库外 JSON 配置（字段至少 <code>ssh_target</code>、<code>host_a_lan</code>、<code>host_b_lan</code>、<code>remote_root</code>）；<code>remote_root</code> 指向本轮新建的私有子目录。A→B 使用严格主机密钥校验的 SSH；实际 IP、用户名、密钥和本地路径不入库；B 的来宾内核、initramfs、执行器和镜像摘要在启动前核对。
 5. **锁与证据。** 两端在 QEMU 启动前取得 PARALLEL-1 §6.4 锁，在证据回收完成后释放；锁记录（时间按 5.5 使用 A 侧编排时钟）、拓扑、源清单、环境和执行器摘要写入 5.4 的结构。证据回收失败或锁未释放时 R4 失败。
 6. **保持 R3 语义。** R4a 可以扩展后端、fixture、profile 层和证据写入，但不得改变 R3 的种子生成、五类顺序、S1–S7 判定或检查器的独立累计规则；不得在 R4 运行中调整种子、预算、caps、槽位或 placement。R3（PR #140）必须先合入，R4a 从最新 <code>main</code> 开发。
@@ -273,8 +283,14 @@ R4a（[#151](https://github.com/ZeroMatrixTech/ACLt/issues/151)）负责把 R3 �
 
 **检测边界。** 归档清单与证据文件可能被一起替换；只有以仓库外独立冻结的摘要/清单为锚时，检查器才能发现这种替换。本规格不主张对任意篡改的普适检测，因此不把该全称主张列为已满足的检测保证；若未来要求该主张，须按 PARALLEL-1 §5.6 定义篡改者能力、可信锚和可检测性命题。
 
-**残余风险。** 两台物理主机仍在同一操作者、同一 LAN、可能共享供电和相同软件的控制下，不能据此声称故障域独立或统计独立。R4 不覆盖真实断电、分区、宿主回滚、恶意参与者、跨宿主自动恢复、自动选主、主网状态或生产部署。R4 的 0 violation 只说明固定种子、固定拓扑和固定故障矩阵下的安全层证据；它不关闭 Gate、OQ、P0-1B 或生产准入。
+**残余风险。** 两台物理主机仍在同一操作者、同一 LAN、可能共享供电和相同软件的控制下，不能据此声称故障域独立或统计独立。R4 不覆盖协调者兼任求解/验证的布局（见 5.2）、真实断电、分区、宿主回滚、恶意参与者、跨宿主自动恢复、自动选主、主网状态或生产部署。R4 的 0 violation 只说明固定种子、固定拓扑和固定故障矩阵下的安全层证据；它不关闭 Gate、OQ、P0-1B 或生产准入。
 
 ## 9. 变更控制
 
 本规格的种子、次数、拓扑、叶数、caps、预算、故障类、S1–S7 判据和验收标准属于 R4 验收条件。任何变更都必须先由维护者批准并更新 Issue #150 或后续决定；R4 开始后不得为了得到 0 violation 或补齐终态而修改。历史失败、未触发类和差异证据必须保留，不得删除或重写为通过。
+
+### 修订记录
+
+| 修订 | 日期 | 原因 | 变更 |
+|---|---|---|---|
+| 修订 1 | 2026-11-15 | R4a 物理双机冒烟（[PR #156](https://github.com/ZeroMatrixTech/ACLt/pull/156)）发现原 5.2 布局与 4、5.3.1、7.3 无法同时满足：A、C 在物理 A 且 A 兼任求解，引擎按轮转派活，冻结槽位规则下种子 <code>20261115</code>、<code>20261116</code> 的丢答复类 run 分别有 6/10、8/10 的目标尝试由物理 A 上的来宾服务；T1 两次均丢失时的补算也只能落在物理 A。R4 将确定性失败。 | 采用“协调者只协调、工作来宾全在物理 B”布局（5.2）；T1 改为四来宾；指派由检查端独立重建（5.3）；profile 版本改为 <code>r4-profile-v2</code>（5.3.1）；负例增至 12 类（6.3）；7.2、7.3、第 8 节相应更新。种子、次数、叶数、caps、预算、槽位规则、故障类和 S1–S7 判据不变。修订时 R4 尚未开始；R4a 在原布局下的冒烟证据（含失败）在仓库外保留为历史，不计入 R4。 |
