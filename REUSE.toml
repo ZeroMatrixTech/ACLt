@@ -104,10 +104,11 @@ SPDX-License-Identifier = "Apache-2.0"
 
 # Configuration and build files that cannot or must not carry a header:
 # validate.yml is the CI workflow this item must not modify; the .gitignore
-# files are pinned byte-for-byte by delivery evidence (the .aclt-flow one is
-# declared with them for uniformity); the two JSON files are read by strict
-# parsers that reject comments; state3's Cargo.toml stays a manifest like the
-# historical ones above.
+# files are declared here for uniform treatment with the experiment-directory
+# ones (the experiment files are pinned byte-for-byte by delivery evidence; the
+# root and .aclt-flow ones are regenerable or ordinary ignores); the two JSON
+# files are read by strict parsers that reject comments; state3's Cargo.toml
+# stays a manifest like the historical ones above.
 [[annotations]]
 path = [
   ".aclt-flow/.gitignore",

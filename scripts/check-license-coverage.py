@@ -1,27 +1,36 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Check that every tracked code and configuration file has an SPDX license.
+"""Check that every tracked file is either licensed or explicitly excluded.
 
-The covered boundary is every tracked file whose contents carry code or
-configuration: the code suffixes (.py, .rs, .sh, .cpp, .cjs, .js, .mjs, .html,
-.htm), the configuration suffixes (.yml, .yaml, .toml), the build and VCS files
-named Makefile, GNUmakefile, makefile or .gitignore, and the explicit strict
-JSON configuration paths in CONFIG_PATHS. JSON has no comment syntax and strict
-parsers reject comments, so those two files can only be declared externally.
-`.js`, `.mjs` and `.cjs` are treated the same.
+The classification is closed: every tracked file must fall into exactly one of
+two sets, and a file in neither set fails with `unclassified tracked file`.
 
-Markdown, data JSON, plain-text logs and captured outputs, lock files, archives
-and the root LICENSE are outside the boundary. The repository-wide statement in
-README ("开源与许可") and the root LICENSE cover them; most are historical
-evidence kept byte-for-byte. OQ-01 in docs/07-roadmap/open-questions.md carries
-the exclusion table with a reason per class.
+Covered (needs an SPDX header or an explicit REUSE.toml path):
 
-An SPDX identifier must stand alone in a leading comment line; the same text
-inside a string or code line is not a file header. A covered file is covered by
-a header in its first ten lines or by an explicit REUSE.toml path declaring
-Apache-2.0. A declaration for a path outside the boundary, for a missing path,
-or for a file that already carries a header is an error. Unicode-3.0 headers are
-accepted only on UNICODE_DATA_PATHS; every other file must be Apache-2.0.
+- code suffixes .py, .rs, .sh, .cpp, .cjs, .js, .mjs, .html, .htm;
+- configuration suffixes .yml, .yaml, .toml;
+- the build and VCS names Makefile, GNUmakefile, makefile, .gitignore;
+- the explicit strict-JSON configuration paths in CONFIG_PATHS.
+  JSON has no comment syntax and strict parsers reject comments, so those two
+  files can only be declared externally. `.js`, `.mjs` and `.cjs` are treated
+  the same.
+
+Excluded, with the reason recorded per class in OQ-01
+(docs/07-roadmap/open-questions.md):
+
+- Markdown, data JSON, plain-text logs and captured outputs, lock files,
+  archives and the root LICENSE. The repository-wide statement in README
+  ("开源与许可") and the root LICENSE cover them; most are historical evidence
+  kept byte-for-byte.
+
+Suffixes and names are matched case-insensitively, so `PAGE.HTML` is covered
+like `page.html`. An SPDX identifier must stand alone in a leading comment
+line; the same text inside a string or code line is not a file header. A
+covered file is covered by a header in its first ten lines or by an explicit
+REUSE.toml path declaring Apache-2.0. A declaration for a path outside the
+boundary, for a path that is not in the tracked inventory, for a missing path,
+or for a file that already carries a header is an error. Unicode-3.0 headers
+are accepted only on UNICODE_DATA_PATHS; every other file must be Apache-2.0.
 Tracked files are read through git when the directory is a checkout; an
 unpacked tree is walked.
 """
@@ -37,8 +46,13 @@ from pathlib import Path, PurePosixPath
 
 CODE_SUFFIXES = frozenset({".py", ".rs", ".sh", ".cpp", ".cjs", ".js", ".mjs", ".html", ".htm"})
 CONFIG_SUFFIXES = frozenset({".yml", ".yaml", ".toml"})
-CONFIG_NAMES = frozenset({"Makefile", "GNUmakefile", "makefile", ".gitignore"})
+CONFIG_NAMES = frozenset({"makefile", "gnumakefile", ".gitignore"})
 CONFIG_PATHS = frozenset({"DELIVERY-SCOPE.json", ".aclt-flow/template.json"})
+# Classified as excluded, not silently skipped: a file whose class is absent
+# here and in the covered sets fails as `unclassified tracked file`.
+EXCLUDED_SUFFIXES = frozenset({".md", ".json", ".txt", ".tsv", ".log", ".lock", ".gz", ".cbor", ".docx"})
+EXCLUDED_NAMES = frozenset({"license"})
+EXCLUDED_NAME_ENDINGS = ("sha256sums",)
 DEFAULT_LICENSE = "Apache-2.0"
 UNICODE_LICENSE = "Unicode-3.0"
 UNICODE_DATA_PATHS = frozenset({"tools/verification_profile/rust/unicode_data.rs"})
@@ -58,16 +72,27 @@ class Coverage:
     covered: int
     headers: int
     declared: int
+    excluded: int
     missing: int
 
 
 def _is_covered(relative):
     path = PurePosixPath(relative)
     return (
-        path.suffix in CODE_SUFFIXES
-        or path.suffix in CONFIG_SUFFIXES
-        or path.name in CONFIG_NAMES
+        path.suffix.lower() in CODE_SUFFIXES
+        or path.suffix.lower() in CONFIG_SUFFIXES
+        or path.name.lower() in CONFIG_NAMES
         or relative in CONFIG_PATHS
+    )
+
+
+def _is_excluded(relative):
+    path = PurePosixPath(relative)
+    name = path.name.lower()
+    return (
+        path.suffix.lower() in EXCLUDED_SUFFIXES
+        or name in EXCLUDED_NAMES
+        or name.endswith(EXCLUDED_NAME_ENDINGS)
     )
 
 
@@ -86,15 +111,13 @@ def _run_git(root, *arguments):
         raise CoverageError(f"cannot read git inventory: {detail or exc}") from exc
 
 
-def _tracked_covered_files(root):
+def _tracked_files(root):
     names = _run_git(root, "ls-files", "-z").stdout.split(b"\0")
     files = []
     for raw in names:
         if not raw:
             continue
         relative = raw.decode("utf-8")
-        if not _is_covered(relative):
-            continue
         path = root / relative
         if path.is_symlink():
             raise CoverageError(f"unsafe symlink source: {relative}")
@@ -103,7 +126,7 @@ def _tracked_covered_files(root):
     return sorted(files)
 
 
-def _walk_covered_files(root):
+def _walk_files(root):
     files = []
     for directory, dirnames, filenames in os.walk(root):
         directory_path = Path(directory)
@@ -121,12 +144,12 @@ def _walk_covered_files(root):
             relative = path.relative_to(root)
             if path.is_symlink():
                 raise CoverageError(f"unsafe symlink source: {relative.as_posix()}")
-            if path.is_file() and _is_covered(relative.as_posix()):
+            if path.is_file():
                 files.append(relative.as_posix())
     return sorted(files)
 
 
-def _covered_files(root, require_git=False):
+def _inventory(root, require_git=False):
     if (root / ".git").exists():
         try:
             top = _run_git(root, "rev-parse", "--show-toplevel").stdout.decode("utf-8").strip()
@@ -137,13 +160,13 @@ def _covered_files(root, require_git=False):
             if Path(top).resolve() != root.resolve():
                 raise CoverageError(f"not a git checkout root: {root}")
             try:
-                return _tracked_covered_files(root)
+                return _tracked_files(root)
             except CoverageError:
                 # Git metadata can be present but unusable, for example a
                 # container checkout rejected by Git's dubious-ownership check.
                 if require_git:
                     raise
-    return _walk_covered_files(root)
+    return _walk_files(root)
 
 
 def _comment_body(line):
@@ -252,15 +275,27 @@ def check_coverage(root, require_git=False):
         raise CoverageError(f"not a directory: {root}")
 
     declarations = _load_declarations(root)
-    covered = _covered_files(root, require_git=require_git)
+    inventory = _inventory(root, require_git=require_git)
+    covered = []
+    excluded = 0
+    unclassified = []
+    for relative in inventory:
+        if _is_covered(relative):
+            covered.append(relative)
+        elif _is_excluded(relative):
+            excluded += 1
+        else:
+            unclassified.append(relative)
+
     headers = {}
-    errors = []
+    errors = [f"unclassified tracked file: {relative}" for relative in unclassified]
     for relative in covered:
         try:
             headers[relative] = _header_license(root / relative, relative)
         except CoverageError as exc:
             errors.append(str(exc))
 
+    covered_set = set(covered)
     declared = {}
     for relative in declarations:
         path = root / relative
@@ -275,6 +310,11 @@ def check_coverage(root, require_git=False):
             continue
         if not _is_covered(relative):
             errors.append(f"declared path is not a code or configuration file: {relative}")
+            continue
+        if relative not in covered_set:
+            errors.append(
+                f"declared path is not an included code or configuration file: {relative}"
+            )
             continue
         license_value = headers.get(relative)
         if license_value is not None:
@@ -310,10 +350,16 @@ def check_coverage(root, require_git=False):
         )
 
     header_count = sum(value is not None for value in headers.values())
+    if header_count + len(declared) != len(covered):
+        raise CoverageError(
+            "internal coverage accounting mismatch: "
+            f"covered={len(covered)} headers={header_count} declared={len(declared)}"
+        )
     return Coverage(
         covered=len(covered),
         headers=header_count,
         declared=len(declared),
+        excluded=excluded,
         missing=0,
     )
 
@@ -339,7 +385,8 @@ def main(argv=None):
         return 1
     print(
         f"PASS: covered={result.covered} headers={result.headers} "
-        f"declared={result.declared} missing={result.missing}"
+        f"declared={result.declared} excluded={result.excluded} "
+        f"missing={result.missing}"
     )
     return 0
 

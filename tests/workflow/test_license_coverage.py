@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Regression tests for the SPDX/REUSE code and configuration coverage check."""
 import importlib.util
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -59,11 +60,29 @@ class LicenseCoverageTests(unittest.TestCase):
     def result(self):
         return CHECKER.check_coverage(self.root)
 
+    def init_git(self):
+        subprocess.run(
+            ["git", "init", "-q", str(self.root)],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def git_add(self, *paths):
+        subprocess.run(
+            ["git", "-C", str(self.root), "add", "--", *paths],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
     def test_repository_tree_is_covered(self):
         result = CHECKER.check_coverage(ROOT)
         self.assertEqual(result.missing, 0)
         self.assertEqual((result.covered, result.headers, result.declared), (341, 251, 90))
+        self.assertEqual(result.excluded, 444)
         self.assertEqual(result.covered, result.headers + result.declared)
+        self.assertEqual(result.covered + result.excluded, 785)
 
     def test_git_inventory_unavailable_falls_back_to_walk(self):
         self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
@@ -221,6 +240,65 @@ class LicenseCoverageTests(unittest.TestCase):
     def test_too_late_header_is_rejected(self):
         self.write("example.py", "\n" * 10 + "# SPDX-License-Identifier: Apache-2.0\n")
         self.assert_rejected("missing licenses")
+
+    def test_uppercase_suffix_is_covered(self):
+        self.write("PAGE.HTML", "<!doctype html>\n<p>hi</p>\n")
+        self.assert_rejected("missing licenses")
+        self.write("PAGE.HTML", "<!-- SPDX-License-Identifier: Apache-2.0 -->\n<p>hi</p>\n")
+        self.assertEqual(self.result().headers, 2)
+
+    def test_unclassified_tracked_file_is_rejected(self):
+        for relative in ("tool.ts", "Dockerfile", "run"):
+            with self.subTest(relative=relative):
+                self.write(relative, "text\n")
+                self.assert_rejected(f"unclassified tracked file: {relative}")
+                (self.root / relative).unlink()
+
+    def test_excluded_classes_do_not_need_headers(self):
+        for relative in (
+            "notes.md",
+            "data.json",
+            "output.txt",
+            "table.tsv",
+            "run.log",
+            "Cargo.lock",
+            "bundle.tar.gz",
+            "artifact.cbor",
+            "report.docx",
+            "SHA256SUMS",
+            "LICENSE",
+        ):
+            self.write(relative, "text\n")
+        result = self.result()
+        self.assertEqual((result.covered, result.excluded, result.missing), (1, 11, 0))
+
+    def test_untracked_declared_file_is_rejected(self):
+        self.write("scratch.py", "print(1)\n")
+        self.write_reuse("version = 1\n" + self.declaration("scratch.py"))
+        self.init_git()
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn(
+            "declared path is not an included code or configuration file: scratch.py",
+            str(context.exception),
+        )
+
+    def test_untracked_declared_file_with_header_is_rejected(self):
+        self.write("scratch.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
+        self.write_reuse("version = 1\n" + self.declaration("scratch.py"))
+        self.init_git()
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn("not an included code or configuration file", str(context.exception))
+        self.assertNotIn("already has an SPDX header", str(context.exception))
+
+    def test_tracked_declared_file_passes(self):
+        self.write("scratch.py", "print(1)\n")
+        self.write_reuse("version = 1\n" + self.declaration("scratch.py"))
+        self.init_git()
+        self.git_add("scratch.py")
+        result = CHECKER.check_coverage(self.root, require_git=True)
+        self.assertEqual((result.covered, result.headers, result.declared), (1, 0, 1))
 
 
 if __name__ == "__main__":
