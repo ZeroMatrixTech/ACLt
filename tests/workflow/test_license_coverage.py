@@ -76,13 +76,33 @@ class LicenseCoverageTests(unittest.TestCase):
             stderr=subprocess.DEVNULL,
         )
 
-    def test_repository_tree_is_covered(self):
+    def test_repository_tree_is_classified(self):
+        # The live tree may legitimately gain headed files, so this checks the
+        # classification invariants rather than a frozen total.
+        inventory = CHECKER._inventory(ROOT, require_git=True)
         result = CHECKER.check_coverage(ROOT)
         self.assertEqual(result.missing, 0)
-        self.assertEqual((result.covered, result.headers, result.declared), (341, 251, 90))
-        self.assertEqual(result.excluded, 444)
         self.assertEqual(result.covered, result.headers + result.declared)
-        self.assertEqual(result.covered + result.excluded, 785)
+        self.assertEqual(result.covered + result.excluded, len(inventory))
+        unclassified = [
+            relative
+            for relative in inventory
+            if not CHECKER._is_covered(relative) and not CHECKER._is_excluded(relative)
+        ]
+        self.assertEqual(unclassified, [])
+
+    def test_closed_classification_snapshot(self):
+        # Fixed snapshot: covered/declared/excluded counts on a known tree.
+        self.write("src/a.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        self.write("src/b.py", "print(1)\n")
+        self.write("notes.md", "text\n")
+        self.write("Cargo.lock", "lock\n")
+        self.write_reuse("version = 1\n" + self.declaration("src/b.py"))
+        result = self.result()
+        self.assertEqual(
+            (result.covered, result.headers, result.declared, result.excluded, result.missing),
+            (3, 2, 1, 2, 0),
+        )
 
     def test_git_inventory_unavailable_falls_back_to_walk(self):
         self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
@@ -248,7 +268,7 @@ class LicenseCoverageTests(unittest.TestCase):
         self.assertEqual(self.result().headers, 2)
 
     def test_unclassified_tracked_file_is_rejected(self):
-        for relative in ("tool.ts", "Dockerfile", "run"):
+        for relative in ("tool.ts", "Dockerfile", "run", "other.lock"):
             with self.subTest(relative=relative):
                 self.write(relative, "text\n")
                 self.assert_rejected(f"unclassified tracked file: {relative}")
@@ -291,6 +311,20 @@ class LicenseCoverageTests(unittest.TestCase):
             CHECKER.check_coverage(self.root, require_git=True)
         self.assertIn("not an included code or configuration file", str(context.exception))
         self.assertNotIn("already has an SPDX header", str(context.exception))
+
+    def test_tracked_file_missing_from_working_tree_is_rejected(self):
+        self.write("notes.md", "text\n")
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        self.init_git()
+        self.git_add("notes.md", "example.py")
+        (self.root / "notes.md").unlink()
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn(
+            "tracked file is missing from the working tree:",
+            str(context.exception),
+        )
+        self.assertIn("notes.md", str(context.exception))
 
     def test_tracked_declared_file_passes(self):
         self.write("scratch.py", "print(1)\n")

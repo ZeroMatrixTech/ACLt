@@ -5,6 +5,10 @@
 The classification is closed: every tracked file must fall into exactly one of
 two sets, and a file in neither set fails with `unclassified tracked file`.
 
+A tracked path that is absent from the working tree counts as delivered and
+is an error, not a silent omission; the same goes for a tracked path that is
+a symlink.
+
 Covered (needs an SPDX header or an explicit REUSE.toml path):
 
 - code suffixes .py, .rs, .sh, .cpp, .cjs, .js, .mjs, .html, .htm;
@@ -18,10 +22,10 @@ Covered (needs an SPDX header or an explicit REUSE.toml path):
 Excluded, with the reason recorded per class in OQ-01
 (docs/07-roadmap/open-questions.md):
 
-- Markdown, data JSON, plain-text logs and captured outputs, lock files,
-  archives and the root LICENSE. The repository-wide statement in README
-  ("开源与许可") and the root LICENSE cover them; most are historical evidence
-  kept byte-for-byte.
+- Markdown, data JSON, plain-text logs and captured outputs, Cargo lock
+  files (by exact name), archives and the root LICENSE. The repository-wide
+  statement in README ("开源与许可") and the root LICENSE cover them; most are
+  historical evidence kept byte-for-byte.
 
 Suffixes and names are matched case-insensitively, so `PAGE.HTML` is covered
 like `page.html`. An SPDX identifier must stand alone in a leading comment
@@ -50,8 +54,8 @@ CONFIG_NAMES = frozenset({"makefile", "gnumakefile", ".gitignore"})
 CONFIG_PATHS = frozenset({"DELIVERY-SCOPE.json", ".aclt-flow/template.json"})
 # Classified as excluded, not silently skipped: a file whose class is absent
 # here and in the covered sets fails as `unclassified tracked file`.
-EXCLUDED_SUFFIXES = frozenset({".md", ".json", ".txt", ".tsv", ".log", ".lock", ".gz", ".cbor", ".docx"})
-EXCLUDED_NAMES = frozenset({"license"})
+EXCLUDED_SUFFIXES = frozenset({".md", ".json", ".txt", ".tsv", ".log", ".gz", ".cbor", ".docx"})
+EXCLUDED_NAMES = frozenset({"license", "cargo.lock"})
 EXCLUDED_NAME_ENDINGS = ("sha256sums",)
 DEFAULT_LICENSE = "Apache-2.0"
 UNICODE_LICENSE = "Unicode-3.0"
@@ -111,18 +115,29 @@ def _run_git(root, *arguments):
         raise CoverageError(f"cannot read git inventory: {detail or exc}") from exc
 
 
-def _tracked_files(root):
+def _tracked_paths(root):
     names = _run_git(root, "ls-files", "-z").stdout.split(b"\0")
+    return [raw.decode("utf-8") for raw in names if raw]
+
+
+def _materialize(root, relatives):
     files = []
-    for raw in names:
-        if not raw:
-            continue
-        relative = raw.decode("utf-8")
+    missing = []
+    for relative in relatives:
         path = root / relative
         if path.is_symlink():
             raise CoverageError(f"unsafe symlink source: {relative}")
         if path.is_file():
             files.append(relative)
+        else:
+            missing.append(relative)
+    if missing:
+        # A tracked path that is absent from the working tree still counts as
+        # delivered; silently dropping it would shrink the excluded count and
+        # hide a missing file.
+        raise CoverageError(
+            "tracked file is missing from the working tree:\n" + "\n".join(missing)
+        )
     return sorted(files)
 
 
@@ -153,19 +168,14 @@ def _inventory(root, require_git=False):
     if (root / ".git").exists():
         try:
             top = _run_git(root, "rev-parse", "--show-toplevel").stdout.decode("utf-8").strip()
+            names = _tracked_paths(root)
         except CoverageError:
             if require_git:
                 raise
-        else:
-            if Path(top).resolve() != root.resolve():
-                raise CoverageError(f"not a git checkout root: {root}")
-            try:
-                return _tracked_files(root)
-            except CoverageError:
-                # Git metadata can be present but unusable, for example a
-                # container checkout rejected by Git's dubious-ownership check.
-                if require_git:
-                    raise
+            return _walk_files(root)
+        if Path(top).resolve() != root.resolve():
+            raise CoverageError(f"not a git checkout root: {root}")
+        return _materialize(root, names)
     return _walk_files(root)
 
 
