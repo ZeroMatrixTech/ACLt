@@ -1,3 +1,5 @@
+> **SUPERSEDED — historical archive.** This document records an earlier stage of the project under a former name. It is not the current ACLt Protocol specification. For the current entry points, see the [archive notes](../README.md).
+
 # RUDCP Complete Project Architecture and Argument Mapping v0.4
 
 > Date: 2026-08-16  
