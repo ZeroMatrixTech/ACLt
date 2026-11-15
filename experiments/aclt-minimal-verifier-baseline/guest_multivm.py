@@ -135,6 +135,8 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
         except InjectedDisconnect:
             pass
         except OSError as error:
+            report["transport_stopped"] = True
+            (output / "guest.json").write_text(json.dumps(report, indent=2) + "\n")
             print(f"GUEST_TRANSPORT_STOP role={role} reason={error}", flush=True)
             return 1
         else:
@@ -187,6 +189,7 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
                 print("GUEST_HANDOFF accepted=1", flush=True)
                 return HANDOFF_EXIT
             except IncompleteExchange as error:
+                (output / "guest.json").write_text(json.dumps(report, indent=2) + "\n")
                 print(f"GUEST_JOB_INCOMPLETE operation={error}", flush=True)
                 return 1
             print(f"GUEST_RESULT slices={len(summary['slices'])}", flush=True)
