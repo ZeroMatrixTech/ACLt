@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 PYTHON ?= python3
 REPORT_DIR ?= $(CURDIR)/artifacts/multinode
 PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip
@@ -50,8 +51,10 @@ check-profile-inventory:
 	$(PYTHON) -B scripts/check-profile-inventory.py
 
 .PHONY: check-license-coverage
+# An unpacked source archive has no .git and is verified with this same
+# target, so strict git mode is requested only when a checkout is present.
 check-license-coverage:
-	$(PYTHON) -B scripts/check-license-coverage.py --require-git
+	$(PYTHON) -B scripts/check-license-coverage.py $(if $(wildcard .git),--require-git,)
 
 .PHONY: test-claim-codec
 test-claim-codec:
