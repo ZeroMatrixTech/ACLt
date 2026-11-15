@@ -58,6 +58,12 @@ class LicenseCoverageTests(unittest.TestCase):
         self.assertEqual(result.declared, 79)
         self.assertEqual(result.source, result.headers + result.declared)
 
+    def test_git_inventory_unavailable_falls_back_to_walk(self):
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
+        (self.root / ".git").mkdir()
+        result = CHECKER.check_coverage(self.root)
+        self.assertEqual((result.source, result.headers, result.declared, result.missing), (1, 1, 0, 0))
+
     def test_header_covers_source(self):
         self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
         result = CHECKER.check_coverage(self.root)

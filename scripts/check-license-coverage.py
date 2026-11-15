@@ -50,26 +50,24 @@ def _run_git(root, *arguments):
         raise CoverageError(f"cannot read git inventory: {detail or exc}") from exc
 
 
-def _source_files(root):
-    if (root / ".git").exists():
-        top = _run_git(root, "rev-parse", "--show-toplevel").stdout.decode("utf-8").strip()
-        if Path(top).resolve() != root.resolve():
-            raise CoverageError(f"not a git checkout root: {root}")
-        names = _run_git(root, "ls-files", "-z").stdout.split(b"\0")
-        files = []
-        for raw in names:
-            if not raw:
-                continue
-            relative = raw.decode("utf-8")
-            path = root / relative
-            if path.suffix not in SOURCE_SUFFIXES:
-                continue
-            if path.is_symlink():
-                raise CoverageError(f"unsafe symlink source: {relative}")
-            if path.is_file():
-                files.append(relative)
-        return sorted(files)
+def _tracked_source_files(root):
+    names = _run_git(root, "ls-files", "-z").stdout.split(b"\0")
+    files = []
+    for raw in names:
+        if not raw:
+            continue
+        relative = raw.decode("utf-8")
+        path = root / relative
+        if path.suffix not in SOURCE_SUFFIXES:
+            continue
+        if path.is_symlink():
+            raise CoverageError(f"unsafe symlink source: {relative}")
+        if path.is_file():
+            files.append(relative)
+    return sorted(files)
 
+
+def _walk_source_files(root):
     files = []
     for path in sorted(root.rglob("*")):
         relative = path.relative_to(root)
@@ -80,6 +78,24 @@ def _source_files(root):
         if path.is_file() and path.suffix in SOURCE_SUFFIXES:
             files.append(relative.as_posix())
     return sorted(files)
+
+
+def _source_files(root):
+    if (root / ".git").exists():
+        try:
+            top = _run_git(root, "rev-parse", "--show-toplevel").stdout.decode("utf-8").strip()
+        except CoverageError:
+            top = None
+        if top is not None:
+            if Path(top).resolve() != root.resolve():
+                raise CoverageError(f"not a git checkout root: {root}")
+            try:
+                return _tracked_source_files(root)
+            except CoverageError:
+                # Git metadata can be present but unusable, for example a
+                # container checkout rejected by Git's dubious-ownership check.
+                pass
+    return _walk_source_files(root)
 
 
 def _header_license(path, relative):
