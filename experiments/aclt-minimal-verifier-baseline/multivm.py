@@ -752,6 +752,8 @@ def run(args: argparse.Namespace) -> dict:
     args.owns_output = True
     remote_roles = ()
     if settings:
+        if settings.resolve().is_relative_to(ROOT):
+            raise RunError("dual-host configuration must be kept outside the repository")
         settings, remote_roles = dualhost_multivm.config(settings, roles, args.host_b_roles)
     if many and not general and not args.handoff:
         write_json(output / "run-input.json", dict(schema="aclt.nvm-input/1", guests=len(roles), leaves=leaves,
@@ -844,6 +846,8 @@ def run(args: argparse.Namespace) -> dict:
                 listener.settimeout(30)
             for role in (*active[1:], active[0]):
                 if role == active[0] and len(active) > 1:
+                    if remote:
+                        remote.wait_ready()
                     time.sleep(1)
                 on_b = role in remote_roles
                 argv = boot_arguments(
@@ -1142,7 +1146,8 @@ def main() -> None:
     except (RuntimeError, OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
         if getattr(args, "owns_output", False) and args.guests >= 3 and not args.general and not args.handoff:
             write_json(args.output / "outcome.json", dict(schema="aclt.nvm-outcome/1", status="RUN_ERROR",
-                       requested_fault=args.interrupt, reason=type(error).__name__))
+                       requested_fault=args.interrupt, triggered_fault=None, output_published=None,
+                       reason=type(error).__name__))
 
         print(json.dumps({"status": "FAIL", "error": str(error)}, indent=2))
         raise SystemExit(2 if args.guests >= 3 and not args.general and not args.handoff else 1)

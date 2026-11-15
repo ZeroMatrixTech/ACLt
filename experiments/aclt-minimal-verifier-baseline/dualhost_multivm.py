@@ -3,7 +3,7 @@
 
 import argparse
 import base64
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 import fcntl
 import gzip
 import hashlib
@@ -18,6 +18,7 @@ import shlex
 import shutil
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -131,13 +132,12 @@ def agent(parent, lan, roles):
                               qemu=subprocess.check_output(["qemu-system-x86_64", "--version"],
                                                            text=True).splitlines()[0],
                               lock="held")), flush=True)
-        import sys
         try:
             for line in sys.stdin:
                 request = json.loads(line)
                 action = request["action"]
                 if action == "ports":
-                    with contextmanager_ports(lan, roles) as ports:
+                    with reserved_ports(lan, roles) as ports:
                         response = ports
                 elif action == "stage":
                     filename = request["name"]
@@ -159,6 +159,10 @@ def agent(parent, lan, roles):
                         children[role] = subprocess.Popen(request["argv"], cwd=root, stdin=subprocess.DEVNULL,
                                                           stdout=log, stderr=subprocess.STDOUT)
                     response = None
+                elif action == "ready":
+                    active = subprocess.check_output(["ss", "-4Hltnp"], text=True)
+                    response = [role for role, proc in children.items()
+                                if proc.poll() is None and f"pid={proc.pid}," in active]
                 elif action == "observe":
                     response = {role: sockets(proc.pid, lan, request["peer"])
                                 for role, proc in children.items()}
@@ -182,8 +186,7 @@ def agent(parent, lan, roles):
 
 
 @contextmanager
-def contextmanager_ports(address, roles):
-    from contextlib import ExitStack
+def reserved_ports(address, roles):
     with ExitStack() as stack:
         reserved = {}
         for role in roles:
@@ -253,6 +256,14 @@ class Remote:
                 raise DualHostError("B boot image digest mismatch")
             observed[name] = recorded
         return observed
+
+    def wait_ready(self):
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            if set(self.call(action="ready")) == set(self.roles):
+                return
+            time.sleep(0.2)
+        raise DualHostError("B QEMU listeners did not become ready")
 
     def observe(self, coordinator, ports):
         address_a = self.settings["host_a_lan"]
