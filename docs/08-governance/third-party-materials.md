@@ -18,13 +18,13 @@
 | 外部审计原文（DeepSeek 输出） | `docs/08-governance/audits/external/AUDIT-20261105-01.original.txt` | 按 `README.md` 的仓库范围声明，仓库内工件采用 Apache-2.0；AI 产出的权利状态不在本轮判断范围 | 作为历史审计证据保留，不重写原文。若未来需要再分发或改编，应单独确认权利状态。 |
 | 文献引用 | `docs/06-research/`、`docs/codocs/` 中的引用与链接 | 以引用和链接为主；未发现大段逐字转载，但未逐篇核对 | 本轮只做抽查；引用材料的许可仍归原作者。新增长段引文或图片时应单独记录来源与许可。 |
 
-本轮未发现随仓库分发的、带独立 `NOTICE` 的第三方 Apache 组件，也未发现 vendored 的第三方源代码。Unicode 数据是上表中唯一随交付物分发的第三方数据；字体只在运行时请求，不进入仓库。
+本轮核对范围内未发现随仓库分发的、带独立 `NOTICE` 的第三方 Apache 组件，也未发现 vendored 的第三方源代码。Unicode 数据是上表中唯一随交付物分发的第三方数据；字体只在运行时请求，不进入仓库。
 
 ## 2. 依赖许可
 
 | 依赖类别 | 当前状态 | 许可处理 |
 |---|---|---|
-| Rust crates | 3 个 `Cargo.lock` 都只包含本仓库的 crate，没有外部 crate；3 个 `Cargo.toml` 已声明 `license = "Apache-2.0"` | 不产生第三方 crate 的 NOTICE 义务；Cargo 元数据可解析该许可。 |
+| Rust crates | 3 个 `Cargo.lock` 都只包含本仓库的 crate，没有外部 crate；当前 state3 的 `Cargo.toml` 声明 `license = "Apache-2.0"`；state1/state2 的历史 `Cargo.toml` 保持基线字节，由 `REUSE.toml` 外部声明覆盖 | 不产生第三方 crate 的 NOTICE 义务；Cargo 元数据可解析当前 state3 的许可，历史清单由外置声明覆盖。 |
 | Python | 只使用标准库和仓库内本地模块；没有第三方 Python 包，也没有 vendored 的 Python 依赖 | 不产生第三方 Python 包许可文件；本地模块按仓库许可处理。 |
 | Node 脚本 | `.cjs` 文件只使用 Node 内置模块 | 不产生第三方 npm 包许可文件。 |
 | 外部工具链 | rustc/cargo、g++、OpenSSL CLI、Python、e2fsprogs、QEMU、Node 等由环境提供，不随仓库再分发 | 工具链自身的许可不因本仓库的源码交付而改变；环境版本要求见 `environment-standard.md`。 |
@@ -32,17 +32,17 @@
 
 ## 3. NOTICE 判断
 
-Apache License 2.0 第 4(d) 条的要求是：如果被再分发的作品包含 `NOTICE` 文件，则再分发时必须包含该 NOTICE 的可读副本（或在修改过的文件中附加归属声明）。因此，当前是否存在 NOTICE 义务，取决于是否实际分发带有 NOTICE 的第三方作品，而不是取决于仓库是否采用 Apache-2.0。
+Apache License 2.0 第 4(d) 条规定：如果被再分发的作品包含 `NOTICE` 文本文件，则任何再分发的 Derivative Work 必须在以下至少一处包含该 `NOTICE` 中适用于该作品的归属声明：随附的 `NOTICE` 文件、随作品提供的源码或文档、或作品生成的显示（且该显示通常出现第三方声明之处）；该条还允许在再分发作品中添加自己的归属声明，只要不修改许可。因此，是否存在该条义务，取决于是否实际分发包含 `NOTICE` 的第三方作品，而不取决于本仓库采用 Apache-2.0。
 
 就本轮核对的范围：
 
-- 未发现随附 `NOTICE` 的第三方 Apache 组件；
-- 未发现 vendored 的第三方源代码；
-- 仓库当前没有 `NOTICE` 文件，也没有需要复制到 `NOTICE` 的第三方归属声明；
-- Unicode 数据的 `Unicode-3.0` 许可全文 `UNICODE-LICENSE.txt` 与数据同目录并随源码包分发，满足该许可对版权与许可声明随数据副本保留的要求；
+- 在本次核对范围内，未发现随附 `NOTICE` 的第三方 Apache 组件；
+- 在本次核对范围内，未发现 vendored 的第三方源代码；
+- 仓库当前没有 `NOTICE` 文件；在本次核对范围内，也未识别出需要复制到 `NOTICE` 的第三方归属声明；
+- Unicode 数据的 `Unicode-3.0` 许可全文 `UNICODE-LICENSE.txt` 与数据同目录并随源码包交付；本文件只记录这一事实，不对 Unicode 许可的全部合规要求作法律结论；
 - Google Fonts 只在运行时请求，字体文件不随交付物分发。
 
-**当前结论：** 按上述材料与依赖，当前没有 Apache-2.0 第 4(d) 条意义上的 NOTICE 义务。这是对当前仓库材料的事实核对，不是法律意见，也不表示未来永远不会产生义务。
+**当前结论（限于本次核对）：** 在本次核对的材料与依赖范围内，未识别出 Apache-2.0 第 4(d) 条要求随附的第三方 `NOTICE`。这是对当前仓库材料的事实核对，不是法律意见，也不表示未来不会产生义务。
 
 **触发重新核对的条件：** 新增带 `NOTICE` 的第三方 Apache 组件；vendored 第三方代码或数据；本地化或打包字体；新增需要保留归属/许可声明的第三方材料；改变交付范围或再分发方式。触发后应更新本文件、必要的 `NOTICE`、OQ-01，以及 README/CONTRIBUTING 中相应的许可陈述；涉及权利状态判断时由维护者决定是否取得法律意见。
 

@@ -51,7 +51,7 @@ check-profile-inventory:
 
 .PHONY: check-license-coverage
 check-license-coverage:
-	$(PYTHON) -B scripts/check-license-coverage.py
+	$(PYTHON) -B scripts/check-license-coverage.py --require-git
 
 .PHONY: test-claim-codec
 test-claim-codec:

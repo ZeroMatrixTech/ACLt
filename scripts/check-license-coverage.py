@@ -2,10 +2,14 @@
 # SPDX-License-Identifier: Apache-2.0
 """Check that every source file has an SPDX license or a REUSE declaration.
 
-Source files are Python, Rust, shell, C++, and Node scripts. A source file is
-covered by an SPDX-License-Identifier in its first ten lines or, for
-Apache-2.0 only, by an explicit path in REUSE.toml. Tracked files are read
-through git when the directory is a checkout; an unpacked source tree is walked.
+The checked source boundary matches A7.3: Python, Rust, shell, C++, and Node
+scripts (.py, .rs, .sh, .cpp, .cjs). `.js`, Makefile, TOML, YAML, HTML,
+Markdown, JSON and data files are outside source coverage. An SPDX identifier must stand
+alone in a leading comment line; the same text inside a string or code line is
+not a file header. A source file is covered by a header in its first ten lines
+or, for Apache-2.0 only, by an explicit REUSE.toml path. Cargo manifests may be
+declared externally, but they are not counted as source. Tracked files are read
+through git when the directory is a checkout; an unpacked tree is walked.
 """
 from __future__ import annotations
 
@@ -18,10 +22,14 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
 SOURCE_SUFFIXES = frozenset({".py", ".rs", ".sh", ".cpp", ".cjs"})
+NON_SOURCE_DECLARATION_NAMES = frozenset({"Cargo.toml"})
 HEADER_LICENSES = frozenset({"Apache-2.0", "Unicode-3.0"})
 EXTERNAL_LICENSE = "Apache-2.0"
 HEADER_LINES = 10
-EXCLUDED_DIRS = frozenset({".git", "__pycache__", "target", "build", ".toolchain", "artifacts", "dist"})
+COMMENT_PREFIXES = ("#", "//", "/*", "*", "<!--")
+# Only VCS metadata is skipped during a fallback walk. Other directories can
+# contain tracked source (for example build/probe.py), so they must be visited.
+EXCLUDED_DIRS = frozenset({".git"})
 
 
 class CoverageError(Exception):
@@ -33,13 +41,14 @@ class Coverage:
     source: int
     headers: int
     declared: int
+    external: int
     missing: int
 
 
 def _run_git(root, *arguments):
     try:
         return subprocess.run(
-            ["git", "-C", str(root), *arguments],
+            ["git", "-c", f"safe.directory={root}", "-C", str(root), *arguments],
             check=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -72,8 +81,9 @@ def _walk_source_files(root):
     files = []
     for directory, dirnames, filenames in os.walk(root):
         directory_path = Path(directory)
-        # Prune excluded directories before descending. A tracked checkout can
-        # carry a large .git or target tree even though none of it is source.
+        # Prune only VCS metadata before descending. Do not prune source-like
+        # directories such as build/: a tracked source there must not vanish
+        # just because git metadata is unusable.
         dirnames[:] = sorted(name for name in dirnames if name not in EXCLUDED_DIRS)
         for name in dirnames:
             path = directory_path / name
@@ -90,13 +100,14 @@ def _walk_source_files(root):
     return sorted(files)
 
 
-def _source_files(root):
+def _source_files(root, require_git=False):
     if (root / ".git").exists():
         try:
             top = _run_git(root, "rev-parse", "--show-toplevel").stdout.decode("utf-8").strip()
         except CoverageError:
-            top = None
-        if top is not None:
+            if require_git:
+                raise
+        else:
             if Path(top).resolve() != root.resolve():
                 raise CoverageError(f"not a git checkout root: {root}")
             try:
@@ -104,8 +115,17 @@ def _source_files(root):
             except CoverageError:
                 # Git metadata can be present but unusable, for example a
                 # container checkout rejected by Git's dubious-ownership check.
-                pass
+                if require_git:
+                    raise
     return _walk_source_files(root)
+
+
+def _comment_body(line):
+    stripped = line.strip()
+    for prefix in COMMENT_PREFIXES:
+        if stripped.startswith(prefix):
+            return stripped[len(prefix):].strip()
+    return None
 
 
 def _header_license(path, relative):
@@ -116,11 +136,19 @@ def _header_license(path, relative):
 
     found = []
     for line in lines:
-        marker = "SPDX-License-Identifier:"
-        if marker not in line:
+        if not line.strip():
             continue
-        value = line.split(marker, 1)[1].strip()
+        body = _comment_body(line)
+        if body is None:
+            # Stop at the first non-comment line. A comment-looking line inside
+            # a string or a later comment after code is not a file header.
+            break
+        if not body.startswith("SPDX-License-Identifier:"):
+            continue
+        value = body.split(":", 1)[1].strip()
         value = value.removesuffix("*/").strip().removesuffix("-->").strip()
+        if not value or any(character.isspace() for character in value):
+            raise CoverageError(f"{relative}: malformed SPDX-License-Identifier")
         found.append(value)
     if not found:
         return None
@@ -192,13 +220,13 @@ def _load_declarations(root):
     return declarations
 
 
-def check_coverage(root):
+def check_coverage(root, require_git=False):
     root = Path(root).resolve()
     if not root.is_dir():
         raise CoverageError(f"not a directory: {root}")
 
     declarations = _load_declarations(root)
-    source = _source_files(root)
+    source = _source_files(root, require_git=require_git)
     headers = {}
     errors = []
     for relative in source:
@@ -207,26 +235,37 @@ def check_coverage(root):
         except CoverageError as exc:
             errors.append(str(exc))
 
+    source_declarations = {}
+    external_declarations = {}
     for relative in declarations:
         path = root / relative
         if path.is_symlink():
             errors.append(f"unsafe symlink declared path: {relative}")
-        elif not path.exists():
+            continue
+        if not path.exists():
             errors.append(f"declared path does not exist: {relative}")
-        elif not path.is_file():
+            continue
+        if not path.is_file():
             errors.append(f"declared path is not a file: {relative}")
-        elif path.suffix not in SOURCE_SUFFIXES:
-            errors.append(f"declared path is not a source file: {relative}")
-        elif relative not in headers:
-            errors.append(f"declared path is not an included source file: {relative}")
-        elif headers[relative] is not None:
-            errors.append(f"declared path already has an SPDX header: {relative}")
+            continue
+        if path.suffix in SOURCE_SUFFIXES:
+            source_declarations[relative] = declarations[relative]
+            if relative not in headers:
+                errors.append(f"declared path is not an included source file: {relative}")
+            elif headers[relative] is not None:
+                errors.append(f"declared path already has an SPDX header: {relative}")
+        elif path.name in NON_SOURCE_DECLARATION_NAMES:
+            external_declarations[relative] = declarations[relative]
+        else:
+            errors.append(
+                f"declared path is not a source file or Cargo manifest: {relative}"
+            )
 
     missing = []
     for relative in source:
         license_value = headers.get(relative)
         if license_value is None:
-            if relative not in declarations:
+            if relative not in source_declarations:
                 missing.append(relative)
         elif license_value not in HEADER_LICENSES:
             errors.append(f"{relative}: unsupported SPDX license {license_value!r}")
@@ -240,13 +279,11 @@ def check_coverage(root):
         )
 
     header_count = sum(value is not None for value in headers.values())
-    declared_count = sum(
-        headers.get(relative) is None and relative in declarations for relative in source
-    )
     return Coverage(
         source=len(source),
         headers=header_count,
-        declared=declared_count,
+        declared=len(source_declarations),
+        external=len(external_declarations),
         missing=0,
     )
 
@@ -259,15 +296,21 @@ def main(argv=None):
         default=Path(__file__).resolve().parents[1],
         help="source tree root (default: the repository containing this script)",
     )
+    parser.add_argument(
+        "--require-git",
+        action="store_true",
+        help="fail instead of walking if a checkout's git inventory is unusable",
+    )
     args = parser.parse_args(argv)
     try:
-        result = check_coverage(args.root)
+        result = check_coverage(args.root, require_git=args.require_git)
     except CoverageError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1
     print(
         f"PASS: source={result.source} headers={result.headers} "
-        f"declared={result.declared} missing={result.missing}"
+        f"declared={result.declared} external={result.external} "
+        f"missing={result.missing}"
     )
     return 0
 

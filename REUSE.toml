@@ -87,3 +87,14 @@ path = [
 precedence = "closest"
 SPDX-FileCopyrightText = "Copyright 2026 北京凌矩阵科技有限责任公司"
 SPDX-License-Identifier = "Apache-2.0"
+
+# Historical Cargo manifests: state2 is pinned by evidence and state1 is a
+# historical delivery, so both are declared here instead of edited in place.
+[[annotations]]
+path = [
+  "experiments/aclt-minimal-verifier/Cargo.toml",
+  "experiments/aclt-minimal-verifier-state2/Cargo.toml",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = "Copyright 2026 北京凌矩阵科技有限责任公司"
+SPDX-License-Identifier = "Apache-2.0"
