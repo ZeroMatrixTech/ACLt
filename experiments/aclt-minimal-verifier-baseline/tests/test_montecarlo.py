@@ -514,6 +514,66 @@ class MonteCarloRegressionTests(unittest.TestCase):
         violations = montecarlo.check_campaign(root, self.executor)["violations"]
         self.assertTrue(any("profile.cbor differs" in item for item in violations), violations)
 
+    def test_per_run_topology_check_rejects_a_weakened_record(self):
+        root = Path(self.tmp.name) / "topology-check"
+        root.mkdir()
+        (root / "topology.json").write_text("{}\n")
+        run_dir = root / "run-0000"
+        run_dir.mkdir()
+        links = {
+            "B": {"A": {"local": ["A-LAN", 40000], "peer": ["B-LAN", 5300]},
+                  "B": {"local": ["B-LAN", 5300], "peer": ["A-LAN", 40000]}},
+        }
+        phase = {
+            "phase": "run",
+            "topology": {
+                "guest_ips": {"A": "10.0.0.1", "B": "10.0.0.2", "C": "10.0.0.3"},
+                "placement": {"A": "A", "B": "B", "C": "A"},
+                "lan_links": links,
+                "host_a_lock": "held",
+                "host_b_environment": {"lock": "held"},
+                "host_b_boot_hashes": {"kernel": "k", "guest.cpio.gz": "i"},
+            },
+        }
+        metadata = {
+            "backend": "dualhost", "topology": "t1", "kernel_sha256": "k",
+            "initramfs_sha256": "i", "initial_initramfs_sha256": "i",
+            "placement": "B", "phases": [{"phase": "run", "initramfs_sha256": "i"}],
+            "locks": [
+                {"host": "A", "phase": "run", "state": "held"},
+                {"host": "B", "phase": "run", "state": "held"},
+                {"host": "A", "phase": "run", "state": "released"},
+                {"host": "B", "phase": "run", "state": "released"},
+            ],
+        }
+        (run_dir / "topology.json").write_text(json.dumps({"phases": [phase]}))
+        (run_dir / "metadata.json").write_text(json.dumps(metadata))
+        schedule = {"seed": 8, "runs": [{"index": 0, "fault": "no_reply"}]}
+        violations = []
+        montecarlo._check_campaign_topology(root, schedule, "dualhost", "t1", violations)
+        self.assertEqual(violations, [])
+
+        metadata["locks"] = [row for row in metadata["locks"]
+                             if not (row["host"] == "A" and row["state"] == "released")]
+        (run_dir / "metadata.json").write_text(json.dumps(metadata))
+        violations = []
+        montecarlo._check_campaign_topology(root, schedule, "dualhost", "t1", violations)
+        self.assertTrue(any("lock is not recorded" in item for item in violations), violations)
+
+        metadata["locks"] = []
+        phase["topology"]["host_b_boot_hashes"]["guest.cpio.gz"] = "j"
+        (run_dir / "topology.json").write_text(json.dumps({"phases": [phase]}))
+        (run_dir / "metadata.json").write_text(json.dumps(metadata))
+        violations = []
+        montecarlo._check_campaign_topology(root, schedule, "dualhost", "t1", violations)
+        self.assertTrue(any("boot image digest mismatch" in item for item in violations),
+                        violations)
+
+        (run_dir / "topology.json").write_text(json.dumps({"phases": []}))
+        violations = []
+        montecarlo._check_campaign_topology(root, schedule, "dualhost", "t1", violations)
+        self.assertTrue(any("no per-phase topology" in item for item in violations), violations)
+
     def test_t2_in_process_campaign_checks_clean(self):
         root = Path(self.tmp.name) / "t2"
         result = montecarlo.run_campaign(SEED, 5, root, self.executor, topology="t2")

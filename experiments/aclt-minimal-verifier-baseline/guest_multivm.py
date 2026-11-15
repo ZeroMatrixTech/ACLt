@@ -23,6 +23,7 @@ import general_vm
 from lan import TIMEOUT, handle_request, run_job, serve
 from multivm_job import IncompleteExchange, assignments, guest_ip, guest_roles, label, peer_operations, run_many
 from tools.formal_migration.s2_transport import receive, send
+from tools.verification_profile import codec as c
 from tools.verification_profile import codec
 
 EVIDENCE = Path("/evidence")
@@ -260,6 +261,9 @@ def run_general(role, port, budget, report, pairs):
         def exchange(owner, raw):
             name = general_vm.wire_name(raw)
             (output / f"{name}-request.cbor").write_bytes(raw)
+            if inject is not None and owner == role and inject.matches(c.decode(raw)):
+                inject.hit(raw)
+                raise ConnectionError(f"injected {inject.mode} on the coordinator")
             if sort_job is None:
                 result = general_vm.handle(raw, EXECUTOR) if owner == role else remote(owner, raw)
             else:

@@ -903,6 +903,12 @@ def run(args: argparse.Namespace) -> dict:
                     processes["A"], {role: phase_links[role] for role in remote_roles})
                 write_json(output / f"host-topology-{handoff or 'run'}.json",
                            record["topology"])
+            else:
+                record["topology"].update(
+                    placement={role: "A" for role in roles},
+                    transport="QEMU hub with host-loopback socket links")
+                write_json(output / f"host-topology-{handoff or 'run'}.json",
+                           record["topology"])
             if guard:
                 coordinator = processes["A"]
                 guard.assign(coordinator)
