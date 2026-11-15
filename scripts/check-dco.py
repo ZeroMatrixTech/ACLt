@@ -4,8 +4,10 @@
 
 Two modes:
 
-* ``pr``: commits on a pull request from a fork must each carry a
-  ``Signed-off-by`` trailer whose e-mail matches the commit author.  Pull
+* ``pr``: every commit on a pull request from a fork, merge commits included,
+  must carry a ``Signed-off-by`` trailer whose e-mail matches the commit
+  author.  Only the trailer block counts (``git interpret-trailers``); a
+  ``Signed-off-by`` line in the body does not.  Pull
   requests from branches of this repository are written by agents and the
   maintainer; the maintainer signs the squash merge commit instead, so they
   are skipped here.
@@ -13,6 +15,10 @@ Two modes:
   one ``Signed-off-by`` trailer, starting with the first commit whose parent
   already contains this script (the adoption point).  Earlier history is not
   rewritten and is out of scope.
+
+The workflow runs this script from a trusted checkout (the base branch for
+pull requests, ``main`` for pushes) and passes the commits under review with
+``--repo``; nothing from the pull request is executed.
 """
 import argparse
 import re
@@ -21,19 +27,22 @@ import sys
 
 SCRIPT = "scripts/check-dco.py"
 SIGNOFF = re.compile(r"^Signed-off-by:\s*(.+?)\s*<([^<>\s]+@[^<>\s]+)>\s*$", re.MULTILINE)
+REPO = "."
 ZERO = "0" * 40
 
 
-def git(*args, check=True):
-    result = subprocess.run(["git", *args], capture_output=True, text=True)
+def git(*args, check=True, stdin=None):
+    result = subprocess.run(["git", "-C", REPO, *args], capture_output=True, text=True, input=stdin)
     if check and result.returncode != 0:
         raise SystemExit(f"git {' '.join(args)} failed: {result.stderr.strip()}")
     return result
 
 
 def signoffs(commit):
+    """E-mails in Signed-off-by trailers; lines elsewhere in the body are ignored."""
     message = git("show", "-s", "--format=%B", commit).stdout
-    return [email.lower() for _, email in SIGNOFF.findall(message)]
+    trailers = git("interpret-trailers", "--parse", stdin=message).stdout
+    return [email.lower() for _, email in SIGNOFF.findall(trailers)]
 
 
 def author_email(commit):
@@ -52,7 +61,7 @@ def check_pr(base, head, fork):
     if not fork:
         print("PASS: same-repository pull request; the maintainer signs the squash merge commit")
         return 0
-    commits = git("rev-list", "--no-merges", f"{base}..{head}").stdout.split()
+    commits = git("rev-list", f"{base}..{head}").stdout.split()
     failures = []
     for commit in commits:
         emails = signoffs(commit)
@@ -88,7 +97,9 @@ def check_push(before, after):
 
 
 def main(argv=None):
+    global REPO
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--repo", default=".", help="Git repository holding the commits to check")
     sub = parser.add_subparsers(dest="mode", required=True)
     pr = sub.add_parser("pr")
     pr.add_argument("--base", required=True)
@@ -98,6 +109,7 @@ def main(argv=None):
     push.add_argument("--before", required=True)
     push.add_argument("--after", required=True)
     args = parser.parse_args(argv)
+    REPO = args.repo
     if args.mode == "pr":
         return check_pr(args.base, args.head, args.fork == "true")
     return check_push(args.before, args.after)

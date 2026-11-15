@@ -54,6 +54,35 @@ class CheckDcoTests(unittest.TestCase):
         unsigned = self.commit("d", "unsigned")
         self.assertEqual(self.run_check("pr", "--base", good, "--head", unsigned, "--fork", "true").returncode, 1)
 
+    def test_fork_merge_commits_and_body_lines_do_not_count(self):
+        base = self.commit("a", "base")
+        self.git("checkout", "-q", "-b", "side")
+        side = self.commit("s", f"side\n\nSigned-off-by: {AUTHOR[0]} <{AUTHOR[1]}>")
+        self.git("checkout", "-q", "main")
+        self.commit("m", f"main\n\nSigned-off-by: {AUTHOR[0]} <{AUTHOR[1]}>")
+        self.git("merge", "-q", "--no-ff", "-m", "merge without sign-off", side)
+        merge = self.git("rev-parse", "HEAD")
+        result = self.run_check("pr", "--base", base, "--head", merge, "--fork", "true")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(merge[:12], result.stdout)
+        body = self.commit("b", f"subject\n\nSigned-off-by: {AUTHOR[0]} <{AUTHOR[1]}> appears in prose\n\nnot a trailer block line")
+        result = self.run_check("pr", "--base", merge, "--head", body, "--fork", "true")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(body[:12], result.stdout)
+
+    def test_checker_reads_commits_from_a_separate_repository(self):
+        base = self.commit("a", "base")
+        head = self.commit("b", "unsigned")
+        outside = tempfile.mkdtemp()
+        try:
+            result = subprocess.run([sys.executable, "-B", str(SCRIPT), "--repo", str(self.dir), "pr",
+                                     "--base", base, "--head", head, "--fork", "true"],
+                                    cwd=outside, env=self.env, capture_output=True, text=True)
+        finally:
+            shutil.rmtree(outside)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(head[:12], result.stdout)
+
     def test_same_repository_pull_request_is_signed_at_merge(self):
         base = self.commit("a", "base")
         head = self.commit("b", "agent commit without sign-off")

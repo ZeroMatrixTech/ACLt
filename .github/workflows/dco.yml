@@ -1,33 +1,48 @@
 name: DCO sign-off
+# Trust boundary: for pull requests this uses pull_request_target, so the
+# workflow and scripts/check-dco.py come from the base branch, never from the
+# pull request. The pull request is checked out into pr/ as data only;
+# nothing from it is executed, no secrets are used, and the token is
+# read-only and not persisted.
 on:
-  pull_request:
+  pull_request_target:
   push:
     branches: [main]
 permissions:
   contents: read
 concurrency:
-  group: dco-${{ github.ref }}
+  group: dco-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
   dco:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout complete history
+      - name: Checkout the trusted checker
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.base.sha || github.sha }}
+          path: trusted
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Checkout pull request commits as data
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/head
+          path: pr
           fetch-depth: 0
           persist-credentials: false
       - name: Check pull request sign-offs
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request_target'
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
           FORK: ${{ github.event.pull_request.head.repo.fork }}
-        run: python3 -B scripts/check-dco.py pr --base "$BASE" --head "$HEAD" --fork "$FORK"
+        run: python3 -B trusted/scripts/check-dco.py --repo pr pr --base "$BASE" --head "$HEAD" --fork "$FORK"
       - name: Check main sign-offs
         if: github.event_name == 'push'
         env:
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.sha }}
-        run: python3 -B scripts/check-dco.py push --before "$BEFORE" --after "$AFTER"
+        run: python3 -B trusted/scripts/check-dco.py --repo trusted push --before "$BEFORE" --after "$AFTER"
