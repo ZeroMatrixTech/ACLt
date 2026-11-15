@@ -43,7 +43,7 @@
 
 | ID | 问题组 | 优先级 | 状态 | 主要阻断 |
 |---|---|---:|---|---|
-| OQ-01 | 名称、分层许可与发布章程 | P0 | OPEN（仓库工件许可与 DCO 已决定；源码覆盖已建立） | 公开发布 |
+| OQ-01 | 名称、分层许可与发布章程 | P0 | OPEN（仓库工件许可、DCO 与 README 成熟度声明已决定；源码覆盖已建立） | 公开发布 |
 | OQ-02 | 规范对象、编码与版本演进 | P0 | OPEN | G0 |
 | OQ-03 | Principal、签名与控制关系 | P0 | OPEN | G0 |
 | OQ-04 | WorkPlan、准入与 Assignment 合法性 | P0 | OPEN | G0 |
@@ -74,7 +74,7 @@
 
 **当前建议。** 保留名称但完成法律与生态检索；根目录 `LICENSE` 为 Apache License 2.0 英文全文，条款正文（第 1–176 行）与标准文本逐字一致，开头有空行差异（本机标准副本比仓库文件多一行），附录示例的版权行已填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`；后续保持该文件。源码使用 `SPDX-License-Identifier: Apache-2.0`；无文件头的 79 个源码与 2 个历史交付目录的 `Cargo.toml`（state1/state2）由 `REUSE.toml` 的显式路径声明覆盖，其中被历史证据钉住字节的文件不修改。规范、文档与仓库内研究文稿沿用 Apache-2.0；该许可不授予名称或商标使用权（第 6 条），名称、商标与兼容性政策另行决定。v0.5 公开时标为 draft/research baseline。2026-11-15 阶段 #128 决定贡献机制采用 DCO，保留并接受历史提交；签署与检查由 P1-b 落地。
 
-**关闭证据。** 代码许可证选择及根目录 `LICENSE` 已经完成；规范、文档与研究文稿的许可声明已于 2026-11-14 写入 README 与 CONTRIBUTING。2026-11-15 P1-a 已建立 `REUSE.toml` 文件外声明（79 个无头源码；另有 2 个历史交付目录的 `Cargo.toml`）与 `scripts/check-license-coverage.py` 覆盖检查，后者接入 `make check`，在 checkout 中要求读取 git 跟踪清单，Git 不可用时失败；第三方材料与依赖清单见 `docs/08-governance/third-party-materials.md`；当前 state3 的 `Cargo.toml` 已声明 `license = "Apache-2.0"`，state1/state2 的历史 `Cargo.toml` 保持基线字节并由 `REUSE.toml` 外部声明覆盖。同日阶段 #128 决定采用 DCO，保留并接受历史提交；签署与检查由 P1-b 落地。NOTICE 核对结论为：在本次核对的材料与依赖范围内，未识别出 Apache-2.0 第 4(d) 条要求随附的第三方 `NOTICE`；依据见第三方材料清单，不是法律意见。仍 OPEN：名称与商标检索、README 中统一的成熟度声明、必要的法律意见；OQ-01 不关闭。上述覆盖检查是项目内检查，不宣称官方 REUSE 认证。
+**关闭证据。** 代码许可证选择及根目录 `LICENSE` 已经完成；规范、文档与研究文稿的许可声明已于 2026-11-14 写入 README 与 CONTRIBUTING。2026-11-15 P1-a 已建立 `REUSE.toml` 文件外声明（79 个无头源码；另有 2 个历史交付目录的 `Cargo.toml`）与 `scripts/check-license-coverage.py` 覆盖检查，后者接入 `make check`，在 checkout 中要求读取 git 跟踪清单，Git 不可用时失败；第三方材料与依赖清单见 `docs/08-governance/third-party-materials.md`；当前 state3 的 `Cargo.toml` 已声明 `license = "Apache-2.0"`，state1/state2 的历史 `Cargo.toml` 保持基线字节并由 `REUSE.toml` 外部声明覆盖。同日阶段 #128 决定采用 DCO，保留并接受历史提交；签署与检查由 P1-b 落地。NOTICE 核对结论为：在本次核对的材料与依赖范围内，未识别出 Apache-2.0 第 4(d) 条要求随附的第三方 `NOTICE`；依据见第三方材料清单，不是法律意见。2026-11-15 P1-c（#148）已在 README 入口加入统一成熟度声明（draft/research baseline，当前没有可部署的软件），并给出发行说明的公开版本（`research-preview-1`，尚未发布）。仍 OPEN：名称与商标检索、必要的法律意见；OQ-01 不关闭。上述覆盖检查是项目内检查，不宣称官方 REUSE 认证。
 
 **依赖。** OQ-13 的维护主体与发布权限。
 
