@@ -203,6 +203,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-15 | v0.5 | 接受 R1 首次公开阶段安全层与 R4 验收规格：S1–S7、五类跨主机故障、固定种子/拓扑/证据和统计口径；仅文档，不改变协议或结论 | [R1 规格](first-public-release-safety-plan.md)、#150、#151 | 不变 |
 | 2026-11-15 | v0.5 | 维护者决定：保留 Git 历史，接受其中的主机名、本地路径与作者邮箱随仓库公开；首次公开发行说明由 `PREVIEW-20261106.md` 改写（名称 `research-preview-1`）。DCO 决定另见其日志行 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)、[公开发布准备审计](../08-governance/audits/audit-20261115-01-public-release.md) | 公开发布 |
 | 2026-11-15 | v0.5 | 维护者决定：首次公开发行阶段的蒙特卡洛只做安全层，只报告“N 次带种子运行、违反 0 次、可复现”，不报告概率上界或置信度；量化层延后，TG-6（#123）与 TG-7（#124）保持开启 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128) | 不变 |
 | 2026-11-15 | v0.5 | 维护者授权整个首次公开发行阶段占用物理 A、B 机，按 DUALHOST-SSH-1 与 PARALLEL-1 §6.4 执行，阶段结束即终止 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)、[ENV-1](../08-governance/environment-standard.md#本地多虚拟机验证2026-11-12) | 不变 |
