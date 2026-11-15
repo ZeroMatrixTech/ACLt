@@ -36,3 +36,10 @@ Desktop.ini
 # Claude Code: per-item worktrees and per-user settings stay local
 .claude/worktrees/
 .claude/settings.local.json
+
+# Local agent, editor and environment state
+.agents/
+.idea/
+.vscode/
+.fleet/
+.env*
