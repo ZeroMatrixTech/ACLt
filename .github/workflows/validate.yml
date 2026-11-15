@@ -12,6 +12,8 @@ concurrency:
 jobs:
   local-validation:
     runs-on: ubuntu-latest
+    # The image tag and APT packages can drift. See
+    # docs/08-governance/public-repository-settings.md#ci-toolchain-drift.
     container: ubuntu:26.04
     timeout-minutes: 20
     steps:
@@ -24,6 +26,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      # Keep this gate before evidence checks and tests.
       - name: Check tested environment scope
         run: python3 -B scripts/check-environment.py --full
       - name: Verify retained source pins against Git
