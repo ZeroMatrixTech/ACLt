@@ -1,3 +1,5 @@
+> **SUPERSEDED — historical archive.** This document records an earlier stage of the project under a former name. It is not the current ACLt Protocol specification. For the current entry points, see the [archive notes](../README.md).
+
 # RUDCP Public Argument Chain, Proof Obligations, and Project Structure v0.3
 
 > Date: 2026-08-16  
