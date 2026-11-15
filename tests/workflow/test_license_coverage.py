@@ -106,18 +106,25 @@ class LicenseCoverageTests(unittest.TestCase):
             (3, 2, 1, 4, 0),
         )
 
-    def test_git_inventory_unavailable_falls_back_to_walk(self):
+    def test_unusable_git_is_rejected_in_default_mode(self):
         self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
         (self.root / ".git").mkdir()
-        result = self.result()
-        self.assertEqual((result.covered, result.headers, result.declared), (2, 2, 0))
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root)
+        self.assertIn("cannot read git inventory", str(context.exception))
 
-    def test_require_git_rejects_unusable_git(self):
+    def test_unusable_git_is_rejected_with_require_git(self):
         self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\n")
         (self.root / ".git").mkdir()
         with self.assertRaises(CHECKER.CoverageError) as context:
             CHECKER.check_coverage(self.root, require_git=True)
         self.assertIn("cannot read git inventory", str(context.exception))
+
+    def test_require_git_rejects_a_tree_without_git(self):
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn("is not a checkout", str(context.exception))
 
     def test_walk_includes_build_source_without_git(self):
         self.write("build/probe.py", "# SPDX-License-Identifier: Apache-2.0\n")
@@ -125,8 +132,17 @@ class LicenseCoverageTests(unittest.TestCase):
 
     def test_walk_reports_build_source_without_header(self):
         self.write("build/probe.py", "print(1)\n")
-        (self.root / ".git").mkdir()
         self.assert_rejected("build/probe.py")
+
+    def test_symlinked_parent_directory_is_rejected(self):
+        self.write("real/tracked.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        self.init_git()
+        self.git_add("real/tracked.py")
+        (self.root / "real").rename(self.root / "aside")
+        (self.root / "real").symlink_to(self.root / "aside", target_is_directory=True)
+        with self.assertRaises(CHECKER.CoverageError) as context:
+            CHECKER.check_coverage(self.root, require_git=True)
+        self.assertIn("unsafe symlink directory in tracked path", str(context.exception))
 
     def test_symlinked_directory_is_rejected(self):
         self.write("real/example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
@@ -278,6 +294,9 @@ class LicenseCoverageTests(unittest.TestCase):
             "audit/package.lock",
             "audit/tool.pySHA256SUMS",
             "audit/LICENSE",
+            "CARGO.LOCK",
+            "NOTES.MD",
+            "tools-foo-SHA256SUMS",
         ):
             with self.subTest(relative=relative):
                 self.write(relative, "text\n")
@@ -297,10 +316,12 @@ class LicenseCoverageTests(unittest.TestCase):
             "report.docx",
             "SHA256SUMS",
             "LICENSE",
+            "SINGLEHOST-SHA256SUMS",
+            "WORKFLOW-SHA256SUMS",
         ):
             self.write(relative, "text\n")
         result = self.result()
-        self.assertEqual((result.covered, result.excluded, result.missing), (1, 11, 0))
+        self.assertEqual((result.covered, result.excluded, result.missing), (1, 13, 0))
 
     def test_untracked_declared_file_is_rejected(self):
         self.write("scratch.py", "print(1)\n")

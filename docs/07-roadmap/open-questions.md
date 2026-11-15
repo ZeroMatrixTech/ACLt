@@ -74,18 +74,18 @@
 
 **当前建议。** 保留名称但完成法律与生态检索；根目录 `LICENSE` 为 Apache License 2.0 英文全文，条款正文（第 1–176 行）与标准文本逐字一致，开头有空行差异（本机标准副本比仓库文件多一行），附录示例的版权行已填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`；后续保持该文件。源码与配置类文件使用 `SPDX-License-Identifier: Apache-2.0`，`Unicode-3.0` 只出现在 `tools/verification_profile/rust/unicode_data.rs`；其余无文件头的文件由 `REUSE.toml` 的显式路径声明覆盖（基线 341 个受检查文件 = 251 个文件头 + 90 个声明），其中被历史证据钉住字节的文件不修改。规范、文档与仓库内研究文稿沿用 Apache-2.0；该许可不授予名称或商标使用权（第 6 条），名称、商标与兼容性政策另行决定。v0.5 公开时标为 draft/research baseline。2026-11-15 阶段 #128 决定贡献机制采用 DCO，保留并接受历史提交；签署与检查由 P1-b 落地。
 
-**关闭证据。** 代码许可证选择及根目录 `LICENSE` 已经完成；规范、文档与研究文稿的许可声明已于 2026-11-14 写入 README 与 CONTRIBUTING。2026-11-15 P1-a 已建立 `REUSE.toml` 文件外声明（79 个无头源码；另有 2 个历史交付目录的 `Cargo.toml`）与 `scripts/check-license-coverage.py` 覆盖检查；同日 #149 把检查边界扩到全部已跟踪的代码与配置类文件（代码后缀 `.py`、`.rs`、`.sh`、`.cpp`、`.cjs`、`.js`、`.mjs`、`.html`、`.htm`，配置后缀 `.yml`、`.yaml`、`.toml`，`Makefile`/`GNUmakefile`/`makefile`、`.gitignore`，以及 `DELIVERY-SCOPE.json` 与 `.aclt-flow/template.json` 两个严格 JSON 配置），基线 341 个受检查文件 = 251 个文件头 + 90 个外置声明，接入 `make check`，在 checkout 中要求读取 git 跟踪清单，Git 不可用时失败；检查边界是闭集，后缀按小写匹配，既非受检查类别也非「排除类别」表的已跟踪文件报 `unclassified tracked file` 并失败，被跟踪但工作树中缺失的文件报 `tracked file is missing from the working tree` 并失败，外置声明只能指向受检查清单内的文件；`Unicode-3.0` 头只接受 `tools/verification_profile/rust/unicode_data.rs`，外置声明只接受 `Apache-2.0`；第三方材料与依赖清单见 `docs/08-governance/third-party-materials.md`；当前 state3 的 `Cargo.toml` 声明 `license = "Apache-2.0"` 并由文件外声明覆盖（清单不加 SPDX 头），state1/state2 的历史 `Cargo.toml` 保持基线字节并由 `REUSE.toml` 外部声明覆盖。同日阶段 #128 决定采用 DCO，保留并接受历史提交；签署与检查由 P1-b 落地。NOTICE 核对结论为：在本次核对的材料与依赖范围内，未识别出 Apache-2.0 第 4(d) 条要求随附的第三方 `NOTICE`；依据见第三方材料清单，不是法律意见。2026-11-15 P1-c（#148）已在 README 入口加入统一成熟度声明（draft/research baseline，当前没有可部署的软件），并给出发行说明的公开版本（`research-preview-1`，尚未发布）。仍 OPEN：名称与商标检索、必要的法律意见；OQ-01 不关闭。上述覆盖检查是项目内检查，不宣称官方 REUSE 认证。
+**关闭证据。** 代码许可证选择及根目录 `LICENSE` 已经完成；规范、文档与研究文稿的许可声明已于 2026-11-14 写入 README 与 CONTRIBUTING。2026-11-15 P1-a 已建立 `REUSE.toml` 文件外声明（79 个无头源码；另有 2 个历史交付目录的 `Cargo.toml`）与 `scripts/check-license-coverage.py` 覆盖检查；同日 #149 把检查边界扩到全部已跟踪的代码与配置类文件（代码后缀 `.py`、`.rs`、`.sh`、`.cpp`、`.cjs`、`.js`、`.mjs`、`.html`、`.htm`，配置后缀 `.yml`、`.yaml`、`.toml`，`Makefile`/`GNUmakefile`/`makefile`、`.gitignore`，以及 `DELIVERY-SCOPE.json` 与 `.aclt-flow/template.json` 两个严格 JSON 配置），基线 341 个受检查文件 = 251 个文件头 + 90 个外置声明，接入 `make check`，在 checkout 中一律读取 git 跟踪清单：`.git` 存在而 git 不可用时两种模式都失败，不会退化为目录遍历，`.git` 不存在时遍历目录、`--require-git` 则要求必须是可读的 checkout；检查边界是闭集，后缀按小写匹配，既非受检查类别也非「排除类别」表的已跟踪文件报 `unclassified tracked file` 并失败，被跟踪但工作树中缺失的文件报 `tracked file is missing from the working tree` 并失败，被跟踪路径经过符号链接目录时报 `unsafe symlink directory in tracked path` 并失败，「排除类别」按精确后缀、文件名与相对路径且区分大小写匹配，外置声明只能指向受检查清单内的文件；`Unicode-3.0` 头只接受 `tools/verification_profile/rust/unicode_data.rs`，外置声明只接受 `Apache-2.0`；第三方材料与依赖清单见 `docs/08-governance/third-party-materials.md`；当前 state3 的 `Cargo.toml` 声明 `license = "Apache-2.0"` 并由文件外声明覆盖（清单不加 SPDX 头），state1/state2 的历史 `Cargo.toml` 保持基线字节并由 `REUSE.toml` 外部声明覆盖。同日阶段 #128 决定采用 DCO，保留并接受历史提交；签署与检查由 P1-b 落地。NOTICE 核对结论为：在本次核对的材料与依赖范围内，未识别出 Apache-2.0 第 4(d) 条要求随附的第三方 `NOTICE`；依据见第三方材料清单，不是法律意见。2026-11-15 P1-c（#148）已在 README 入口加入统一成熟度声明（draft/research baseline，当前没有可部署的软件），并给出发行说明的公开版本（`research-preview-1`，尚未发布）。仍 OPEN：名称与商标检索、必要的法律意见；OQ-01 不关闭。上述覆盖检查是项目内检查，不宣称官方 REUSE 认证。
 
-**排除类别。** 下列类别不逐文件加 SPDX 头，理由与基线数量（基线 52883d6 的 `git ls-files`）如下。该清单与受检查类别共同构成闭集：检查器对既不属于受检查类别、也不属于下表的已跟踪文件报 `unclassified tracked file` 并失败，因此新增未登记的文件类别会显式失败，而不是静默逃过检查。
+**排除类别。** 下列类别不逐文件加 SPDX 头，理由与基线数量（基线 52883d6 的 `git ls-files`）如下。该清单与受检查类别共同构成闭集：检查器对既不属于受检查类别、也不属于下表的已跟踪文件报 `unclassified tracked file` 并失败，因此新增未登记的文件类别会显式失败，而不是静默逃过检查。排除匹配是精确且区分大小写的：`NOTES.MD`、`CARGO.LOCK` 或 `tools-foo-SHA256SUMS` 都不在下列类别内。
 | 类别 | 基线数量 | 不逐文件加头的理由 |
 |---|---|---|
 | `.md` | 213 | 文档与历史报告；许可声明由 README 的「开源与许可」一节和根目录 `LICENSE` 覆盖，多数是保持原样的证据与调研记录 |
 | 数据 `.json`（除 `DELIVERY-SCOPE.json` 与 `.aclt-flow/template.json`） | 151 | 记录与证据格式，无注释语法，多数由脚本生成 |
 | `.txt` / `.tsv` / `.log` | 40 | 捕获的运行输出、外部审计原文与表格数据，按原样保留 |
-| `Cargo.lock` | 3 | Cargo 生成的可复现锁文件，不加注释头 |
+| `Cargo.lock` | 3 | Cargo 生成的可复现锁文件，不加注释头；按精确文件名匹配（区分大小写） |
 | `.gz` / `.cbor` / `.docx` | 29 | 归档与二进制，无法携带注释头 |
-| `SHA256SUMS`（含 `SINGLEHOST-SHA256SUMS`、`WORKFLOW-SHA256SUMS`，无后缀） | 7 | 校验清单数据；按文件名匹配，其他前缀同名文件不在此类 |
-| 根目录 `LICENSE` | 1 | 许可正文本身，不得改写；按相对路径匹配，其他目录的同名文件不在此类 |
+| `SHA256SUMS`（含根目录的 `SINGLEHOST-SHA256SUMS`、`WORKFLOW-SHA256SUMS`） | 7 | 校验清单数据；`SHA256SUMS` 按精确文件名匹配，两个交付清单按精确相对路径匹配，其他前缀或大小写不同者不在此类 |
+| 根目录 `LICENSE` | 1 | 许可正文本身，不得改写；按精确相对路径匹配，其他目录或大小写不同的同名文件不在此类 |
 | 合计 | 444 | 与 341 个受检查文件相加为 785 个已跟踪文件 |
 
 **依赖。** OQ-13 的维护主体与发布权限。

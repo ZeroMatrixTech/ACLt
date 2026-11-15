@@ -38,8 +38,11 @@ REUSE.toml path declaring Apache-2.0. A declaration for a path outside the
 boundary, for a path that is not in the tracked inventory, for a missing path,
 or for a file that already carries a header is an error. Unicode-3.0 headers
 are accepted only on UNICODE_DATA_PATHS; every other file must be Apache-2.0.
-Tracked files are read through git when the directory is a checkout; an
-unpacked tree is walked.
+Tracked files are read through git whenever the directory is a checkout: an
+unusable git inventory is an error in both modes, so a damaged index cannot
+degrade into a directory walk. Only a tree with no `.git` is walked, and
+`--require-git` turns that walk into an error. A tracked path must not
+traverse a symlinked directory.
 """
 from __future__ import annotations
 
@@ -57,10 +60,12 @@ CONFIG_NAMES = frozenset({"makefile", "gnumakefile", ".gitignore"})
 CONFIG_PATHS = frozenset({"DELIVERY-SCOPE.json", ".aclt-flow/template.json"})
 # Classified as excluded, not silently skipped: a file whose class is absent
 # here and in the covered sets fails as `unclassified tracked file`.
+# Exclusion is exact: the OQ-01 table names these suffixes, file names and
+# relative paths literally, so a differently cased or prefixed name is not
+# excluded and fails as unclassified.
 EXCLUDED_SUFFIXES = frozenset({".md", ".json", ".txt", ".tsv", ".log", ".gz", ".cbor", ".docx"})
-EXCLUDED_NAMES = frozenset({"cargo.lock", "sha256sums"})
-EXCLUDED_NAME_ENDINGS = ("-sha256sums",)
-EXCLUDED_PATHS = frozenset({"LICENSE"})
+EXCLUDED_NAMES = frozenset({"Cargo.lock", "SHA256SUMS"})
+EXCLUDED_PATHS = frozenset({"LICENSE", "SINGLEHOST-SHA256SUMS", "WORKFLOW-SHA256SUMS"})
 DEFAULT_LICENSE = "Apache-2.0"
 UNICODE_LICENSE = "Unicode-3.0"
 UNICODE_DATA_PATHS = frozenset({"tools/verification_profile/rust/unicode_data.rs"})
@@ -96,12 +101,10 @@ def _is_covered(relative):
 
 def _is_excluded(relative):
     path = PurePosixPath(relative)
-    name = path.name.lower()
     return (
         relative in EXCLUDED_PATHS
-        or path.suffix.lower() in EXCLUDED_SUFFIXES
-        or name in EXCLUDED_NAMES
-        or name.endswith(EXCLUDED_NAME_ENDINGS)
+        or path.suffix in EXCLUDED_SUFFIXES
+        or path.name in EXCLUDED_NAMES
     )
 
 
@@ -129,6 +132,11 @@ def _materialize(root, relatives):
     files = []
     missing = []
     for relative in relatives:
+        current = root
+        for part in PurePosixPath(relative).parts[:-1]:
+            current = current / part
+            if current.is_symlink():
+                raise CoverageError(f"unsafe symlink directory in tracked path: {relative}")
         path = root / relative
         if path.is_symlink():
             raise CoverageError(f"unsafe symlink source: {relative}")
@@ -171,16 +179,15 @@ def _walk_files(root):
 
 def _inventory(root, require_git=False):
     if (root / ".git").exists():
-        try:
-            top = _run_git(root, "rev-parse", "--show-toplevel").stdout.decode("utf-8").strip()
-            names = _tracked_paths(root)
-        except CoverageError:
-            if require_git:
-                raise
-            return _walk_files(root)
+        # A checkout that git cannot read is an error in both modes: falling
+        # back to a walk would hide files the index still tracks.
+        top = _run_git(root, "rev-parse", "--show-toplevel").stdout.decode("utf-8").strip()
+        names = _tracked_paths(root)
         if Path(top).resolve() != root.resolve():
             raise CoverageError(f"not a git checkout root: {root}")
         return _materialize(root, names)
+    if require_git:
+        raise CoverageError(f"cannot read git inventory: {root} is not a checkout")
     return _walk_files(root)
 
 
@@ -390,7 +397,7 @@ def main(argv=None):
     parser.add_argument(
         "--require-git",
         action="store_true",
-        help="fail instead of walking if a checkout's git inventory is unusable",
+        help="fail when the target is not a git checkout with a readable inventory",
     )
     args = parser.parse_args(argv)
     try:
