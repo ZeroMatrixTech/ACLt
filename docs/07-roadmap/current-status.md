@@ -12,7 +12,7 @@
 
 | 工作 | 当前事实 | 下一动作 |
 |---|---|---|
-| 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 按[乌托邦基线闭合条件](minimal-verifier-baseline.md#乌托邦基线闭合条件)推进：补容量排序回归（M1）、物理双机基线验收（M3）、排序任务族接入通用契约（M2）、补齐契约 §6 的证据复用与双写者停止（M9） |
+| 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 乌托邦基线已于 2026-11-15 经维护者确认闭合（[闭合确认](minimal-verifier-baseline.md#闭合确认2026-11-15)）。下一阶段为首次公开发行（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)）：双机 nVM 安全层蒙特卡洛与公开条件综合检查 |
 | 本地双来宾验证 | [第 1 轮报告](../testing/MULTIVM-20261112.md)：同一作业在单宿主两个 QEMU 来宾上跑平坦两片、显式预算两片与树归并三片，两端角色切分、逐片交叉验证和归并输出均通过校验 | 只算来宾级证据；[DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md) 的物理双机条件与 G2/G3、P0-1B 仍未关闭 |
 | 本地可配置多来宾验证 | [n VM 验收](../testing/MULTIVM-N-20261112.md)：三来宾三片、四来宾六片均通过角色轮换、原始帧重放与成功输出等价验收 | 已验证[来宾工作进程退出与 TCP 断连](../testing/MULTIVM-N-FAULTS-20261113.md)时停止归并与留证，并验证[显式预算内的单次求解补算](../testing/MULTIVM-N-RETRY-20261113.md)；固定统计工件的[整题资源准入](../testing/MULTIVM-ROOT-LIMITS-20261113.md)已验收；并行调度、一般恢复、经济性与原 Gate 各自待验收；完整单机 trap 等价用于明确声明该要求的任务 |
 | 双宿主多来宾验证 | [R2 双机 nVM](../testing/DUALHOST-MULTIVM-R2-20261115.md)完成三来宾与四来宾跨物理 LAN 作业、远端断连安全停止和丢答复补算 | 可信双机与固定用例。R4 用同一入口执行安全层蒙特卡洛 |
@@ -203,6 +203,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
 | 2026-11-15 | v0.5 | R2 完成两台物理宿主上的 nVM 实跑与离线重放，覆盖两种来宾分布、远端安全停止及一次补算 | [R2 验收报告](../testing/DUALHOST-MULTIVM-R2-20261115.md)、OQ-04、OQ-05、OQ-06 | 不变 |
+| 2026-11-15 | v0.5 | 维护者确认最简验证机乌托邦基线闭合：五项闭合条件均满足，证据层级为本地、同宿主来宾级与物理双机各有分布；协调规则限可信单宿主 | [闭合确认](minimal-verifier-baseline.md#闭合确认2026-11-15)、#128 | 不变 |
 | 2026-11-14 | v0.5 | M9 补齐通用契约 §6 在可信单宿主的跨计划复用与双写停止，证据为来宾级 | [M9 验收报告](../testing/MULTIVM-CONTRACT-CLOSURE-20261114.md)、OQ-04、OQ-06 | 不变 |
 | 2026-11-14 | v0.5 | M2 在同宿主三来宾完成通用契约下的固定容量排序，含记录数记账、补算及无在途协调器交接。单来宾对照实际写入失败，证据为来宾级 | [M2 验收报告](../testing/MULTIVM-SORT-CONTRACT-20261114.md)、OQ-04、OQ-05、OQ-06 | 不变 |
 | 2026-11-14 | v0.5 | M3 完成固定统计用例的物理双机验收。两种 LAN 返回顺序的归并结果均与单机参照逐字节一致，漏片和错绑提交均由实跑证据重放并被拒绝 | [M3 验收报告](../testing/DUALHOST-BASELINE-20261114.md)、OQ-04、OQ-06 | 不变 |

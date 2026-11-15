@@ -289,6 +289,7 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [P0-1B Profile 摘要与判决结构第一片](testing/PROFILE-DIGEST-R1-20261107.md)：正式摘要与规则级证据，Python/Rust 正负向量。
 - [FM 第四项证据归档收尾](testing/FM-EVIDENCE-CLOSEOUT-20261107.md)：五份公开归档、24 套历史快照的离线重放，外部审计原文、CI 运行记录和 FM-A 候选证据列。
 
+- [2026-11-15 首次公开发布准备审计](08-governance/audits/audit-20261115-01-public-release.md)：A0–A10 完整审计，发布准备 FAIL（7 个 BLOCKER 待 P1 修复）；全部历史未发现凭据。
 - [2026-11-06 仓库维护记录](08-governance/audits/audit-20261106-01-repository-maintenance.md)与[开发者预览发行说明草案](releases/PREVIEW-20261106.md)：索引与入口同步、发布准备检查；预览尚未发布。
 
 - [P0-1B Profile 注册上下文第二片](testing/PROFILE-REGISTRATION-R2-20261107.md)：嵌套字段、显式 schema lock、注册/事件快照摘要与闭合 DAG；限定 audit Phase R。
