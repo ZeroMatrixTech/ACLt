@@ -27,6 +27,15 @@ def write_trace(path, events):
         for raw in (c.encode(event) for event in events)))
 
 
+def strip_writer_epochs(run_dir):
+    for name in ("host.cbor", "guest.cbor"):
+        path = run_dir / name
+        events = c.decode(path.read_bytes())
+        for event in events:
+            event.pop("writer_epoch", None)
+        path.write_bytes(c.encode(events))
+
+
 class MonteCarloRegressionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -360,6 +369,45 @@ class MonteCarloRegressionTests(unittest.TestCase):
         violations = []
         montecarlo._check_overlap(job, spec, run_dir, violations)
         self.assertTrue(any("after pause" in item for item in violations), violations)
+
+    def test_overlap_checker_requires_writer_epochs(self):
+        spec, run_dir = self.run_dir("overlap")
+        strip_writer_epochs(run_dir)
+        job = montecarlo._job_from_bundle((run_dir / "job.cbor").read_bytes())
+        violations = []
+        montecarlo._check_overlap(job, spec, run_dir, violations)
+        self.assertTrue(any("lacks writer_epoch" in item for item in violations), violations)
+
+    def test_overlap_checker_binds_committed_epoch(self):
+        spec, run_dir = self.run_dir("overlap")
+        strip_writer_epochs(run_dir)
+        trace_path = run_dir / "trace.cbor"
+        trace = montecarlo._trace_events(trace_path)
+        paused = next(event for event in trace if event["kind"] == "PAUSED")
+        commits = [index for index, event in enumerate(trace)
+                   if event["kind"] == "WRITE_COMMITTED"]
+        trace[commits[-1]]["epoch"] = paused["conflicting_epoch"]
+        write_trace(trace_path, trace)
+        job = montecarlo._job_from_bundle((run_dir / "job.cbor").read_bytes())
+        violations = []
+        montecarlo._check_overlap(job, spec, run_dir, violations)
+        self.assertTrue(any("does not use the active epoch" in item for item in violations),
+                        violations)
+
+    def test_overlap_checker_pairs_commits_with_intents(self):
+        spec, run_dir = self.run_dir("overlap")
+        trace_path = run_dir / "trace.cbor"
+        trace = montecarlo._trace_events(trace_path)
+        commits = [index for index, event in enumerate(trace)
+                   if event["kind"] == "WRITE_COMMITTED"]
+        commit = trace.pop(commits[0])
+        trace.insert(commits[0] - 1, commit)
+        write_trace(trace_path, trace)
+        job = montecarlo._job_from_bundle((run_dir / "job.cbor").read_bytes())
+        violations = []
+        montecarlo._check_overlap(job, spec, run_dir, violations)
+        self.assertTrue(any("does not follow a write intent" in item for item in violations),
+                        violations)
 
     def test_drop_checker_reads_the_injection_point_from_the_journal(self):
         spec, run_dir = self.run_dir("no_reply")

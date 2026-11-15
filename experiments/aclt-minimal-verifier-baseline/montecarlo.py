@@ -728,6 +728,12 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
     _check_accept_slots(guest_raw, "overlap-guest", violations)
     host = _load_journal(job, run_dir / "host.cbor")
     guest = _load_journal(job, run_dir / "guest.cbor")
+    for label, events in (("host", host_raw), ("guest", guest_raw)):
+        missing = [index for index, event in enumerate(events)
+                   if event.get("kind") != "HANDOFF" and "writer_epoch" not in event]
+        if missing:
+            violations.append(
+                f"overlap: {label} journal lacks writer_epoch at events {missing}")
 
     trace = _trace_events(run_dir / "trace.cbor")
     assigned = [event for event in trace if event.get("kind") == "ASSIGNED"]
@@ -779,6 +785,29 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
             if event.get("owner") != active:
                 violations.append(
                     f"overlap: successful write at trace event {index} has another owner")
+            if c.uint(event.get("epoch", -1)) != active_epoch:
+                violations.append(
+                    f"overlap: successful write at trace event {index} "
+                    f"does not use the active epoch")
+            if index == 0 or trace[index - 1].get("kind") != "WRITE_REQUEST":
+                violations.append(
+                    f"overlap: successful write at trace event {index} "
+                    f"does not follow a write intent")
+                continue
+            intent = trace[index - 1]
+            if intent.get("owner") != event.get("owner"):
+                violations.append(
+                    f"overlap: successful write at trace event {index} "
+                    f"follows another owner's intent")
+            message = intent.get("message", {})
+            if message.get("event") != event.get("event"):
+                violations.append(
+                    f"overlap: successful write at trace event {index} "
+                    f"follows a different write intent")
+            if c.uint(message.get("epoch", -1)) != c.uint(event.get("epoch", -1)):
+                violations.append(
+                    f"overlap: successful write at trace event {index} "
+                    f"follows an intent for a different epoch")
         if len(committed) != len(host.events):
             violations.append(
                 f"overlap: {len(committed)} successful writes but "
@@ -790,8 +819,7 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
                     violations.append(
                         f"overlap: successful write {position} is {event.get('event')}, "
                         f"not {recorded.get('kind')}")
-                if "writer_epoch" in recorded and c.uint(
-                        event.get("epoch", -1)) != c.uint(recorded["writer_epoch"]):
+                if event.get("epoch") != recorded.get("writer_epoch"):
                     violations.append(
                         f"overlap: successful write {position} used a different epoch")
     if status["outcome"] != "PAUSED":
