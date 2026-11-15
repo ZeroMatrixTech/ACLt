@@ -315,6 +315,9 @@ def run_general(role, port, budget, report, pairs):
         if journal.final is not None:
             (output / "publication.cbor").write_bytes(codec.encode(journal.final))
         report["general_status"] = status
+        if inject is not None:
+            report["fault_triggered"] = len(inject.hits)
+            report["injection"] = inject.hits
     (output / "guest.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
     return 0
 
