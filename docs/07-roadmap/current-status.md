@@ -27,7 +27,7 @@
 | FM 证据归档 | [第四项收尾](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md)归档五份公开包并重放 24 套快照，补齐原始审计、CI 记录和 12 项 FM-A 候选证据 | 正式 FM-A 仍逐项验收；本轮改动的 CI 随提交触发 |
 | P0-1B Profile 注册 | [R1 正式摘要与判决](../testing/PROFILE-DIGEST-R1-20261107.md)及 [R2 嵌套类型/导入与注册上下文](../testing/PROFILE-REGISTRATION-R2-20261107.md)：新增 RegistrySnapshot/事件快照摘要与六类注册条目检查，audit Phase R 显式接两个快照；[R3](../testing/PROFILE-REFERENCES-R3-20261108.md)补排除集/注册对象引用与两个摘要，并修正 TimeRange/ExternalTypedObject wire | [R4](../testing/PROFILE-RULES-R4-20261108.md)落实共同假设/撤销/scope/方法必需类与静态集合摘要；[R5](../testing/PROFILE-MATRICES-R5-20261108.md)补四方法参数/失败/条件矩阵；[R6](../testing/PROFILE-CREATION-R6-20261108.md)补固定 audit I/F 测试接线、三个摘要与 CC-1；[R7](../testing/PROFILE-SELECTION-R7-20261108.md)集中完成注册/选择/绑定 14 项，扩展 7 项仍 partial；[R8](../testing/PROFILE-COMMITMENTS-R8-20261108.md)集中完成 19 项 Claim/快照/承诺规则，18 个摘要公式/投影已有双语言实现；[R9](../testing/PROFILE-RUNTIME-R9-20261108.md)补七种 Phase B 的运行期绑定/冻结/阶段守卫，snapshot/population/randomness 仍限 TEST imports，SV-69/81 partial。[R10](../testing/PROFILE-DECISION-R10-20261109.md)加入 audit-only Phase D 测试重放，SV-115/121 partial。[R11](../testing/PROFILE-AUTHORITY-R11-20261109.md)接入 FM-S3 候选权威来源与结算对照，SV-119 partial；下一步评审候选输入胶囊的正式版本承诺、ENUM/sum wire，闭合 FailureReason、predicate/gate 和完整重放。其他方法 wire 缺口独立追踪，完整 Phase R 尚未验收 |
 | Phase I/F/B/D 候选接口 | [R14](../testing/PROFILE-PHASE-D-R14-20261111.md)验证历史 B/D 信封，[R15](../testing/PROFILE-PHASE-D-R15-20261111.md)实现创建时部署绑定并串联授权、判决与结算 | [R16](../testing/PROFILE-PHASE-D-R16-20261111.md)验证候选部署撤销；正式 FM-A08 仍依赖 Profile/来源审批、撤销传播和部署证据 |
-| 开发者预览 | [发行说明草案](../releases/PREVIEW-20261106.md)与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：源码包可重现、包内本地检查可运行 | 发布前在待打标签 commit 上重跑双机并确认 CI；预览不是 ProtocolVersion、ConformanceTarget 或部署启用 |
+| 首次公开发行（research-preview-1） | [公开发行说明](../releases/PREVIEW-20261106.md)（文件名保留 `PREVIEW-20261106.md`）与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：README 已加统一成熟度声明与 #101 边界；源码包可重现、包内本地检查可运行 | 发布前完成 R4 双机安全层蒙特卡洛、按检查清单切换可见性与设置、在待打标签 commit 上重跑并确认 CI；发行名不是 ProtocolVersion、ConformanceTarget 或部署启用 |
 | 证明验证路线 | [ADR-0009](../05-decisions/ADR-0009-proof-verified-computation-statements.md) `PROPOSED` 草案：以推导证书验证计算陈述，分陈述绑定、推导检查与语义充分性三层；`verification.proof-assisted` 仍为 V1 `DEFERRED` | 评审接口；首个实例依赖 RIR-0 形式语义（PO-11），在此之前只走非主网测试路线 |
 | 验收边界 | P0-1B 为 80/36/3，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
@@ -203,6 +203,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-15 | v0.5 | README 加入统一成熟度声明（draft / research baseline；当前没有可部署软件）与 #101 证据边界；发行说明改写为首次公开发行说明，计入 M3、容量排序与 R2，并将 R4 列为发布前置 | [README](../../README.md)、[发行说明](../releases/PREVIEW-20261106.md)、#137 | 公开发布 |
 | 2026-11-15 | v0.5 | 维护者决定采用 DCO 作为贡献许可机制，代理提交由维护者在合并时签署；新增安全政策与 DCO 检查 | `CONTRIBUTING.md` §11、`SECURITY.md`、`.github/workflows/dco.yml`、#128 | 公开发布 |
 | 2026-11-15 | v0.5 | R2 完成两台物理宿主上的 nVM 实跑与离线重放，覆盖两种来宾分布、远端安全停止及一次补算 | [R2 验收报告](../testing/DUALHOST-MULTIVM-R2-20261115.md)、OQ-04、OQ-05、OQ-06 | 不变 |
 | 2026-11-15 | v0.5 | 维护者确认最简验证机乌托邦基线闭合：五项闭合条件均满足，证据层级为本地、同宿主来宾级与物理双机各有分布；协调规则限可信单宿主 | [闭合确认](minimal-verifier-baseline.md#闭合确认2026-11-15)、#128 | 不变 |

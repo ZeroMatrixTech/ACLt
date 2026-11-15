@@ -22,13 +22,13 @@ ACLt Protocol 从构想到落地，大量工作是在 AI 助手协助下完成�
 |---|---|---|
 | Codex（OpenAI） | 大部分证明推导、程序实现与测试；2026-08 至 2026-10 的多轮语义、结构与仓库维护审计。 | [`docs/08-governance/audits/`](docs/08-governance/audits/) 中审计者为 Codex 的记录；[`AGENTS.md`](AGENTS.md) 工作会话入口 |
 | Claude（Anthropic，经 Claude Code） | 自 2026-10-23（[#42](https://github.com/ZeroMatrixTech/ACLt/pull/42)）起参与 P0-1B 及 Verification Profile 的实现、测试与文档；仓库维护审计；ACLt 像素剧场。自 2026-11-14 起在 [多分支并行开发流程](docs/08-governance/parallel-workflow.md) 中担任调度会话，并审计其他代理的 PR。 | 提交中的 `Co-Authored-By: Claude` 署名；[`audit-20261106-01`](docs/08-governance/audits/audit-20261106-01-repository-maintenance.md)；[`aclt-theater.html`](docs/00-overview/aclt-theater.html) |
-| DeepSeek | 外部审计（AUDIT-20261105-01）；项目的外部灵感来源，尤其是与维护者长期的图论讨论。自 2026-11-14 起经 dsh 代理参与条目实现，例如容量排序回归（[#113](https://github.com/ZeroMatrixTech/ACLt/pull/113)）。 | [审计原文](docs/08-governance/audits/external/AUDIT-20261105-01.original.txt)；[修复记录](docs/testing/AUDIT-FIXES-20261105.md)；PR 中的实现代理记录 |
+| DeepSeek V4.1 Flash（经 dsh 代理） | 外部审计（AUDIT-20261105-01）；项目的外部灵感来源，尤其是与维护者长期的图论讨论。自 2026-11-14 起经 dsh 代理参与条目实现：容量排序回归（M1，[#113](https://github.com/ZeroMatrixTech/ACLt/pull/113)）、安全层蒙特卡洛（R3，[#140](https://github.com/ZeroMatrixTech/ACLt/pull/140)）、外部许可声明（P1-a，[#145](https://github.com/ZeroMatrixTech/ACLt/pull/145)）与首次公开发行说明（P1-c，[#137](https://github.com/ZeroMatrixTech/ACLt/issues/137)）。 | [审计原文](docs/08-governance/audits/external/AUDIT-20261105-01.original.txt)；[修复记录](docs/testing/AUDIT-FIXES-20261105.md)；PR 中的实现代理记录 |
 | GitHub Copilot | 多来宾验证的 make 目标与清单修订（[#95](https://github.com/ZeroMatrixTech/ACLt/pull/95)）。 | 该 PR 提交中的 `Co-authored-by: Copilot` 署名 |
 
 ## 署名原则
 
 - AI 工具不是法律意义上的作者或权利人，也不对仓库内容承担责任。仓库的法律责任由上述维护主体承担；内容的取舍与合并由维护者决定。
-- Git 历史中只有部分提交保留了 co-author 署名（Claude、Copilot 与外部贡献者）。Codex 与 DeepSeek（含 dsh 代理）的工作没有独立署名，讨论与灵感也不会出现在提交中。因此提交统计和 GitHub contributors 图都不能反映各方实际贡献；自 PARALLEL-1 起，各条目的实现代理与审计代理记录在 PR 与审计评论中。
+- Git 历史中只有部分提交保留了 co-author 署名（Claude、Copilot 与外部贡献者）。Codex 与 DeepSeek V4.1 Flash（经 dsh 代理）的工作没有独立署名，讨论与灵感也不会出现在提交中。因此提交统计和 GitHub contributors 图都不能反映各方实际贡献；自 PARALLEL-1 起，各条目的实现代理与审计代理记录在 PR 与审计评论中。
 - 自 2026-11-15 起采用 DCO（CONTRIBUTING §11）。AI 代理产生的提交由维护者在合并时签署，签署者对该贡献承担 DCO 规定的确认责任。
 - 无论由谁产出，证明、代码和结论都只以仓库中的测试、对拍、审计与双机证据为准，不因来源而获得或失去可信度。
 - 新增贡献者，或某方角色有实质变化时，同步更新本文件。
