@@ -126,6 +126,10 @@ def agent(parent, lan, roles):
     with experiment_lock(), tempfile.TemporaryDirectory(prefix="aclt-r2-", dir=parent) as name:
         root = Path(name)
         children = {}
+        disks = {}
+        serials = {}
+        qemus = {}
+        generations = {}
         with socket.socket() as endpoint:
             endpoint.bind((lan, 0))
         print(json.dumps(dict(identity=identity(), kernel=platform.release(), machine=platform.machine(),
@@ -144,20 +148,28 @@ def agent(parent, lan, roles):
                     if filename not in ("kernel", "guest.cpio.gz"):
                         raise DualHostError("unknown staging object")
                     path = root / filename
-                    with path.open("xb") as stream:
+                    with path.open("wb") as stream:
                         stream.write(base64.b64decode(request["data"], validate=True))
                     response = sha(path)
                 elif action == "launch":
                     role = request["role"]
-                    if role not in roles or role in children:
+                    if role not in roles:
                         raise DualHostError("invalid remote launch role")
+                    if role in children:
+                        stop(children.pop(role))
+                    generations[role] = generations.get(role, 0) + 1
                     disk = root / f"{role}.img"
+                    serial = root / f"{role}-serial.log"
+                    qemu = root / f"{role}-qemu.log"
+                    if disk.exists():
+                        disk.unlink()
                     with disk.open("xb") as stream:
                         stream.truncate(request["disk_size"])
                     subprocess.run(["mkfs.ext4", "-q", "-F", "-L", "evidence", str(disk)], check=True)
-                    with (root / f"{role}-qemu.log").open("wb") as log:
+                    with qemu.open("wb") as log:
                         children[role] = subprocess.Popen(request["argv"], cwd=root, stdin=subprocess.DEVNULL,
                                                           stdout=log, stderr=subprocess.STDOUT)
+                    disks[role], serials[role], qemus[role] = disk, serial, qemu
                     response = None
                 elif action == "ready":
                     active = subprocess.check_output(["ss", "-4Hltnp"], text=True)
@@ -171,12 +183,12 @@ def agent(parent, lan, roles):
                     returncode = children[role].poll()
                     response = None
                     if returncode is not None or action == "diagnostics":
-                        log = root / f"{role}-serial.log"
+                        log = serials[role]
                         response = dict(exit=returncode, serial=log.read_text(errors="replace") if log.exists() else "",
-                                        qemu=(root / f"{role}-qemu.log").read_text(errors="replace"))
+                                        qemu=qemus[role].read_text(errors="replace"))
                         if action == "collect" and returncode == 0:
                             response["disk"] = base64.b64encode(
-                                gzip.compress((root / f"{role}.img").read_bytes(), compresslevel=1)).decode()
+                                gzip.compress(disks[role].read_bytes(), compresslevel=1)).decode()
                 else:
                     raise DualHostError("unknown remote action")
                 print(json.dumps({"result": response}), flush=True)

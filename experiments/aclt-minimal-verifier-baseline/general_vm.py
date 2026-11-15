@@ -4,6 +4,7 @@
 from contextlib import closing
 import json
 import socket
+from pathlib import Path
 
 from baseline import ARTIFACT_TAG, PROBE, QUESTION_TAG, ask, solve, validate
 from general_job import BudgetError, FAMILY, INT, Job, Journal, digest, handle
@@ -242,9 +243,10 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                     respond(sort_job, raw, connection, response_path, drop=drop)
 
 
-def replay(job, roots, executor, previous=(), *, check_response=None, source=None):
+def replay(job, roots, executor, previous=(), *, check_response=None, source=None,
+           journal_path=None):
     """Check all requests and recompute the retained peer responses before replaying."""
-    journal_path = roots["A"] / "journal.cbor"
+    journal_path = Path(journal_path) if journal_path is not None else roots["A"] / "journal.cbor"
     events = c.decode(journal_path.read_bytes())
     c.need(events[:len(previous)] == list(previous), "successor changed retained history")
     journal = Journal(job, journal_path, events, source=source)

@@ -19,6 +19,7 @@ import json
 import os
 import platform
 import random
+import shutil
 import socket
 import subprocess
 import sys
@@ -33,6 +34,7 @@ from baseline import PROBE, ROOT
 import dualhost_multivm
 from coordination import Coordinator, CoordinationError, GuestJournal, serve
 from general_job import INT, Job, Journal, c, handle, response_for
+import general_vm
 from general_vm import DEFAULT_BUDGET, DEFAULT_BUDGET_SIX, fixture, run, standalone_probe
 from multivm_job import assignments
 from lan import decode_answer
@@ -515,6 +517,8 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
             destination = frames / label / role if label else frames / role
             for path in sorted(source.glob("*-*.cbor")):
                 _copy(path, destination / path.name)
+    initial_image = result.get("initramfs_sha256")
+    boot_image = (result.get("successor_initramfs_sha256") if handoff else None) or initial_image
     metadata = {
         "backend": backend,
         "topology": topology,
@@ -522,7 +526,8 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
         "source_manifest_sha256": result.get("source_manifest_sha256"),
         "executor_sha256": result.get("executor_sha256"),
         "kernel_sha256": result.get("kernel_sha256"),
-        "initramfs_sha256": result.get("initramfs_sha256"),
+        "initramfs_sha256": boot_image,
+        "initial_initramfs_sha256": initial_image,
         "placement": _redact_topology(observed).get("placement"),
         "remote_roles": sorted(observed.get("lan_links", {})),
         "guest_boot_ids": {role: row.get("boot_id") for role, row in guest.items()},
@@ -535,6 +540,32 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
     _copy_json(run_dir / "metadata.json", metadata)
 
 
+def _check_frames(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path | None,
+                  violations: list[str]) -> None:
+    """Replay the retained raw frames, not just the journals derived from them."""
+    frames = run_dir / "frames"
+    if not frames.is_dir():
+        violations.append("frames: run retained no request/response frames")
+        return
+    topology = spec.get("topology", "t1")
+    roles = TOPOLOGIES[topology]["roles"]
+    try:
+        if spec["fault"] == "handoff":
+            general_vm.replay(
+                job, {role: frames / "before" / role for role in roles}, executor,
+                journal_path=run_dir / "checkpoint.cbor")
+            checkpoint = c.decode((run_dir / "checkpoint.cbor").read_bytes())
+            general_vm.replay(
+                job, {role: frames / "after" / role for role in roles}, executor,
+                previous=checkpoint, journal_path=run_dir / "journal.cbor")
+        else:
+            general_vm.replay(
+                job, {role: frames / role for role in roles}, executor,
+                journal_path=run_dir / "journal.cbor")
+    except Exception as error:
+        violations.append(f"frames: {error}")
+
+
 def _copy_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
@@ -542,7 +573,7 @@ def _copy_json(path: Path, value: Any) -> None:
 
 def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
                topology: str, config: Path | None, kernel: Path, placement: str | None,
-               accel: str, timeout: int) -> None:
+               accel: str, timeout: int, executor: Path | None = None) -> None:
     shape = TOPOLOGIES[topology]
     remote_roles = tuple(role for role in (placement or "").split(",") if role)
     roles = shape["roles"]
@@ -560,6 +591,8 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
                "--output", str(raw), "--solve-budget", str(spec["budget"]),
                "--general-order", order, "--general-nonce", spec["nonce"],
                "--accel", accel]
+    if executor is not None:
+        command += ["--executor", str(executor)]
     if topology == "t2":
         command.append("--general-six")
     if backend == "dualhost":
@@ -579,7 +612,7 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
         _write_status(run_dir, spec, "ERROR", error=f"guest harness exceeded {timeout}s")
         _write_fault(run_dir, spec, triggered=0)
         return
-    (run_dir / "multivm.log").write_text(completed.stdout + completed.stderr, encoding="utf-8")
+    (raw / "multivm.log").write_text(completed.stdout + completed.stderr, encoding="utf-8")
     result_path = raw / "result.json"
     if not result_path.is_file():
         _write_status(run_dir, spec, "ERROR",
@@ -599,17 +632,17 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
             _write_fault(run_dir, spec, triggered=0)
             return
     _normalize_guest_run(job, spec, run_dir, raw, result, backend=backend, topology=topology)
+    shutil.rmtree(raw, ignore_errors=True)
 
 
 def _manifest(root: Path) -> None:
+    """Cover every retained evidence file; only the manifest itself is excluded."""
     rows = []
     for path in sorted(root.rglob("*")):
         if not path.is_file():
             continue
         relative = path.relative_to(root).as_posix()
-        if relative in ("report.json", "manifest.sha256") or relative.startswith("raw/"):
-            continue
-        if "/raw/" in relative or relative.endswith("trace.cbor") or relative.endswith("multivm.log"):
+        if relative == "manifest.sha256":
             continue
         rows.append(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {relative}")
     (root / "manifest.sha256").write_text("\n".join(rows) + "\n", encoding="utf-8")
@@ -658,7 +691,7 @@ def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None,
         else:
             _run_guest(job, spec, run_dir, backend=backend, topology=spec_topology,
                        config=config, kernel=Path(kernel), placement=placement,
-                       accel=accel, timeout=timeout)
+                       accel=accel, timeout=timeout, executor=Path(executor))
         status = c.decode((run_dir / "status.cbor").read_bytes())
         row = {"index": spec["index"], "fault": spec["fault"], "outcome": status["outcome"]}
         if backend != "inprocess":
@@ -668,15 +701,19 @@ def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None,
     report = {"seed": seed, "runs": rows, "environment": environment}
     if backend != "inprocess":
         report.update(backend=backend, topology=topology)
-        first = root / "run-0000" / "metadata.json"
-        if first.is_file():
-            meta = json.loads(first.read_text())
-            topology_record = json.loads((root / "run-0000" / "topology.json").read_text())
+        first_spec = next((spec for spec in schedule["runs"] if spec["fault"] != "handoff"),
+                          schedule["runs"][0])
+        first = root / f"run-{first_spec['index']:04d}"
+        if (first / "metadata.json").is_file():
+            meta = json.loads((first / "metadata.json").read_text())
+            topology_record = json.loads((first / "topology.json").read_text())
             topology_record.update(kernel_sha256=meta.get("kernel_sha256"),
-                                   initramfs_sha256=meta.get("initramfs_sha256"))
+                                   initramfs_sha256=meta.get("initial_initramfs_sha256")
+                                   or meta.get("initramfs_sha256"))
             _copy_json(root / "topology.json", topology_record)
-        _manifest(root)
     (root / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    if backend != "inprocess":
+        _manifest(root)
     return {"root": str(root), "seed": seed, "runs": runs, "rows": rows}
 
 
@@ -1102,7 +1139,7 @@ def _check_overlap(job: Job, spec: dict[str, Any], run_dir: Path,
         violations.append("overlap: paused run retained a complete output")
 
 
-def _check_run(spec: dict[str, Any], run_dir: Path, *,
+def _check_run(spec: dict[str, Any], run_dir: Path, *, executor: Path | None = None,
                backend: str = "inprocess") -> list[str]:
     violations: list[str] = []
     for name in ("job.cbor", "status.cbor", "fault.cbor"):
@@ -1132,6 +1169,12 @@ def _check_run(spec: dict[str, Any], run_dir: Path, *,
             status = c.decode((run_dir / "status.cbor").read_bytes())
             if c.uint(metadata.get("triggered", -1)) != c.uint(status.get("triggered", -1)):
                 violations.append("metadata: triggered count differs from status")
+            if executor is not None:
+                digest = hashlib.sha256(Path(executor).read_bytes()).hexdigest()
+                if metadata.get("executor_sha256") != digest:
+                    violations.append("metadata: guest executor differs from campaign executor")
+    if backend != "inprocess":
+        _check_frames(job, spec, run_dir, executor, violations)
     fault = spec["fault"]
     try:
         if fault in DROPS:
@@ -1204,7 +1247,9 @@ def _check_campaign_topology(root: Path, schedule: dict[str, Any], backend: str,
         metadata = json.loads(metadata_path.read_text())
         if metadata.get("kernel_sha256") != record.get("kernel_sha256"):
             violations.append(f"run-{spec['index']:04d}: kernel digest differs from topology")
-        if metadata.get("initramfs_sha256") != record.get("initramfs_sha256"):
+        run_topology = json.loads((root / f"run-{spec['index']:04d}" / "topology.json").read_text())
+        boot = run_topology.get("host_b_boot_hashes", {}).get("guest.cpio.gz")
+        if boot is not None and metadata.get("initramfs_sha256") != boot:
             violations.append(f"run-{spec['index']:04d}: initramfs digest differs from topology")
 
 
@@ -1224,9 +1269,7 @@ def _check_manifest(root: Path, violations: list[str]) -> None:
         if not file.is_file():
             continue
         relative = file.relative_to(root).as_posix()
-        if (relative in ("report.json", "manifest.sha256") or relative.startswith("raw/")
-                or "/raw/" in relative or relative.endswith("trace.cbor")
-                or relative.endswith("multivm.log")):
+        if relative == "manifest.sha256":
             continue
         expected[relative] = hashlib.sha256(file.read_bytes()).hexdigest()
     if recorded != expected:
@@ -1267,7 +1310,7 @@ def check_campaign(root: Path, executor: Path | None = None) -> dict[str, Any]:
             violations.append(f"run-{spec['index']:04d}: missing directory")
             continue
         try:
-            violations.extend(_check_run(spec, run_dir, backend=backend))
+            violations.extend(_check_run(spec, run_dir, executor=executor, backend=backend))
         except Exception as error:
             violations.append(f"run-{spec['index']:04d}: {error}")
     return {"runs": len(specs), "seed": seed, "violations": violations}
@@ -1279,8 +1322,8 @@ def _evidence_hashes(root: Path) -> dict[str, str]:
         if not path.is_file():
             continue
         relative = path.relative_to(root).as_posix()
-        if (relative in ("report.json",) or relative.endswith("trace.cbor")
-                or relative.endswith("multivm.log") or relative.startswith("raw/")
+        if (relative in ("report.json", "manifest.sha256")
+                or relative.endswith("trace.cbor") or relative.startswith("raw/")
                 or "/raw/" in relative):
             continue
         hashes[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -1402,7 +1445,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if not result["violations"] else 1
     with tempfile.TemporaryDirectory(prefix="aclt-montecarlo-executor-") as temporary:
         executor = build_executor(Path(temporary) / "executor")
-        run_campaign(args.seed, args.runs, args.output, executor)
+        run_campaign(args.seed, args.runs, args.output, executor,
+                     backend=args.backend, topology=args.topology, config=args.config,
+                     kernel=args.kernel, placement=args.placement, accel=args.accel,
+                     timeout=args.timeout)
         result = check_campaign(args.output, executor)
     print(format_report(result))
     return 0 if not result["violations"] else 1

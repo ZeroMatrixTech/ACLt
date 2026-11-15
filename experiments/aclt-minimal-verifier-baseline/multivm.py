@@ -655,6 +655,7 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
                       if entry["state"] == "ACCEPTED")
             files.append(before[owner] / "delivery.img")
         image = successor_image(image, files)
+        record["successor_initramfs_sha256"] = sha256(image)
     roots, guests, journal = phase(output / "after" if history else output, image,
                                    "after" if history else mode, history, source=source, guard=authority)
     if history and (journal.events[len(history)] != {"kind": "HANDOFF", "epoch": 1}
@@ -796,7 +797,11 @@ def run(args: argparse.Namespace) -> dict:
     staging = work / "guest"
     source_manifest_sha256 = stage_sources(staging / "repo", commit, archive, pins)
     executor = output / "executor"
-    subprocess.run(COMPILE + [str(executor)], cwd=staging / "repo", check=True, capture_output=True)
+    if args.executor is not None:
+        shutil.copyfile(args.executor, executor)
+    else:
+        subprocess.run(COMPILE + [str(executor)], cwd=staging / "repo", check=True,
+                       capture_output=True)
     executor.chmod(0o755)
     runtime = (args.runtime_root.resolve() if args.runtime_root
                else build_runtime(work / "runtime", capacity_sort=is_sort))
@@ -827,8 +832,12 @@ def run(args: argparse.Namespace) -> dict:
             record["root_limits"] = job[2]
         record["topology"] = {"coordinator": "A", "guest_ips": {role: guest_ip(role) for role in roles},
                               "transport": "QEMU hub with host-loopback socket links"}
+    session = None
     def boot(directory: Path, image: Path, handoff: str | None = None, *, phase_job=execution, guard=None):
         if settings:
+            if session is not None:
+                return boot_guests(directory, image, handoff, phase_job=phase_job,
+                                   guard=guard, remote=session)
             with dualhost_multivm.experiment_lock(), dualhost_multivm.Remote(settings, remote_roles, output) as remote:
                 return boot_guests(directory, image, handoff, phase_job=phase_job, guard=guard, remote=remote)
         return boot_guests(directory, image, handoff, phase_job=phase_job, guard=guard)
@@ -957,8 +966,15 @@ def run(args: argparse.Namespace) -> dict:
     started = time.monotonic()
     (output / "init").write_text(INIT, encoding="utf-8")
     if general:
-        record.update(run_general(execution, args, boot, executor, initramfs, output, record,
-                                  successor_image))
+        if settings:
+            with dualhost_multivm.experiment_lock(), dualhost_multivm.Remote(
+                    settings, remote_roles, output) as remote:
+                session = remote
+                record.update(run_general(execution, args, boot, executor, initramfs, output,
+                                          record, successor_image))
+        else:
+            record.update(run_general(execution, args, boot, executor, initramfs, output,
+                                      record, successor_image))
         record["seconds"] = round(time.monotonic() - started, 2)
         (output / "result.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
         if not args.keep_work:
@@ -1117,6 +1133,7 @@ def main() -> None:
     runner.add_argument("--runtime-root", type=Path,
                         help="existing guest root with bin/busybox and usr/bin/python3")
     runner.add_argument("--solve-budget", type=int)
+    runner.add_argument("--executor", type=Path, help="use a prebuilt guest executor")
     runner.add_argument("--recursive", action="store_true")
     runner.add_argument("--guests", type=int, default=2, help="guest count; three or more use a tree job")
     runner.add_argument("--accel", choices=("kvm", "tcg"), default="kvm")
