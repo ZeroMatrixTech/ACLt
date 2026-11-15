@@ -40,12 +40,14 @@ python3 -B experiments/aclt-minimal-verifier-baseline/montecarlo.py check --outp
   - 在这一布局下，协调来宾如果收到让自己服务请求的调用，会直接报错。
 - **丢答复类留证。**
   - `no_reply`：服务方生成答复并保存答复帧，但不发送。
-  - `worker_exit` 和 `tcp_disconnect`：在生成答复之前就退出或断连。
-  - 三类注入都由服务方在执行注入动作之前写一条逐尝试注入记录，汇总到 `fault.cbor` 的 `injections[]`。记录绑定执行实例、槽位、尝试、角色、故障类和请求摘要；`no_reply` 的记录还带被扣留答复的摘要。
+  - `worker_exit`：工作来宾的服务循环运行在子进程里。注入时子进程在生成答复前以退出码 7 真实退出，由内核关闭其连接；来宾内的父进程观察到退出码后记录并重启服务。不再用异常代替进程退出。
+  - `tcp_disconnect`：服务方在生成答复前关闭连接，随后记录一条关闭观测。
+  - 三类注入都由服务方在执行注入动作之前写一条逐尝试注入记录（落盘并 fsync，进程退出后仍在），汇总到 `fault.cbor` 的 `injections[]`。记录绑定执行实例、槽位、尝试、角色、故障类和请求摘要；`no_reply` 的记录还带被扣留答复的摘要。
+  - 工作进程退出观测（含退出码）和服务方关闭观测写入 `metadata.json` 的 `worker_exits[]` 与 `serving_observations[]`，不含墙钟。
 - **检查器扩展（R1 5.3、6.3 第 12 类）。**
   - 独立重建每个槽位的首算者、验证者和补算者。
   - 每次已派发的 SOLVE（首算和补算）和 VERIFY，都要与协调者一侧以及服务方 VM 一侧的原始帧逐字节绑定，并用静态执行器重算答复。
-  - `NO_REPLY` 与注入记录必须一一对应。
+  - `NO_REPLY` 与注入记录必须一一对应；`worker_exit` 的每条记录必须有同一角色、槽位、尝试的非零退出观测，`tcp_disconnect` 的每条记录必须有关闭观测。
   - 未绑定的帧（例如没有对应 `ACCEPT` 的 VERIFY）计为违规。
   - overlap 被暂停的悬挂意图必须是未派发的 `RESERVE`。
 
@@ -77,8 +79,8 @@ python3 -B experiments/aclt-minimal-verifier-baseline/montecarlo.py check --outp
 
 **源码与执行器：**
 
-- 实跑源码提交 `1fc4332`（`source_dirty=false`）。
-- 冻结源码清单摘要 `c174864eed18f79769381f1c313b927eab2cbf4a1cb4aa7a8133d840992819fb`。
+- 实跑源码提交 `dca1709`（`source_dirty=false`）。
+- 冻结源码清单摘要 `0ccfa8fe5ab377b8d6fcbd24ceff6d0615282727da8ae2749b14d13554d5f087`。
 - campaign 执行器摘要 `b54d938a1448f88efb5633b35b30d50f99614581c2fe2d73b24711daf4712d74`。
 
 **镜像摘要：**
@@ -86,8 +88,8 @@ python3 -B experiments/aclt-minimal-verifier-baseline/montecarlo.py check --outp
 | 镜像 | SHA-256 |
 |---|---|
 | 内核 | `646f7e41faa4b7c8899deee5f725c39eb46987977b5d0ab4340deb3463d9de86` |
-| 来宾 initramfs | `60377065038471c630b08110c03dc4197820ef72f5a9e4feee1e99c0b6e78ab9` |
-| T1 交接后继 initramfs（run 4） | `dbbc19559c09789f506f76c18b84112462c443ec26c3baa02f02b8dbab1da8cf` |
+| 来宾 initramfs | `fd9da379a41bca0d5f828da669080e4ae136913ae83b11b311c7113f1db90bbb` |
+| T1 交接后继 initramfs（run 4） | `2cca8df0429d4e83b5182cd776bacdcf5837813ab7e52c499e6dcdef53de5c7e` |
 
 B 上的 kernel 和 initramfs 在启动前逐项核对摘要；来宾启动后核对冻结源码清单和执行器指纹。
 
@@ -101,8 +103,8 @@ B 上的 kernel 和 initramfs 在启动前逐项核对摘要；来宾启动后�
 
 | 后端 | 输出目录（仓库外） | `check` | `manifest.sha256` 的摘要 |
 |---|---|---|---|
-| 本地同宿主（4 来宾） | `.r4a-work/profile-v2-local-16` | `runs=16 seed=8 violations=0` | `5131609d0e76a0f4f6143e3193fb76711d3b3cde46ec61f9d49db9d2390f831e` |
-| 物理 A、B（A + B、C、D） | `.r4a-work/profile-v2-physical-16` | `runs=16 seed=8 violations=0` | `58871a3e1b05ef3e4b2fa937d2061a4e5559e46dd1a6dc3eb8e40c5563ff967a` |
+| 本地同宿主（4 来宾） | `.r4a-work/profile-v2b-local-16` | `runs=16 seed=8 violations=0` | `ee17a3a82a56834f77e25f5186665be22ffdff808d464ad13b85734254ee85c1` |
+| 物理 A、B（A + B、C、D） | `.r4a-work/profile-v2b-physical-16` | `runs=16 seed=8 violations=0` | `14a6173c71302044ffc672bd9d53b717d3ac55e61601aefe66b4683cd523a4ff` |
 
 两个 campaign 的逐 run 结果完全相同：
 
@@ -129,6 +131,7 @@ B 上的 kernel 和 initramfs 在启动前逐项核对摘要；来宾启动后�
 
 - **终态：** `PUBLISHED` 4、`NO_REPLY` 5、`BUDGET_BLOCKED` 3、`PAUSED` 4。
 - **触发次数：** `no_reply` 6、`worker_exit` 3、`tcp_disconnect` 5、`overlap` 4、`handoff` 3。五类都实际触发；每个丢答复类 run 中，`NO_REPLY` 次数都与 `injections[]` 的条数相等。
+- **`worker_exit` 的三个 run（1、8、10）：** 每个 run 都观察到工作来宾 D 的工作进程在槽位 2 首算时以退出码 7 退出，与注入记录一一对应。
 - **`BUDGET_BLOCKED` 的三个 run：** 补算在派发前被预算闸门拒绝，因此没有第二次请求，也没有第二条注入记录。这符合 R1 5.2 的“已准入并实际派发”口径。
 - **run 12：** 首算断连后补算成功，并正常发布，符合 R1 第 4 节。
 - **overlap 的四个 run：** 被暂停的悬挂意图都是第二个派发槽位的 `RESERVE`；它没有提交，也没有对应的帧。
@@ -143,8 +146,9 @@ B 上的 kernel 和 initramfs 在启动前逐项核对摘要；来宾启动后�
   - 出现没有注入记录的 `NO_REPLY`；
   - VERIFY 已派发，却没有对应的 `ACCEPT`；
   - overlap 的悬挂意图不是 `RESERVE`，或者已经派发；
-  - 指派到协调者。
-- 另在本地真实证据的**副本**上删除了一个服务方答复帧，离线检查报出 4 项违规。
+  - 指派到协调者；
+  - `worker_exit` 缺少非零退出观测，`tcp_disconnect` 缺少关闭观测。
+- 另在中间版本 `1fc4332` 的本地真实证据**副本**上删除了一个服务方答复帧，离线检查报出 4 项违规。
 
 ## 证据结构
 
@@ -159,6 +163,10 @@ campaign 根目录有 `schedule.cbor`、`environment.json`、`topology.json`（p
 
 本地和物理证据都保存在仓库外。仓库里没有真实 IP、用户名、SSH 密钥、宿主路径或来宾地址。
 
+## 中间版本（保留）
+
+同日先在 `1fc4332` 上跑过一组 v2 冒烟（`.r4a-work/profile-v2-local-16` 和 `profile-v2-physical-16`），两者都是 `runs=16 seed=8 violations=0`，逐 run 终态与本文相同。那一版的 `worker_exit` 仍以异常代替进程退出，因此改为真实退出后，在 `dca1709` 上重跑了本文的两组证据。中间版本证据保留在仓库外，不作为本文结论的依据。
+
 ## 历史失败（保留，不改写）
 
 同日，在 R1 修订 1 之前，用 `r4-profile-v1` 布局（源码 `303bc9e`）跑了一次物理 16-run 冒烟。证据在 `.r4a-work/profile-physical-16`，结果是 `runs=16 seed=8 violations=24`：
@@ -172,7 +180,7 @@ campaign 根目录有 `schedule.cbor`、`environment.json`、`topology.json`（p
 
 - R4 需要两个种子（20261115、20261116），每个种子 16 个 run，跑两个独立 pass，每个种子做 `check --compare` 可复现比较，并满足第 6 节的全部验收条件。本次只跑了种子 8 的一个 pass。
 - 锁记录目前用 A 侧编排的 run 起止时间填写 `observed_at`。R1 5.5 要求的“A 在获取/释放 B 锁时经 SSH 确认的时刻”和 `observations[]` 实时观测，要在 R4 实跑前由 R4 条目复核是否满足。
-- `worker_exit` 在本实现中是工作来宾 VM 内的服务实例在读取请求后退出，入口随即重启监听；不是整个来宾 VM 退出。按 R1 第 4 节，这属于“工作来宾 VM 内的工作进程退出”，但仍需在 R4 正式验收前由审计复核。
+- `worker_exit` 现在是工作来宾 VM 内工作进程的真实非零退出（退出码 7），由来宾内的父进程重启；不是整台来宾 VM 退出。是否满足 R1 第 4 节，由本轮审计复核。
 
 ## 边界与未做
 
