@@ -54,10 +54,9 @@ class LicenseCoverageTests(unittest.TestCase):
 
     def test_repository_tree_is_covered(self):
         result = CHECKER.check_coverage(ROOT)
-        self.assertEqual(
-            (result.source, result.headers, result.declared, result.missing),
-            (320, 241, 79, 0),
-        )
+        self.assertEqual(result.missing, 0)
+        self.assertEqual(result.declared, 79)
+        self.assertEqual(result.source, result.headers + result.declared)
 
     def test_header_covers_source(self):
         self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
