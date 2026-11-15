@@ -79,7 +79,7 @@ class LicenseCoverageTests(unittest.TestCase):
     def test_repository_tree_is_classified(self):
         # The live tree may legitimately gain headed files, so this checks the
         # classification invariants rather than a frozen total.
-        inventory = CHECKER._inventory(ROOT, require_git=True)
+        inventory = CHECKER._inventory(ROOT, require_git=(ROOT / ".git").exists())
         result = CHECKER.check_coverage(ROOT)
         self.assertEqual(result.missing, 0)
         self.assertEqual(result.covered, result.headers + result.declared)
@@ -125,6 +125,46 @@ class LicenseCoverageTests(unittest.TestCase):
         with self.assertRaises(CHECKER.CoverageError) as context:
             CHECKER.check_coverage(self.root, require_git=True)
         self.assertIn("is not a checkout", str(context.exception))
+
+    def test_cli_passes_on_an_unpacked_tree(self):
+        # An unpacked source archive has no .git and the release notes verify
+        # it by running the coverage target, so the CLI has to pass there.
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\nprint(1)\n")
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(Path(CHECKER.__file__)),
+                "--root",
+                str(self.root),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn(
+            "PASS: covered=2 headers=2 declared=0 excluded=0 missing=0",
+            completed.stdout,
+        )
+
+    def test_cli_require_git_rejects_an_unpacked_tree(self):
+        self.write("example.py", "# SPDX-License-Identifier: Apache-2.0\n")
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                str(Path(CHECKER.__file__)),
+                "--root",
+                str(self.root),
+                "--require-git",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 1)
+        self.assertIn("is not a checkout", completed.stderr)
 
     def test_walk_includes_build_source_without_git(self):
         self.write("build/probe.py", "# SPDX-License-Identifier: Apache-2.0\n")

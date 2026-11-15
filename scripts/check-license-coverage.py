@@ -23,15 +23,17 @@ Excluded, with the reason recorded per class in OQ-01
 (docs/07-roadmap/open-questions.md):
 
 - Markdown, data JSON, plain-text logs and captured outputs, files named
-  exactly `Cargo.lock`, `SHA256SUMS` or `*-SHA256SUMS`, archives and the root
-  `LICENSE` (by exact relative path). The table in OQ-01 lists these classes
-  and their counts; a `package.lock`, a `tool.pySHA256SUMS` or a nested
-  `LICENSE` is not one of them and fails as `unclassified tracked file`. The repository-wide
-  statement in README ("开源与许可") and the root LICENSE cover them; most are
-  historical evidence kept byte-for-byte.
+  exactly `Cargo.lock` or `SHA256SUMS`, archives, and the exact relative paths
+  `LICENSE`, `SINGLEHOST-SHA256SUMS` and `WORKFLOW-SHA256SUMS`. The table in
+  OQ-01 lists these classes and their counts; a `package.lock`, a
+  `tool.pySHA256SUMS`, a `CARGO.LOCK` or a nested `LICENSE` is not one of them
+  and fails as `unclassified tracked file`. The repository-wide statement in
+  README ("开源与许可") and the root LICENSE cover them; most are historical
+  evidence kept byte-for-byte.
 
-Suffixes and names are matched case-insensitively, so `PAGE.HTML` is covered
-like `page.html`. An SPDX identifier must stand alone in a leading comment
+Covered suffixes and names are matched case-insensitively, so `PAGE.HTML` is
+covered like `page.html`; exclusion matching is exact and case-sensitive, as
+the OQ-01 table names the classes. An SPDX identifier must stand alone in a leading comment
 line; the same text inside a string or code line is not a file header. A
 covered file is covered by a header in its first ten lines or by an explicit
 REUSE.toml path declaring Apache-2.0. A declaration for a path outside the
@@ -40,9 +42,10 @@ or for a file that already carries a header is an error. Unicode-3.0 headers
 are accepted only on UNICODE_DATA_PATHS; every other file must be Apache-2.0.
 Tracked files are read through git whenever the directory is a checkout: an
 unusable git inventory is an error in both modes, so a damaged index cannot
-degrade into a directory walk. Only a tree with no `.git` is walked, and
-`--require-git` turns that walk into an error. A tracked path must not
-traverse a symlinked directory.
+degrade into a directory walk. A tree with no `.git` (an unpacked source
+archive) is walked, which is how the release tarball is verified;
+`--require-git` rejects that walk for callers that must read a checkout. A
+tracked path must not traverse a symlinked directory.
 """
 from __future__ import annotations
 
