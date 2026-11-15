@@ -201,7 +201,7 @@ state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifi
 
 另有标注的第三方材料保留其原许可。目前为 `tools/verification_profile/rust/unicode_data.rs`：该文件由 Unicode 字符数据库生成，适用 `Unicode-3.0`，全文见同目录 `UNICODE-LICENSE.txt`。Apache-2.0 第 6 条不授予名称或商标使用权，ACLt 的名称、商标与兼容性声明政策另行决定，见下节。贡献采用 Developer Certificate of Origin（DCO），不使用 CLA；外部 fork PR 的每个提交须带与作者一致的 `Signed-off-by`，内部代理提交由维护者在合并时签署，细则见 [CONTRIBUTING §11](CONTRIBUTING.md#11-许可)。安全漏洞不要先公开细节，按 [SECURITY.md](SECURITY.md) 报告。
 
-仓库根目录 `LICENSE` 为 Apache License 2.0 英文全文；2026-11-06 起，文末附录示例中的版权行填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`，许可条款正文未改。源码文件使用 SPDX 标识，尚缺标识的源码仍需补齐；Markdown 等文档由本节与根目录 `LICENSE` 覆盖。存在归属声明或第三方通知要求时再维护 `NOTICE`。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
+仓库根目录 `LICENSE` 为 Apache License 2.0 英文全文；2026-11-06 起，文末附录示例中的版权行填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`，许可条款正文未改。源码由文件头 SPDX 标识或 [REUSE.toml](REUSE.toml) 显式路径声明覆盖，由 `make check` 中的覆盖检查核对；第三方材料见 [docs/08-governance/third-party-materials.md](docs/08-governance/third-party-materials.md)；Markdown 等文档由本节与根目录 `LICENSE` 覆盖。存在归属声明或第三方通知要求时再维护 `NOTICE`。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
 
 ## 名称说明
 
