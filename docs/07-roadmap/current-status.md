@@ -203,6 +203,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-15 | v0.5 | R4a 完成双机通用契约引擎冒烟：四来宾六叶五类故障各一次、三来宾四叶交接；本地与物理 A、B 的离线检查均 0 违反。冒烟不计入 R4，不改 S1–S7 | [R4a 冒烟报告](../testing/R4A-DUALHOST-CONTRACT-SMOKE-20261115.md)、#151 | 不变 |
 | 2026-11-15 | v0.5 | README 加入统一成熟度声明（draft / research baseline；当前没有可部署软件）与 #101 证据边界；发行说明改写为首次公开发行说明，计入 M3、容量排序与 R2，并将 R4 列为发布前置 | [README](../../README.md)、[发行说明](../releases/PREVIEW-20261106.md)、#137 | 公开发布 |
 | 2026-11-15 | v0.5 | 维护者决定：保留 Git 历史，接受其中的主机名、本地路径与作者邮箱随仓库公开；首次公开发行说明由 `PREVIEW-20261106.md` 改写（名称 `research-preview-1`）。DCO 决定另见其日志行 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)、[公开发布准备审计](../08-governance/audits/audit-20261115-01-public-release.md) | 公开发布 |
 | 2026-11-15 | v0.5 | 维护者决定：首次公开发行阶段的蒙特卡洛只做安全层，只报告“N 次带种子运行、违反 0 次、可复现”，不报告概率上界或置信度；量化层延后，TG-6（#123）与 TG-7（#124）保持开启 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128) | 不变 |
