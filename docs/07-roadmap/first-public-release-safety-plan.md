@@ -24,13 +24,13 @@ R4 只验收**安全层**：在固定的可信双机 LAN、固定种子和固定
 | **journal** | 宿主侧权威追加日志；guest 日志是其可核对副本。对 journal 前缀的检查不得依赖引擎自身的预算或守卫。 |
 | **checkpoint** | 静止点交接前的 journal 前缀；交接后必须原样保留。 |
 | **PUBLISH** | 唯一一次最终发布事件；发布后不得再有写入。 |
-| **standalone reference** | 对同一冻结 job 在单机执行的参照输出；用于逐字节比较。 |
+| **standalone reference** | 对同一 run 的 job（由冻结模板、nonce 和 profile 预算重建）在单机执行的参照输出；用于逐字节比较。 |
 | **violation** | 离线检查器返回的非空违规项；任意一项即失败，不以警告处理。 |
 | **T1 / T2** | 三来宾四叶 / 四来宾六叶拓扑；定义见第 5 节。 |
 
 ## 3. 安全层 S1–S7
 
-以下七条对每个 run 逐条检查，并由检查器独立重算。检查器不得把被测引擎的 <code>replay</code>、状态文件或自身守卫当作通过依据；只使用冻结的 job、调度、原始帧、journal、checkpoint、trace 和结果文件。
+以下七条对每个 run 逐条检查，并由检查器独立重算。检查器不得把被测引擎的 <code>replay</code>、状态文件或自身守卫当作通过依据；只使用由冻结模板重建的 job、调度、原始帧、journal、checkpoint、trace 和结果文件。
 
 ### S1 无错误发布
 
@@ -38,7 +38,7 @@ R4 只验收**安全层**：在固定的可信双机 LAN、固定种子和固定
 
 1. journal 的 <code>final</code> 存在，最后一个事件是 <code>PUBLISH</code>；
 2. <code>result.cbor</code> 存在，且与 <code>final</code> 的规范编码逐字节一致；
-3. <code>final.output</code> 逐项按大端 <code>uint64</code> 拼接后的字节，与同一冻结 job、同一预算的 <code>standalone_probe</code> 输出逐字节一致；
+3. <code>final.output</code> 逐项按大端 <code>uint64</code> 拼接后的字节，与同一 run 重建的 job、同一 profile 预算的 <code>standalone_probe</code> 输出逐字节一致；
 4. <code>standalone_probe</code> 的 outcome 为 <code>OK</code>；参照失败时不得把该 run 记为成功发布。
 
 若 run 的终态不是 <code>PUBLISHED</code>，则不得存在 <code>result.cbor</code>，不得存在可还原的完整输出，也不得出现 <code>PUBLISH</code>。发布完整性由第 4 节的故障矩阵和 S7 的独立重放共同支撑。
@@ -55,7 +55,7 @@ R4 只验收**安全层**：在固定的可信双机 LAN、固定种子和固定
 
 <code>RESERVE</code> 增加对应尝试的 cap；<code>NO_REPLY</code> 把该 cap 从预留转为已计入；<code>ANSWER</code> 记录该尝试的实测 gas；<code>ACCEPT</code> 把该次实测 gas 转为已计入并释放对应预留。检查器必须拒绝以下任一情况：没有对应预留的答复或接纳、同一尝试的重复终结、实测 gas 超过 cap、未知事件、悬空预留，以及任何前缀不满足上述不等式。
 
-预算与 cap 从冻结的 job 读取；不得用引擎报告的累计值代替检查器自己的累加。预算不能为了得到某个终态而在 R4 实跑中调整。
+预算与 cap 从该 run 重建的 job 读取；预算必须等于 profile 的 <code>budget</code>，不得用引擎报告的累计值代替检查器自己的累加。预算不能为了得到某个终态而在 R4 实跑中调整。
 
 补算（<code>attempt=2</code>）的 <code>RESERVE</code> 还必须在派发前独立检查可完成性：当前已计入 + 在途预留 + 本次补算 cap + 所有尚未发起首次尝试且尚未被接纳的必需槽位的首次 cap 之和，不得超过执行实例预算；已在在途预留中的首次尝试不得重复计入；即使当前前缀本身仍满足 S2 不等式，不满足该检查也必须拒绝补算。以 T1 为例，slot 2 首次无答复后已计入 24706；若先预留 8242 补算，当前前缀为 32948，仍低于 41170，但尚未首算的 slot 3 还需 8232，合计 41180，检查器必须在补算派发前拒绝。该检查必须由检查器自己完成，不能用引擎的预算守卫或事后看到的超限替代。
 
@@ -109,17 +109,17 @@ R4 只验收**安全层**：在固定的可信双机 LAN、固定种子和固定
 检查器必须能够只从证据目录、冻结源码和匹配的执行器重建：
 
 - 由种子重新生成的完整调度；
-- 由调度中的 nonce 和预算重建的 job；
+- 由冻结拓扑模板、调度中的 nonce 和 profile 预算重建的 job；
 - 每个 run 的 host/guest journal、checkpoint、trace、原始帧和结果；
 - S1–S6 的全部判定。
 
-检查器不得调用引擎的预算检查、接纳守卫或“已通过”状态来决定通过；它必须自己累计预算、自己数接纳和发布、自己比较参照输出。检测保证限定为：以冻结的 <code>manifest.sha256</code> 或冻结摘要为参照的清单/摘要核对，以及下列已列出的语义反例。对冻结清单或摘要的篡改，以及输出被替换、重复 <code>ACCEPT</code>、缺失 <code>PUBLISH</code>/<code>result.cbor</code>、预算前缀超限、补算可完成性反例、写入 epoch 缺失、提交前缺少意图、暂停后仍提交，必须返回非空 violation 和非零退出码。本规格不声称对任意篡改的普适检测；未列出的篡改类型不在该保证内。若未来需要该全称主张，必须按第 8 节定义篡改者能力、验证者独立可信锚和可检测性命题。
+检查器不得调用引擎的预算检查、接纳守卫或“已通过”状态来决定通过；它必须自己累计预算、自己数接纳和发布、自己比较参照输出。检测保证限定为：以冻结的 <code>manifest.sha256</code> 或冻结摘要为参照的清单/摘要核对，以及下列已列出的语义反例。对冻结清单或摘要的篡改，以及输出被替换、重复 <code>ACCEPT</code>、缺失 <code>PUBLISH</code>、缺失 <code>result.cbor</code>、<code>PUBLISH</code> 后再写入、预算前缀超限、补算可完成性反例、写入 epoch 缺失、提交前缺少意图、暂停后仍提交或发布，必须返回非空 violation 和非零退出码。本规格不声称对任意篡改的普适检测；未列出的篡改类型不在该保证内。若未来需要该全称主张，必须按第 8 节定义篡改者能力、验证者独立可信锚和可检测性命题。
 
 **出处：** [通用分布式作业契约](distributed-job-contract.md) §1 的冻结证据与可重放范围、§7 的实验入口；R3 <code>check_campaign</code> 的设计；[PARALLEL-1](../08-governance/parallel-workflow.md) §3 的独立审计要求。
 
 ## 4. 故障类与边界
 
-五类故障全部在物理跨主机的 R4 运行中实际抽取；本地 R3 结果、模拟器结果、历史 R2 统计运行器和跳过项都不能替代。每一类至少实际触发一次，并在 <code>fault.cbor</code> 和报告中有对应的原始帧/宿主观测记录。
+五类故障全部在物理跨主机的 R4 运行中实际抽取；本地 R3 结果、模拟器结果、历史 R2 统计运行器和跳过项都不能替代。每一类至少实际触发一次；<code>fault.cbor</code> 保存确定性故障记录，<code>frames/</code> 保存对应的原始请求/答复帧。宿主侧带墙钟的实时观测只写入 <code>metadata.json</code> 的 <code>observations[]</code>（按 5.5 排除比较），不写入 <code>fault.cbor</code> 或原始帧。
 
 | 故障类 | R4 触发方式 | 安全路径 | 不计入的情形 |
 |---|---|---|---|
@@ -159,7 +159,7 @@ R4 的种子在首次 R4 实跑前固定为：
 
 ### 5.3 作业、预算与分片
 
-两个拓扑都运行在通用作业契约引擎上，不使用 R2 的 nVM 统计运行器。T1 沿用 R3 的四叶 fixture；T2 使用六叶扩展。两者的冻结 job、cap、预算和 standalone reference 必须由 R4a 固化到 <code>job.cbor</code>，并在首轮 R4 前提交。
+两个拓扑都运行在通用作业契约引擎上，不使用 R2 的 nVM 统计运行器。T1 沿用 R3 的四叶 fixture（<code>job_id=r4-t1-v1</code>）；T2 使用六叶扩展（<code>job_id=r4-t2-v1</code>）。两个 <code>job_id</code> 各自固定声明、计划、树、依赖、caps、artifact 摘要和 standalone reference，由 R4a 固化并在首轮 R4 前提交；这是该拓扑的冻结模板，不是某个 run 的完整 job。每个 run 的 <code>job.cbor</code> 由冻结模板加上该 run 的 <code>nonce</code> 和 profile 预算重建，见 5.3.1。
 
 | 拓扑 | 叶序与依赖 | caps（gas） | 预算（gas） | 单机参照输出 |
 |---|---|---|---|---|
@@ -179,9 +179,9 @@ T1 的 caps 和预算与 R3 回归一致：<code>sum(caps) + 8232 = 41170</code>
 | 0–7 | T1 | <code>r4-t1-v1</code> | <code>41170</code> | 0–3 | <code>base.slot</code> |
 | 8–15 | T2 | <code>r4-t2-v1</code> | <code>57644</code> | 0–5 | <code>base.slot + 2</code> |
 
-<code>base</code> 是 <code>schedule.cbor</code> 中同一 <code>(seed,index)</code> 的记录；profile 的 <code>fault</code>、<code>nonce</code>、<code>attempt</code>、<code>loss</code>、<code>checkpoint</code> 和 <code>overlap_after</code> 逐项复制 base。非丢答复故障不含 <code>slot</code>。T2 的 <code>+2</code> 是固定的拓扑偏移，使新增叶 4、5 以及叶 2、3 可被丢答复故障命中；它不是按结果选择槽位。其他偏移、重排、按结果改槽位或改变 16 个 run 的索引/拓扑分配都使 R4 失败。
+<code>base</code> 是 <code>schedule.cbor</code> 中同一 <code>(seed,index)</code> 的记录；profile 的 <code>fault</code>、<code>nonce</code> 及故障相关字段逐项复制 base，不得补默认值。故障相关字段按 <code>fault</code> 严格限定：<code>no_reply</code>、<code>worker_exit</code>、<code>tcp_disconnect</code> 必须且只能带 <code>attempt</code>、<code>loss</code>、<code>slot</code>（<code>slot</code> 经 T2 偏移）；<code>handoff</code> 必须且只能带 <code>checkpoint</code>；<code>overlap</code> 必须且只能带 <code>overlap_after</code>。R3 的 handoff/overlap 记录没有 <code>attempt</code> 时，profile 也不得出现该键。T2 的 <code>+2</code> 是固定的拓扑偏移，使新增叶 4、5 以及叶 2、3 可被丢答复故障命中；它不是按结果选择槽位。其他偏移、重排、按结果改槽位或改变 16 个 run 的索引/拓扑分配都使 R4 失败。
 
-<code>profile.cbor</code> 至少包含 <code>profile_version</code>、<code>seed</code>、<code>index</code>、<code>topology</code>、<code>job_id</code>、<code>job_sha256</code>、<code>budget</code>、<code>fault</code>、<code>nonce</code>、<code>attempt</code>、<code>loss</code>（仅丢答复）、<code>slot</code>（仅丢答复）、<code>checkpoint</code>（仅 handoff）、<code>overlap_after</code>（仅 overlap）。<code>job_sha256</code> 是规范编码 <code>job.cbor</code> 的 SHA-256；<code>job.cbor</code> 必须与 5.3 表中该拓扑的冻结 job 逐字节一致。运行端写 <code>run-NNNN/profile.cbor</code>；检查端从 <code>(seed,index)</code> 重建并逐字节比较。未知 profile 版本、缺失/多余字段、job 摘要不符或任一字段不一致均为 violation；检查端不得用运行端写入的值覆盖自己的重建。
+<code>profile.cbor</code> 必须且只能包含 <code>profile_version</code>、<code>seed</code>、<code>index</code>、<code>topology</code>、<code>job_id</code>、<code>job_sha256</code>、<code>budget</code>、<code>fault</code>、<code>nonce</code>，以及按故障种类限定的字段：<code>attempt</code>、<code>loss</code>、<code>slot</code>（仅 <code>no_reply</code>/<code>worker_exit</code>/<code>tcp_disconnect</code>）、<code>checkpoint</code>（仅 handoff）、<code>overlap_after</code>（仅 overlap）。缺键、增键或故障种类不匹配均为 violation。<code>job_sha256</code> 是规范编码 <code>job.cbor</code> 的 SHA-256；<code>job.cbor</code> 必须与“5.3 的冻结模板 + 本 run 的 <code>nonce</code> + profile <code>budget</code>”独立重建的 job 逐字节一致，不得拿模板本身或另一 run 的 job 代替。运行端写 <code>run-NNNN/profile.cbor</code>；检查端从 <code>(seed,index)</code> 重建并逐字节比较。未知 profile 版本、缺失/多余字段、job 摘要不符或任一字段不一致均为 violation；检查端不得用运行端写入的值覆盖自己的重建。
 
 R4a 可以在 R3 之上增加 profile 层、T2 job、证据写入和检查器扩展，但不得改变 R3 的种子生成、五类顺序、S1–S7 判定或独立累计规则，也不得在 R4 中重选种子、预算、caps 或槽位。T1 和 T2 必须通过同一个 <code>r4_profile</code> 入口；不得为两个拓扑各写一套互不校验的生成器。
 
@@ -212,7 +212,7 @@ R4a 可以在 R3 之上增加 profile 层、T2 job、证据写入和检查器扩
   ...
 ~~~
 
-<code>host.cbor</code> 是权威 journal；<code>guest.cbor</code> 是协调来宾的副本；overlap run 同时保留 host 和 guest 两侧。<code>checkpoint.cbor</code> 只用于 handoff；<code>trace.cbor</code> 只用于 overlap。<code>result.cbor</code> 只在 <code>PUBLISHED</code> 时存在。<code>metadata.json</code> 记录源 SHA、执行器 SHA、两端主机和来宾角色、实际映射端点（脱敏）、实际触发事件、最终状态、开始/结束时间和失败原因；开始/结束时间按 5.5 校验。<code>environment.json</code> 记录两端 OS、内核、QEMU、KVM、Python、Rust、执行器摘要、源清单摘要和 B 侧镜像摘要，不含时间或临时端点。实际 IP、用户名、密钥和本地路径不得入库。
+<code>host.cbor</code> 是权威 journal；<code>guest.cbor</code> 是协调来宾的副本；overlap run 同时保留 host 和 guest 两侧。<code>checkpoint.cbor</code> 只用于 handoff；<code>trace.cbor</code> 只用于 overlap。<code>result.cbor</code> 只在 <code>PUBLISHED</code> 时存在。<code>metadata.json</code> 记录源 SHA、执行器 SHA、两端主机和来宾角色、实际映射端点（脱敏）、实际触发事件、最终状态、<code>locks[]</code> 锁记录、<code>observations[]</code> 宿主实时观测、开始/结束时间和失败原因。所有墙钟时间只允许出现在 <code>metadata.json</code> 的 <code>started_at</code>、<code>ended_at</code>、<code>locks[].observed_at</code>、<code>observations[].observed_at</code>；这些字段由 A 侧编排进程的同一 UTC 时钟记录，按 5.5 不参与跨 pass 比较。<code>fault.cbor</code> 只保存确定性故障记录（故障类、目标 role，以及该故障的调度字段：无答复类（<code>no_reply</code>/<code>worker_exit</code>/<code>tcp_disconnect</code>）的 <code>slot</code>/<code>attempt</code>/<code>loss</code>、handoff 的 <code>checkpoint</code>、overlap 的 <code>overlap_after</code>，和注入帧摘要），不得含墙钟、临时端点、PID 或本地路径；<code>frames/</code> 只保存协议原始字节，不附加捕获时间；<code>host.cbor</code>/<code>guest.cbor</code>/<code>status.cbor</code> 只含逻辑事件和状态，不含墙钟。<code>environment.json</code> 记录两端 OS、内核、QEMU、KVM、Python、Rust、执行器摘要、源清单摘要和 B 侧镜像摘要，不含时间或临时端点。实际 IP、用户名、密钥和本地路径不得入库。
 
 归档完整性、确定性比较投影和时间字段分别按 5.5 处理；<code>manifest.sha256</code> 覆盖 campaign 内除自身外的全部证据文件，<code>check --compare</code> 只比较 5.5 定义的投影。<code>report.json</code> 只汇总该种子 campaign 的结果，不作为覆盖原始证据的替代；<code>pass-report.json</code> 同样只是汇总，不替代原始证据。
 
@@ -222,11 +222,11 @@ R4a 可以在 R3 之上增加 profile 层、T2 job、证据写入和检查器扩
 
 1. **归档完整性。** 每个 campaign 的 <code>manifest.sha256</code> 覆盖该 campaign 根目录下除 <code>manifest.sha256</code> 自身以外的所有普通文件，包括 <code>report.json</code>、<code>metadata.json</code>、<code>trace.cbor</code>、<code>profile.cbor</code> 和 <code>frames/</code>。每个 pass 的检查器必须先验证清单中的路径存在、摘要匹配、没有未列出的普通文件，然后用该 pass 的原始字节执行 S1–S7 全量检查；<code>trace.cbor</code> 即使不参与跨 pass 字节比较，也必须在各自 pass 中通过 S6。清单或任一文件的完整性失败即 R4 失败。
 2. **确定性比较投影。** <code>check --compare</code> 只比较可由冻结输入重建的确定性投影，不比较实时字段：
-   - 完整字节比较：<code>schedule.cbor</code>、每个 run 的 <code>profile.cbor</code>、<code>job.cbor</code>、<code>fault.cbor</code>、<code>status.cbor</code>、<code>host.cbor</code>、<code>guest.cbor</code>、可选的 <code>checkpoint.cbor</code>/<code>result.cbor</code>、<code>frames/</code> 下全部原始帧，以及 <code>environment.json</code>（其字段集合见 5.4，不得含时间或临时端点）。
+   - 完整字节比较：<code>schedule.cbor</code>、每个 run 的 <code>profile.cbor</code>、<code>job.cbor</code>、<code>fault.cbor</code>、<code>status.cbor</code>、<code>host.cbor</code>、<code>guest.cbor</code>、可选的 <code>checkpoint.cbor</code>/<code>result.cbor</code>、<code>frames/</code> 下全部原始帧，以及 <code>environment.json</code>（其字段集合见 5.4，不得含时间或临时端点）。这些文件必须是确定性字节：不得含墙钟、临时端点、PID 或本地路径。
    - <code>topology.json</code> 的稳定投影：拓扑 id、角色到主机的映射、来宾角色/放置、叶到角色的绑定、B 侧镜像摘要；不比较仅用于连接诊断的临时端点、端口和本地路径。
-   - <code>metadata.json</code> 的稳定投影：<code>seed</code>、<code>index</code>、<code>source_revision</code>、<code>source_manifest_sha256</code>、<code>executor_sha256</code>、<code>topology</code>、<code>job_id</code>、<code>job_sha256</code>、<code>fault</code>、实际触发事件、最终状态、失败原因、两端主机/来宾角色映射和 B 侧镜像摘要；逐字段比较。
-   - 不参与比较：<code>metadata.json</code> 的 <code>started_at</code>/<code>ended_at</code>、<code>report.json</code>、<code>pass-report.json</code>、<code>trace.cbor</code> 和 <code>manifest.sha256</code>。
-3. **时间字段。** <code>metadata.json</code> 的 <code>started_at</code> 和 <code>ended_at</code> 必须是带时区的 RFC 3339 时间，且 <code>started_at &lt;= ended_at</code>；两者必须落在该 run 的宿主锁获取与释放之间，并满足第 6 节期限。时间只用于每 pass 的有效性检查，不用于跨 pass 相等比较，也不得成为“可复现”的判据。
+   - <code>metadata.json</code> 的稳定投影：<code>seed</code>、<code>index</code>、<code>source_revision</code>、<code>source_manifest_sha256</code>、<code>executor_sha256</code>、<code>topology</code>、<code>job_id</code>、<code>job_sha256</code>、<code>fault</code>、实际触发事件、最终状态、失败原因、两端主机/来宾角色映射、B 侧镜像摘要、<code>locks[]</code> 的 <code>host</code>/<code>phase</code>/<code>state</code>/<code>run_index</code> 和 <code>observations[]</code> 的 <code>event</code>/<code>role</code>/<code>frame_sha256</code>；逐字段比较。
+   - 不参与比较：<code>metadata.json</code> 的 <code>started_at</code>/<code>ended_at</code>、<code>locks[].observed_at</code>、<code>observations[].observed_at</code>、<code>report.json</code>、<code>pass-report.json</code>、<code>trace.cbor</code> 和 <code>manifest.sha256</code>。
+3. **时间字段与时钟来源。** <code>metadata.json</code> 的 <code>started_at</code> 和 <code>ended_at</code> 必须是带时区的 RFC 3339 时间，且 <code>started_at &lt;= ended_at</code>；两者必须落在该 run 的 A、B 宿主锁获取与释放记录构成的公共窗口内。锁记录、<code>started_at</code>、<code>ended_at</code> 和 <code>observations[].observed_at</code> 一律使用 A 侧编排进程的同一 UTC 时钟；A 在获取/释放 B 锁时通过 SSH 查询状态并把确认时刻写入 <code>locks[]</code>，B 的本地时钟不参与排序或窗口判定。因此本条不进行 A/B 跨时钟比较，也不需要时钟误差界。若未来改用 B 本地时钟，必须由维护者先定义共同时间基准和误差界；本轮不采用该做法。时间只用于每 pass 的有效性检查，不用于跨 pass 相等比较，也不得成为“可复现”的判据。
 
 <code>report.json</code> 和 <code>pass-report.json</code> 只是汇总，不替代原始证据。<code>check --compare</code> 返回 <code>reproducible=yes</code> 的条件是：两个 pass 先各自通过上述归档完整性和 S1–S7 检查，再在确定性投影上逐字节或逐字段一致；仅比较 <code>report.json</code> 或仅比较 <code>trace.cbor</code> 都不构成通过。
 
@@ -234,9 +234,21 @@ R4a 可以在 R3 之上增加 profile 层、T2 job、证据写入和检查器扩
 
 R4 只有在以下条件全部满足时才通过；缺一项即失败，不得把“其余都通过”写成通过。
 
-1. **授权与拓扑。** 运行处于 [#128 决定 2](https://github.com/ZeroMatrixTech/ACLt/issues/128) 的首次公开阶段授权内，并遵守 [DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md)：A、B 是两台独立物理主机；B 通过严格主机密钥校验的 SSH 管理；实际拓扑、来宾分布、两端端点（脱敏）和镜像摘要记录在 <code>topology.json</code>。两端在 QEMU 启动、运行、退出和证据回收期间持有 [PARALLEL-1 §6.4](../08-governance/parallel-workflow.md#64-共享实验资源) 的宿主锁，锁的获取/释放记录进入证据。发现单主机、共享目录或拓扑变化时停止并失败。
+1. **授权与拓扑。** 运行处于 [#128 决定 2](https://github.com/ZeroMatrixTech/ACLt/issues/128) 的首次公开阶段授权内，并遵守 [DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md)：A、B 是两台独立物理主机；B 通过严格主机密钥校验的 SSH 管理；实际拓扑、来宾分布、两端端点（脱敏）和镜像摘要记录在 <code>topology.json</code>。两端在 QEMU 启动、运行、退出和证据回收期间持有 [PARALLEL-1 §6.4](../08-governance/parallel-workflow.md#64-共享实验资源) 的宿主锁；锁的获取/释放记录按 5.5 写入 <code>metadata.json.locks[]</code>，由 A 侧编排进程的同一 UTC 时钟记录，B 侧锁状态由 A 在操作前后通过 SSH 确认。发现单主机、共享目录或拓扑变化时停止并失败。
 2. **实际执行与证据。** 完成 2 个种子 × 每种子 16 个 run × 2 个 pass 的实跑，拓扑映射遵守 5.2 和 5.3.1；五类故障均至少实际触发一次；在途协调器崩溃只运行 4 节的 fail-closed 探针，不混入五类计数。所有 run 都有完整证据目录（含 <code>profile.cbor</code>）；没有用本地 R3 campaign、R2 统计运行器、模拟或跳过项替代。源码 SHA、源码清单摘要、执行器摘要、两端环境和 B 侧镜像摘要均已记录且与证据一致。实际运行提交必须可从 <code>main</code> 或 <code>evidence/*</code> 标签到达；证据包有 <code>evidence/*</code> 标签和 SHA-256。
-3. **S1–S7 离线检查。** 使用与证据提交绑定的检查器版本重放全部 64 个 run；每个 run 的 S1–S7 均无 violation，汇总 violation 为 0。检查器自身的负例测试覆盖 3 节 S1–S7 所列的至少一个反例并通过；任一负例被静默接受即失败。检查器不得依赖被测引擎的预算、接纳或发布守卫。
+3. **S1–S7 离线检查。** 使用与证据提交绑定的检查器版本重放全部 64 个 run；每个 run 的 S1–S7 均无 violation，汇总 violation 为 0。检查器自身的负例测试必须逐项覆盖下列 11 类反例，每类至少一个独立用例，并断言非空 violation 与非零退出码；缺任一类或任一负例被静默接受即失败：
+   - 冻结清单或摘要被篡改；
+   - 输出被替换；
+   - 预算前缀超限；
+   - 补算可完成性反例（T1：slot 2 首算无答复后已计入 <code>24706</code>，补算 <code>8242</code> 与尚未派发的 slot 3 首算 <code>8232</code> 合计 <code>41180 &gt; 41170</code>，必须在派发补算前拒绝）；
+   - 重复 <code>ACCEPT</code>；
+   - 缺失 <code>PUBLISH</code>；
+   - <code>PUBLISH</code> 后再写入；
+   - <code>PUBLISHED</code> run 缺失 <code>result.cbor</code>；
+   - 写入 epoch 缺失；
+   - 提交前缺少意图；
+   - 暂停后仍提交或发布。
+   检查器不得依赖被测引擎的预算、接纳或发布守卫。
 4. **两遍可复现。** 两个独立 pass 使用相同的源码 SHA、执行器、种子、拓扑、预算和 placement 规则；每个 pass 先各自通过 5.5 的归档完整性和 S1–S7 全量检查（含 <code>trace.cbor</code>），再对每个种子运行 <code>check --compare</code> 并返回 <code>reproducible=yes</code>：<code>schedule.cbor</code> 和 5.5 的确定性比较投影逐字节或逐字段一致，pass 汇总层确认两个种子均为 yes。<code>report.json</code>、<code>pass-report.json</code>、<code>trace.cbor</code> 和 <code>metadata.json</code> 的起止时间不参与该比较，但 trace 仍须各自通过 S6。任何投影差异、环境差异或执行器差异均为失败。不得通过重跑到“看起来一致”来替代首次差异的保留和解释。
 5. **终态覆盖。** 在 R4 的两个 pass 合计中，<code>BUDGET_BLOCKED</code>、<code>PAUSED</code> 和安全停止（<code>SAFE_STOP</code> 或无答复安全终态）各至少出现一次；这些 run 均无 <code>PUBLISH</code>、无 <code>result.cbor</code>、无完整输出。若固定种子没有产生某一类终态，R4 失败，不得改种子、增加 run 或降低预算来补齐。
 6. **措辞与统计口径。** 验收报告只允许报告“每个 pass 32 个带种子运行、违反 0 次、可复现”；可以报告终态计数和故障触发计数，但不得报告概率、置信度、覆盖率、故障率、上界、完成率、成本或统计独立性。不得宣称物理故障域分离、M4 恢复、自动选主、Gate 退出或生产就绪。TG-6（[#123](https://github.com/ZeroMatrixTech/ACLt/issues/123)）保持 <code>OPEN</code>，R4 不依赖故障过程模型。
@@ -251,7 +263,7 @@ R4a（[#151](https://github.com/ZeroMatrixTech/ACLt/issues/151)）负责把 R3 �
 2. **拓扑。** 同时支持 T1（三来宾四叶）和 T2（四来宾六叶）；叶序、依赖、caps、预算和 placement 按 5.3 固化，索引/拓扑/job 的唯一映射按 5.3.1 的 <code>r4_profile</code> 固化。T2 的六叶 fixture、六叶 standalone reference、证据写入和检查器扩展由 R4a 提供。两种拓扑必须通过同一个 <code>r4_profile</code> 入口；运行端和检查端分别重建 profile，不得由运行端单方面决定映射。
 3. **故障注入。** 五类故障都通过真实物理跨主机路径触发：远端进程退出、真实 LAN TCP 断连、无答复/丢答复、静止点交接和宿主仲裁入口的重叠写入。每类记录实际触发事件；无法注入时 R4 失败，不得 skip 或降级为本地模拟。M4 崩溃探针单独实现，只断言 fail closed。
 4. **配置与凭据。** 使用仓库外 JSON 配置（字段至少 <code>ssh_target</code>、<code>host_a_lan</code>、<code>host_b_lan</code>、<code>remote_root</code>）；<code>remote_root</code> 指向本轮新建的私有子目录。A→B 使用严格主机密钥校验的 SSH；实际 IP、用户名、密钥和本地路径不入库；B 的来宾内核、initramfs、执行器和镜像摘要在启动前核对。
-5. **锁与证据。** 两端在 QEMU 启动前取得 PARALLEL-1 §6.4 锁，在证据回收完成后释放；锁记录、拓扑、源清单、环境和执行器摘要写入 5.4 的结构。证据回收失败或锁未释放时 R4 失败。
+5. **锁与证据。** 两端在 QEMU 启动前取得 PARALLEL-1 §6.4 锁，在证据回收完成后释放；锁记录（时间按 5.5 使用 A 侧编排时钟）、拓扑、源清单、环境和执行器摘要写入 5.4 的结构。证据回收失败或锁未释放时 R4 失败。
 6. **保持 R3 语义。** R4a 可以扩展后端、fixture、profile 层和证据写入，但不得改变 R3 的种子生成、五类顺序、S1–S7 判定或检查器的独立累计规则；不得在 R4 运行中调整种子、预算、caps、槽位或 placement。R3（PR #140）必须先合入，R4a 从最新 <code>main</code> 开发。
 7. **不改变协议。** R4a 只增加实验后端和证据；不修改协议对象、ADR、OQ、Gate、<code>current-status</code> 的结论或生产路径。
 
