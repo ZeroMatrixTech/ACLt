@@ -2,7 +2,7 @@
 
 日期：2026-10-23。工程跟踪标识：`RIR-WORK1`。
 **结论：三个切片组成的第一项工程工作，在候选执行链与 stats-int-v1 的限定范围内完成。**
-该完成不改变 SemanticStatus/VersionDisposition；ADR-0006 仍 PROPOSED，详细规则仍 CANDIDATE，G0/G2/P0-1B 保持开启。
+这不是 SemanticStatus/VersionDisposition 的新状态；ADR-0006 仍 PROPOSED，详细规则仍 CANDIDATE，G0/G2/P0-1B 不关闭。
 
 ## 验收范围
 
@@ -63,4 +63,4 @@ python3 -B scripts/rir-work1.py verify \
 2. 验证同一工件只改变输入/上限时 rir_digest 保持不变、ReceiptID 变化；工件/输入/上限错绑明确拒绝，保留重放与失败证据。
 3. 将双机 outcome 与精确比较记录绑定到同一冻结 Receipt，明确适用 Profile；相等不自动产生 TRUSTED，不新增 `REEXEC_EXACT` 方法。
 
-完整 validator/独立 Rust 外壳、全指令/拒绝阶段 conformance、正式判决与结算仍分别跟踪，ADR 的接受证据要求不变。B/Q、无许可部署、市场/经济假设与生产资格的证据不因本轮通过而建立。下一项的完成条件是可复核的冻结绑定链；结算接入在此之后。
+完整 validator/独立 Rust 外壳、全指令/拒绝阶段 conformance、正式判决与结算仍分别跟踪，ADR 的接受证据要求不变。B/Q、无许可部署、市场/经济假设与生产资格没有因本轮通过而得到证明。下一项的完成条件是可复核的冻结绑定链；结算接入在此之后。

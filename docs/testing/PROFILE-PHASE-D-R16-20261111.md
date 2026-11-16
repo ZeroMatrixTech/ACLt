@@ -25,5 +25,5 @@ Profile 与来源审批、撤销传播和新鲜性，以及正式部署证据。
 `make test` 通过，含 668 项 Python 测试及 20 次 sanitizer 检查。
 R1–R15 的结果摘要逐项匹配历史记录。
 
-双机验证待恢复。已配置的 `aki2` 在 SSH 预检返回 `no route to host`；本轮结论限于单主机证据与本地回归。
+双机验证待恢复。已配置的 `aki2` 在 SSH 预检返回 `no route to host`。
 [机器可读证据](PROFILE-PHASE-D-R16-20261111.summary.json)

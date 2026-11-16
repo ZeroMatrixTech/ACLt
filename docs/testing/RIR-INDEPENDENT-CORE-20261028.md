@@ -28,4 +28,4 @@ FM-S2 授权/原子预留/事件结构可以针对候选接口开发；正式执
 
 按 CONTRIBUTING 同步矩阵核对 protocol-spec、task-lifecycle、invariants、threat-model、术语、架构与 v1-profile：本轮提供候选实现，未改变 RIR/RPR 权威语义、结果等价、Principal 集合或 VersionDisposition；对应 INV-01/02/09/16 与 TH-02/27/29/33—35 的完整证明仍不由局部证据替代。ADR 补记、MG 清单、计划/追踪、当前状态、OQ、论断证据及开发/索引已同步。
 
-原始双机记录的[机器摘要](RIR-INDEPENDENT-CORE-20261028.summary.json)及[校验/本地重放范围](MIGRATION-EVIDENCE-20261028.md)已补入库；该补载不产生新的双机验收结论。
+原始双机记录的[机器摘要](RIR-INDEPENDENT-CORE-20261028.summary.json)及[校验/本地重放范围](MIGRATION-EVIDENCE-20261028.md)已补入库；该恢复不产生新的双机验收结论。

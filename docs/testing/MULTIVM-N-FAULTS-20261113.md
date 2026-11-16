@@ -24,4 +24,4 @@ python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
   --interrupt disconnect VERIFY-1
 ```
 
-本轮规定遇到不完整交换时停止和留证。重派、沿用已接受叶子、二次执行计费，以及整题资源上限和 trap 的组合，均属于需要独立规则与验收的范围。
+本轮只规定遇到不完整交换时停止和留证。是否重派、是否沿用已接受叶子、如何给二次执行计费，以及整题资源上限和 trap 如何组合，均需要独立的规则与验收。

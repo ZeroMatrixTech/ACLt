@@ -60,4 +60,4 @@ ADR-0006 保持 PROPOSED，P0-1B、G0/G2 不关闭。没有执行完整 RIR 22 �
 
 维护入口在两台机器重新各构建两次，独立离线安装器也分别执行通过；四组 raw、normalized 与候选工件均相同，候选 rir_digest 与首次探针相同。保存证据的重新运行被拒绝，原 PASS report 内容不变。收尾源文件摘要和结果见 [机器摘要](rir-build-slice1-closeout-20261023.json)，完整原始证据由操作者保留在 `<EVIDENCE_ROOT>/rir-build-slice1-closeout-20261023/`。已有的 74 项回归加本轮 10 项回归共 84 项；交付清单与覆盖盘点通过。
 
-第一个切片在“最小构建可行性＋可复用入口＋真实双机复现＋保留失败/拒绝覆盖”的范围内完成。ADR 仍 PROPOSED；切片完成只覆盖构建可行性，G0/G2 与 RIR conformance 状态维持原状。下一切片继续为显式输入输出 SDK/执行路径。
+第一个切片在“最小构建可行性＋可复用入口＋真实双机复现＋保留失败/拒绝覆盖”的范围内完成。ADR 仍 PROPOSED，未把切片完成升级为 G0/G2 或 RIR conformance。下一切片继续为显式输入输出 SDK/执行路径。

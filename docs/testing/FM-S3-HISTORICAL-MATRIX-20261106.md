@@ -105,4 +105,4 @@ python3 -B scripts/fm-s3-dualhost.py --historical-gaps \
   --remote-root '/tmp/fm-s3-history-<RUN>' --output '<EVIDENCE_ROOT>/historical'
 ```
 
-本轮结论适用于候选测试层；FM-A01–A12、正式对象准入、真实断电、权威回滚与主网保证分别使用各自的验收证据。
+本轮仍在候选测试层。FM-A01–A12、正式对象准入、真实断电、权威回滚与主网保证继续使用各自的验收证据。

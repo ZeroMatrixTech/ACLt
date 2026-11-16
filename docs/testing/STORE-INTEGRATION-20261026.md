@@ -16,6 +16,6 @@
 | docs/README.md | 当前 ADR/FM 入口及报告链接；不恢复旧 work4 链接 |
 | SINGLEHOST-SHA256SUMS | 根据最终内容重新生成，不恢复旧哈希 |
 
-以上去向均相对 docs 目录中的对应原目录。唯一实施入口仍为[正式迁移计划](../07-roadmap/formal-migration-plan.md)；本次范围限于草案整合，路线决定、FM-S1a 实现与 Gate 均保持原状。
+以上去向均相对 docs 目录中的对应原目录。唯一实施入口仍为[正式迁移计划](../07-roadmap/formal-migration-plan.md)，本次不新增路线决定、不实现 FM-S1a、不改变 Gate。
 
-操作者本地 `<EVIDENCE_ROOT>/store-integration-20261026/` 留存九文件原字节、tracked patch、stash 元数据和 SHA-256 清单。提交和清单检查完成后仅删除上述 store stash，其他 stash 不变；本轮不推送远端。
+操作者本地 `<EVIDENCE_ROOT>/store-integration-20261026/` 留存九文件原字节、tracked patch、stash 元数据和 SHA-256 清单。提交和清单检查完成后，仅删除上述 store stash；其他 stash 不变。不推送远端。

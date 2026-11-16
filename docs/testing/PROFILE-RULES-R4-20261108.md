@@ -45,6 +45,6 @@ Rust 行模式为 `registration-rules:<pin><TAB><CBOR-hex>` 和 `phase-r4:<pin><
 
 完整 `make test` 退出码为 0：默认 23 组 526 项（R3 512 + 本片 14），另 25 项执行器测试，共 551 项；20 次 sanitizer、既有 Claim/FM/RIR 对拍通过。R1/R2/R3 的 66/74/104 条结果流 SHA-256 均与各自原记录一致；24 套公开历史快照的 249 条事件重放通过。
 
-两台物理机各自构建并通过 145 条，结果流 SHA-256 均为 `fd6fce4a40ec608cdfd44e9a97ed8a0ba0af795bdd4c2b420003d3b2e81161e4`，逐文件源码 pin 相同。环境与结果见[机器摘要](PROFILE-RULES-R4-20261108.summary.json)。[公开最小源码包](public-evidence/PROFILE-RULES-R4-source.tar.gz)已在新目录核对 pin、复跑 145 条和 14 项新增单元测试，结果一致；R3 的原始源码包/pin 亦逐文件通过。全量日志、A/B 原报告、部署记录和修改前的完整源码备份保留在操作者证据目录。双机范围是静态构建/编码/规则核对，新增任务协议运行数为 0；两台物理机与 SSH 约定按 DUALHOST-SSH-1 的有限工程假设使用，身份/统计独立保证须另行建立。
+两台物理机各自构建并通过 145 条，结果流 SHA-256 均为 `fd6fce4a40ec608cdfd44e9a97ed8a0ba0af795bdd4c2b420003d3b2e81161e4`，逐文件源码 pin 相同。环境与结果见[机器摘要](PROFILE-RULES-R4-20261108.summary.json)。[公开最小源码包](public-evidence/PROFILE-RULES-R4-source.tar.gz)已在新目录核对 pin、复跑 145 条和 14 项新增单元测试，结果一致；R3 的原始源码包/pin 亦逐文件通过。全量日志、A/B 原报告、部署记录和修改前的完整源码备份保留在操作者证据目录。双机范围是静态构建/编码/规则核对，新增任务协议运行数为 0；两台物理机与 SSH 约定不提供身份/统计独立保证。
 
-后续按剩余 Phase R 缺口逐项推进，再接固定 Profile 的 I/F 创建/绑定；官方 import 的未冻结内部结构仍待正式规范定义，本片 helper 与测试占位仅用于限域核对。
+后续按剩余 Phase R 缺口逐项推进，再接固定 Profile 的 I/F 创建/绑定；官方 import 的未冻结内部结构不能靠本片 helper 或测试占位补成事实。
