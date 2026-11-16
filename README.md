@@ -41,18 +41,18 @@ ACLt Protocol 已形成一套完整的候选协议架构，但**尚未证明整�
 
 ## 非目标与禁止主张
 
-当前不得声称：
+以下结论不在当前安全主张范围内：
 
-- 任意计算都可以廉价或绝对正确地验证；
-- Provider 数量等于独立控制实体数量；
-- 51% 是 ACLt Protocol 的默认安全阈值；
-- Rank、信誉或历史表现代表真理；
-- 攻击不划算等于攻击不可能；
-- 临时发行使验证免费；
-- 使用区块链自动带来协议安全或分布式容错；
-- 中心化参考实现已经具备公共网络鲁棒性。
-- 使用 Rust、RIR 或某个编译器自动保证结果正确、确定性、资源计量一致或分布式安全；
-- V1 已支持或验证 unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器或非确定性任务。
+- 任意计算的廉价或绝对正确验证尚未建立；
+- Provider 数量不表示独立控制实体的数量；
+- ACLt Protocol 没有默认的 51% 安全阈值；
+- Rank、信誉或历史表现不表示真理；
+- 攻击不划算不等同于攻击不可能；
+- 临时发行不会使验证免费；
+- 使用区块链不会自动带来协议安全或分布式容错；
+- 中心化参考实现尚不具备公共网络鲁棒性；
+- 使用 Rust、RIR 或某个编译器不会自动保证结果正确、确定性、资源计量一致或分布式安全；
+- V1 尚未支持或验证 unsafe Rust、完整 `std`/宿主 OS effects、原生执行、GPU/专用加速器或非确定性任务。
 
 ## 最小本体
 
@@ -95,7 +95,7 @@ flowchart TD
 | 1 | [`project-overview.md`](docs/00-overview/project-overview.md) | 项目目标、范围、非目标和成熟度 |
 | 2 | [`terminology.md`](docs/00-overview/terminology.md) | 统一术语、状态标签和废弃语义 |
 | 3 | [`system-context.md`](docs/00-overview/system-context.md) | 系统边界、Principal、函数和外部依赖 |
-| 4 | [`threat-model.md`](docs/01-requirements/threat-model.md) | 攻击者、威胁、剩余风险和禁止主张 |
+| 4 | [`threat-model.md`](docs/01-requirements/threat-model.md) | 攻击者、威胁与剩余风险边界 |
 | 5 | [`invariants.md`](docs/01-requirements/invariants.md) | 16 条规范性安全不变量 |
 | 6 | [`system-architecture.md`](docs/02-architecture/system-architecture.md) | 分层架构和实现边界 |
 | 7 | [`ADR-0002`](docs/05-decisions/ADR-0002-normative-rir-and-v1-rust-profile.md) | RIR、Rust Profile 与 V1 能力边界 |
@@ -186,7 +186,7 @@ state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifi
 - 规格化 FundingPolicy、退款、故障归因和最多一次结算；
 - 建立适配器一致性、发布密钥、撤销和漏洞响应流程。
 
-提交前请阅读 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+贡献流程见 [`CONTRIBUTING.md`](CONTRIBUTING.md)；提交前应先阅读。
 
 ## 版本与更新
 
@@ -199,7 +199,7 @@ state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifi
 
 本仓库的全部工件采用 **Apache License 2.0**，SPDX 标识为 `Apache-2.0`，范围包括代码与参考实现、协议规范、项目文档、仓库内的研究文稿、测试向量与证据。代码许可于 2026-08-17 确定；2026-11-14 维护者决定规范、文档与研究文稿沿用同一许可。
 
-另有标注的第三方材料保留其原许可。目前包括 `tools/verification_profile/rust/unicode_data.rs`（由 Unicode 字符数据库生成，适用 `Unicode-3.0`，全文见同目录 `UNICODE-LICENSE.txt`）和 `docs/00-overview/fonts/` 下的五个字体子集（适用 `OFL-1.1`，随附三份 `OFL-*.txt` 原文）。Apache-2.0 第 6 条不授予名称或商标使用权，ACLt 的名称、商标与兼容性声明政策另行决定，见下节。贡献采用 Developer Certificate of Origin（DCO），不使用 CLA；外部 fork PR 的每个提交须带与作者一致的 `Signed-off-by`，内部代理提交由维护者在合并时签署，细则见 [CONTRIBUTING §11](CONTRIBUTING.md#11-许可)。安全漏洞不要先公开细节，按 [SECURITY.md](SECURITY.md) 报告。
+另有标注的第三方材料保留其原许可。目前包括 `tools/verification_profile/rust/unicode_data.rs`（由 Unicode 字符数据库生成，适用 `Unicode-3.0`，全文见同目录 `UNICODE-LICENSE.txt`）和 `docs/00-overview/fonts/` 下的五个字体子集（适用 `OFL-1.1`，随附三份 `OFL-*.txt` 原文）。Apache-2.0 第 6 条不授予名称或商标使用权，ACLt 的名称、商标与兼容性声明政策另行决定，见下节。贡献采用 Developer Certificate of Origin（DCO），不使用 CLA；外部 fork PR 的每个提交须带与作者一致的 `Signed-off-by`，内部代理提交由维护者在合并时签署，细则见 [CONTRIBUTING §11](CONTRIBUTING.md#11-许可)。安全漏洞的私密报告流程见 [SECURITY.md](SECURITY.md)；利用细节不在公开渠道先行披露。
 
 仓库根目录 `LICENSE` 为 Apache License 2.0 英文全文；2026-11-06 起，文末附录示例中的版权行填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`，许可条款正文未改。源码由文件头 SPDX 标识或 [REUSE.toml](REUSE.toml) 显式路径声明覆盖，由 `make check` 中的覆盖检查核对；第三方材料见 [docs/08-governance/third-party-materials.md](docs/08-governance/third-party-materials.md)；Markdown 等文档由本节与根目录 `LICENSE` 覆盖。存在归属声明或第三方通知要求时再维护 `NOTICE`。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
 

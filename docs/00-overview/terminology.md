@@ -102,7 +102,7 @@ ACLt 中的名词必须属于以下类别之一。分类用于防止把数据对
 
 ### `Plan`
 
-依据 `ComputeReceipt`、依赖和资源约束提出 `WorkPlan` 或 `Assignment` 的函数。Plan 只需满足合法性、确定性和边界要求，不承诺全局最优。
+依据 `ComputeReceipt`、依赖和资源约束提出 `WorkPlan` 或 `Assignment` 的函数。Plan 只需满足合法性、确定性和边界要求；全局最优不属于其要求。
 
 ### `Compile`
 
@@ -414,4 +414,4 @@ V1 的 reference frontend 约束集合：规定哪些 Rust 源构造可以被接
 - **Decentralized Compute Protocol / DCP**：v0.5 语义基线使用的历史名称。
 - **RUDCP、DistributedCompute**：更早期历史名称，仅用于追踪旧文件和决策演变。
 
-ACLt 的商标、域名、软件包名和公共品牌可用性尚未完成外部清查。内部命名决定不得被解释为外部权利确认。
+ACLt 的商标、域名、软件包名和公共品牌可用性尚未完成外部清查。内部命名决定不构成外部权利确认。

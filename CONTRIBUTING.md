@@ -108,7 +108,7 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 5. 更新 `docs/06-research/claims-and-sources.md` 中的论断状态；
 6. 运行全部现有检查；
 7. 提交小而可审查的变更，每个提交按 §11 签署 DCO（`git commit -s`）；
-8. 在证据不足时保留 `OPEN/CANDIDATE`，不要提前关闭问题。
+8. 在证据不足时保留 `OPEN/CANDIDATE`，不提前关闭问题。
 9. 按 `docs/08-governance/audit-procedure.md` 执行连续性、结构与 Gate 回验。
 
 ## 6. 提交说明模板
@@ -179,7 +179,7 @@ Signed-off-by: 姓名 <邮箱>
 
 ## 10. 行为与安全问题
 
-保持技术讨论可审计、具体并针对论证，不针对个人。涉及未公开漏洞、密钥或可直接利用细节时，不要先在公开 Issue、PR 或讨论中披露，请按 [安全政策](SECURITY.md) 私下报告。
+参与者在所有项目空间中的行为要求见 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。技术讨论保持可审计、具体并针对论证，不针对个人。涉及未公开漏洞、密钥或可直接利用细节时，按 [SECURITY.md](SECURITY.md) 的私密渠道报告，不在公开 Issue、PR 或讨论中先行披露。
 
 ## 11. 许可
 
@@ -187,7 +187,7 @@ Signed-off-by: 姓名 <邮箱>
 
 ### 贡献签署（DCO）
 
-维护者于 2026-11-15 决定采用 [Developer Certificate of Origin 1.1](https://developercertificate.org/)（DCO）作为贡献许可机制，不使用 CLA。签署表示你按 DCO 的条款，确认有权以本仓库的许可证提交该贡献。
+维护者于 2026-11-15 决定采用 [Developer Certificate of Origin 1.1](https://developercertificate.org/)（DCO）作为贡献许可机制，不使用 CLA。签署表示签署者按 DCO 的条款，确认有权以本仓库的许可证提交该贡献。
 
 - **外部贡献**（来自 fork 的 PR）：每个提交都要在提交说明末尾的 trailer 区带有 `Signed-off-by: 姓名 <邮箱>`，邮箱与提交作者一致，合并提交也不例外；写在正文中间的签署行不算数。用 `git commit -s` 即可自动添加。`.github/workflows/dco.yml` 在 PR 上检查，检查脚本与工作流取自目标分支，不会运行 PR 中的任何内容。**在仓库公开后用一次 fork PR 实测确认“缺签时合并受阻、补签后最新头部通过”之前，这项检查对外部 PR 只作提示**；维护者合并外部 PR 前，须在本地独立核验：`python3 -B scripts/check-dco.py pr --base <目标分支提交> --head <PR 头部提交> --fork true`（需要先 `git fetch origin pull/<编号>/head`）。
 - **本仓库分支上的工作**（维护者与 AI 代理）：代理产生的提交不加 `Signed-off-by`。维护者在 squash 合并时，在合并提交说明末尾加上自己的 `Signed-off-by`，代为签署。`dco.yml` 在推送到 `main` 时检查。
