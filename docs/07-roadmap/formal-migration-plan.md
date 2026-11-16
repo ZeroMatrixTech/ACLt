@@ -28,7 +28,7 @@
 
 开工依据：六项路线已接受；已有 [Python codec](../../tools/verification_profile/codec.py)、[Rust codec/独立 SHA/NFC](../../tools/verification_profile/rust/README.md)、[106 条固定向量和差分入口](../testing/CLAIM-CODEC-20261023.md)。这些是有限候选实现，不能直接改名成通用正式对象实现。
 
-本片只做以下范围，Receipt/资金转移/Lease/真实密钥生命周期不提前进入：
+本片范围限于以下各项，Receipt/资金转移/Lease/真实密钥生命周期不提前进入：
 
 1. 在现有规范 owner 下核对 primitive、整数、容器、Rational/SemVer、ENUM、Schema View 和必要导入的封闭合约；明确哪些规则得到完整支持、哪些仍 partial，不按通过测试数量抬高覆盖率。
 2. 精确定义最小 Principal 公钥绑定和 Requester/Provider 签署责任。日志实现密钥独立引用，不新增协议 Principal。私钥不入库，未知 key/role/network/version 必须拒绝。
@@ -41,7 +41,7 @@ FM-S1a 已形成可审查的[测试合约与精确 suite](../../schemas/formal-m
 
 ## 各片交付与回归要求
 
-沿用原 store 计划的交付义务：每个实现切片附规范/schema/registry 同步清单、golden/negative vectors、独立实现差分与拒绝前后业务状态不变检查；需要集成的阶段附真实双机驱动和新报告，保留失败证据。纯文档或局部编码阶段不得冒充双机集成已完成。
+沿用原 store 计划的交付义务：每个实现切片附规范/schema/registry 同步清单、golden/negative vectors、独立实现差分与拒绝前后业务状态不变检查；需要集成的阶段附真实双机驱动和新报告，保留失败证据。纯文档或局部编码阶段的证据范围限于该阶段，双机集成的完成状态由对应阶段的真实运行单独证明。
 
 FM-S3 应以新对象重跑原授权提交/重放 12 场景、结算 12 场景及恢复 14 场景所对应的矩阵，再补 deadline、旧 epoch、终态竞争与拒绝状态不变；历史场景数是回归基线，不是本轮已通过记录。通用 R-G1～6、A-G1～6 仍由迁移清单约束。
 
@@ -64,7 +64,7 @@ FM-S3 应以新对象重跑原授权提交/重放 12 场景、结算 12 场景�
 
 候选列对应追踪表中的 `candidate_path_evidence`。正式验收状态仍逐项记录为 `PLANNED_NOT_RUN`。本轮证据归档和回放见 [第四项收尾](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md)。
 
-这些是整条迁移的要求，不意味着 FM-S1a 一片完成全部 FM-A。完整 RIR/RPR、身份控制独立、B/Q、真实支付、主网资格和 Gate 都不能由局部编码对拍替代。
+这些是整条迁移的要求；FM-S1a 一片的验收范围限于该片，全部 FM-A 仍需逐项完成。局部编码对拍不构成完整 RIR/RPR、身份控制独立、B/Q、真实支付、主网资格或 Gate 的替代证据。
 
 ## 2026-10-28 FM-S1b 交接
 
