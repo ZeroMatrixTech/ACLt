@@ -262,7 +262,7 @@ class NegativeClassExitCodeTests(unittest.TestCase):
             status = c.decode((run_dir / "status.cbor").read_bytes())
             if outcome is None or status["outcome"] == outcome:
                 return spec, run_dir
-        self.skipTest(f"no {fault} run with outcome {outcome}")
+        self.fail(f"fixture lost its required {fault} run with outcome {outcome}")
 
     def refresh_manifest(self, root: Path) -> None:
         montecarlo._manifest(root)
@@ -504,6 +504,85 @@ class NegativeClassExitCodeTests(unittest.TestCase):
             (run_dir / "metadata.json").write_text(json.dumps(metadata))
             return "non-zero worker process exit"
         cases.append(("exit-status", text_exit_status))
+
+        def run_with_verify(root, fault):
+            _, run_dir = self.run_dir(root, fault)
+            events = c.decode((run_dir / "journal.cbor").read_bytes())
+            accept = next(event for event in events if event["kind"] == "ACCEPT")
+            wire = general_vm.wire_name(accept["request"])
+            return run_dir, accept["verifier"], f"{wire}-request.cbor"
+
+        def misplace_bound_verify(root):
+            # A VERIFY that has its ACCEPT, but the serving frame sits at another worker.
+            run_dir, verifier, name = run_with_verify(root, "no_reply")
+            other = next(role for role in montecarlo.PROFILE_WORKERS if role != verifier)
+            (run_dir / "frames" / verifier / name).rename(run_dir / "frames" / other / name)
+            return f"request frame at {verifier} is missing or differs"
+        cases.append(("verify-misplaced", misplace_bound_verify))
+
+        def drop_bound_verify(root):
+            run_dir, verifier, name = run_with_verify(root, "no_reply")
+            (run_dir / "frames" / verifier / name).unlink()
+            return f"request frame at {verifier} is missing or differs"
+        cases.append(("verify-missing", drop_bound_verify))
+
+        def reply_after(fault):
+            def mutate(root):
+                # worker_exit / tcp_disconnect must never leave a serving-side reply.
+                _, run_dir = self.run_dir(root, fault)
+                record = c.decode((run_dir / "fault.cbor").read_bytes())["injections"][0]
+                frames = run_dir / "frames" / record["role"]
+                request = next(path for path in frames.glob("*-SOLVE-request.cbor")
+                               if _sha(path.read_bytes()) == record["request_sha256"])
+                response = request.with_name(request.name.replace("-request.", "-response."))
+                response.write_bytes(handle(request.read_bytes(), self.executor))
+                return f"{fault} solve"
+            return mutate
+        cases.append(("exit-reply", reply_after("worker_exit")))
+        cases.append(("disconnect-reply", reply_after("tcp_disconnect")))
+
+        def drop_no_reply_record(root):
+            _, run_dir = self.run_dir(root, "no_reply")
+            record = c.decode((run_dir / "fault.cbor").read_bytes())
+            record["injections"] = record["injections"][1:]
+            (run_dir / "fault.cbor").write_bytes(c.encode(record))
+            return "has no injection record"
+        cases.append(("no-reply-record-missing", drop_no_reply_record))
+
+        def misbind_no_reply_record(root):
+            _, run_dir = self.run_dir(root, "no_reply")
+            record = c.decode((run_dir / "fault.cbor").read_bytes())
+            record["injections"][0]["response_sha256"] = "0" * 64
+            (run_dir / "fault.cbor").write_bytes(c.encode(record))
+            return "does not bind the withheld reply"
+        cases.append(("no-reply-record-misbound", misbind_no_reply_record))
+
+        def pending_intent(root, mutate_message):
+            _, run_dir = self.run_dir(root, "overlap")
+            trace_path = run_dir / "trace.cbor"
+            trace = montecarlo._trace_events(trace_path)
+            pause = next(i for i, event in enumerate(trace) if event["kind"] == "PAUSED")
+            pending = trace[pause - 2]
+            self.assertEqual(pending["message"]["event"], "RESERVE")
+            mutate_message(run_dir, pending["message"])
+            trace_path.write_bytes(b"".join(len(raw).to_bytes(4, "big") + raw
+                                            for raw in (c.encode(event) for event in trace)))
+
+        def pending_not_reserve(root):
+            # The pending intent exists, but its content is not an uncommitted RESERVE.
+            pending_intent(root, lambda run_dir, message: message.update(event="ANSWER"))
+            return "not an uncommitted RESERVE"
+        cases.append(("pending-not-reserve", pending_not_reserve))
+
+        def pending_dispatched(root):
+            def dispatch(run_dir, message):
+                fields = message["fields"]
+                wire = general_vm.wire_name(fields["request"])
+                path = run_dir / "frames" / fields["worker"] / f"{wire}-request.cbor"
+                path.write_bytes(fields["request"])
+            pending_intent(root, dispatch)
+            return "was dispatched"
+        cases.append(("pending-dispatched", pending_dispatched))
 
         for name, mutate in cases:
             with self.subTest(name):
