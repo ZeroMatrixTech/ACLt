@@ -709,9 +709,14 @@ class MonteCarloRegressionTests(unittest.TestCase):
         spec = {"fault": fault, "slot": slot, "attempt": 1, "loss": loss, "topology": "t1"}
         (run_dir / "fault.cbor").write_bytes(c.encode(
             dict(spec, injections=inject.hits if inject is not None else [])))
+        timed = [{"event": f"injected_{row['mode']}", "role": row["role"],
+                  "frame_sha256": row["request_sha256"], "observed_at": "2026-11-16T10:00:05+00:00"}
+                 for row in (inject.hits if inject is not None else [])]
+        timed += [{"event": f"worker_exit_{row['exit_status']}", "role": row["role"],
+                   "frame_sha256": None, "observed_at": "2026-11-16T10:00:05+00:00"} for row in exits]
         (run_dir / "metadata.json").write_text(json.dumps(
             {"guest_boot_ids": {role: f"boot-{role}" for role in montecarlo.PROFILE_ROLES},
-             "worker_exits": exits, "serving_observations": closed}))
+             "worker_exits": exits, "serving_observations": closed, "observations": timed}))
         return job, spec, run_dir
 
     def serving(self, job, spec, run_dir):
@@ -900,6 +905,45 @@ class MonteCarloRegressionTests(unittest.TestCase):
         missing = self.window_metadata()
         missing["observations"] = missing["observations"][:2]
         self.assertTrue(any("after: phase start" in item for item in self.window(missing)))
+
+    def test_handoff_phases_are_ordered_on_the_a_clock(self):
+        swapped = self.window_metadata()
+        times = {row["event"]: row["observed_at"] for row in swapped["observations"]}
+        for row in swapped["observations"]:
+            phase, _, what = row["event"].partition("_")
+            other = "after" if phase == "before" else "before"
+            row["observed_at"] = times[f"{other}_{what}"]
+        self.assertTrue(any("started before the previous phase was collected" in item
+                            for item in self.window(swapped)))
+
+    def test_timed_fault_observations_match_the_records(self):
+        job, spec, run_dir = self.guest_evidence("worker_exit", 1, "first", "timed-exit")
+        path = run_dir / "metadata.json"
+        metadata = json.loads(path.read_text())
+        metadata["observations"] = [row for row in metadata["observations"]
+                                    if not row["event"].startswith("worker_exit_")]
+        path.write_text(json.dumps(metadata))
+        self.assertTrue(any("worker-exit observations do not match" in item
+                            for item in self.serving(job, spec, run_dir)))
+        job, spec, run_dir = self.guest_evidence("tcp_disconnect", 2, "first", "timed-close")
+        path = run_dir / "metadata.json"
+        metadata = json.loads(path.read_text())
+        metadata["observations"][0]["role"] = "A"
+        path.write_text(json.dumps(metadata))
+        self.assertTrue(any("injection observations do not match" in item
+                            for item in self.serving(job, spec, run_dir)))
+
+    def test_run_source_revision_matches_the_campaign(self):
+        root = Path(self.tmp.name) / "source-revision"
+        root.mkdir()
+        (root / "environment.json").write_text(json.dumps({"source_revision": "a" * 40}))
+        metadata = {"source_revision": "a" * 40, "source_commit": "a" * 40}
+        violations = []
+        montecarlo._check_run_environment("run-0004", root, metadata, "local", violations)
+        self.assertFalse(any("source revision" in item for item in violations), violations)
+        metadata["source_revision"] = "b" * 40
+        montecarlo._check_run_environment("run-0004", root, metadata, "local", violations)
+        self.assertTrue(any("source revision differs" in item for item in violations))
 
     def test_handoff_needs_fresh_boots_for_every_guest(self):
         before = {role: f"before-{role}" for role in montecarlo.PROFILE_ROLES}

@@ -155,6 +155,12 @@ B 上的 kernel 和 initramfs 在启动前逐项核对摘要；来宾启动后�
 
 - **宿主仲裁与轮次（PRA-156-03）。** profile run 一律经宿主仲裁入口写 journal（`--coordinated`），因此每个 run 都有权威的 `host.cbor` 和协调来宾副本 `guest.cbor`。检查器要求两者相同、与 `journal.cbor` 一致、每条非 `HANDOFF` 事件都带 `writer_epoch`，交接 run 的轮次在 `HANDOFF` 处恰好推进一次，其余 run 不换轮次。
 - **交接的新启动（PRA-156-01）。** 交接后每个来宾都必须是新的启动，协调来宾 A 的启动 ID 前后不同，两阶段之间不共享任何启动 ID。
+- **阶段先后与故障观测（PRA-156-03，第二轮）。**
+  - 交接 run 的后继阶段必须在前一阶段回收之后才开始，按同一 A 时钟核对。
+  - `observations[]` 中注入和工作进程退出的 `observed_at`，表示 A 侧编排进程**收集到该记录的时刻**，不是来宾内事件发生的时刻。
+  - 检查器要求：每条注入记录对应一条 `injected_<故障类>` 观测，服务角色和请求帧摘要都与记录一致；每次工作进程退出对应一条 `worker_exit_<退出码>` 观测，角色一致。
+  - `tcp_disconnect` 的关闭事件由服务方来宾按角色、槽位、尝试写入 `serving_observations`（不带时间），经注入记录与请求帧绑定。
+- **源码身份（PRA-156-08）。** 每个 run 的 `source_revision` 和 `source_commit` 都必须等于 `environment.json` 记录的 campaign 源码提交。
 - **后端绑定（PRA-156-07）。** `check --backend dualhost` 把验收路径绑定到预期后端，不再由汇总 `report.json` 决定跑哪些检查。不带该参数时，若声明为进程内却存在任何来宾后端证据（`environment.json`、清单、逐 run 元数据或帧），同样报违规。来宾后端缺清单即违规。
 - **比较投影（PRA-156-03）。** `check --compare` 按 R1 5.5 只比较稳定投影：确定性文件逐字节比较；`metadata.json` 只比较列出的字段（锁记录去掉 `observed_at`，观测去掉 `observed_at`，不比较启动 ID）；`topology.json` 只比较角色、放置和 B 侧镜像摘要，不比较端口和端点；`report.json`、`trace.cbor`、清单不参与比较。
 

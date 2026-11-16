@@ -917,6 +917,25 @@ def _check_serving(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path
                     f"serving: tcp_disconnect {key} has no serving-side close observation")
     for key in sorted(set(no_replies) - matched):
         violations.append(f"serving: NO_REPLY at slot/attempt {key} has no injection record")
+    # Host-timed observations (A-side collection time, R1 5.5) must match the
+    # per-attempt records: one injected_<mode> per record with its serving role and
+    # request-frame digest, and one worker_exit_<status> per observed worker exit.
+    timed = [row for row in metadata.get("observations", ()) if type(row) is dict]
+    expected_injected = sorted((row.get("role"), row.get("request_sha256"))
+                               for row in injections if type(row) is dict)
+    observed_injected = sorted((row.get("role"), row.get("frame_sha256")) for row in timed
+                               if row.get("event") == f"injected_{fault}")
+    if observed_injected != expected_injected or any(
+            str(row.get("event", "")).startswith("injected_") and row.get("event") != f"injected_{fault}"
+            for row in timed):
+        violations.append("serving: host injection observations do not match the injection records")
+    if fault == "worker_exit":
+        expected_exits = sorted((row.get("role"), f"worker_exit_{row.get('exit_status')}")
+                                for row in metadata.get("worker_exits", ()) if type(row) is dict)
+        observed_exits = sorted((row.get("role"), row.get("event")) for row in timed
+                                if str(row.get("event", "")).startswith("worker_exit_"))
+        if observed_exits != expected_exits:
+            violations.append("serving: host worker-exit observations do not match the worker exits")
 
 
 def _copy_json(path: Path, value: Any) -> None:
@@ -1845,10 +1864,18 @@ def _check_run_window(label: str, index: int, metadata: dict[str, Any], backend:
         if not started <= moment <= ended:
             violations.append(f"{label}: host observation {row.get('event')} is outside the run window")
         events.setdefault(row.get("event"), []).append(moment)
+    previous_done = None
     for phase in phases:
         begin, done = events.get(f"{phase}_started"), events.get(f"{phase}_collected")
         if not begin or not done or len(begin) != 1 or len(done) != 1 or begin[0] > done[0]:
             violations.append(f"{label}/{phase}: phase start/collection observations are missing")
+            previous_done = None
+            continue
+        # Phases are sequential on the one A clock: a successor starts only after the
+        # previous phase has been collected.
+        if previous_done is not None and begin[0] < previous_done:
+            violations.append(f"{label}/{phase}: phase started before the previous phase was collected")
+        previous_done = done[0]
 
 
 def _check_run_environment(label: str, root: Path, metadata: dict[str, Any], backend: str,
@@ -1858,6 +1885,10 @@ def _check_run_environment(label: str, root: Path, metadata: dict[str, Any], bac
         violations.append(f"{label}: campaign has no environment.json")
         return
     recorded = json.loads(path.read_text())
+    frozen = recorded.get("source_revision")
+    if not isinstance(frozen, str) or metadata.get("source_revision") != frozen \
+            or metadata.get("source_commit") != frozen:
+        violations.append(f"{label}: source revision differs from the campaign's frozen revision")
     for key, value in _host_environment(metadata, backend).items():
         if recorded.get(key) != value:
             violations.append(f"{label}: {key} differs from environment.json")
