@@ -1,7 +1,6 @@
 # 接纳端回滚与复制保护：2026-10-20 工程记录
 
-基线 `c0e0800d720d147bcbd87ffda88df2dd45d1975b`，叠加已核查维护成果及本轮新实验。
-这是实现与实测记录，不是独立第三方审计，不改变协议状态或 Gate 结论。
+本轮完成有限物理与 VM 环境下的接纳端回滚和复制保护实验：62 项 VM 场景断言与 970 项独立离线检查通过，本地检查见下文。记录基线为 `c0e0800d720d147bcbd87ffda88df2dd45d1975b`，叠加已核查维护成果及本轮新实验。本记录属实现与实测记录，独立第三方审计另行安排；协议状态与 Gate 结论保持原状。
 
 ## 改动与适用范围
 
@@ -27,4 +26,4 @@ QEMU TCG 软件虚拟化，五台主测试 VM（一个权威账本、两个接�
 
 沙箱最初禁止回环网络与 LeakSanitizer；在支持的环境用相同入口重跑通过，未关闭检测器。VM 首次控制端就绪后请求被重置，第二次首次请求超时；驱动修正就绪顺序、增加只读健康探针并放宽 TCG 通信期限。第三次断网验证中，超时请求在恢复后接纳，重传返回 duplicate；原验收只接受 accepted，已改为检查断连期间未接纳、恢复后只有一个贡献和稳定回执。失败现场全部保留。
 
-原始证据位于项目工作区 `outputs/receiver-rollback-round4-20261020/`：`vm-final/`、`offline-final/`、`local-evidence/`、`baseline-counterexamples.json`、`maintenance-resolution.json` 与环境记录。源代码更新包不包含 VM 运行时、镜像或测试私钥。QEMU 来宾中断不证明宿主物理断电持久性。
+原始证据位于项目工作区 `outputs/receiver-rollback-round4-20261020/`：`vm-final/`、`offline-final/`、`local-evidence/`、`baseline-counterexamples.json`、`maintenance-resolution.json` 与环境记录。源代码更新包不含 VM 运行时、镜像或测试私钥。QEMU 来宾中断的持久性范围限于来宾，宿主物理断电持久性未建立。
