@@ -31,7 +31,7 @@ Work 1–3 的构建、实验任务承诺、授权、日志、测试资金与恢
 
 ### D-2 终态与费用：首轮 audit-only；过程付费与正确性背书分开
 
-首轮采用受限 `REEXEC_AUDIT_ONLY` 路线连接 stats-int-v1：首轮接入不新增 DIRECT_VERIFIED 谓词，独立主机建立 B/Q 也不属于首轮接入的证明目标。这限定当前实现路线，不排除其他任务族未来采用 DIRECT_VERIFIED。
+首轮采用受限 `REEXEC_AUDIT_ONLY` 路线连接 stats-int-v1：首轮接入不新增 DIRECT_VERIFIED 谓词，也不声称独立主机建立 B/Q。这限定当前实现路线，不排除其他任务族未来采用 DIRECT_VERIFIED。
 
 audit-only 必须使用合规 Profile 的 ReexecAuditParams/AuditFailureMapping，safety_parameters 与 liveness_parameters 为空，不冻结 EligibilitySnapshot、不做随机抽样，不承载 B/Q 或统计活性 claim（Profile §7.4、§8.5、§10.2）。完整证据、冻结停止/失败规则及规范要求的显式 AssumptionEvaluation 仍需提供；AssumptionStateSnapshot 与有限总体 EligibilitySnapshot 不可混淆。只有未来的 REEXEC_BOUNDED 路线才接入后者及其总体/随机性绑定。
 
