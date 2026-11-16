@@ -6,3 +6,6 @@ contact_links:
   - name: 安全漏洞私密报告
     url: https://github.com/ZeroMatrixTech/ACLt/blob/main/SECURITY.md
     about: 未公开漏洞、密钥或可直接利用的细节的私密报告渠道。
+  - name: 安全报告请求（无细节）
+    url: https://github.com/ZeroMatrixTech/ACLt/issues/new?template=security-contact.md
+    about: 私密报告入口不可用时，请求维护者提供私下渠道；不要写入任何漏洞细节。
