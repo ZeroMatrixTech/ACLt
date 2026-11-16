@@ -28,4 +28,6 @@ python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
 
 复现另一交接点可指定 `--general-checkpoint 1`。只保留 `--general --guests 3` 运行正常树形计划，加入 `--general-flat --general-order 3102` 运行平铺计划。预算负例使用 `--general-order 1023 --general-drop --solve-budget 41169`。
 
-[原始证据包](public-evidence/MULTIVM-GENERAL-JOB-public-evidence.tar.gz) SHA-256 为 `d07c6b6c66171a1e3fca5780f2f3cddb91695adb1bb372746ab947ab8d15ed45`，包含五场景的两端帧、账本、来宾和宿主报告、源码清单、串口日志及终态证据。物理故障域、在途自动恢复与开放环境的协调权仍需独立验收。
+[原始证据包](public-evidence/MULTIVM-GENERAL-JOB-public-evidence.tar.gz) SHA-256 为 `bb1b4ced2882442098f86de1aa0d2434dcac67ea7fcd26633cc9bd31eff0eabe`，包含五场景的两端帧、账本、来宾和宿主报告、源码清单、串口日志及终态证据。物理故障域、在途自动恢复与开放环境的协调权仍需独立验收。
+
+> 2026-11-16：按维护者决定（#128）将本包 21 个串口日志中的上游内核联系人邮箱字段统一替换为 `<redacted-email>` 后重新打包；上列 SHA-256 为脱敏后的包，帧、账目、清单和其他字段未变。

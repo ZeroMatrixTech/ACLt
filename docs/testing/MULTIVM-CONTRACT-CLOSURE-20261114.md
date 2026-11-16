@@ -41,6 +41,9 @@ flock "${XDG_RUNTIME_DIR:-/tmp}/aclt-experiment.lock" bash -c '
 '
 ```
 
-[脱敏证据包](public-evidence/MULTIVM-CONTRACT-CLOSURE-public-evidence.tar.gz) SHA-256 为 `7f84647dad3efbe19f9c72cd1eee34cd28a2087b15675b1b7389535eb1639353`，含来源与目标的原始帧、日志、发布记录、宿主协调轨迹、来宾启动记录、版本与源码指纹。宿主报告中的内核路径只留文件名。前两次来宾试验分别因 virtio 控制通道空读处理和确认帧使用编解码器不支持的空值失败，现场保存在包内 `failed/`。
+[脱敏证据包](public-evidence/MULTIVM-CONTRACT-CLOSURE-public-evidence.tar.gz) SHA-256 为 `a77afc748c8cf1187a3eedcc61db8a00de57d8728ade9a49a5076496c4538ce9`，含来源与目标的原始帧、日志、发布记录、宿主协调轨迹、来宾启动记录、版本与源码指纹。宿主报告中的内核路径只留文件名。前两次来宾试验分别因 virtio 控制通道空读处理和确认帧使用编解码器不支持的空值失败，现场保存在包内 `failed/`。
+
+> 2026-11-16：按维护者决定（#128）将本包 20 个串口日志中的上游内核联系人邮箱字段统一替换为 `<redacted-email>` 后重新打包；上列 SHA-256 为脱敏后的包，帧、账目、清单和其他字段未变。
+
 
 复核时从各阶段的 `execution.cbor` 读取 nonce 和预算，构建对应的 `general_vm.fixture`。先用 `general_vm.replay` 重放 `reuse/source`，用其结果作为 `source` 重放 `reuse` 的平铺计划。对交接与重叠场景，先重放 `before`，再用其日志作为前缀重放 `after`。将各场景的来宾日志与 `host-journal.cbor` 对比，按 `coordination.receive` 逐帧读宿主轨迹，确认冲突后没有提交，也没有发布。

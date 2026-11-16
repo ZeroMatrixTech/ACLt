@@ -32,6 +32,9 @@ flock "${XDG_RUNTIME_DIR:-/tmp}/aclt-experiment.lock" \
   --kernel /path/to/vmlinuz --output /tmp/aclt-sort-contract-run
 ```
 
-[脱敏证据包](public-evidence/MULTIVM-SORT-CONTRACT-public-evidence.tar.gz) SHA-256 为 `d0586d68d689a775b2e375ac804d4e674015c5e8356371702693956ff406e405`。包内含源码清单、单来宾对照、两阶段账及原始 CBOR 帧、交付镜像、来宾报告、串口日志和负例结论。宿主报告中的内核路径仅保留文件名。
+[脱敏证据包](public-evidence/MULTIVM-SORT-CONTRACT-public-evidence.tar.gz) SHA-256 为 `56ef93050aa6ae6a2cbaa80fc05e989cd47be21ae38130ac2f67a89bea77733f`。包内含源码清单、单来宾对照、两阶段账及原始 CBOR 帧、交付镜像、来宾报告、串口日志和负例结论。宿主报告中的内核路径仅保留文件名。
+
+> 2026-11-16：按维护者决定（#128）将本包 7 个串口日志中的上游内核联系人邮箱字段统一替换为 `<redacted-email>` 后重新打包；上列 SHA-256 为脱敏后的包，帧、账目、清单和其他字段未变。
+
 
 从包中的 `before/A/A/execution.cbor` 读取 nonce 构造 `SortJob`，用 `general_vm.replay` 依次重放 `before` 和 `after`，分别传入各阶段的来宾目录及 `sort_contract.replay_response` 检查器。对第二阶段传入第一阶段的原始日志。最后用 `sort_contract.verify_retained` 重读 `before/B/B/delivery.img` 和 `after/C/C/delivery.img` 并比较最终发布记录。
