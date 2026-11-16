@@ -28,6 +28,7 @@ jobs:
           persist-credentials: false
       - name: Classify validation channel
         id: classify
+        shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
