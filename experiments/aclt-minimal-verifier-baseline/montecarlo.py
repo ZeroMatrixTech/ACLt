@@ -905,7 +905,9 @@ def _check_serving(job: Job, spec: dict[str, Any], run_dir: Path, executor: Path
         if fault == "worker_exit":
             exits = [item for item in metadata.get("worker_exits", ())
                      if type(item) is dict and all(item.get(k) == v for k, v in target.items())]
-            if len(exits) != 1 or exits[0].get("exit_status") in (None, 0):
+            status = exits[0].get("exit_status") if len(exits) == 1 else None
+            # A real process exit status: an integer 1..255 (bool is not an exit status).
+            if type(status) is not int or not 0 < status < 256:
                 violations.append(
                     f"serving: worker_exit {key} has no non-zero worker process exit observation")
         elif fault == "tcp_disconnect":

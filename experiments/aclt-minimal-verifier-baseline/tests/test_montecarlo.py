@@ -933,6 +933,19 @@ class MonteCarloRegressionTests(unittest.TestCase):
         self.assertTrue(any("injection observations do not match" in item
                             for item in self.serving(job, spec, run_dir)))
 
+    def test_worker_exit_status_must_be_a_nonzero_integer(self):
+        for bad in ("seven", 7.0, True, 0, 256, None):
+            job, spec, run_dir = self.guest_evidence("worker_exit", 1, "first", f"status-{bad!r}")
+            path = run_dir / "metadata.json"
+            metadata = json.loads(path.read_text())
+            metadata["worker_exits"][0]["exit_status"] = bad
+            for row in metadata["observations"]:
+                if row["event"].startswith("worker_exit_"):
+                    row["event"] = f"worker_exit_{bad}"
+            path.write_text(json.dumps(metadata))
+            self.assertTrue(any("non-zero worker process exit" in item
+                                for item in self.serving(job, spec, run_dir)), bad)
+
     def test_run_source_revision_matches_the_campaign(self):
         root = Path(self.tmp.name) / "source-revision"
         root.mkdir()
