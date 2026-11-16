@@ -1,7 +1,7 @@
 # 第三项工作维护与交接入口
 
-工程标识 `FUNDING-WORK3`：冻结测试资金政策/原子预留 → 双端 outcome/固定支付退款 → 实际进程故障/原权利恢复。
-限定工程完成不改变 SemanticStatus、VersionDisposition、ADR 或 Gate；正式对象/终态矩阵、真实支付和 OQ-10 仍分别跟踪。
+工程 `FUNDING-WORK3` 的限定工作已完成，本页记录其维护与交接入口，内容覆盖统一双机运行、只读复核和证据布局。该工程按三阶段组织：冻结测试资金政策与原子预留、双端 outcome 与固定支付退款、实际进程故障与原权利恢复。
+完成该限定工作不改变 SemanticStatus、VersionDisposition、ADR 或 Gate；正式对象与终态矩阵、真实支付和 OQ-10 仍分别跟踪。
 
 ## 统一双机运行
 
@@ -60,8 +60,8 @@ python3 -B scripts/funding-work3.py verify \
 
 ## 恢复与完成边界
 
-当前正常恢复路径只发 STATUS。已结算取原回执；RESERVED 继续占用；不可用保持未知，不自动支付/退款。未提交事务确认回滚后可以显式 SETTLE，仍受原政策及唯一权利约束。worker 只有完整 fsynced outcome 才能重传，permit-only 或半成品不能续算、补发执行资格或自动退款。
+当前正常恢复路径只发 STATUS。已结算取原回执；RESERVED 继续占用；不可用的结果保持未知，自动支付与退款不在恢复路径内。未提交事务确认回滚后可以显式 SETTLE，仍受原政策及唯一权利约束。worker 仅在持有完整 fsynced outcome 时重传；permit-only 或半成品不具备续算、补发执行资格或自动退款的条件。
 
-历史 paid/refunded 已进入 available，不能重复加进资产供给。第一片不执行 guest；后两片使用同一 Python reference，独立物理主机不代表独立执行实现或统计身份独立。SIGKILL/热日志恢复不冒充断电、整机重启、failover 或权威抗回滚。
+历史 paid/refunded 已进入 available，资产供给只计一次。第一片覆盖范围不含 guest；后两片使用同一 Python reference，两台独立物理主机不构成独立执行实现或统计身份独立。SIGKILL/热日志恢复的适用范围限于进程崩溃；断电、整机重启、failover 与权威抗回滚需另行验证。
 
-[本次总报告](FUNDING-WORK3-CLOSEOUT-20261024.md)列出新跑数据和交付验证。三片原始报告与失败保留。后续建议先做正式对象/接口收敛：列清 ExperimentalTaskCommitment、funding policy、funded-start、comparison、entitlement、EventRecord 与规范对象的迁移和证据缺口，再选最小范围补齐；不继续扩大价格/支付适配器范围，不据当前实验关闭 G0/G2/OQ-10。
+[工程总报告](FUNDING-WORK3-CLOSEOUT-20261024.md)列出新跑数据和交付验证。三片原始报告与失败保留。后续建议先做正式对象/接口收敛：列清 ExperimentalTaskCommitment、funding policy、funded-start、comparison、entitlement、EventRecord 与规范对象的迁移和证据缺口，再选最小范围补齐；价格/支付适配器范围保持现状，G0/G2/OQ-10 的关闭需另行证据。

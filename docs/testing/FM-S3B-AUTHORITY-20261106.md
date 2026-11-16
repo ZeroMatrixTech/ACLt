@@ -1,6 +1,6 @@
 # FM-S3b 本地权威接纳与终态
 
-2026-11-06。基线 `9598782` 加本地 ADR-0008 与 S3b 工作区变更。[ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md)
+2026-11-06。本报告记录 FM-S3b 本地权威接纳与终态的候选实现：`ACLt/FM/S3b/1` 固定候选 audit 合约，本地权威服务、终态求值与快照复核入口已交付；`make check-fm-s3-authority` 覆盖签名、边界、重传、冲突、唯一终态、快照和提交后丢回复的局部回归。基线 `9598782` 加本地 ADR-0008 与 S3b 工作区变更。[ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md)
 
 `ACLt/FM/S3b/1` 固定候选 audit 合约。无 claim 和不适用参数块采用省略键，新组件引用产生新 Receipt，须重新签名并绑定新测试 genesis。使用 `s3_authority.bind_bundle` 生成候选内容。服务以 `scripts/fm-s2-service.py --s3b --clock-file PATH` 选择该路径，首次启动可加 `--create`。沿用 S2 签名请求封套、SQLite 事务和快照格式，S3b 快照用 `s3_authority.verify_snapshot` 与带外保存的 checkpoint 复核。命令行可使用 `scripts/check-fm-s2-evidence.py --s3b`，提供 genesis pin 和 anchor。使用 `scripts/fm-s2-client.py --body-file PATH` 签署并发送给定 CBOR 的 S3 请求体。
 

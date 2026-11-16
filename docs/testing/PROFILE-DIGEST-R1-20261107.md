@@ -1,6 +1,6 @@
 # P0-1B Profile 摘要与判决结构第一片
 
-基线 main `41f0ee9`，2026-11-07。实现依据为 VerificationProfile 规范 §3.1、§3.3.3、§11.3、§17.4。范围为 Profile 的正式内容投影、摘要重算与选定注册期字段检查。
+本片交付 Profile 的正式内容投影、摘要重算与选定注册期字段检查，66 条固定向量在 A/B 两台物理机上全部通过且结果流 SHA-256 一致，完整 `make test` 退出码为 0；全局 119 条 Type A 由 `3 implemented / 24 partial / 92 not implemented` 变为 `7 / 28 / 84`。基线 main `41f0ee9`，日期 2026-11-07；实现依据为 VerificationProfile 规范 §3.1、§3.3.3、§11.3、§17.4。
 
 ## 规则交付
 
@@ -25,7 +25,7 @@ make test-profile-digest
 
 既有 JSON bootstrap 调用方式保留。新增 raw-CBOR 入口运行摘要、判决结构与 audit 分支检查；`--production` 继续依剩余覆盖缺口拒绝。该入口的零退出码只表示所列规则通过。
 
-SV-02 的输入是已确定原生类型的规范 CBOR。投影保留嵌套字段的原生值及字节，不从字段名推断类型，不解析外部引用。嵌套 L1a/L1b、不可变 schema import、ExcludedClaims/RegistrySnapshot 解析与其他摘要有各自的规则 owner。当前向量在这些位置使用固定测试输入，未声称整个对象已通过 SchemaValid 或注册授权。新 audit 字段检查要求 v2，v1 只用于摘要复核。
+SV-02 的输入是已确定原生类型的规范 CBOR。投影保留嵌套字段的原生值及字节，不从字段名推断类型，不解析外部引用。嵌套 L1a/L1b、不可变 schema import、ExcludedClaims/RegistrySnapshot 解析与其他摘要有各自的规则 owner。当前向量在这些位置使用固定测试输入；整个对象通过 SchemaValid 或注册授权属于对应规则 owner 的验收范围。新 audit 字段检查要求 v2，v1 只用于摘要复核。
 
 FailureMapping.entries 使用规范 §3.2.1 声明的排序 `{key, value}` 行。key 是 ObservableEvent，value 包含 outcome 与 attribution。候选 FM-S3 的 Profile schema/摘要与历史快照保留各自字节，正式对象接入该运行链需后续切片。
 

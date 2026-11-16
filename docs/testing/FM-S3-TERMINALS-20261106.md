@@ -1,12 +1,12 @@
 # FM-S3 候选执行闭合、可耗尽预算与 RPR 入口绑定
 
-2026-11-06，基线 main `9f915c3`，分支 `feat/fm-s3-terminals-20261106`。本切片属于推进列表第二项"补齐候选执行与终态"，在 [Task trap 切片](FM-S3-TASK-TRAP-20261106.md)之后补齐另外三块：
+2026-11-06，基线 main `9f915c3`，分支 `feat/fm-s3-terminals-20261106`。本报告记录 FM-S3 候选执行闭合、可耗尽预算与 RPR 入口绑定的切片：本地 `make check` 共 23 组、463 项通过（`check-fm-s3-terminals` 新增 14 项），三份留存公开快照用合并后代码重放，链头与状态摘要均与原摘要一致；组合矩阵后续在两套独立测试账本上通过，见 [本轮双机结果](FM-S3-HISTORICAL-MATRIX-20261106.md#本轮双机结果2026-11-06)。本切片属于推进列表第二项"补齐候选执行与终态"，在 [Task trap 切片](FM-S3-TASK-TRAP-20261106.md)之后补齐另外三块：
 
 - `FAILED` 所需的执行闭合；
 - `FUNDING_EXHAUSTED` 所需的可耗尽预算；
 - 绑定到可验证 RPR 入口的启动记录。
 
-精确字段见[候选合约](../../schemas/formal-migration/audit-terminals.md)。范围限于 [ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) 的首轮测试路线，不是正式准入。
+精确字段见[候选合约](../../schemas/formal-migration/audit-terminals.md)。范围限于 [ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) 的首轮测试路线；正式准入属于后续门槛。
 
 ## 组成与来源
 
@@ -59,11 +59,11 @@
 
 ## 留给规范修订的事项
 
-以下差异或选择留给第一项（正式规范与向量）处理，本切片不修改 00–03 规范：
+以下差异或选择留给第一项（正式规范与向量）处理；本切片保持 00–03 规范原字节：
 
 1. **资金边界只在激活时可达**：资金边界只发生在首次激活冻结之前，因为 S2 在首次激活时冻结整个 Receipt。过程中按计量耗尽未建模；`ResolveBoundary` 的"不可比"分支在单链日志里不可达。
 2. **期限观察的记法**：期限观察作为权威在求值时追加的子事件进入 frontier 投影，不是日志里的独立事件。正式 Phase D 需决定期限事件是否落盘。
-3. **闭合来源**：闭合来源是合约钉住的测试观察方密钥，对应规范的"受认可 closure 来源"，但不解决 OQ-04/OQ-05，也不是 MainnetAssuranceProfile 组件。闭合要求验证尚未开始，与 §11.3.5"此时验证从未开始"一致。
-4. **启动未知的处理**：`START_UNKNOWN` 按 ADR-0008 走 `INVALIDATING`。入口描述证明 Provider 签署了确切调用，不证明运行时已执行。
+3. **闭合来源**：闭合来源是合约钉住的测试观察方密钥，对应规范的"受认可 closure 来源"；OQ-04/OQ-05 与 MainnetAssuranceProfile 组件属于独立验收。闭合要求验证尚未开始，与 §11.3.5"此时验证从未开始"一致。
+4. **启动未知的处理**：`START_UNKNOWN` 按 ADR-0008 走 `INVALIDATING`。入口描述证明 Provider 签署了确切调用；运行时的实际执行需要另行验证。
 
-P0-1B 覆盖、ADR-0006、Gate 与主网资格均不变。
+P0-1B 覆盖、ADR-0006、Gate 与主网资格保持原状态。

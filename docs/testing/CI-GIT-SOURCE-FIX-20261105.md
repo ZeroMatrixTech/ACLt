@@ -1,6 +1,6 @@
 # CI Git source verification follow-up (2026-11-05)
 
-Scope: repository tooling only; no protocol, runtime, deployment or Gate changes.
+This fix makes Git source verification work in a clean clone with absent or foreign-owned checkouts. The seven new regression tests, all 95 retained source pins and the full local test suite pass; two independently generated packages are byte-identical. Scope is repository tooling only; protocol, runtime, deployment and Gate state are unchanged.
 
 ## Failure and diagnosis
 

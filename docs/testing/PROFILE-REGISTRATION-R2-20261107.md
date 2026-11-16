@@ -2,7 +2,7 @@
 
 > 2026-11-08 更正：R2 的 map TimeRange 与 opaque ExternalTypedObject 是限域测试输入，不能作为正式线上 conformance 证据。§17.3 要求 TimeRange 二元数组，§11.3 已定义三字段 ExternalTypedObject；新入口及反例见 [R3](PROFILE-REFERENCES-R3-20261108.md)。以下保留当时实现和运行记录。
 
-基线 main `41f0ee9`，2026-11-07；工作区包含尚未提交的 R1。本片沿用 §3.2.1、§3.5、§8.4、§13.0 与 §17.4，补 audit Profile 嵌套类型、显式不可变导入绑定、Phase R 注册上下文和两个快照。
+本片沿用 §3.2.1、§3.5、§8.4、§13.0 与 §17.4，补 audit Profile 嵌套类型、显式不可变导入绑定、Phase R 注册上下文和两个快照；74 条固定向量在 A/B 两台物理机上全部通过且结果流 SHA-256 相同，完整 `make test` 退出码为 0，Type A 由 R1 的 **7/28/84** 变为 **11 implemented / 36 partial / 72 not implemented**。基线 main `41f0ee9`，日期 2026-11-07，工作区包含尚未提交的 R1。
 
 ## 已实现范围
 

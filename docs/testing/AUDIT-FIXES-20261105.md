@@ -1,8 +1,8 @@
 # 2026-11-05 有界审计修复
 
-2026-11-07 补记。所依据的 [外部审计原文](../08-governance/audits/external/AUDIT-20261105-01.original.txt)已按原字节归档，首次 CI 失败及修复后通过见 [收尾记录](FM-EVIDENCE-CLOSEOUT-20261107.md#github-ci-运行记录)。
+2026-11-07 补记。本轮依据维护者授权，对 2026-11-05 外部有界审计的已确认项和定点复核结论执行有限修复，修复范围限于已确认项和定点复核结论，不覆盖报告的全部指控。所依据的 [外部审计原文](../08-governance/audits/external/AUDIT-20261105-01.original.txt)已按原字节归档，首次 CI 失败及修复后通过见 [收尾记录](FM-EVIDENCE-CLOSEOUT-20261107.md#github-ci-运行记录)。
 
-基线：main `9cf939838c6d8c59c3568d3b23dd8614b6aefb72`。依据维护者授权，对 AUDIT-20261105-01 的已确认项和定点复核结论执行有限修复；不是接受报告全部指控。完整 `make test` 退出 0：默认 391 个 unittest，Claim 29766、FM-S1a 179、FM-S1b 196、RIR 独立核心 161 项对拍及 20 次 sanitizer 通过；同名机器摘要记录确切范围。本轮不改变协议状态、B/Q、V1、OQ/Gate 或正式准入；主线继续 FM-S3。
+基线：main `9cf939838c6d8c59c3568d3b23dd8614b6aefb72`。完整 `make test` 退出 0：默认 391 个 unittest，Claim 29766、FM-S1a 179、FM-S1b 196、RIR 独立核心 161 项对拍及 20 次 sanitizer 通过；同名机器摘要记录确切范围。协议状态、B/Q、V1、OQ/Gate 与正式准入保持原状；主线继续 FM-S3。
 
 ## 交付与边界
 
@@ -36,8 +36,8 @@ make test-fm-s2 FM_S2_PEER=user@B FM_S2_A_HOST=A_LAN_IP FM_S2_REMOTE_ROOT=/new/B
 
 ## 审计误报与保留问题
 
-Reader 已检查 decode 字节上限，不重复补检查；required_draws 仍用 Fraction，没有报告声称的 log/ceil 路径；WAL 仍串行写者，不借修复名义改写事务算法；`open('xb')` 拒绝已有最终符号链接，父目录/SQLite 打开竞态须另行建模，不使用未经验证的 /proc/fd 封装。canonical JSON 签名契约不因重新编码就被判为密码学缺陷。历史身份/路径不批量替换，原证据不以刷新 hash 的方式伪装成未改动。
+Reader 的 decode 字节上限已检查，不重复补检查；required_draws 仍用 Fraction，报告所称的 log/ceil 路径不存在；WAL 仍为串行写者，本次修复不改写事务算法；`open('xb')` 拒绝已有最终符号链接；父目录/SQLite 打开竞态留待另行建模，未使用未经验证的 /proc/fd 封装。canonical JSON 签名契约不因重新编码而成为密码学缺陷。历史身份/路径不批量替换，原证据不以刷新 hash 的方式伪装成未改动。
 
-给定有效 Q 的抽样预算仍由条件活性曲线和 δL 决定。校准好事件上，未来失败风险受 δQ+δL 控制；跨校准与未来任务，“发布且失败”可保守加 α，不能把它当作给定发布后的后验/条件保证。该澄清不改变条件模型、B/Q 准入或统计算法。
+给定有效 Q 的抽样预算仍由条件活性曲线和 δL 决定。校准好事件上，未来失败风险受 δQ+δL 控制；跨校准与未来任务，“发布且失败”可保守加 α，该加项不构成给定发布后的后验或条件保证。该澄清不改变条件模型、B/Q 准入或统计算法。
 
-Formal schema/非主网 assurance、四项 audit 接口、完整 RIR/RPR/OS sandbox、恶意宿主、断电、权威回滚/failover、结果判决与权利/退款仍按各自门槛推进。本轮不把保护测试控制入口说成生产部署安全认证。
+Formal schema/非主网 assurance、四项 audit 接口、完整 RIR/RPR/OS sandbox、恶意宿主、断电、权威回滚/failover、结果判决与权利/退款各自按门槛推进。保护测试控制入口不构成生产部署安全认证。

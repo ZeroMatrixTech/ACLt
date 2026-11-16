@@ -1,6 +1,6 @@
 # FM-S3 接口规范切片收尾
 
-2026-11-06。基线 `3275a63` 加本轮规范草案与局部实现。范围是推进列表第一项的规范、向量和局部校验。正式部署和 P0-1B 全量验收分别记录。[ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md)
+2026-11-06。本报告记录 FM-S3 接口规范切片的四项交付：无 claim 编码、无 Snapshot Phase B、结果接纳时点与预算、非主网部署边界均完成草案与局部验证；P0-1B 119 条 Type A 当前为 3 implemented / 24 partial / 92 not implemented。基线 `3275a63` 加本轮规范草案与局部实现；范围是推进列表第一项的规范、向量和局部校验，正式部署和 P0-1B 全量验收分别记录。[ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md)
 
 | 切片 | 草案与局部验证 | 后续验收 |
 |---|---|---|
