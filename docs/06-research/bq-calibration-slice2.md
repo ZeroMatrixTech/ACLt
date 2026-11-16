@@ -3,7 +3,7 @@
 日期：2026-10-26；标识 `BQ-W4-S2`。接续[第一片边界](bq-boundaries-slice1.md)。
 **本片完成固定样本 Q 校准方法、严格合成输入合约及五组精确敏感性分析；未收集部署校准样本，未估得现实 B/Q，不启用 REEXEC_BOUNDED。**
 
-## 1. 能校准什么，不能校准什么
+## 1. 校准范围
 
 | 对象 | 本片处理 | 必须额外提供的依据 |
 |---|---|---|
@@ -17,7 +17,7 @@ B 的安全前提与 Q 的活性校准分开，二者不能用同一批多数结
 
 ## 2. 冻结输入与真值契约
 
-[合成样例](../../tests/bq_calibration/fixtures/synthetic-v1.json)是 80 条人工正确支持数均为 8 的记录，明确 `data_kind=synthetic`。这些数值是构造，不是实际双机测量，也不声称是从真实分布随机抽到。研究工具当前仅接受这一类显式合成输入；真实观察数据适配/取证尚未实现。
+[合成样例](../../tests/bq_calibration/fixtures/synthetic-v1.json)是 80 条人工正确支持数均为 8 的记录，明确 `data_kind=synthetic`。这些数值为人工构造，不是实际双机测量，也不作为从真实分布随机抽取的样本。研究工具当前仅接受这一类显式合成输入；真实观察数据适配/取证尚未实现。
 
 研究输入 `aclt.research.bq-calibration@1` 不是正式协议 schema，不签发 Receipt 或 Profile。封闭字段与校验见[实现](../../tools/bq_boundaries/calibration.py)：
 
@@ -36,7 +36,7 @@ scope、digest、iid_asserted 都只是研究输入声明。哈希或结构检�
 T_{\delta_Q}(n,k)=\sum_{j=0}^{k}{n\choose j}\delta_Q^j(1-\delta_Q)^{n-j}.
 \]
 
-若事前固定 K 个候选 Q，则本片保守采用 `T≤α/K` 才标为 conditional_pass，并从通过项中取最大 Q。二项式下尾关于 p 单调，所以每个不满足目标的 Q 误通过概率≤α/K；对固定家族作 union bound，挑选后的误颁证事件概率≤α。不要求不同 Q 的检验互相独立；也不宣称 Bonferroni 是利用嵌套结构的最优方法。
+若事前固定 K 个候选 Q，则本片保守采用 `T≤α/K` 才标为 conditional_pass，并从通过项中取最大 Q。二项式下尾关于 p 单调，所以每个不满足目标的 Q 误通过概率≤α/K；对固定家族作 union bound，挑选后的误颁证事件概率≤α。不同 Q 的检验不要求互相独立；Bonferroni 在利用嵌套结构上的最优性不在本片结论范围内。
 
 这相当于检验目标 δQ 的单侧精确阈值，不求近似置信端点，不用浮点、正态近似或有限样本均值充当覆盖率。方法背景见 [NIST 官方单/双侧 exact binomial 说明](https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/exacbino.htm)；NIST 不证明本项目数据 iid、Bridge 或部署安全。
 
@@ -100,6 +100,6 @@ python3 -B scripts/check-bq-calibration.py \
 
 ## 7. 本片完成与剩余工作
 
-已交付方法、输入契约、正负样例与敏感性，不声称完成现实校准。相关 CLM、SemanticStatus、OQ、Gate、εF 算法、Profile 准入保持原状。B 的不可识别部分仍靠外生模型/工程证据，RIR/运行时不等待它。
+已交付方法、输入契约、正负样例与敏感性；现实校准尚未完成。相关 CLM、SemanticStatus、OQ、Gate、εF 算法、Profile 准入保持原状。B 的不可识别部分仍靠外生模型/工程证据，RIR/运行时不等待它。
 
 第三片整理部署判断与降级条件：哪些证据允许讨论 bounded，哪些只能 audit-only/禁用；把 B、Q/α、抽样来源、有效期、失效信号、损失/预算及撤销路径逐项对应。真实校准数据不足应直接记未建立，不用本片合成通过数替代。
