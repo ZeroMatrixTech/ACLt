@@ -1,6 +1,6 @@
 # 第三方材料与依赖清单
 
-**状态：** P1-a（阶段 #128）实现记录，2026-11-15。OQ-01 仍为 OPEN；本文件提供关闭证据之一，不关闭 OQ-01。
+**状态：** P1-a（阶段 #128）实现记录，2026-11-15；P1-j 字体本地化更新，2026-11-16。OQ-01 仍为 OPEN；本文件提供关闭证据之一，不关闭 OQ-01。
 
 **范围：** 当前交付范围（`DELIVERY-SCOPE.json`）内可识别的第三方材料，以及构建、运行和 CI 使用的第三方依赖。历史证据包中的材料按原样保留；本文件不重写历史证据。
 
@@ -13,12 +13,12 @@
 | 材料 | 位置与使用方式 | 许可或权利状态 | 处理与备注 |
 |---|---|---|---|
 | Unicode 16.0.0 规范分解数据（生成数据） | `tools/verification_profile/rust/unicode_data.rs`；由 `generate_unicode.py` 从 CPython 3.14.4 `unicodedata` 的 Unicode 16.0.0 数据生成 | `Unicode-3.0`；`unicode_data.rs` 文件头带 SPDX 标识；同目录 `UNICODE-LICENSE.txt` 保存许可全文 | 数据随源码包分发，许可全文与数据同目录。`generate_unicode.py` 自身是 `Apache-2.0`；它第 23 行的字符串只把 `Unicode-3.0` 写进生成文件的文件头，不改变生成器的许可。`check-license-coverage` 只接受 `unicode_data.rs` 一处 `Unicode-3.0` 头。未把该数据改标为 Apache-2.0。 |
-| Google Fonts：Press Start 2P、ZCOOL KuaiLe、Noto Sans SC | `docs/00-overview/aclt-theater.html` 通过 `fonts.googleapis.com` 的样式表在运行时加载 | 字体文件未纳入仓库，也不随交付物分发；页面使用系统字体作为回退 | 打开该页面会向 Google 发出网络请求。这里不复制字体文件，也不声称已满足字体再分发相关的全部条件；若将来本地化或打包字体，需重新核对许可并更新本文件。 |
+| Google Fonts：Press Start 2P、ZCOOL KuaiLe、Noto Sans SC | `docs/00-overview/fonts/` 中的 5 个 WOFF2 子集；`docs/00-overview/aclt-theater.html` 以相对路径 `@font-face` 加载 | `OFL-1.1`；字体文件带外置 `REUSE.toml` 声明，同目录 `OFL-PressStart2P.txt`、`OFL-ZCOOLKuaiLe.txt`、`OFL-NotoSansSC.txt` 保存各自许可全文与版权行 | 随仓库分发，已按页面实际用字子集化（合计 243,528 字节；Noto Sans SC 分 400/500/700 三档）。Press Start 2P 的 OFL 声明 Reserved Font Name “Press Start 2P”，子集属于修改版，已改名为 `ACLt Pixel`；ZCOOL KuaiLe 的 OFL 未声明 RFN，保留原名；Noto Sans SC 的 OFL 声明 RFN “Source”，字体名不含该名，保留原名。页面不再向 Google 发请求。 |
 | Linux 内核启动输出 | MULTIVM 证据包中的来宾串口日志 | 运行日志；本仓库不随交付物分发内核源码或内核二进制 | 作为实验证据原样保留。日志中的内核版本和配置以对应证据包为准；本文件不改变内核自身的许可。 |
 | 外部审计原文（DeepSeek 输出） | `docs/08-governance/audits/external/AUDIT-20261105-01.original.txt` | 按 `README.md` 的仓库范围声明，仓库内工件采用 Apache-2.0；AI 产出的权利状态不在本轮判断范围 | 作为历史审计证据保留，不重写原文。若未来需要再分发或改编，应单独确认权利状态。 |
 | 文献引用 | `docs/06-research/`、`docs/codocs/` 中的引用与链接 | 以引用和链接为主；未发现大段逐字转载，但未逐篇核对 | 本轮只做抽查；引用材料的许可仍归原作者。新增长段引文或图片时应单独记录来源与许可。 |
 
-本轮核对范围内未发现随仓库分发的、带独立 `NOTICE` 的第三方 Apache 组件，也未发现 vendored 的第三方源代码。Unicode 数据是上表中唯一随交付物分发的第三方数据；字体只在运行时请求，不进入仓库。
+本轮核对范围内未发现随仓库分发的、带独立 `NOTICE` 的第三方 Apache 组件，也未发现 vendored 的第三方源代码。Unicode 数据与三款字体是上表中随交付物分发的第三方材料；字体只以子集形式进入仓库，不再在运行时请求。
 
 ## 2. 依赖许可
 
@@ -40,11 +40,11 @@ Apache License 2.0 第 4(d) 条规定：如果被再分发的作品包含 `NOTIC
 - 在本次核对范围内，未发现 vendored 的第三方源代码；
 - 仓库当前没有 `NOTICE` 文件；在本次核对范围内，也未识别出需要复制到 `NOTICE` 的第三方归属声明；
 - Unicode 数据的 `Unicode-3.0` 许可全文 `UNICODE-LICENSE.txt` 与数据同目录并随源码包交付；本文件只记录这一事实，不对 Unicode 许可的全部合规要求作法律结论；
-- Google Fonts 只在运行时请求，字体文件不随交付物分发。
+- 三款字体随交付物分发，均采用 `OFL-1.1`；`OFL-1.1` 不是 Apache-2.0，不触发 Apache-2.0 第 4(d) 条的 `NOTICE` 义务，其许可全文与版权行随字体同目录保存。
 
-**当前结论（限于本次核对）：** 在本次核对的材料与依赖范围内，未识别出 Apache-2.0 第 4(d) 条要求随附的第三方 `NOTICE`。这是对当前仓库材料的事实核对，不是法律意见，也不表示未来不会产生义务。
+**当前结论（限于本次核对）：** 在本次核对的材料与依赖范围内，未识别出 Apache-2.0 第 4(d) 条要求随附的第三方 `NOTICE`；三款字体为 `OFL-1.1`，其许可全文随字体同目录保存。这是对当前仓库材料的事实核对，不是法律意见，也不表示未来不会产生义务。
 
-**触发重新核对的条件：** 新增带 `NOTICE` 的第三方 Apache 组件；vendored 第三方代码或数据；本地化或打包字体；新增需要保留归属/许可声明的第三方材料；改变交付范围或再分发方式。触发后应更新本文件、必要的 `NOTICE`、OQ-01，以及 README/CONTRIBUTING 中相应的许可陈述；涉及权利状态判断时由维护者决定是否取得法律意见。
+**触发重新核对的条件：** 新增带 `NOTICE` 的第三方 Apache 组件；vendored 第三方代码或数据；字体子集或页面用字变化，或新增、替换字体；新增需要保留归属/许可声明的第三方材料；改变交付范围或再分发方式。触发后应更新本文件、必要的 `NOTICE`、OQ-01，以及 README/CONTRIBUTING 中相应的许可陈述；涉及权利状态判断时由维护者决定是否取得法律意见。
 
 ## 4. 相关文档
 

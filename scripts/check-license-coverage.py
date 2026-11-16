@@ -19,6 +19,13 @@ Covered (needs an SPDX header or an explicit REUSE.toml path):
   files can only be declared externally. `.js`, `.mjs` and `.cjs` are treated
   the same.
 
+Font binaries under the font directory are covered but cannot carry a header:
+
+- .woff2 files below `docs/00-overview/fonts/` must be declared in
+  REUSE.toml with `OFL-1.1`; no other license or location is accepted.
+  The font files are third-party material and are not relicensed under the
+  repository's Apache-2.0 terms.
+
 Excluded, with the reason recorded per class in OQ-01
 (docs/07-roadmap/open-questions.md):
 
@@ -35,11 +42,14 @@ Covered suffixes and names are matched case-insensitively, so `PAGE.HTML` is
 covered like `page.html`; exclusion matching is exact and case-sensitive, as
 the OQ-01 table names the classes. An SPDX identifier must stand alone in a leading comment
 line; the same text inside a string or code line is not a file header. A
-covered file is covered by a header in its first ten lines or by an explicit
-REUSE.toml path declaring Apache-2.0. A declaration for a path outside the
-boundary, for a path that is not in the tracked inventory, for a missing path,
-or for a file that already carries a header is an error. Unicode-3.0 headers
-are accepted only on UNICODE_DATA_PATHS; every other file must be Apache-2.0.
+covered code or configuration file is covered by a header in its first ten
+lines or by an explicit REUSE.toml path declaring Apache-2.0. A font file is
+covered only by an explicit REUSE.toml path declaring OFL-1.1; a header is not
+read from a WOFF2 binary. A declaration for a path outside the boundary, for a
+path that is not in the tracked inventory, for a missing path, or for a file
+that already carries a header is an error. Unicode-3.0 headers are accepted
+only on UNICODE_DATA_PATHS; every other code or configuration file must be
+Apache-2.0.
 Tracked files are read through git whenever the directory is a checkout: an
 unusable git inventory is an error in both modes, so a damaged index cannot
 degrade into a directory walk. A tree with no `.git` (an unpacked source
@@ -61,6 +71,9 @@ CODE_SUFFIXES = frozenset({".py", ".rs", ".sh", ".cpp", ".cjs", ".js", ".mjs", "
 CONFIG_SUFFIXES = frozenset({".yml", ".yaml", ".toml"})
 CONFIG_NAMES = frozenset({"makefile", "gnumakefile", ".gitignore"})
 CONFIG_PATHS = frozenset({"DELIVERY-SCOPE.json", ".aclt-flow/template.json"})
+FONT_PATH_PREFIX = "docs/00-overview/fonts/"
+FONT_SUFFIXES = frozenset({".woff2"})
+OFL_LICENSE = "OFL-1.1"
 # Classified as excluded, not silently skipped: a file whose class is absent
 # here and in the covered sets fails as `unclassified tracked file`.
 # Exclusion is exact: the OQ-01 table names these suffixes, file names and
@@ -92,7 +105,7 @@ class Coverage:
     missing: int
 
 
-def _is_covered(relative):
+def _is_code_or_config(relative):
     path = PurePosixPath(relative)
     return (
         path.suffix.lower() in CODE_SUFFIXES
@@ -100,6 +113,15 @@ def _is_covered(relative):
         or path.name.lower() in CONFIG_NAMES
         or relative in CONFIG_PATHS
     )
+
+
+def _is_font(relative):
+    path = PurePosixPath(relative)
+    return relative.startswith(FONT_PATH_PREFIX) and path.suffix.lower() in FONT_SUFFIXES
+
+
+def _is_covered(relative):
+    return _is_code_or_config(relative) or _is_font(relative)
 
 
 def _is_excluded(relative):
@@ -269,11 +291,8 @@ def _load_declarations(root):
         license_value = annotation.get("SPDX-License-Identifier")
         if not isinstance(license_value, str) or not license_value:
             raise CoverageError(f"REUSE.toml annotation {index} has no SPDX license")
-        if license_value != DEFAULT_LICENSE:
-            raise CoverageError(
-                f"REUSE.toml annotation {index} uses unsupported external license "
-                f"{license_value!r}; only {DEFAULT_LICENSE} is allowed"
-            )
+        # The per-path license policy is checked in check_coverage(), where
+        # the path class (font or code/configuration) is known.
         copyright_value = annotation.get("SPDX-FileCopyrightText")
         copyright_values = copyright_value if isinstance(copyright_value, list) else [copyright_value]
         if not copyright_values or any(
@@ -315,6 +334,9 @@ def check_coverage(root, require_git=False):
     headers = {}
     errors = [f"unclassified tracked file: {relative}" for relative in unclassified]
     for relative in covered:
+        if _is_font(relative):
+            # A WOFF2 file cannot carry a leading comment header.
+            continue
         try:
             headers[relative] = _header_license(root / relative, relative)
         except CoverageError as exc:
@@ -334,18 +356,33 @@ def check_coverage(root, require_git=False):
             errors.append(f"declared path is not a file: {relative}")
             continue
         if not _is_covered(relative):
-            errors.append(f"declared path is not a code or configuration file: {relative}")
+            errors.append(
+                f"declared path is not a covered code, configuration, or font file: {relative}"
+            )
             continue
         if relative not in covered_set:
             errors.append(
-                f"declared path is not an included code or configuration file: {relative}"
+                f"declared path is not an included code, configuration, or font file: {relative}"
             )
             continue
-        license_value = headers.get(relative)
-        if license_value is not None:
+        license_value = declarations[relative]
+        if _is_font(relative):
+            if license_value != OFL_LICENSE:
+                errors.append(
+                    f"{relative}: unsupported external license {license_value!r}; "
+                    f"font files require {OFL_LICENSE}"
+                )
+                continue
+        elif license_value != DEFAULT_LICENSE:
+            errors.append(
+                f"{relative}: unsupported external license {license_value!r}; "
+                f"only {DEFAULT_LICENSE} is allowed"
+            )
+            continue
+        if headers.get(relative) is not None:
             errors.append(f"declared path already has an SPDX header: {relative}")
             continue
-        declared[relative] = declarations[relative]
+        declared[relative] = license_value
 
     missing = []
     for relative in covered:

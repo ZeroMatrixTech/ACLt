@@ -5,17 +5,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ACLt 协议剧场</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&display=swap">
 <style>
+/* Local WOFF2 subsets. "ACLt Pixel" is a modified version of Press Start 2P
+   (OFL-1.1, Reserved Font Name); see fonts/OFL-PressStart2P.txt. Noto Sans SC
+   and ZCOOL KuaiLe keep their family names; see their OFL files. */
+@font-face{font-family:"ACLt Pixel";src:url("fonts/aclt-pixel-subset.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"ZCOOL KuaiLe";src:url("fonts/zcool-kuaile-subset.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Noto Sans SC";src:url("fonts/noto-sans-sc-400-subset.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Noto Sans SC";src:url("fonts/noto-sans-sc-500-subset.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Noto Sans SC";src:url("fonts/noto-sans-sc-700-subset.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
 /* Layout: one pixel-art side-scrolling stage (320x180 world, upscaled 4x), a caption rail with the host, then the stage list. Single committed night-sky look. */
 :root{
   --night:#0d1324; --night-2:#161e36; --line:#2a3656; --paper:#F2EDE4; --mute:#8D97AB;
   --frost:#9FD0EE; --amber:#F2A65A; --clawd:#E8774A; --sage:#74C7A5; --coral:#EC6F5F; --ink:#0B0F1A;
   --fun:"ZCOOL KuaiLe","Noto Sans SC","PingFang SC",sans-serif;
   --body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
-  --px:"Press Start 2P",ui-monospace,monospace;
+  --px:"ACLt Pixel",ui-monospace,monospace;
   color-scheme:dark;
 }
 html{background:var(--night)}
@@ -110,7 +115,7 @@ const C = {
   gold: "#FFD166", sage: "#74C7A5", coral: "#EC6F5F", violet: "#B3A8E6", wood: "#8A5A3C", wood2: "#5E3C28",
   stone: "#5B6478", blue: "#6FA8DC",
 };
-const FONTS = { fun: '"ZCOOL KuaiLe","Noto Sans SC","PingFang SC",sans-serif', px: '"Press Start 2P",ui-monospace,monospace', sans: '"Noto Sans SC","PingFang SC",sans-serif' };
+const FONTS = { fun: '"ZCOOL KuaiLe","Noto Sans SC","PingFang SC",sans-serif', px: '"ACLt Pixel",ui-monospace,monospace', sans: '"Noto Sans SC","PingFang SC",sans-serif' };
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let WT = 0;
 
@@ -1038,7 +1043,7 @@ addEventListener("keydown", e => {
 let fontChars = "";
 function loadFonts() {
   const all = [...used].join(""); if (all === fontChars || !document.fonts) return; fontChars = all;
-  Promise.all([`20px "ZCOOL KuaiLe"`, `12px "Press Start 2P"`, `20px "Noto Sans SC"`].map(f => document.fonts.load(f, all).catch(() => null)));
+  Promise.all([`20px "ZCOOL KuaiLe"`, `12px "ACLt Pixel"`, `20px "Noto Sans SC"`].map(f => document.fonts.load(f, all).catch(() => null)));
 }
 setInterval(loadFonts, 1200);
 (() => { S.forEach(s => { for (let t = 0; t <= s.dur; t += .5) { try { s.draw(t); } catch (e) { console.error(e); } } s.cues.forEach(c => { for (const ch of c.b + c.say) used.add(ch); }); }); for (const ch of "STAGE0123456789点开始冒险我们就出发") used.add(ch); TQ.length = 0; GQ.length = 0; loadFonts(); })();

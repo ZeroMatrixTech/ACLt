@@ -259,7 +259,7 @@ class LicenseCoverageTests(unittest.TestCase):
     def test_non_covered_declaration_is_rejected(self):
         self.write("README.md", "text\n")
         self.write_reuse("version = 1\n" + self.declaration("README.md"))
-        self.assert_rejected("not a code or configuration file")
+        self.assert_rejected("not a covered code, configuration, or font file")
 
     def test_unicode_license_is_limited_to_generated_data(self):
         self.write(
@@ -285,6 +285,59 @@ class LicenseCoverageTests(unittest.TestCase):
         self.write("example.py", "print(1)\n")
         self.write_reuse("version = 1\n" + self.declaration("example.py", "Unicode-3.0"))
         self.assert_rejected("unsupported external license")
+
+    def test_font_declaration_requires_ofl(self):
+        self.write("docs/00-overview/fonts/example.woff2", "not really a font\n")
+        self.write_reuse(
+            "version = 1\n"
+            + self.declaration("docs/00-overview/fonts/example.woff2")
+        )
+        self.assert_rejected("font files require OFL-1.1")
+
+    def test_font_declaration_with_ofl_is_accepted(self):
+        self.write("docs/00-overview/fonts/example.woff2", "not really a font\n")
+        self.write_reuse(
+            "version = 1\n"
+            + self.declaration("docs/00-overview/fonts/example.woff2", "OFL-1.1")
+        )
+        result = self.result()
+        self.assertEqual(
+            (result.covered, result.headers, result.declared, result.excluded, result.missing),
+            (2, 1, 1, 0, 0),
+        )
+
+    def test_font_without_declaration_is_rejected(self):
+        self.write("docs/00-overview/fonts/example.woff2", "not really a font\n")
+        self.assert_rejected("missing licenses")
+
+    def test_ofl_license_is_limited_to_fonts(self):
+        self.write("example.py", "print(1)\n")
+        self.write_reuse("version = 1\n" + self.declaration("example.py", "OFL-1.1"))
+        self.assert_rejected("only Apache-2.0 is allowed")
+
+    def test_font_outside_font_directory_is_unclassified(self):
+        self.write("assets/example.woff2", "not really a font\n")
+        self.assert_rejected("unclassified tracked file: assets/example.woff2")
+
+    def test_font_ignores_comment_like_bytes(self):
+        self.write(
+            "docs/00-overview/fonts/example.woff2",
+            "# SPDX-License-Identifier: OFL-1.1\n",
+        )
+        self.assert_rejected("missing licenses")
+        self.write_reuse(
+            "version = 1\n"
+            + self.declaration("docs/00-overview/fonts/example.woff2", "OFL-1.1")
+        )
+        self.assertEqual(self.result().declared, 1)
+
+    def test_font_declared_as_apache_is_rejected(self):
+        self.write("docs/00-overview/fonts/example.woff2", "not really a font\n")
+        self.write_reuse(
+            "version = 1\n"
+            + self.declaration("docs/00-overview/fonts/example.woff2", "Apache-2.0")
+        )
+        self.assert_rejected("font files require OFL-1.1")
 
     def test_undeclared_covered_file_is_rejected(self):
         self.write("example.py", "print(1)\n")
@@ -370,7 +423,7 @@ class LicenseCoverageTests(unittest.TestCase):
         with self.assertRaises(CHECKER.CoverageError) as context:
             CHECKER.check_coverage(self.root, require_git=True)
         self.assertIn(
-            "declared path is not an included code or configuration file: scratch.py",
+            "declared path is not an included code, configuration, or font file: scratch.py",
             str(context.exception),
         )
 
@@ -380,7 +433,7 @@ class LicenseCoverageTests(unittest.TestCase):
         self.init_git()
         with self.assertRaises(CHECKER.CoverageError) as context:
             CHECKER.check_coverage(self.root, require_git=True)
-        self.assertIn("not an included code or configuration file", str(context.exception))
+        self.assertIn("not an included code, configuration, or font file", str(context.exception))
         self.assertNotIn("already has an SPDX header", str(context.exception))
 
     def test_tracked_file_missing_from_working_tree_is_rejected(self):
