@@ -8,13 +8,13 @@
 
 ## 当前实施入口（2026-11-16）
 
-截至 2026-11-16，R4 安全层蒙特卡洛已完成并合入（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)）；发布准备增量回验（[#161](https://github.com/ZeroMatrixTech/ACLt/issues/161)、[AUD-20261116-02](../08-governance/audits/audit-20261116-02-public-release-recheck.md)）也已完成，结论为 FAIL，新增 0 BLOCKER、0 MAJOR、3 MINOR、1 NOTE。当前入口是首次公开发行前的文档与证据收尾：P1-g（#163）、P1-i（#164）、P1-j（#165）可并行，P1-h（#166）在三者合入后开工；之后由维护者按 [PREVIEW §10](../releases/PREVIEW-20261106.md#10-发布前检查清单) 选定发布 commit、重跑 CI 并切换可见性。
+截至 2026-11-16，R4 安全层蒙特卡洛已完成并合入（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)）；P1-g（#163）、P1-i（#164）、P1-j（#165）与 P1-h1–h4（#166）已完成并合入。发布准备续轮回验（[#161](https://github.com/ZeroMatrixTech/ACLt/issues/161)、[AUD-20261116-03](../08-governance/audits/audit-20261116-03-public-release-recheck.md)）已归档，时点结论为 FAIL，新增 0 BLOCKER、1 MAJOR、2 MINOR、1 NOTE；其中 1 MAJOR 为 #167 的 DCO 补救，原失败记录见 AUD-20261116-03，补救提交 [02476db](https://github.com/ZeroMatrixTech/ACLt/commit/02476db9a14ec53aac1d4c15413cef37e60a0dec) 已合入当前 main（#167）。当前入口是本次文档同步（AUD-20261116-03-002、003）与维护者重新冻结发行说明；之后按 [PREVIEW §10](../releases/PREVIEW-20261106.md#10-发布前检查清单) 选定发布 commit、重跑 CI 并切换可见性。
 
 最简验证机的乌托邦基线覆盖可信环境中的多机分工、派发、验证和归并。[通用分布式作业契约](distributed-job-contract.md)的首个整数向量切片已在本地三来宾上联合验收身份绑定、跨子树依赖、尝试账和交接发布，见[联合验收报告](../testing/MULTIVM-GENERAL-JOB-20261113.md)。[可信双机条件](minimal-verifier-baseline.md#可信双机验收)适用于物理双机证据。
 
 | 工作 | 当前事实 | 下一动作 |
 |---|---|---|
-| 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 乌托邦基线已于 2026-11-15 经维护者确认闭合（[闭合确认](minimal-verifier-baseline.md#闭合确认2026-11-15)）。R4 安全层蒙特卡洛已完成并合入（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)）；发布准备回验已完成（[#161](https://github.com/ZeroMatrixTech/ACLt/issues/161)）。下一步按 P1-g/P1-i/P1-j/P1-h 收尾公开前文档与证据，再由维护者执行发布检查 |
+| 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 乌托邦基线已于 2026-11-15 经维护者确认闭合（[闭合确认](minimal-verifier-baseline.md#闭合确认2026-11-15)）。R4 安全层蒙特卡洛已完成并合入（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)）；发布准备回验已完成（[#161](https://github.com/ZeroMatrixTech/ACLt/issues/161)）。P1-g（#163）、P1-i（#164）、P1-j（#165）与 P1-h1–h4（#166）已完成并合入。接下来执行本次续轮回验的文档同步，由维护者重新冻结发行说明，再执行发布检查 |
 | 本地双来宾验证 | [第 1 轮报告](../testing/MULTIVM-20261112.md)：同一作业在单宿主两个 QEMU 来宾上跑平坦两片、显式预算两片与树归并三片，两端角色切分、逐片交叉验证和归并输出均通过校验 | 只算来宾级证据；[DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md) 的物理双机条件与 G2/G3、P0-1B 仍未关闭 |
 | 本地可配置多来宾验证 | [n VM 验收](../testing/MULTIVM-N-20261112.md)：三来宾三片、四来宾六片均通过角色轮换、原始帧重放与成功输出等价验收 | 已验证[来宾工作进程退出与 TCP 断连](../testing/MULTIVM-N-FAULTS-20261113.md)时停止归并与留证，并验证[显式预算内的单次求解补算](../testing/MULTIVM-N-RETRY-20261113.md)；固定统计工件的[整题资源准入](../testing/MULTIVM-ROOT-LIMITS-20261113.md)已验收；并行调度、一般恢复、经济性与原 Gate 各自待验收；完整单机 trap 等价用于明确声明该要求的任务 |
 | 双宿主多来宾验证 | [R2 双机 nVM](../testing/DUALHOST-MULTIVM-R2-20261115.md)完成三来宾与四来宾跨物理 LAN 作业、远端断连安全停止和丢答复补算 | 可信双机与固定用例。R4 已用同一入口完成安全层蒙特卡洛（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)） |
@@ -29,7 +29,7 @@
 | FM 证据归档 | [第四项收尾](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md)归档五份公开包并重放 24 套快照，补齐原始审计、CI 记录和 12 项 FM-A 候选证据 | 正式 FM-A 仍逐项验收；本轮改动的 CI 随提交触发 |
 | P0-1B Profile 注册 | [R1 正式摘要与判决](../testing/PROFILE-DIGEST-R1-20261107.md)及 [R2 嵌套类型/导入与注册上下文](../testing/PROFILE-REGISTRATION-R2-20261107.md)：新增 RegistrySnapshot/事件快照摘要与六类注册条目检查，audit Phase R 显式接两个快照；[R3](../testing/PROFILE-REFERENCES-R3-20261108.md)补排除集/注册对象引用与两个摘要，并修正 TimeRange/ExternalTypedObject wire | [R4](../testing/PROFILE-RULES-R4-20261108.md)落实共同假设/撤销/scope/方法必需类与静态集合摘要；[R5](../testing/PROFILE-MATRICES-R5-20261108.md)补四方法参数/失败/条件矩阵；[R6](../testing/PROFILE-CREATION-R6-20261108.md)补固定 audit I/F 测试接线、三个摘要与 CC-1；[R7](../testing/PROFILE-SELECTION-R7-20261108.md)集中完成注册/选择/绑定 14 项，扩展 7 项仍 partial；[R8](../testing/PROFILE-COMMITMENTS-R8-20261108.md)集中完成 19 项 Claim/快照/承诺规则，18 个摘要公式/投影已有双语言实现；[R9](../testing/PROFILE-RUNTIME-R9-20261108.md)补七种 Phase B 的运行期绑定/冻结/阶段守卫，snapshot/population/randomness 仍限 TEST imports，SV-69/81 partial。[R10](../testing/PROFILE-DECISION-R10-20261109.md)加入 audit-only Phase D 测试重放，SV-115/121 partial。[R11](../testing/PROFILE-AUTHORITY-R11-20261109.md)接入 FM-S3 候选权威来源与结算对照，SV-119 partial；下一步评审候选输入胶囊的正式版本承诺、ENUM/sum wire，闭合 FailureReason、predicate/gate 和完整重放。其他方法 wire 缺口独立追踪，完整 Phase R 尚未验收 |
 | Phase I/F/B/D 候选接口 | [R14](../testing/PROFILE-PHASE-D-R14-20261111.md)验证历史 B/D 信封，[R15](../testing/PROFILE-PHASE-D-R15-20261111.md)实现创建时部署绑定并串联授权、判决与结算 | [R16](../testing/PROFILE-PHASE-D-R16-20261111.md)验证候选部署撤销；正式 FM-A08 仍依赖 Profile/来源审批、撤销传播和部署证据 |
-| 首次公开发行（research-preview-1） | [公开发行说明](../releases/PREVIEW-20261106.md)（文件名保留 `PREVIEW-20261106.md`）与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：README 已加统一成熟度声明与 #101 边界；源码包可重现、包内本地检查可运行 | R4 已完成（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)）；发布准备回验（[#161](https://github.com/ZeroMatrixTech/ACLt/issues/161)）结论 FAIL，剩余项由 P1-g/P1-i/P1-j/P1-h 处理；随后按检查清单切换可见性与设置、在待打标签 commit 上重跑并确认 CI。发行名不是 ProtocolVersion、ConformanceTarget 或部署启用 |
+| 首次公开发行（research-preview-1） | [公开发行说明](../releases/PREVIEW-20261106.md)（文件名保留 `PREVIEW-20261106.md`）与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：README 已加统一成熟度声明与 #101 边界；源码包可重现、包内本地检查可运行 | R4 已完成（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)）；P1-g（#163）、P1-i（#164）、P1-j（#165）与 P1-h1–h4（#166）已完成并合入；#161 续轮回验（[AUD-20261116-03](../08-governance/audits/audit-20261116-03-public-release-recheck.md)）的发现由本次文档同步处理；随后由维护者重新冻结发行说明，并按检查清单切换可见性与设置、在待打标签 commit 上重跑并确认 CI。发行名不是 ProtocolVersion、ConformanceTarget 或部署启用 |
 | 证明验证路线 | [ADR-0009](../05-decisions/ADR-0009-proof-verified-computation-statements.md) `PROPOSED` 草案：以推导证书验证计算陈述，分陈述绑定、推导检查与语义充分性三层；`verification.proof-assisted` 仍为 V1 `DEFERRED` | 评审接口；首个实例依赖 RIR-0 形式语义（PO-11），在此之前只走非主网测试路线 |
 | 验收边界 | P0-1B 为 80/36/3，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
@@ -60,7 +60,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 领域 | SemanticStatus | V1 | 已确定内容 | 尚缺内容 |
 |---|---|---|---|---|
-| 名称与定位 | `DECIDED`；外部权利 `OPEN` | — | 名称为 ACLt Protocol；它是协议而非区块链 | 名称法律检索、域名、商标和兼容性标识政策 |
+| 名称与定位 | `DECIDED`（名称政策）；域名政策 `OPEN` | — | 名称为 ACLt Protocol（ACLt 为项目名称），ACLt 是协议而非区块链；ACLt 不是商标，项目不声明商标；维护者 2026-11-16 决定放弃名称冲突检索并接受同名风险，名称、商标与兼容性声明不再作为发行阻断项；Apache-2.0 第 6 条不授予名称或商标许可 | 域名政策（2026-11-16 决定未涉及） |
 | 代码许可 | `DECIDED` | — | 代码与参考实现采用 Apache-2.0；根目录 `LICENSE` 已存在 | 未来源码 SPDX、按需 NOTICE 和第三方许可清单 |
 | 其他工件许可 | `DECIDED` | — | 2026-11-14 决定规范、文档、仓库内研究文稿与测试证据沿用 Apache-2.0；第三方材料保留原许可；名称与商标不在许可范围内，见「名称与定位」 | 按需 NOTICE；文稿投稿时出版方另有条款的单独处理 |
 | 状态与版本 | `DECIDED` | `CORE` | SemanticStatus 与 VersionDisposition 分离；v0.5 是语义基线，V1 是 ConformanceTarget | machine-readable registry、版本兼容矩阵 |
@@ -205,6 +205,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-16 | v0.5 | 续轮回验（AUD-20261116-03）文档同步：README、CONTRIBUTING、术语表与 OQ-01 的名称表述改为已决政策（ACLt 不是商标，不声明商标，放弃名称冲突检索并接受同名风险）；current-status 入口改为 P1-g/i/j/h 已完成，下一步为本次同步、重新冻结发行说明与发布步骤；公开仓库设置清单改为先用 fork PR 验证缺签阻止合并、补签后最新头通过，再设为必需检查并记录结果 | [README](../../README.md)、[当前状态](current-status.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、[回验报告](../08-governance/audits/audit-20261116-03-public-release-recheck.md)、#161 | 不变 |
 | 2026-11-16 | v0.5 | 发布准备增量回验续轮（AUD-20261116-03）：新增 0 BLOCKER、1 MAJOR、2 MINOR、1 NOTE；发布准备 FAIL | [回验报告](../08-governance/audits/audit-20261116-03-public-release-recheck.md)、#161 | 不变 |
 | 2026-11-16 | v0.5 | P1-h 文风维护：文档改为百科体第三人称并先写已完成事实；发行说明文字按 #166 更新，列明 OFL-1.1 字体例外并修正四份清单的适用 campaign 范围；最终冻结待四个 P1-h 子条目合入及 #161 续轮回验后由维护者执行；R1 规格的规范性条款原义不变 | [发行说明](../releases/PREVIEW-20261106.md)、[R1 规格](first-public-release-safety-plan.md)、#166 | 不变 |
 | 2026-11-16 | v0.5 | P1-j 将剧场页的三款 Google Fonts 改为仓库内本地字体：移除 3 个外部链接，新增 5 个 WOFF2 子集（合计 243,528 字节）与 3 份 OFL 全文；页面不再向第三方域名发请求，保留系统字体回退；许可检查器把 `.woff2` 纳入受检查类别并接受 `fonts/` 下的 `OFL-1.1` 外置声明 | [fonts](../00-overview/fonts/)、#165 | 公开发布 |

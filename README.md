@@ -201,10 +201,10 @@ state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifi
 
 本仓库的全部工件采用 **Apache License 2.0**，SPDX 标识为 `Apache-2.0`，范围包括代码与参考实现、协议规范、项目文档、仓库内的研究文稿、测试向量与证据。代码许可于 2026-08-17 确定；2026-11-14 维护者决定规范、文档与研究文稿沿用同一许可。
 
-另有标注的第三方材料保留其原许可。目前包括 `tools/verification_profile/rust/unicode_data.rs`（由 Unicode 字符数据库生成，适用 `Unicode-3.0`，全文见同目录 `UNICODE-LICENSE.txt`）和 `docs/00-overview/fonts/` 下的五个字体子集（适用 `OFL-1.1`，随附三份 `OFL-*.txt` 原文）。Apache-2.0 第 6 条不授予名称或商标使用权，ACLt 的名称、商标与兼容性声明政策另行决定，见下节。贡献采用 Developer Certificate of Origin（DCO），不使用 CLA；外部 fork PR 的每个提交须带与作者一致的 `Signed-off-by`，内部代理提交由维护者在合并时签署，细则见 [CONTRIBUTING §11](CONTRIBUTING.md#11-许可)。安全漏洞的私密报告流程见 [SECURITY.md](SECURITY.md)；利用细节不在公开渠道先行披露。
+另有标注的第三方材料保留其原许可。目前包括 `tools/verification_profile/rust/unicode_data.rs`（由 Unicode 字符数据库生成，适用 `Unicode-3.0`，全文见同目录 `UNICODE-LICENSE.txt`）和 `docs/00-overview/fonts/` 下的五个字体子集（适用 `OFL-1.1`，随附三份 `OFL-*.txt` 原文）。Apache-2.0 第 6 条不授予名称或商标使用权；ACLt 是项目名称，不是商标，项目不声明商标；维护者已于 2026-11-16 决定放弃名称冲突检索并接受同名风险（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6920084883)），名称、商标与兼容性声明不再作为公开发行的阻断项，见下节。贡献采用 Developer Certificate of Origin（DCO），不使用 CLA；外部 fork PR 的每个提交须带与作者一致的 `Signed-off-by`，内部代理提交由维护者在合并时签署，细则见 [CONTRIBUTING §11](CONTRIBUTING.md#11-许可)。安全漏洞的私密报告流程见 [SECURITY.md](SECURITY.md)；利用细节不在公开渠道先行披露。
 
 仓库根目录 `LICENSE` 为 Apache License 2.0 英文全文；2026-11-06 起，文末附录示例中的版权行填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`，许可条款正文未改。源码由文件头 SPDX 标识或 [REUSE.toml](REUSE.toml) 显式路径声明覆盖，由 `make check` 中的覆盖检查核对；第三方材料见 [docs/08-governance/third-party-materials.md](docs/08-governance/third-party-materials.md)；Markdown 等文档由本节与根目录 `LICENSE` 覆盖。存在归属声明或第三方通知要求时再维护 `NOTICE`。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
 
 ## 名称说明
 
-当前正式名称为 **ACLt Protocol**。DistributedCompute、RUDCP、DCP 和 BigMind 仅用于历史追踪。ACLt 的商标、域名和软件包名清查仍为 `OPEN`。
+当前正式名称为 **ACLt Protocol**；ACLt 是项目名称。DistributedCompute、RUDCP、DCP 和 BigMind 仅用于历史追踪。ACLt 不是商标，项目不声明商标。2026-11-16 维护者决定放弃名称冲突检索并接受同名风险（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6920084883)）；名称、商标与兼容性声明因此不再作为公开发行的阻断项。Apache License 2.0 第 6 条不授予名称或商标许可。域名政策不在该决定范围内。
