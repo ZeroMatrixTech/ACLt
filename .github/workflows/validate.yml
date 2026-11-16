@@ -35,6 +35,8 @@ jobs:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           set -euo pipefail
+          # The checkout runs as a different user; allow git to read the work tree.
+          git config --global --add safe.directory "$PWD"
           files="$(mktemp)"; raw="$(mktemp)"
           trap 'rm -f "$files" "$raw"' EXIT
           channel=full
