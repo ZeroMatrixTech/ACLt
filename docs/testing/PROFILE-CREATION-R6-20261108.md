@@ -1,6 +1,6 @@
 # Profile R6：固定 audit I/F 测试接线
 
-日期：2026-11-08。基线 main `70f56a2f53318ec9ccd85c4122d6a9743f2aa70e`，叠加已完成但尚未提交的 R5 和本片；精确源码以机器摘要与公开源码包为准。
+本片完成固定 audit 的 I transcript/F envelope 测试接线，A/B 两台物理机各通过 122 条向量且结果流 SHA-256 一致，完整 `make test` 通过 578 项 Python 测试，119 条 Type A 由 R5 的 32/29/58 变为 **36 implemented / 33 partial / 50 not implemented**。日期：2026-11-08；基线 main `70f56a2f53318ec9ccd85c4122d6a9743f2aa70e`，叠加已完成但尚未提交的 R5 和本片；精确源码以机器摘要与公开源码包为准。
 
 ## 范围与结果
 
@@ -28,6 +28,6 @@ A/B 两台物理机各自构建 Rust 并通过 **122 条向量（14 正、108 �
 
 ## 兼容与下一步
 
-保留 R1–R5 的向量和结果，不改历史公开证据。新增 Rust include/module 的源码随既有独立 FM/RIR 驱动一起传递与摘要绑定。旧 CLI 与 JSON bootstrap 保持；新增 I/F 两个入口必须提供 schema-lock 与测试合约两个外部 pin，生产模式持续 fail closed。
+R1–R5 的向量和结果保持原值，历史公开证据按原样保留。新增 Rust include/module 的源码随既有独立 FM/RIR 驱动一起传递与摘要绑定。旧 CLI 与 JSON bootstrap 保持；新增 I/F 两个入口必须提供 schema-lock 与测试合约两个外部 pin，生产模式持续 fail closed。
 
-接下来应固定并接入 audit 实际使用的准入 predicate/ContractTuple、scope 与正式 imports，逐步替换此 TEST replay；再做正式 I/F 和 Receipt 创建验收。此处不要求 Direct signature 或 non-audit 可达终态字段先完成。Phase B/D、来源忠实性、注册授权和 FM-A 验收仍独立推进。
+接下来应固定并接入 audit 实际使用的准入 predicate/ContractTuple、scope 与正式 imports，逐步替换此 TEST replay；再做正式 I/F 和 Receipt 创建验收。正式 I/F 与 Receipt 创建验收不以 Direct signature 或 non-audit 可达终态字段完成为前置条件。Phase B/D、来源忠实性、注册授权和 FM-A 验收仍独立推进。

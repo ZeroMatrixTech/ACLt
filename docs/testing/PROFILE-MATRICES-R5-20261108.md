@@ -1,6 +1,6 @@
 # 方法参数与失败／判决矩阵第五片（R5）
 
-基线 `3b85c59`，2026-11-08；开始时分支 `feat/profile-r3-r4-20261108`，工作区干净。本片实现 VerificationProfile §7、§8.5、§10.2、§11.3 中已冻结的矩阵，接入固定 audit 路线。规范正文和既有线上字段未修改。
+本片实现 VerificationProfile §7、§8.5、§10.2、§11.3 中已冻结的矩阵并接入固定 audit 路线，382 条固定向量在 A/B 两台物理机上全部通过且结果流 SHA-256 一致，完整 `make test` 退出码为 0，119 条 Type A 由 **24/30/65** 变为 **32 implemented / 29 partial / 58 not implemented**。基线 `3b85c59`，日期 2026-11-08，开始时分支 `feat/profile-r3-r4-20261108`、工作区干净；规范正文与既有线上字段保持原值。
 
 ## 交付
 
@@ -27,7 +27,7 @@ Python `method_rules.py`、Rust `method_rules.rs` 分别实现矩阵与投影模
 | **SV-65 PARTIAL** | 方法 outcome/聚合耗尽行已有固定纯函数，拒绝自定义投影参数；完整 AggregateState/evaluator contract、共通来源行和 Phase D 接线仍缺。测试布尔状态不是权威事实或统计资本计算 |
 | **SV-09 PARTIAL** | 检查 Direct SOUND 的 REJECT 归因为 NO_ATTRIBUTION；方法特定排除项及其完整引用链待后续接入 |
 
-非 audit 的参数不再是空占位，均填充已知冻结字段；未冻结的引用/签名是测试绑定，数值亦为测试输入，不由本片证明 B/Q、DP 校准、proof soundness 或运行语义。非 audit 的 verified_claim_spec 仍是未验证占位，完整 claim/注册授权未接通。`full_schema_valid:false`、`source_authentication:false`、非 audit 部署未启用及生产强制拒绝保持不变；不关闭 Phase R、A0/A1、P0-1B 或 Gate。
+非 audit 的参数已填充已知冻结字段；未冻结的引用/签名是测试绑定，数值亦为测试输入，B/Q、DP 校准、proof soundness 与运行语义不在本片证明范围内。非 audit 的 verified_claim_spec 仍为未验证占位，完整 claim/注册授权另行接通。`full_schema_valid:false`、`source_authentication:false`、非 audit 部署未启用及生产强制拒绝保持不变；Phase R、A0/A1、P0-1B 与 Gate 的关闭状态由各自的验收决定。
 
 ## 入口
 

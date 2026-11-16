@@ -1,7 +1,9 @@
 # R14 非主网注册与 Phase B/D 信封重放
 
-基线为 main `6c34c4d`（R13）。R14 将已经认证的 FM-S3 历史证据接入版本化的
-非主网测试注册表与 Phase B/D 信封。验证者独立提供注册表摘要和 Receipt 列表。
+R14 将已经认证的 FM-S3 历史证据接入版本化的非主网测试注册表与 Phase B/D 信封：
+A/B 两端 17 条 Receipt 的注册与 B/D 信封验证通过、19 个负例均按预期拒绝，
+完整 `make test` 通过 24 组 668 项 Python 测试和 20 次 sanitizer 检查。
+基线为 main `6c34c4d`（R13）。验证者独立提供注册表摘要和 Receipt 列表。
 注册项冻结配置、部署声明、七类测试来源、允许的 Profile、anchor 和 checkpoint。
 
 Phase B 投影冻结 Receipt、CREATE、资金、Lease 和已提交的 ACTIVATE／CONSUME。
@@ -13,9 +15,9 @@ Phase D 提交 Phase B 摘要、R11 来源摘要及完整 R12 候选判决。两
 `make test` 中。负例覆盖错误的外部 pin、版本、部署、检查点、签名、来源和 Profile，
 以及篡改资金、Lease、判决来源、内层判决与重算后的 B/D 链接。
 
-FM-A08 增加固定部署下的注册和候选信封证据。正式验收仍需正式 Profile 与来源审批、
+FM-A08 增加固定部署下的注册和候选信封证据。正式验收覆盖正式 Profile 与来源审批、
 新版 Intent/Receipt 冻结部署绑定，以及正式 Phase B/D 验证。可信时钟、日志终局性
-与正式撤销机制仍属于待定来源合约。正式 FM-A08 为 `PLANNED_NOT_RUN`。
+与正式撤销机制属待定来源合约。正式 FM-A08 为 `PLANNED_NOT_RUN`。
 
 ## 双机结果
 
@@ -39,4 +41,4 @@ R13 使用外部固定配置和已认证来源重算判决。R14 将该版本认
 ## 本地回归
 
 `make test` 通过，含 24 组 668 项 Python 测试和 20 次 sanitizer 检查。
-R1–R13 的结果摘要逐项匹配历史记录，R14 本地结果与双机一致。
+R1–R13 的结果摘要逐项匹配历史记录，R14 本地结果与双机一致；本片结论限于固定部署下的注册与候选信封证据。

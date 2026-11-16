@@ -1,6 +1,6 @@
 # Profile R9：运行期绑定与冻结状态集中实现
 
-日期：2026-11-08。基线 main `d67effc`（PR #79），开始时工作区干净。本轮按“最大进度覆盖”集中完成一个 Phase B 组件包；不改规范、ADR、OQ、Gate 或部署资格。
+本轮按“最大进度覆盖”范围集中完成一个 Phase B 组件包，10 项 Type A 转为完成，367 条向量在 A/B 两台物理主机上通过且结果流 SHA-256 一致，完整 `make test` 退出码为 0（665 项 Python 测试）。日期：2026-11-08；基线 main `d67effc`（PR #79），开始时工作区干净；规范、ADR、OQ、Gate 与部署资格保持原状。
 
 ## 范围与计数
 
@@ -50,4 +50,4 @@ python3 -B -m tools.verification_profile.validator INPUT.cbor \
 
 ## 后续主线
 
-正式 Intent 版本/签名/Receipt 承诺、ENUM/sum wire 与真实 NormalizeDeclaredScope/FailureReason/predicate/gate 仍需收敛；完整 I/F/D、method evaluator、执行闭合与日志/来源认证继续独立验收。将本片 guard 接入真实服务并原子执行四类后果之前，不得宣称 Phase B 运行准入已完成。P0-1B、G0/G2、FM-A 与 RIR conformance 均不随本片关闭。
+正式 Intent 版本/签名/Receipt 承诺、ENUM/sum wire 与真实 NormalizeDeclaredScope/FailureReason/predicate/gate 仍需收敛；完整 I/F/D、method evaluator、执行闭合与日志/来源认证继续独立验收。Phase B 运行准入的完成以本片 guard 接入真实服务并原子执行四类后果为前提，该前提尚未满足。P0-1B、G0/G2、FM-A 与 RIR conformance 的关闭由各自的验收决定。

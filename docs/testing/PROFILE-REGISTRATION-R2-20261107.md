@@ -1,8 +1,8 @@
 # Profile 注册上下文第二片（R2）
 
-> 2026-11-08 更正：R2 的 map TimeRange 与 opaque ExternalTypedObject 是限域测试输入，不能作为正式线上 conformance 证据。§17.3 要求 TimeRange 二元数组，§11.3 已定义三字段 ExternalTypedObject；新入口及反例见 [R3](PROFILE-REFERENCES-R3-20261108.md)。以下保留当时实现和运行记录。
+> 2026-11-08 更正：R2 的 map TimeRange 与 opaque ExternalTypedObject 属于限域测试输入，正式线上 conformance 证据由 §17.3 的 TimeRange 二元数组与 §11.3 的三字段 ExternalTypedObject 定义；新入口及反例见 [R3](PROFILE-REFERENCES-R3-20261108.md)。以下保留当时实现和运行记录。
 
-基线 main `41f0ee9`，2026-11-07；工作区包含尚未提交的 R1。本片沿用 §3.2.1、§3.5、§8.4、§13.0 与 §17.4，补 audit Profile 嵌套类型、显式不可变导入绑定、Phase R 注册上下文和两个快照。
+本片沿用 §3.2.1、§3.5、§8.4、§13.0 与 §17.4，补 audit Profile 嵌套类型、显式不可变导入绑定、Phase R 注册上下文和两个快照；74 条固定向量在 A/B 两台物理机上全部通过且结果流 SHA-256 相同，完整 `make test` 退出码为 0，Type A 由 R1 的 **7/28/84** 变为 **11 implemented / 36 partial / 72 not implemented**。基线 main `41f0ee9`，日期 2026-11-07，工作区包含尚未提交的 R1。
 
 ## 已实现范围
 
@@ -45,8 +45,8 @@ Rust 行入口为 `phase-r:<trusted-lock-sha256-hex><TAB><canonical-CBOR-hex>`�
 
 两台物理机各自构建并通过全部 74 条向量，结果流 SHA-256 同为 `52398f0836bba2891d959be13487855030ada910e12485b2d982c9dc381b8907`；环境与逐文件 pin 见[机器摘要](PROFILE-REGISTRATION-R2-20261107.summary.json)。[本片源码包](public-evidence/PROFILE-REGISTRATION-R2-source.tar.gz)保存实际对拍所用源码、向量、类型表及 source-sha256.json，已在新目录复核 pin 并独立复跑 74 条。该包为最小对拍源码包，仓库全量交付使用正常 package 入口。
 
-完整 `make test` 退出码为 0：默认 23 组 497 项（R1 480 + R2 17），另 25 项执行器测试；20 次 sanitizer、Claim/FM-S1a/FM-S1b/RIR/R1/R2 对拍通过。24 套公开历史快照的 249 条事件重新用当前实现重放通过。原始全量日志、两次开发期失败及源码部署记录保留在操作者本地证据根。本轮双机范围限于静态编码和注册检查，新增任务协议运行数为 0，不提供日志 finality 或身份/统计独立的保证。
+完整 `make test` 退出码为 0：默认 23 组 497 项（R1 480 + R2 17），另 25 项执行器测试；20 次 sanitizer、Claim/FM-S1a/FM-S1b/RIR/R1/R2 对拍通过。24 套公开历史快照的 249 条事件重新用当前实现重放通过。原始全量日志、两次开发期失败及源码部署记录保留在操作者本地证据根。本轮双机范围限于静态编码和注册检查，新增任务协议运行数为 0；日志 finality 与身份/统计独立性不在本片证据范围内。
 
-R1 先前在未提交工作区上运行；本片归档其机器摘要列出的全部原始源码，见 [R1 源码包](public-evidence/PROFILE-DIGEST-R1-source.tar.gz)，每份文件按 R1 已有摘要核对。R1 报告/摘要保留原值，当前源码的复跑不能替代其历史运行。
+R1 先前在未提交工作区上运行；本片归档其机器摘要列出的全部原始源码，见 [R1 源码包](public-evidence/PROFILE-DIGEST-R1-source.tar.gz)，每份文件按 R1 已有摘要核对。R1 报告/摘要保留原值；当前源码的复跑与其历史运行分属两份记录，历史运行以原记录为准。
 
-开发期新增测试后首次完整检查遇到清单过期；随后补入新报告时发现文档链接尚未落盘。两次失败均保留在操作者证据目录，修正清单和报告后重新运行，不改动断言降低标准。
+开发期新增测试后首次完整检查遇到清单过期；随后补入新报告时发现文档链接尚未落盘。两次失败均保留在操作者证据目录；修正清单和报告后重新运行，断言标准未作调整。

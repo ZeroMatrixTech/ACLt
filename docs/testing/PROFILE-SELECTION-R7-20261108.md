@@ -1,6 +1,6 @@
 # Profile R7：注册、选择与绑定规则集中实现
 
-日期：2026-11-08。基线 main `96ec459`（PR #77），开始时工作区干净。本次按维护者接受的“13 项基础＋8 项条件扩展”范围实施，不改变规范、ADR、OQ、Gate 或部署能力。源码内容以机器摘要、公开源码包和交付清单为准。
+本次按维护者接受的“13 项基础＋8 项条件扩展”范围实施，基础 13 项与扩展 SV-23 完成、其余 7 项保持 partial；278 条向量在 A/B 两台物理机上通过且结果流一致，完整 `make test` 退出码为 0（602 项 Python 测试）。日期：2026-11-08；基线 main `96ec459`（PR #77），开始时工作区干净；规范、ADR、OQ、Gate 与部署能力保持原状；源码内容以机器摘要、公开源码包和交付清单为准。
 
 ## 实际完成范围
 
@@ -38,8 +38,8 @@ Manifest 是测试资产，不进入语义 RegistrySnapshot。只检查声明的
 
 [机器摘要](PROFILE-SELECTION-R7-20261108.summary.json)保留 A/B 环境、源码 pin、计数、结果和范围表摘要。含逐文件 pin 的[公开最小源码包](public-evidence/PROFILE-SELECTION-R7-source.tar.gz)已在新目录解压、核对并独立构建重放全部 278 条，结果一致。最小包只用于本片对拍，全量本地回归使用完整仓库。
 
-开发初期导入/向量生成检查失败与修复后日志、A/B 原始报告和部署日志、公开包复跑及完整回归日志保留在操作者证据目录。两物理机是有限工程假设，同操作者/LAN/软件及可能共享供电的相关风险仍存在；没有新任务协议或故障矩阵运行，不能把 SSH 对拍当作新的端到端 FM 验收。
+开发初期导入/向量生成检查失败与修复后日志、A/B 原始报告和部署日志、公开包复跑及完整回归日志保留在操作者证据目录。两物理机属有限工程假设，同操作者/LAN/软件及可能共享供电的相关风险仍在；本轮没有新任务协议或故障矩阵运行，SSH 对拍的范围限于本片静态与组件对拍，端到端 FM 验收另行进行。
 
 ## 继续推进
 
-下一轮先闭合正式 Intent/ContractTuple 的取值合约、scope normalization、effects/N_max 来源与 FailureReason/predicate/gate 接口，再把本片组件接入完整 ReplayPhaseI。R6 的四项 partial 不因本片 helper 存在自动升为完成。Phase B/D、来源忠实性和正式 FM-A 分别验收。新规范字段或语义选择须有明确版本和审查，不能为提高计数临时加入测试字段。
+下一轮先闭合正式 Intent/ContractTuple 的取值合约、scope normalization、effects/N_max 来源与 FailureReason/predicate/gate 接口，再把本片组件接入完整 ReplayPhaseI。R6 的四项 partial 维持 partial 等级，本片 helper 仅用于本片对拍。Phase B/D、来源忠实性和正式 FM-A 分别验收。新规范字段或语义选择须有明确版本和审查，计数提升不构成新增测试字段的依据。

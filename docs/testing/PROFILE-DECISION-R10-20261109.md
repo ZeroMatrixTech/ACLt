@@ -1,6 +1,6 @@
 # R10 Phase D 审计重放
 
-R10 基于 `230dd4a`，为 `REEXEC_AUDIT_ONLY` 加入 Python/Rust 独立重放入口。冻结测试合约把 Receipt 绑定、期限和预算上限与外部 SHA-256 pin 对齐。schema lock 另行 pin。
+R10 为 `REEXEC_AUDIT_ONLY` 加入 Python/Rust 独立重放入口，67 条向量在 A/B 两台物理机上对照通过且两端结果 SHA-256 一致，完整 `make test` 通过 667 项 Python 测试与 20 次 sanitizer 检查；基线 `230dd4a`。冻结测试合约把 Receipt 绑定、期限和预算上限与外部 SHA-256 pin 对齐，schema lock 另行 pin。
 
 - 审计求值器从内联规范结果字节、候选结果和接纳投影计算结果及聚合。采用严格期限和无溢出的预算比较，拒绝重复 attempt ID。等时记录的顺序来自测试投影。
 - 事件 DAG 决定资金与期限条件的先后。两个合法但不可比较的事件选资金条件。缺失、不可见、错误主体或成环的事件触发验证作废。

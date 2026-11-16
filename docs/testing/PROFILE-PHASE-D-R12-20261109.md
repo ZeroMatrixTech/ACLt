@@ -1,6 +1,6 @@
 # R12 Phase D 候选编码与 FM-A08 预验收
 
-基线为 main `b09705d`。本轮接口见
+本轮完成 R12 Phase D 候选编码：17 条 Receipt 的候选判决在 A/B 两端结果摘要一致，10 项候选记录篡改均被拒绝，完整 `make test` 通过 24 组 668 项 Python 测试与 20 次 sanitizer 检查。基线为 main `b09705d`，接口见
 [Verification Profile §11.3.7](../03-protocol/verification-profile-schema.md#1137-phase-d-候选编码-1r12供接口评审)。
 新域绑定部署配置、Receipt、Profile、日志前缀与状态、闭合来源及求值时间。
 R11 来源先按旧版验证签名、checkpoint、原判决和结算，再投影到候选字节。
@@ -13,7 +13,7 @@ R11 来源先按旧版验证签名、checkpoint、原判决和结算，再投影
 | 无 ACCEPT/TRUSTED | 冻结条件列表排除 ACCEPT，历史 17 条 Receipt 只有四种过程终态，篡改为 TRUSTED 被拒 | 正式信封及不同调用入口上的同一限制 |
 | 无 EligibilitySnapshot 与 claim | 候选输入省略这两个对象，现有 Profile/接纳回归拒绝越界配置 | 正式部署准入证据 |
 
-FM-A08 保持 `PARTIAL_CANDIDATE_EVIDENCE`，正式 `PLANNED_NOT_RUN`。
+FM-A08 的状态为 `PARTIAL_CANDIDATE_EVIDENCE`，正式验收状态为 `PLANNED_NOT_RUN`。
 历史证据继承操作者时钟和测试 observer，资金耗尽证据限 ACTIVATE。工作区统计按
 `coverage.json` 校验现行入口的计数，历史报告保留各自时点的计数。
 
@@ -55,4 +55,4 @@ R10 的测试原因摘要和闭合摘要各自可复算，但缺少一套共同�
 
 `make test` 通过，含 24 组 668 项 Python 测试、20 次 sanitizer 检查。
 R1 至 R11 的结果摘要逐项匹配各轮归档。把 README 的当前计数故意退回
-80/35/4 后，库存门禁拒绝该副本。正式 FM-A 仍为 0/12。
+80/35/4 后，库存门禁拒绝该副本。正式 FM-A 仍为 0/12；本片结论限于候选编码与只读证据重放。
