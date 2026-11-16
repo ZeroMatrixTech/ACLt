@@ -12,9 +12,9 @@
 
 Requester 提出任务并承诺预算，Provider 接受工作并提供计算和证据。ACLt 用冻结的任务约定、执行授权、验证规则和损失上限，把这些行为连接起来。
 
-它目前是一份持续演进的协议规格，加上局部可执行校验和数学模型。完整运行时、调度系统和多节点网络仍需建设。读图时请把模块理解为**职责边界**，不要理解为已部署的服务。
+它目前是一份持续演进的协议规格，加上局部可执行校验和数学模型。完整运行时、调度系统和多节点网络仍需建设。图中的模块表示**职责边界**，不是已部署的服务。
 
-| 新人常问 | 直接回答 |
+| 常见定位问题 | 回答 |
 |---|---|
 | 这是不是区块链？ | 它定义计算协议；区块链只是未来可选的账本或结算适配器。 |
 | 谁参与？ | 两类基本参与者：Requester（请求方）和 Provider（提供方）。 |
@@ -56,13 +56,13 @@ flowchart TB
 
 实线表示主要工作推进，虚线表示数据支撑或记录关系。图中将源码准备折叠进“编译与规划”；**Lowering 必须在 Receipt 冻结前完成**，详细顺序见下一节。
 
-这些边界共同组成 ACLt Abstract Machine：可以把它理解为一本有严格更新规则的“任务状态总账”。合法事件让状态前进；签名、版本、前置状态或不变量不满足，就不能推进。它不意味着各 Provider 共用内存、时钟或操作系统。
+这些边界共同组成 ACLt Abstract Machine：它是一本有严格更新规则的“任务状态总账”。合法事件让状态前进；签名、版本、前置状态或不变量不满足，就不能推进。该模型不以各 Provider 共用内存、时钟或操作系统为前提。
 
 权威来源：[系统架构](../02-architecture/system-architecture.md)、[不变量](../01-requirements/invariants.md)、[角色与权限](../02-architecture/identities-and-roles.md)。
 
 ## 3. 用一个任务串起全流程
 
-假设请求方希望对一批输入做确定性计算。下面只展示流程，不表示这种任务已有现成可用的编译器或运行时。
+假设请求方希望对一批输入做确定性计算。以下流程只展示协议路径，不表示这种任务已有现成可用的编译器或运行时。
 
 ```mermaid
 flowchart TD
@@ -105,7 +105,7 @@ flowchart LR
     HOST["Host OS<br/>文件、网络、时间、设备"] -->|仅声明并允许的 capability| RT
 ```
 
-| 概念 | 直白理解 | 必须记住的边界 |
+| 概念 | 含义 | 边界 |
 |---|---|---|
 | Rust Profile | V1 接受的 Rust 前端范围 | Rust 编译成功不等于符合 ACLt。 |
 | RIR | 不同实现共同遵守的程序表示 | 源语言和某个编译器不能自行定义协议语义。 |
@@ -193,9 +193,9 @@ ACLt/
     └── verification_profile/       当前校验工具的局部测试
 ```
 
-`spec/` 和 `simulations/` 是根 README 中的规划目录，目前不应当作已有实现入口。当前工作区还含交付包和重复副本；新人以根目录的 `docs/`、`tools/`、`tests/` 等为入口。
+`spec/` 和 `simulations/` 是根 README 中的规划目录，目前不应当作已有实现入口。当前工作区还含交付包和重复副本；新参与者以根目录的 `docs/`、`tools/`、`tests/` 等为入口。
 
-| 你想了解或修改什么 | 先读哪里 | 再看哪里 |
+| 查阅目标 | 先读哪里 | 再看哪里 |
 |---|---|---|
 | 整体边界与组件职责 | [system-architecture.md](../02-architecture/system-architecture.md) | [system-context.md](system-context.md) |
 | 任务、Lease、恢复与结算顺序 | [task-lifecycle.md](../02-architecture/task-lifecycle.md) | [protocol-spec.md](../03-protocol/protocol-spec.md) |
@@ -206,7 +206,7 @@ ACLt/
 | 为什么采用某项设计 | [文档中心的 ADR 索引](../README.md) | [论断与来源](../06-research/claims-and-sources.md) |
 | 现在最缺什么 | [current-status.md](../07-roadmap/current-status.md) | [open-questions.md](../07-roadmap/open-questions.md) |
 
-## 8. 哪些已经有，哪些还没有
+## 8. 当前证据与覆盖范围
 
 以下是读取时工作区的状态摘要，不替代[当前状态](../07-roadmap/current-status.md)和[覆盖清单](../../schemas/verification-profile/coverage.json)。
 
@@ -224,11 +224,11 @@ P0-1B 当前覆盖清单明确列出：L1b 的 SV-10、SV-11、SV-57、SV-76 已
 
 阅读状态时分清三个问题：`DECIDED` 表示设计已接受；V1 `CORE` 表示必须实现；测试通过表示某个检查有证据。三者不能互相替代。
 
-## 9. 新合作者怎样开始
+## 9. 参与路径
 
 ### 9.1 第一次阅读
 
-1. 读本导览，建立任务、执行、验证和结算之间的联系。
+1. 阅读本导览，建立任务、执行、验证和结算之间的联系。
 2. 读[贡献指南](../../CONTRIBUTING.md)，确认改动类别和同步要求。
 3. 读[当前状态](../07-roadmap/current-status.md)与[未决问题](../07-roadmap/open-questions.md)，选择有明确关闭证据的小问题。
 4. 读该问题对应的规范与不变量，再查看实现或测试。
@@ -242,7 +242,7 @@ python -m unittest discover -s tests/verification_model -p "test_*.py" -v
 python -m unittest discover -s tests/verification_profile -t . -v
 ```
 
-第一组验证数学模型与反例的一致性，第二组验证当前 Profile 工具覆盖的规则。通过这两组测试，不等于 P0-1B、G0 或完整协议通过验收。本导览只说明入口，不宣称本次文档编写重新执行了协议测试。
+第一组验证数学模型与反例的一致性，第二组验证当前 Profile 工具覆盖的规则。通过这两组测试不等于 P0-1B、G0 或完整协议通过验收；本导览只说明入口，不作为本次文档编写重新执行协议测试的记录。
 
 ### 9.3 按专长选择第一个贡献
 
@@ -276,10 +276,6 @@ flowchart LR
 
 若本文与权威文件冲突，按[文档中心](../README.md)的冲突解决顺序处理。历史 `codocs/` 用于追踪，不覆盖当前决定。
 
-将本文加入仓库时，可在 `docs/README.md` 的“快速理解”列表前加入：
-
-```markdown
-- [新合作者架构导览](00-overview/architecture-guide.md)：整体图、任务流程、目录导航与参与入口。
-```
+本文在 [docs/README.md](../README.md) 的“工程证据与维护”一节列为“架构阅读指南”。
 
 本文所有相对链接均以 `docs/00-overview/architecture-guide.md` 为基准；单独下载后，应放回该位置再浏览仓库内链接。

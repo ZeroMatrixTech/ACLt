@@ -84,7 +84,7 @@ Compile=Lowering+Decomposition+Packing
 - Decomposition 把冻结的计算与对象依赖表达为有界工作图；
 - Packing 把合法分解组织为 WorkPlan、Assignment、资源和验证上下文。
 
-WorkPlan 只需合法、确定且可验证，不承诺全局最优。合法性至少检查：
+WorkPlan 只需合法、确定且可验证；全局最优不属于其要求。合法性至少检查：
 
 - 所有 Assignment 的并集覆盖要求的工作；
 - 依赖图无非法环或未声明依赖；

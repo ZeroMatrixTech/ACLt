@@ -20,6 +20,7 @@
     "Makefile",
     ".gitignore",
     "SECURITY.md",
+    "CODE_OF_CONDUCT.md",
     "DELIVERY-SCOPE.json",
     "WORKFLOW-SHA256SUMS",
     ".aclt-flow/template.json",
