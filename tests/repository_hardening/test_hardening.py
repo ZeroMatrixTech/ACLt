@@ -88,7 +88,7 @@ class Repository(unittest.TestCase):
         with self.assertRaises(ValueError):check_documents(self.root)
     def test_inventory_includes_histories_and_arbitrary_build_source(self):
         names={p.relative_to(ROOT).as_posix() for p in delivery_files(ROOT)}
-        self.assertIn('AGENTS.md',names);self.assertTrue(any(p.startswith('docs/codocs/') for p in names));self.assertTrue(any(p.startswith('experiments/aclt-minimal-verifier-state2/') for p in names))
+        self.assertNotIn('AGENTS.md',names);self.assertFalse(any(p.startswith('.claude/') for p in names));self.assertTrue(any(p.startswith('docs/codocs/') for p in names));self.assertTrue(any(p.startswith('experiments/aclt-minimal-verifier-state2/') for p in names))
         cfg=json.loads((ROOT/'DELIVERY-SCOPE.json').read_text());(self.root/'DELIVERY-SCOPE.json').write_text(json.dumps(cfg))
         for n in cfg['top_level_files']:
             p=self.root/n;p.parent.mkdir(parents=True,exist_ok=True)

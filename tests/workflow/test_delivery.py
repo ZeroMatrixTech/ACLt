@@ -52,7 +52,7 @@ class DeliveryTests(unittest.TestCase):
         self.assertEqual(r.returncode,0,r.stderr);self.assertEqual(other.read_bytes(),expected)
         with zipfile.ZipFile(other) as z:
             self.assertTrue(all(i.date_time==(1980,1,1,0,0,0) and i.compress_type==zipfile.ZIP_STORED for i in z.infolist()))
-            self.assertIn('AGENTS.md',z.namelist());self.assertTrue(any(n.startswith('docs/codocs/') for n in z.namelist()))
+            self.assertNotIn('AGENTS.md',z.namelist());self.assertFalse(any(n.startswith('.claude/') for n in z.namelist()));self.assertTrue(any(n.startswith('docs/codocs/') for n in z.namelist()))
             self.assertIn('.github/workflows/validate.yml',z.namelist())
 
     def test_stale_source_refuses_package_without_rewriting_manifest(self):
