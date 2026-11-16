@@ -1,6 +1,6 @@
 # 最简验证机 · 多来宾作业中断验收（2026-11-13）
 
-实跑源码为 `d1b4c3cd498774accec57adf17bea73810f6fccf`。同一宿主上的三台 QEMU 来宾运行固定 `stats-int-v1` 三叶树作业。来宾各有独立内核、磁盘和 TCP 栈，使用 Ubuntu 7.0.0-30-generic 内核、TCG 和每来宾 1024 MiB 内存。协调器 A 顺序派发，叶子编号从零开始。
+本报告记录多来宾作业中断验收，实跑源码为 `d1b4c3cd498774accec57adf17bea73810f6fccf`：同一宿主上的三台 QEMU 来宾运行固定 `stats-int-v1` 三叶树作业，来宾各有独立内核、磁盘和 TCP 栈，使用 Ubuntu 7.0.0-30-generic 内核、TCG 和每来宾 1024 MiB 内存。协调器 A 顺序派发，叶子编号从零开始；工作进程退出与 TCP 断连两种注入均以 `EXCHANGE_INCOMPLETE` 结束，正常对照为 `PASS`。
 
 | 场景 | 来宾与操作 | 中断点 | A 最终状态 |
 |---|---|---|---|
@@ -24,4 +24,4 @@ python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
   --interrupt disconnect VERIFY-1
 ```
 
-本轮只规定遇到不完整交换时停止和留证。是否重派、是否沿用已接受叶子、如何给二次执行计费，以及整题资源上限和 trap 如何组合，均需要独立的规则与验收。
+本轮规定遇到不完整交换时停止和留证。重派、沿用已接受叶子、二次执行计费，以及整题资源上限和 trap 的组合，均属于需要独立规则与验收的范围。

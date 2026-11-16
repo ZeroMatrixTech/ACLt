@@ -1,6 +1,6 @@
 # FM / RIR 保留证据摘要
 
-本轮把原始双机报告恢复为仓库内机器摘要；没有新跑 SSH 或产生新的双机结论。
+本报告把原始双机报告恢复为仓库内机器摘要，覆盖 FM-S1a、FM-S1b 与 RIR 核心三组，保留对应合并源码、运行范围与校验值。恢复过程未执行新的 SSH 运行，也未产生新的双机结论。
 
 | 摘要 | 对应的合并源码 | 原运行范围 |
 |---|---|---|
@@ -36,4 +36,4 @@ python3 -B scripts/check-migration-evidence.py --repository . --replay \
 
 Canonical JSON 精确定义为 Python `json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True, allow_nan=False).encode('utf-8')`。summary_sha256 排除自身字段；report projection 和 shared checks 的范围由校验器显式定义。重复 JSON key、未知摘要字段、源路径越界、错 revision、计数/跨端事实不符及伪造 FM 整轮 hash 均拒绝。
 
-这些 SHA 提供内容一致性和可复现锚点，不是数字签名或第三方独立审计，也不能证明物理主机/输入忠实性或统计独立。源码当前工作区后续变化不会悄悄改写历史摘要：核对的是记录的 Git revision。
+这些 SHA 提供内容一致性和可复现锚点；证据等级限于内容校验，数字签名与第三方独立审计均未使用，物理主机与输入的忠实性、统计独立性不在证明范围内。源码当前工作区后续变化不会悄悄改写历史摘要：核对的是记录的 Git revision。

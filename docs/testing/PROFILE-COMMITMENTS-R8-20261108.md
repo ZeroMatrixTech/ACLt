@@ -1,6 +1,6 @@
 # Profile R8：Claim、快照与承诺集中实现
 
-日期：2026-11-08。基线 main `9415fe4`（PR #78），开始时工作区干净。本轮按“最大进度覆盖”将共用承诺/绑定层合并实施，保留 R7 的正式输入缺口，不改规范、ADR、OQ、Gate 或部署资格。
+本报告记录 2026-11-08 的 Profile R8 实施与验证，基线为 main `9415fe4`（PR #78），开始时工作区干净。本轮按“最大进度覆盖”合并实施共用承诺/绑定层：119 项 Type A 从 50/40/29 变为 69 implemented / 35 partial / 15 not implemented，完整 `make test` 退出码 0。规范、ADR、OQ、Gate 与部署资格均未改动，R7 的正式输入缺口保留。
 
 ## 范围与计数
 
@@ -42,4 +42,4 @@ NATIVE_CBOR 只用于显式锁定的 R8 原生测试载荷 schema，不在旧入
 
 ## 后续主线
 
-优先评审候选输入的正式版本/签名承诺与 ENUM/sum wire，再完成真实 NormalizeDeclaredScope、FailureReason/predicate/gate 和完整 I/F/Phase D 重放。完整边界/执行闭合/evaluator/日志认证及正式 FM-A、RIR conformance 继续按各自证据验收。本片没有新任务协议/故障矩阵运行，不关闭 P0-1B 或 G0/G2。
+优先评审候选输入的正式版本/签名承诺与 ENUM/sum wire，再完成真实 NormalizeDeclaredScope、FailureReason/predicate/gate 和完整 I/F/Phase D 重放。完整边界/执行闭合/evaluator/日志认证及正式 FM-A、RIR conformance 按各自证据验收。本片未运行新的任务协议/故障矩阵，P0-1B 与 G0/G2 保持未关闭。
