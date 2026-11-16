@@ -59,7 +59,7 @@ git worktree add --no-track -b <type>/<topic> .claude/worktrees/<名称> origin/
 
 条目会话和审计会话可以由 Claude Code、Codex 或其他编码代理承担，规则相同：
 
-- **执行步骤：** 不支持 `/aclt-*` 技能的代理，直接读取 `.claude/skills/<名称>/SKILL.md`，按其中的步骤执行。其中的 `/code-review` 换成该代理自己的代码审查，并在审计结论中注明用了什么审查方式。
+- **执行步骤：** 不支持 `/aclt-*` 技能的代理，按维护者在本机用户级配置中提供的同名技能说明执行。其中的 `/code-review` 换成该代理自己的代码审查，并在审计结论中注明用了什么审查方式。
 - **审计独立：** 审计不得由实现该条目的代理承担，优先由另一种模型的代理承担。审计评论在结论表之前写明实现代理与审计代理。
 
 ## 4. 授权范围
@@ -89,7 +89,7 @@ git worktree add --no-track -b <type>/<topic> .claude/worktrees/<名称> origin/
 条目会话在修改任何文件前完成规划。
 
 1. 读取以下文件：
-   - AGENTS.md 指定的文件
+   - 本机用户级代理入口指定的文件
    - 本文
    - [当前状态](../07-roadmap/current-status.md) §7
    - 相关 OQ

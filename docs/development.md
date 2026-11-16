@@ -157,7 +157,7 @@
 
 `make check` 保持轻量本地检查，新增环境/文档/证据元数据与测试控制帧回归；以本次日志为准，前文各片总数均为当时快照。`make test` 才构建 Rust/C++、跑独立对拍、回环 HTTP 和 sanitizer；`make verify-source` 在含完整 Git 历史的 checkout 校验三份历史摘要的 52 项 pin 及 SOURCE-BASELINE 的 43 项 pin。元数据通过不能代替源码核对，源码核对不能代替重新执行。无 .git 的解包目录仍可校验清单并运行本地检查，Git 源码维度标为 NOT_RUN。
 
-`DELIVERY-SCOPE.json` 明示完整源码交付范围，包含 AGENTS、Claude Code 项目技能（`.claude/skills`）、历史 state1/state2、codocs 与 CI 配置；历史文件的入包不使其成为运行入口。已存在的受管文件不能藏在枚举之外。生成目录排除锚定在明确的实验构建路径；新增 tools/.../build/*.py 等源码仍会使旧清单失效。新文件和经审阅的删除可以先更新清单，未提交交付也可验收。
+`DELIVERY-SCOPE.json` 明示完整源码交付范围，包含历史 state1/state2、codocs 与 CI 配置；代理工作流程由维护者在本地维护，不随仓库发布。历史文件的入包不使其成为运行入口。已存在的受管文件不能藏在枚举之外。生成目录排除锚定在明确的实验构建路径；新增 tools/.../build/*.py 等源码仍会使旧清单失效。新文件和经审阅的删除可以先更新清单，未提交交付也可验收。
 
 ZIP 使用固定 1980 时间、顺序、Unix 普通文件 0644 与 ZIP_STORED，避免墙钟、源文件 mtime/mode 和压缩库版本引入差异；源码体积稍大。ZIP 内 .sh 以 `bash` 调用，不靠可执行位。SHA 仅证明内容一致，发布来源签名/外部信任根仍未建立。
 
