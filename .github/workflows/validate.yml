@@ -74,21 +74,23 @@ jobs:
           def nul(path):
               with open(path, "rb") as f:
                   return [os.fsdecode(x) for x in f.read().split(b"\0") if x]
-          def links(path):
+          def full_paths(path):
               with open(path, "rb") as f:
                   parts = f.read().split(b"\0")
-              out = set()
+              out = {}
               for i in range(0, len(parts) - 1, 2):
                   meta, p = parts[i], parts[i + 1]
                   if meta.startswith(b":"):
-                      modes = meta[1:].split(b" ")[:2]
-                      if b"120000" in modes or b"160000" in modes:
-                          out.add(os.fsdecode(p))
+                      old_mode, new_mode, _, _, status = meta[1:].split()
+                      if status == b"D":
+                          out[os.fsdecode(p)] = "deleted path"
+                      elif {old_mode, new_mode} & {b"120000", b"160000"}:
+                          out[os.fsdecode(p)] = "symlink/gitlink"
               return out
-          files, linked = nul(sys.argv[1]), links(sys.argv[2])
-          full = False
+          files, required = nul(sys.argv[1]), full_paths(sys.argv[2])
+          full = not files
           for p in files:
-              if p in linked: v, why = "full", "symlink/gitlink"
+              if p in required: v, why = "full", required[p]
               elif unsafe(p): v, why = "full", "unsafe path"
               elif allowed(p): v, why = "fast", "docs whitelist"
               else: v, why = "full", "outside whitelist"
