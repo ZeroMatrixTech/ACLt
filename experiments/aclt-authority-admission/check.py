@@ -52,7 +52,7 @@ class AdmissionTests(unittest.TestCase):
     def setUpClass(cls):
         cls.keys = tempfile.TemporaryDirectory()
         cls.private, cls.public = create_keys(cls.keys.name)
-        cls.worker_executable = ROOT.parent / 'aclt-minimal-verifier-state3/build/worker'
+        cls.worker_executable = Path(os.environ.get('ACLT_AUTHORITY_WORKER', str(ROOT.parent / 'aclt-minimal-verifier-state3/build/worker')))
         if not cls.worker_executable.is_file():
             raise RuntimeError('build state3 worker before running checks')
 

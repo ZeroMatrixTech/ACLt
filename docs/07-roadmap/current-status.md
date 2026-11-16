@@ -205,6 +205,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-16 | v0.5 | P1-k：本地验证增加文档快速通道与并行 make——仅 pull_request 且全部改动落在文档白名单时运行 check-docs，push main 与 workflow_dispatch 保持全量；全量改为 `make -j"$(nproc)" -O test`，test-authority 使用独立 `build/worker-ci`，确定性打包仍在测试后串行 | [开发入口](../development.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、#175 | 不变 |
 | 2026-11-16 | v0.5 | 续轮回验（AUD-20261116-03）文档同步：README、CONTRIBUTING、术语表与 OQ-01 的名称表述改为已决政策（ACLt 不是商标，不声明商标，放弃名称冲突检索并接受同名风险）；current-status 入口改为 P1-g/i/j/h 已完成，下一步为本次同步、重新冻结发行说明与发布步骤；公开仓库设置清单改为先用 fork PR 验证缺签阻止合并、补签后最新头通过，再设为必需检查并记录结果 | [README](../../README.md)、[当前状态](current-status.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、[回验报告](../08-governance/audits/audit-20261116-03-public-release-recheck.md)、#161 | 不变 |
 | 2026-11-16 | v0.5 | 发布准备增量回验续轮（AUD-20261116-03）：新增 0 BLOCKER、1 MAJOR、2 MINOR、1 NOTE；发布准备 FAIL | [回验报告](../08-governance/audits/audit-20261116-03-public-release-recheck.md)、#161 | 不变 |
 | 2026-11-16 | v0.5 | P1-h 文风维护：文档改为百科体第三人称并先写已完成事实；发行说明文字按 #166 更新，列明 OFL-1.1 字体例外并修正四份清单的适用 campaign 范围；最终冻结待四个 P1-h 子条目合入及 #161 续轮回验后由维护者执行；R1 规格的规范性条款原义不变 | [发行说明](../releases/PREVIEW-20261106.md)、[R1 规格](first-public-release-safety-plan.md)、#166 | 不变 |

@@ -2,13 +2,30 @@
 PYTHON ?= python3
 REPORT_DIR ?= $(CURDIR)/artifacts/multinode
 PACKAGE ?= $(CURDIR)/dist/aclt-singlehost-update.zip
+CI_WORKER ?= $(CURDIR)/experiments/aclt-minimal-verifier-state3/build/worker-ci
 .DEFAULT_GOAL := help
-.PHONY: help check test test-python test-singlehost test-multinode test-authority build-worker workflow status manifests check-manifests package
+.PHONY: help check check-docs test test-python test-singlehost test-multinode test-authority build-worker build-worker-ci workflow status manifests check-manifests package
 
 help:
 	@printf '%s\n' 'make check           Python regression tests + manifest validation' 'make test            All local tests (includes compilers and sanitizers)' 'make test-multinode  Local admission/message ordering checks; no VMs' 'make test-claim-codec Candidate Python/Rust CBOR and digest cross-check' 'make test-minimal-verifier Experimental Ask/Solve/Verify loop' 'make test-minimal-verifier-multivm Local QEMU guests; MULTIVM_GUESTS=... MULTIVM_KERNEL=... MULTIVM_OUTPUT=/new/path' 'make test-rir-independent Raw-artifact Rust entry and exact outcome bytes/hash; RIR_INDEPENDENT_REPORT=/new/report.json' 'make check-fm-s1a Pinned test identity and signature regressions' 'make test-fm-s1a Independent FM-S1a byte/signature cross-check; FM_S1A_REPORT=/new/report.json' 'make check-rir-build-probe Empty-run lowering adapter regressions' 'make test-rir-build-probe RIR_TOOLCHAIN=/prefix RIR_OUTPUT=/new/path' 'make test-rir-io-probe RIR_TOOLCHAIN=/prefix RIR_IO_OUTPUT=/new/path' 'make test-rir-stats-probe RIR_TOOLCHAIN=/prefix RIR_STATS_OUTPUT=/new/path' 'make test-rir-work1 RIR_TOOLCHAIN=/prefix RIR_WORK1_OUTPUT=/new/host-run' 'make test-task-commitment TASK_COMMITMENT_OUTPUT=/new/host-run' 'make check-task-authorization Local authorization/startup regressions; OpenSSL required' 'make check-task-replay Local causal journal/replay regressions' 'make test-task-work2 TASK_WORK2_PEER=user@B TASK_WORK2_A_HOST=A_LAN_IP TASK_WORK2_REMOTE_ROOT=/new/B/path TASK_WORK2_OUTPUT=/new/A/path' 'make check-funding-reservation Local test-asset policy/reservation regressions' 'make check-fixed-settlement Local exact-evidence/fixed test-settlement regressions' 'make check-settlement-recovery Local read-first settlement recovery regressions' 'make test-funding-work3 FUNDING_WORK3_PEER=user@B FUNDING_WORK3_A_HOST=A_LAN_IP FUNDING_WORK3_REMOTE_ROOT=/new/B/path FUNDING_WORK3_OUTPUT=/new/A/path' 'make workflow        Fingerprinted singlehost evidence workflow' 'make status          Refresh evidence dashboard only' 'make manifests       Refresh checksums after intentional changes' 'make check-bq-boundaries Exact local B/Q countermodel regressions' 'make test-bq-boundaries BQ_REPORT=/new/report.json' 'make check-bq-calibration Exact local calibration/sensitivity regressions' 'make test-bq-calibration BQ_CALIBRATION_REPORT=/new/report.json' 'make check-bq-readiness Evidence review/lifecycle projection regressions' 'make test-bq-readiness BQ_READINESS_REPORT=/new/report.json' 'make test-bq-work4 BQ_WORK4_OUTPUT=/new/research-run' 'make package         Checked singlehost update archive; PACKAGE=/new/path.zip' 'See docs/development.md for scope and prerequisites.'
 
 check: check-phase-d-contract check-fm-s3-results check-repository-hardening check-fm-s2 check-migration-evidence check-fm-s1b check-fm-s1a test-python check-bq-boundaries check-bq-calibration check-bq-readiness check-manifests check-profile-inventory check-license-coverage check-rir-build-probe check-rir-io-probe check-rir-stats-probe check-task-commitment check-task-authorization check-task-replay check-funding-reservation check-fixed-settlement check-settlement-recovery
+
+.PHONY: check-docs
+check-docs: check \
+  test-profile-digest \
+  test-profile-registration \
+  test-profile-references \
+  test-registration-rules \
+  test-method-matrices \
+  test-creation-bindings \
+  test-selection-assets \
+  test-commitment-bindings \
+  test-runtime-bindings \
+  test-fm-decision-replay \
+  test-phase-d-envelope \
+  test-bound-creation \
+  test-deployment-revocation
 
 test: check check-build-environment test-test-controls test-singlehost test-multinode test-authority test-claim-codec test-fm-s1a test-fm-s1b test-rir-independent
 
@@ -28,8 +45,12 @@ build-worker:
 	mkdir -p experiments/aclt-minimal-verifier-state3/build
 	$(CXX) -std=c++17 -O2 -Wall -Wextra -Werror experiments/aclt-minimal-verifier-state3/cpp/worker.cpp -o experiments/aclt-minimal-verifier-state3/build/worker
 
-test-authority: build-worker
-	$(PYTHON) -B experiments/aclt-authority-admission/check.py
+build-worker-ci:
+	mkdir -p "$(dir $(CI_WORKER))"
+	$(CXX) -std=c++17 -O2 -Wall -Wextra -Werror experiments/aclt-minimal-verifier-state3/cpp/worker.cpp -o "$(CI_WORKER)"
+
+test-authority: build-worker-ci
+	ACLT_AUTHORITY_WORKER="$(CI_WORKER)" $(PYTHON) -B experiments/aclt-authority-admission/check.py
 
 workflow:
 	$(PYTHON) -B scripts/aclt-flow.py run

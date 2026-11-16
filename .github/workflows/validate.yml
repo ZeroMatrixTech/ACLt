@@ -26,13 +26,107 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Classify validation channel
+        id: classify
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          # The checkout runs as a different user; allow git to read the work tree.
+          git config --global --add safe.directory "$PWD"
+          files="$(mktemp)"; raw="$(mktemp)"
+          trap 'rm -f "$files" "$raw"' EXIT
+          channel=full
+          reason="not a pull_request (event=${EVENT_NAME:-unknown})"
+          base=""
+          if [[ "${EVENT_NAME:-}" == "pull_request" && -n "${BASE_SHA:-}" ]]; then
+            base="$BASE_SHA"; reason="base SHA unreachable or git diff failed; fallback to full"
+            if ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+              base=""
+              if [[ -n "${BASE_REF:-}" ]] && \
+                 git rev-parse --verify --quiet "refs/remotes/origin/${BASE_REF}^{commit}" >/dev/null; then
+                base="refs/remotes/origin/${BASE_REF}"
+              elif git fetch --no-tags --quiet origin "$BASE_SHA"; then
+                base="$BASE_SHA"
+              fi
+            fi
+            if [[ -n "$base" ]] && \
+               git diff --name-only -z --no-renames "$base...HEAD" -- >"$files" && \
+               git diff --raw -z --no-renames --no-prefix "$base...HEAD" -- >"$raw"; then
+              classify_ok=0
+              channel="$(python3 - "$files" "$raw" <<'PY'
+          import os, sys
+          ROOT = {"README.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md",
+                  "CONTRIBUTORS.md", "SINGLEHOST-SHA256SUMS", "WORKFLOW-SHA256SUMS"}
+          def allowed(p):
+              if p in ROOT: return True
+              if p.startswith(".github/ISSUE_TEMPLATE/"): return True
+              if p.startswith("docs/testing/public-evidence/"): return False
+              return p.startswith("docs/") and p.endswith(".md")
+          def unsafe(p):
+              return (not p or p.startswith(("/", "./")) or "\\" in p
+                      or p == ".." or "/../" in p or p.endswith("/"))
+          def visible(p):
+              return "".join(c if c.isprintable() else "\\x%02x" % ord(c) for c in p)
+          def nul(path):
+              with open(path, "rb") as f:
+                  return [os.fsdecode(x) for x in f.read().split(b"\0") if x]
+          def full_paths(path):
+              with open(path, "rb") as f:
+                  parts = f.read().split(b"\0")
+              out = {}
+              for i in range(0, len(parts) - 1, 2):
+                  meta, p = parts[i], parts[i + 1]
+                  if meta.startswith(b":"):
+                      old_mode, new_mode, _, _, status = meta[1:].split()
+                      if status == b"D":
+                          out[os.fsdecode(p)] = "deleted path"
+                      elif {old_mode, new_mode} & {b"120000", b"160000"}:
+                          out[os.fsdecode(p)] = "symlink/gitlink"
+              return out
+          files, required = nul(sys.argv[1]), full_paths(sys.argv[2])
+          full = not files
+          for p in files:
+              if p in required: v, why = "full", required[p]
+              elif unsafe(p): v, why = "full", "unsafe path"
+              elif allowed(p): v, why = "fast", "docs whitelist"
+              else: v, why = "full", "outside whitelist"
+              print(f"{v}\t{visible(p)}\t{why}", file=sys.stderr)
+              full = full or v == "full"
+          print("full" if full else "fast")
+          PY
+          )" || { classify_ok=1; channel=full; }
+              if [[ "$classify_ok" == 0 && ( "$channel" == "fast" || "$channel" == "full" ) ]]; then
+                reason="classified $(tr -cd '\0' <"$files" | wc -c | tr -d ' ') path(s)"
+              else
+                channel=full; reason="classifier error or unexpected output; fallback to full"
+              fi
+            else
+              reason="base SHA unreachable or git diff failed; fallback to full"
+            fi
+          fi
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          echo "channel=$channel; reason=$reason" >&2
+          echo "::notice title=Validation channel::${channel} (${reason})"
       # Keep this gate before evidence checks and tests.
       - name: Check tested environment scope
         run: python3 -B scripts/check-environment.py --full
       - name: Verify retained source pins against Git
         run: python3 -B scripts/check-repository-evidence.py --repository .
+      - name: Run documentation-only validation
+        if: steps.classify.outputs.channel == 'fast'
+        env:
+          BASE: ${{ steps.classify.outputs.base }}
+        run: |
+          make -j"$(nproc)" -O check-docs
+          git diff --check "${BASE}...HEAD"
       - name: Run all local implementations and sanitizers
-        run: make test
+        if: steps.classify.outputs.channel != 'fast'
+        run: make -j"$(nproc)" -O test
       - name: Check deterministic source delivery
         run: |
           python3 -B scripts/package-singlehost.py dist/first.zip
