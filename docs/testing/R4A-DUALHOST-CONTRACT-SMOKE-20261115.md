@@ -1,6 +1,6 @@
 # 最简验证机 · R4a 双机通用契约引擎冒烟
 
-2026-11-15，按[阶段 #128 决定 2](https://github.com/ZeroMatrixTech/ACLt/issues/128)、[R4a 计划卡 #151](https://github.com/ZeroMatrixTech/ACLt/issues/151)、[DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md)和 [R1 规格（含修订 1）](../07-roadmap/first-public-release-safety-plan.md)，在本地同宿主和物理 A、B 上各运行一次 R4 profile 冒烟。维护者的授权覆盖首次公开阶段，阶段结束即终止。
+2026-11-15 起草，2026-11-16 按 #156 增量审计（PRA-156-01/03/07）修订后重跑。按[阶段 #128 决定 2](https://github.com/ZeroMatrixTech/ACLt/issues/128)、[R4a 计划卡 #151](https://github.com/ZeroMatrixTech/ACLt/issues/151)、[DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md)和 [R1 规格（含修订 1）](../07-roadmap/first-public-release-safety-plan.md)，在本地同宿主和物理 A、B 上各运行一次 R4 profile 冒烟。维护者的授权覆盖首次公开阶段，阶段结束即终止。
 
 > 本文是**冒烟，不计入 R4**。
 > - 没有运行 R4 正式 campaign。R1 第 6 节规定的 2 种子 × 16 次 × 2 遍矩阵仍属于 R4（#157）。
@@ -56,9 +56,9 @@ python3 -B experiments/aclt-minimal-verifier-baseline/montecarlo.py check --outp
 - **授权：** 物理机使用依据 #128 决定 2，适用于首次公开发行阶段。
 - **计划卡：** #151 已批准。拓扑和跨 VM 口径按 R1 修订 1 执行，维护者的决定记录在 #150。
 - **宿主锁：** 按 PARALLEL-1 §6.4，两端各取 `${XDG_RUNTIME_DIR:-/tmp}/aclt-experiment.lock` 的独占锁。A 的默认运行目录是只读的，本次显式设为 `XDG_RUNTIME_DIR=/tmp`。
-  - 每个 run 都在“取锁、启动、运行、回收、释放”的区间内完成。
-  - 交接 run 用**一个** A 锁和一个 B agent 会话贯穿 `before`、`after` 两个阶段。
-  - 物理证据中，每个 run、每个阶段的 `metadata.json.locks[]` 都同时有 A、B 两端的 `held` 和 `released` 记录。
+  - 每个 run 用**一个** A 锁和一个 B agent 会话，贯穿该 run 的全部阶段（交接 run 的 `before`、`after` 也在同一区间内）。本地后端现在同样先取 A 锁。
+  - 锁记录、`started_at`/`ended_at` 和 `observations[]` 都用 A 侧编排进程的同一 UTC 时钟（R1 5.5）。B 锁在会话建立时由 agent 经 SSH 通道报告 `held`，运行结束时再经 agent 确认仍持有；会话结束后，A 用严格主机密钥的 SSH 探针确认 B 锁已释放，并记下确认时刻。
+  - 每条锁记录带 `run_index`。检查器要求：锁记录属于本 run；A、B 各有一次 `held` 和 `released`；B 锁嵌套在 A 锁之内；`started_at <= ended_at`，且都落在公共锁窗口内；宿主观测也落在运行窗口内，每个阶段各有一次开始和回收观测。
   - 运行结束后 A、B 两端都没有残留 QEMU 进程。
 - **B 的管理通道：** 部署、启动和回收都通过严格主机密钥校验的 SSH：`ssh -F /dev/null -o BatchMode=yes -o StrictHostKeyChecking=yes <B_USER>@<B_IP>`。
   - 仓库外的配置文件只含 `ssh_target`、`host_a_lan`、`host_b_lan`、`remote_root` 四个字段，权限 600。
@@ -73,14 +73,15 @@ python3 -B experiments/aclt-minimal-verifier-baseline/montecarlo.py check --outp
 
 **两端环境：**
 
-- 两端相同：Ubuntu 26.04.1 LTS、Linux 7.0.0-43-generic x86_64、QEMU 10.2.1、Python 3.14.4、Rust 1.93.1。
-- A 没有 `/dev/kvm`，B 有。为了让两端 QEMU 参数一致，本次统一使用 TCG。
+- 两端相同：Ubuntu 26.04.1 LTS、Linux 7.0.0-43-generic x86_64、QEMU 10.2.1、Python 3.14.4。Rust 1.93.1 只在 A 上用于构建静态执行器，B 不需要 Rust。
+- 本次 `environment.json` 记录两端都有可读写的 `/dev/kvm`（交接文档曾记 A 无 KVM，以本次记录为准）。为了让两端 QEMU 参数一致，仍统一使用 TCG。
+- `environment.json` 记录两端的 OS、内核、QEMU、KVM、Python，以及源码清单和 B 侧镜像摘要，不含时间和临时端点；检查器要求每个 run 的环境记录都与它一致。
 - 来宾内核也是 7.0.0-43-generic。
 
 **源码与执行器：**
 
-- 实跑源码提交 `dca1709`（`source_dirty=false`）。
-- 冻结源码清单摘要 `0ccfa8fe5ab377b8d6fcbd24ceff6d0615282727da8ae2749b14d13554d5f087`。
+- 实跑源码提交 `52c8a6a`（`source_dirty=false`）。
+- 冻结源码清单摘要 `05706cbfbb3ddfbfa8b71eed1840338926a619b4f5a981545775202b8b85e434`。
 - campaign 执行器摘要 `b54d938a1448f88efb5633b35b30d50f99614581c2fe2d73b24711daf4712d74`。
 
 **镜像摘要：**
@@ -88,8 +89,8 @@ python3 -B experiments/aclt-minimal-verifier-baseline/montecarlo.py check --outp
 | 镜像 | SHA-256 |
 |---|---|
 | 内核 | `646f7e41faa4b7c8899deee5f725c39eb46987977b5d0ab4340deb3463d9de86` |
-| 来宾 initramfs | `fd9da379a41bca0d5f828da669080e4ae136913ae83b11b311c7113f1db90bbb` |
-| T1 交接后继 initramfs（run 4） | `2cca8df0429d4e83b5182cd776bacdcf5837813ab7e52c499e6dcdef53de5c7e` |
+| 来宾 initramfs | `9a01dec10350684fb057870a92b96e2e6f844117326e0402e763c2e2d75bcc3f` |
+| T1 交接后继 initramfs（run 4） | `fddbef17a9a33bba7c0233b11ed5e568d711a5e1eb90aad9da8b4ee9eedad1bf` |
 
 B 上的 kernel 和 initramfs 在启动前逐项核对摘要；来宾启动后核对冻结源码清单和执行器指纹。
 
@@ -103,8 +104,8 @@ B 上的 kernel 和 initramfs 在启动前逐项核对摘要；来宾启动后�
 
 | 后端 | 输出目录（仓库外） | `check` | `manifest.sha256` 的摘要 |
 |---|---|---|---|
-| 本地同宿主（4 来宾） | `.r4a-work/profile-v2b-local-16` | `runs=16 seed=8 violations=0` | `ee17a3a82a56834f77e25f5186665be22ffdff808d464ad13b85734254ee85c1` |
-| 物理 A、B（A + B、C、D） | `.r4a-work/profile-v2b-physical-16` | `runs=16 seed=8 violations=0` | `14a6173c71302044ffc672bd9d53b717d3ac55e61601aefe66b4683cd523a4ff` |
+| 本地同宿主（4 来宾） | `.r4a-work/profile-v2c-local-16` | `check --backend local`：`runs=16 seed=8 violations=0` | `dd943d99b2fbc0c17831f79fea687fb982f4bd3eabae05cc2b75a0f675b32a44` |
+| 物理 A、B（A + B、C、D） | `.r4a-work/profile-v2c-physical-16` | `check --backend dualhost`：`runs=16 seed=8 violations=0` | `0cecac3d2321f39a735f6f1afc76f45bdf255c7198cbcfcc56521a778192dae9` |
 
 两个 campaign 的逐 run 结果完全相同：
 
@@ -150,13 +151,29 @@ B 上的 kernel 和 initramfs 在启动前逐项核对摘要；来宾启动后�
   - `worker_exit` 缺少非零退出观测，`tcp_disconnect` 缺少关闭观测。
 - 另在中间版本 `1fc4332` 的本地真实证据**副本**上删除了一个服务方答复帧，离线检查报出 4 项违规。
 
+## 本轮新增的检查（#156 增量审计）
+
+- **宿主仲裁与轮次（PRA-156-03）。** profile run 一律经宿主仲裁入口写 journal（`--coordinated`），因此每个 run 都有权威的 `host.cbor` 和协调来宾副本 `guest.cbor`。检查器要求两者相同、与 `journal.cbor` 一致、每条非 `HANDOFF` 事件都带 `writer_epoch`，交接 run 的轮次在 `HANDOFF` 处恰好推进一次，其余 run 不换轮次。
+- **交接的新启动（PRA-156-01）。** 交接后每个来宾都必须是新的启动，协调来宾 A 的启动 ID 前后不同，两阶段之间不共享任何启动 ID。
+- **后端绑定（PRA-156-07）。** `check --backend dualhost` 把验收路径绑定到预期后端，不再由汇总 `report.json` 决定跑哪些检查。不带该参数时，若声明为进程内却存在任何来宾后端证据（`environment.json`、清单、逐 run 元数据或帧），同样报违规。来宾后端缺清单即违规。
+- **比较投影（PRA-156-03）。** `check --compare` 按 R1 5.5 只比较稳定投影：确定性文件逐字节比较；`metadata.json` 只比较列出的字段（锁记录去掉 `observed_at`，观测去掉 `observed_at`，不比较启动 ID）；`topology.json` 只比较角色、放置和 B 侧镜像摘要，不比较端口和端点；`report.json`、`trace.cbor`、清单不参与比较。
+
+在物理证据的**副本**上复现了审计给出的反例，并重算清单：
+
+| 改动 | 结果 |
+|---|---|
+| 汇总后端改为 `inprocess`，删除清单和一个 run 的元数据 | 不带 `--backend`：1 项违规；`--backend dualhost`：7 项违规 |
+| run 4 的锁记录全部改为 `run_index=99`，交接后启动 ID 改为与交接前相同 | 6 项违规 |
+| 只把 run 0 的 `started_at` 推迟 50 毫秒（仍在锁窗口内） | 0 违规，与原证据比较 `reproducible=yes` |
+| 再改一个原始帧的一个字节 | 3 项违规，`reproducible=no` |
+
 ## 证据结构
 
 每个 run 的目录包含：
 
-- 所有 run 都有：`profile.cbor`、`job.cbor`、`fault.cbor`（丢答复类含 `injections[]`）、`status.cbor`、`journal.cbor`、`topology.json`（含逐阶段记录）、`metadata.json`、`frames/<角色>/`；
+- 所有 run 都有：`profile.cbor`、`job.cbor`、`fault.cbor`（丢答复类含 `injections[]`）、`status.cbor`、`host.cbor`、`guest.cbor`、`journal.cbor`、`topology.json`（含逐阶段记录）、`metadata.json`（含 `locks[]`、`observations[]`、起止时间和稳定投影字段）、`frames/<角色>/`；
 - 交接 run 另有 `checkpoint.cbor` 和 `frames/before`、`frames/after`；
-- overlap run 另有 `host.cbor`、`guest.cbor`、`trace.cbor`；
+- overlap run 另有 `trace.cbor`；
 - 发布的 run 另有 `result.cbor`。
 
 campaign 根目录有 `schedule.cbor`、`environment.json`、`topology.json`（profile 版本、角色、工作来宾和放置）、`report.json` 和 `manifest.sha256`。`manifest.sha256` 覆盖除它自身以外的全部文件。
@@ -165,7 +182,10 @@ campaign 根目录有 `schedule.cbor`、`environment.json`、`topology.json`（p
 
 ## 中间版本（保留）
 
-同日先在 `1fc4332` 上跑过一组 v2 冒烟（`.r4a-work/profile-v2-local-16` 和 `profile-v2-physical-16`），两者都是 `runs=16 seed=8 violations=0`，逐 run 终态与本文相同。那一版的 `worker_exit` 仍以异常代替进程退出，因此改为真实退出后，在 `dca1709` 上重跑了本文的两组证据。中间版本证据保留在仓库外，不作为本文结论的依据。
+以下中间版本的证据都保留在仓库外，逐 run 终态与本文相同，但不作为本文结论的依据：
+
+- `1fc4332`（`.r4a-work/profile-v2-*`）：`worker_exit` 仍以异常代替进程退出。
+- `dca1709`（`.r4a-work/profile-v2b-*`，标签 `evidence/20261115-r4a-dualhost-contract-v2`）：真实进程退出已实现，但锁时间、`host.cbor`/`guest.cbor`、后端绑定和比较投影尚未按审计修正。
 
 ## 历史失败（保留，不改写）
 
@@ -179,7 +199,7 @@ campaign 根目录有 `schedule.cbor`、`environment.json`、`topology.json`（p
 ## 与 R4 的差距
 
 - R4 需要两个种子（20261115、20261116），每个种子 16 个 run，跑两个独立 pass，每个种子做 `check --compare` 可复现比较，并满足第 6 节的全部验收条件。本次只跑了种子 8 的一个 pass。
-- 锁记录目前用 A 侧编排的 run 起止时间填写 `observed_at`。R1 5.5 要求的“A 在获取/释放 B 锁时经 SSH 确认的时刻”和 `observations[]` 实时观测，要在 R4 实跑前由 R4 条目复核是否满足。
+- R4 验收应使用 `check --backend dualhost`，两遍比较使用 `check --backend dualhost --compare`。本次只在副本上验证了比较投影，没有跑第二遍。
 - `worker_exit` 现在是工作来宾 VM 内工作进程的真实非零退出（退出码 7），由来宾内的父进程重启；不是整台来宾 VM 退出。是否满足 R1 第 4 节，由本轮审计复核。
 
 ## 边界与未做
