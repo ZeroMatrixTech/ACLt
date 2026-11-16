@@ -2,7 +2,6 @@
 name: 安全报告请求
 about: 私密报告入口不可用时，请求维护者提供私下渠道；不要写入漏洞细节
 title: "security: 请求私密报告渠道"
-labels: ["security"]
 ---
 
 <!-- SPDX-License-Identifier: Apache-2.0 -->
