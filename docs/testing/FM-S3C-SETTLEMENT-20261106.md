@@ -1,6 +1,6 @@
 # FM-S3c 候选账务与恢复
 
-2026-11-06。基线 `9598782` 加本地 S3b 权威状态机及 ADR-0008。适用资产为冻结 FundingPolicy 中的预付测试整数资产。[ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) · [S3b 范围](FM-S3B-AUTHORITY-20261106.md)
+2026-11-06。本报告记录 FM-S3c 候选账务与恢复的本地实现：同一 S3b 权威服务接受 Requester 签署的 `S3_SETTLE` 和 `S3_SETTLEMENT_STATUS`，唯一终态结算、固定费用/退款分配、幂等查询与 COMMIT 边界恢复已完成；`make check-fm-s3-authority` 覆盖相应拒绝与恢复路径。适用资产为冻结 FundingPolicy 中的预付测试整数资产。基线 `9598782` 加本地 S3b 权威状态机及 ADR-0008。[ADR-0008](../05-decisions/ADR-0008-fm-s3-interface-decisions.md) · [S3b 范围](FM-S3B-AUTHORITY-20261106.md)
 
 ## 权威入口与分配规则
 
@@ -16,4 +16,4 @@
 
 `make check-fm-s3-authority` 覆盖未终态/非 Requester 拒绝、客户端试图指定政策/金额/终态拒绝、不一致结果按冻结政策付费、HostFault 与缺失项的退款、无预留零分配、并发请求、已分配后为另一 Receipt 预留及 COMMIT 边界的异常注入和重新打开账本。结算快照沿用带外 checkpoint 的 S3b 重放入口。
 
-本地实现只覆盖 S3b 当前可产生的候选 UNRESOLVED 与 EXPIRED。权利记录与余额变动留在测试账本。Task trap、执行闭合与可耗尽预算路径依赖 S3b 后续证据。双物理机上的进程中断、传输丢回复和端到端重放列入下一阶段验收。
+本地实现的范围是 S3b 当前可产生的候选 UNRESOLVED 与 EXPIRED；权利记录与余额变动保留在测试账本。Task trap、执行闭合与可耗尽预算路径由 S3b 后续证据覆盖。双物理机上的进程中断、传输丢回复和端到端重放列入下一阶段验收。

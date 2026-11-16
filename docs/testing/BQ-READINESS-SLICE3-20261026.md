@@ -1,6 +1,6 @@
 # 原定第四项第三片：部署证据与失效边界记录
 
-日期：2026-10-26（Europe/Budapest）；标识 BQ-W4-S3。
+日期：2026-10-26（Europe/Budapest）；标识 BQ-W4-S3。第三片在证据清单、非权威审阅、创建前选择和分阶段失效投影范围完成，结论见下文“完成与剩余工作”。
 Git 基线 `3a001ddba707ce50c0afef472d43043a244522b0`；本轮开始时已有迁移候选与 B/Q 前两片的未提交内容，447 个文件纳入快照后保留。第三片不改变旧数学模型、前两片源码或任何正式能力状态。
 
 ## 交付与范围
@@ -33,6 +33,6 @@ make test-bq-readiness BQ_READINESS_REPORT=/existing-parent/new-report.json
 
 ## 完成与剩余工作
 
-第三片在“证据清单、非权威审阅、创建前选择和分阶段失效投影”范围完成。旧算法与规范/SemanticStatus、V1 处置、OQ、Gate、ADR-0006/0007 和实际 capability 状态保持不变。
+第三片在“证据清单、非权威审阅、创建前选择和分阶段失效投影”范围完成。旧算法与规范/SemanticStatus、V1 处置、OQ、Gate、ADR-0006/0007 和实际 capability 状态保持原状。
 
-现实 B/Q 来源、完整五相位 validator/签署/registry、日志 finality、assurance 发布与 P0-5 仍未实现或未建立；研究标签不充当正式 CauseSet/EffectiveVerdict。下一步统一收尾三片，汇总本轮结论、可重跑入口和仍缺的部署证据，不阻塞 RIR/运行时实现。
+现实 B/Q 来源、完整五相位 validator/签署/registry、日志 finality、assurance 发布与 P0-5 仍未实现或未建立；研究标签仅用于研究，不替代正式 CauseSet/EffectiveVerdict。下一步统一收尾三片，汇总本轮结论、可重跑入口和仍缺的部署证据；不依赖该结论的 RIR/运行时实现可以继续推进。

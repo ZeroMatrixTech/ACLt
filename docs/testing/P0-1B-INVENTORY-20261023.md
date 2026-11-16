@@ -1,14 +1,14 @@
 # P0-1B 实现覆盖盘点（2026-10-23）
 
-基线：`01e8ee2`（update/miniver #41）。本轮仅盘点、修正覆盖登记和路线图；未修改 validator 行为，未关闭 P0-1B、G0 或 G2。
+本报告基于基线 `01e8ee2`（update/miniver #41）盘点 P0-1B 实现覆盖：规范 §13.2 共 127 行，119 项 Type A 中 3 项局部谓词 implemented、8 项 partial、108 项 not implemented，盘点时 18 个规范摘要均未实现。本次仅盘点、修正覆盖登记与路线图；validator 行为未修改，P0-1B、G0 与 G2 保持未关闭。
 
 ## 核对结论
 
-规范 §13.2 共 127 行：119 项 Type A、6 项 Type B、SV-15 作废、SV-40 延期。D-08-c 是额外 Type B 义务，不能混入这 6 项 SV 计数。
+规范 §13.2 共 127 行：119 项 Type A、6 项 Type B、SV-15 作废、SV-40 延期。D-08-c 是额外 Type B 义务，不计入这 6 项 SV 计数。
 
-119 项 Type A：3 项局部谓词 implemented、8 项 partial、108 项 not implemented。18 个规范摘要全部未实现。implemented 仅表示已有局部谓词及测试，不代表完整相位/生产准入；生产模式继续拒绝。
+119 项 Type A：3 项局部谓词 implemented、8 项 partial、108 项 not implemented；18 个规范摘要全部未实现。implemented 仅表示已有局部谓词及测试，完整相位与生产准入不在该状态内；生产模式继续拒绝。
 
-唯一状态登记为 [coverage.json](../../schemas/verification-profile/coverage.json)，逐项实现、测试符号与缺口见 [inventory.json](../../schemas/verification-profile/inventory.json)。本表从规范表逐行提取，保留非连续及拆分编号，不按 01–121 猜测编号。既有单机/VM 场景不冒充规范 conformance。
+唯一状态登记为 [coverage.json](../../schemas/verification-profile/coverage.json)，逐项实现、测试符号与缺口见 [inventory.json](../../schemas/verification-profile/inventory.json)。本表从规范表逐行提取，保留非连续及拆分编号，编号不按 01–121 推测。既有单机/VM 场景只提供工程证据，规范 conformance 需另行验收。
 
 ## 本次登记修正与待办
 

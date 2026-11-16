@@ -1,6 +1,6 @@
 # 模板与 claim 编码切片：Python / Rust 对拍
 
-日期：2026-10-23。基线 `6750c18`。本轮完成下一轮计划的第二、第三项，在明确的候选切片内实现编码、摘要及独立语言对拍。P0-1B、G0/G2 不关闭，原生产 validator 的 `--production` 继续拒绝。
+日期：2026-10-23。基线 `6750c18`。本轮在明确的候选切片内完成编码、摘要及独立语言对拍，本地 `make check` 74 项通过，构建与对拍日志保存在项目工作区 `outputs/profile-codec-20261023/`。P0-1B、G0/G2 保持开放，原生产 validator 的 `--production` 继续拒绝。
 
 ## 实现与信任边界
 
@@ -43,6 +43,6 @@ make test-claim-codec
 
 前者运行模型/配置/交付与清单/盘点检查；后者构建 Rust、运行对拍，并写 `artifacts/claim-codec/cross-language.json`。它已纳入 `make test` 与独立 `claim-codec` 流程分组。`make check` 不要求 Rust；新编码测试要求 Python 提供 Unicode 16.0.0。现有环境基线 CPython 3.14.4 / rustc 1.93.1 已验证，不引入下载依赖。
 
-下一步审查候选 wire 表与 import 边界，冻结 ENUM/完整模板类型和外部 schema 合约，再接入正式注册/Phase D 输入。现有实验接纳端 JSON wire 与历史 VM 证据不迁移到这套候选编码；本轮没有改动实验运行代码。
+下一步审查候选 wire 表与 import 边界，冻结 ENUM/完整模板类型和外部 schema 合约，再接入正式注册/Phase D 输入。这套候选编码不迁移现有实验接纳端 JSON wire 与历史 VM 证据；实验运行代码保持原字节。
 
 本轮本地 `make check` 共 74 项通过（模型 13、验证配置/编码 34、流程/交付 27），盘点与交付清单检查通过。构建和结果日志保存在项目工作区 `outputs/profile-codec-20261023/`。

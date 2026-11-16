@@ -1,6 +1,6 @@
 # Profile 排除声明与注册引用第三片（R3）
 
-基线 main `723681c`（#74），2026-11-08，修改前工作区干净。本片按 VerificationProfile §6、§11.3、§17.3/17.4 补排除声明引用和已定义的 wire 类型，范围为方法无关纯校验与限定 audit Phase R。
+本片按 VerificationProfile §6、§11.3、§17.3/17.4 补排除声明引用与已定义的 wire 类型，104 条固定向量在 A/B 两台物理机上全部通过且结果流 SHA-256 一致，完整 `make test` 退出码为 0，119 条 Type A 由 **11/36/72** 推进至 **15 implemented / 36 partial / 68 not implemented**。基线 main `723681c`（#74），日期 2026-11-08，修改前工作区干净；范围为方法无关纯校验与限定 audit Phase R。
 
 ## 交付与覆盖
 
@@ -26,9 +26,9 @@ R2 的两个形状不能作为正式线上 conformance 证据：
 
 调用方须在输入之外提供可信 lock SHA-256。R3 支持既有 `OPAQUE_BSTR` 描述和用于 ExternalVersionedObjectRef 的 `VERSIONED_REF` 三元引用描述；别名/schema ID/version/content/pin 均需匹配。未知或不兼容表示 fail closed；R3 禁止再次把 ExternalTypedObject 声明为 opaque import。
 
-**仍未完成的正式导入：** schema 描述格式和测试 pin 是当前校验适配器合约，不是官方 schema 发布/注册。未冻结的 ResourceBounds、RetentionPolicyRef、DocBlock、EffectID 等仍使用显式测试 opaque schema；不猜测其子字段。外部载荷的 `object_digest` 沿用既有 claim codec 的 `SHA256(canonical_bytes)` 测试约定，本片不替其他外部编码/算法建立通用官方注册。种子排除注册表用于生成固定测试对象，状态仍为 SEED_NOT_REGISTERED，未创建官方 ACTIVE 注册表。
+**仍未完成的正式导入：** schema 描述格式和测试 pin 属当前校验适配器合约，官方 schema 发布/注册另行进行。未冻结的 ResourceBounds、RetentionPolicyRef、DocBlock、EffectID 等仍使用显式测试 opaque schema；其子字段保持不透明。外部载荷的 `object_digest` 沿用既有 claim codec 的 `SHA256(canonical_bytes)` 测试约定；其他外部编码与算法的通用官方注册留待后续条目。种子排除注册表用于生成固定测试对象，状态仍为 SEED_NOT_REGISTERED，官方 ACTIVE 注册表另行建立。
 
-纯引用/摘要通过不认证外部组件、日志 proof、finality、时钟来源或发布授权；输出继续 `full_schema_valid:false`、`source_authentication:false`，`--production` 强制拒绝。R3 不改变实际 FM-S3 任务协议或终态/账务行为。
+纯引用/摘要的通过范围限于引用与摘要本身，外部组件、日志 proof、finality、时钟来源与发布授权由其各自的认证流程覆盖；输出继续 `full_schema_valid:false`、`source_authentication:false`，`--production` 强制拒绝。R3 对实际 FM-S3 任务协议与终态/账务行为保持原状。
 
 ```sh
 python3 -B -m tools.verification_profile.validator registration.cbor \

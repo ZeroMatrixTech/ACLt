@@ -1,7 +1,7 @@
 # 第二项工作维护与交接入口
 
 工程标识 `TASK-WORK2`：最小实验任务承诺 → 实验授权/持久启动 → 完整提交/接纳与可重放日志。
-这是限定实验工程工作，不是新 SemanticStatus/VersionDisposition；正式 ComputeReceipt、Lease、ExecutionCapability、EventRecord、验证判决和结算仍未实现。接纳只表示结构/绑定一致的完整提交被保留，不表示运算正确。
+本入口属限定实验工程工作，SemanticStatus/VersionDisposition 保持原状；正式 ComputeReceipt、Lease、ExecutionCapability、EventRecord、验证判决与结算均仍待实现。接纳的含义限于保留结构/绑定一致的完整提交，运算正确性不在其判定范围。
 
 ## 统一运行
 
@@ -53,6 +53,6 @@ python3 -B scripts/task-work2.py verify \
 
 ## 当前边界与下一步
 
-[第二项总报告](TASK-WORK2-CLOSEOUT-20261024.md)列出本次重跑结果；三个历史切片报告保留原范围。日常 `make check` 仅做本地回归，不自动联网或沿用历史双机通过状态。
+[第二项总报告](TASK-WORK2-CLOSEOUT-20261024.md)列出本次重跑结果；三个历史切片报告保留原范围。日常 `make check` 的覆盖范围限于本地回归，不联网，也不沿用历史双机通过状态。
 
-下一项建议先做**同一冻结任务的双端 outcome 与精确比较证据绑定**：把已有 RIR 字节、输入、上限、两端 outcome 和独立比较记录连接起来，并明确 experimental_task_id 与正式对象的迁移缺口。相等仅是该次精确比较证据，不新增 `REEXEC_EXACT` 方法，不直接变成 TRUSTED，不顺带引入结算。正式对象字段/签署、完整 conformance、B/Q、经济/生产资格分别跟踪；未因第二项收尾而关闭。
+下一项建议先做**同一冻结任务的双端 outcome 与精确比较证据绑定**：把已有 RIR 字节、输入、上限、两端 outcome 和独立比较记录连接起来，并明确 experimental_task_id 与正式对象的迁移缺口。相等的支持范围限于该次精确比较证据，不新增 `REEXEC_EXACT` 方法，不产生 TRUSTED，也不引入结算。正式对象字段/签署、完整 conformance、B/Q、经济/生产资格分别跟踪，状态不因第二项收尾而改变。

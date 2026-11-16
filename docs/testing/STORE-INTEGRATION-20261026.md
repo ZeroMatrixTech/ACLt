@@ -1,6 +1,6 @@
 # store 草案整合与清理
 
-日期：2026-10-26；整合基线 `80db6ac2cb3d2ff2e522cd80b335f3f98e748a38`。维护者要求将 store 并入后清理。原 stash 为 `f0952ea913143a4c0e2c10ffc64bb8fcdc09489c`，共九个文件；不是另一条 round4 历史 stash。
+日期：2026-10-26；整合基线 `80db6ac2cb3d2ff2e522cd80b335f3f98e748a38`。按维护者要求，九个文件的 store stash `f0952ea913143a4c0e2c10ffc64bb8fcdc09489c` 已并入并清理：ADR-0007 的六项路线、接口、不变量、假设与退出边界按决定接受，Formal 计划替换旧基线与错误第四项名称（逐项去向见下表）。该 stash 与 round4 历史 stash 相互独立。
 
 ## 内容去向
 

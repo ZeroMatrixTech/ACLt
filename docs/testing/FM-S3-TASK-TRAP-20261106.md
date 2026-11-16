@@ -1,6 +1,6 @@
 # FM-S3 候选 Task trap 接纳
 
-2026-11-06，基线 `3275a63`。候选 audit 合约显式启用 `RIR_OK_ABORT_AND_TRAPS_V1`。合约字节进入 Receipt 组件绑定，试验用新签名 Receipt 与新 genesis。已有仅 OK 合约按原限制复核。
+2026-11-06，基线 `3275a63`。本报告记录 FM-S3 候选 Task trap 接纳：固定除零向量在两端独立执行，实际输出 `TRAP_INTEGER_DIVIDE_BY_ZERO`；8 个 LAN 场景通过，两端重放 39 个事件一致，测试账本 68 单位最终为可用 39、已分配 29、预留 0。候选 audit 合约显式启用 `RIR_OK_ABORT_AND_TRAPS_V1`，合约字节进入 Receipt 组件绑定，试验用新签名 Receipt 与新 genesis；已有仅 OK 合约按原限制复核。
 
 | 结果 | 规范字段 |
 |---|---|

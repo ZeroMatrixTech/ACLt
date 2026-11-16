@@ -1,8 +1,8 @@
 # RIR 构建切片 1：Rust → Wasm 双机可复现性（2026-10-23）
 
-结论：最小 no_std 空 run 程序在两台物理主机、每台两个新目录内共四次独立构建成功，原始 Wasm、限定后处理的 Wasm 与候选工件均逐字节相同。这里只验证候选 lowering 构建可行性，不是 RIR validator/RPR、通用 Rust lowering 或 stats-int-v1 的实现验收。
+最小 no_std 空 run 程序在两台物理主机、每台两个新目录内共四次独立构建成功，原始 Wasm、限定后处理的 Wasm 与候选工件均逐字节相同。该结论的范围限于候选 lowering 构建可行性；RIR validator/RPR、通用 Rust lowering 与 stats-int-v1 的实现验收另行进行。
 
-基线 `677f244cb289a8b1432ec9ace4803d9deb331ea8`；使用当前 ADR-0006 PROPOSED 候选作为可行性实验输入，不将它作为已接受规范或 conformance 权威。源程序、候选工具及原始证据在操作者本地 `<EVIDENCE_ROOT>/rir-build-slice1-20261023/`，不改写此前审阅/测试记录。没有运行 VM。
+基线 `677f244cb289a8b1432ec9ace4803d9deb331ea8`；当前 ADR-0006 PROPOSED 候选仅作为可行性实验输入，尚未成为已接受规范或 conformance 权威。源程序、候选工具及原始证据在操作者本地 `<EVIDENCE_ROOT>/rir-build-slice1-20261023/`，此前审阅/测试记录保持原样。本轮未运行 VM。
 
 ## 工具链与环境
 

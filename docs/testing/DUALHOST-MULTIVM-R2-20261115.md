@@ -1,6 +1,6 @@
 # 最简验证机 · R2 跨物理主机 nVM 验收
 
-2026-11-15，按[阶段 #128 决定 2](https://github.com/ZeroMatrixTech/ACLt/issues/128)和 [DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md)在物理 A、B 上实跑 [R2 #132](https://github.com/ZeroMatrixTech/ACLt/issues/132)。维护者授权覆盖首次公开阶段，阶段结束即终止。两端各持有 PARALLEL-1 §6.4 宿主锁，锁覆盖 QEMU 启动、退出和证据回收。B 的部署、启动和回收使用严格主机密钥验证的 SSH。作业帧通过来宾虚拟网卡，在跨宿主链路上由 QEMU TCP stream 直接经 LAN 传输。A 的 QEMU hub 汇接来宾，本地来宾链路使用宿主回环。
+本轮在物理 A、B 上完成 R2 四场景矩阵：三来宾三片与四来宾六片均发布并通过离线逐字节比对，远端断连为 `SAFE_STOP`，远端丢答复后补算发布成功。2026-11-15，按[阶段 #128 决定 2](https://github.com/ZeroMatrixTech/ACLt/issues/128)和 [DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md)在物理 A、B 上实跑 [R2 #132](https://github.com/ZeroMatrixTech/ACLt/issues/132)。维护者授权覆盖首次公开阶段，阶段结束即终止。两端各持有 PARALLEL-1 §6.4 宿主锁，锁覆盖 QEMU 启动、退出和证据回收。B 的部署、启动和回收使用严格主机密钥验证的 SSH。作业帧通过来宾虚拟网卡，在跨宿主链路上由 QEMU TCP stream 直接经 LAN 传输。A 的 QEMU hub 汇接来宾，本地来宾链路使用宿主回环。
 
 两端为 Linux 7.0.0-43-generic x86_64，QEMU 10.2.1，实跑均用 KVM。来宾 Linux 7.0.0-30-generic，Python 3.14.4。两端各用独立运行目录与证据盘。共享的来宾内核和 initramfs 在 B 落盘后逐项验摘要，每个来宾核验冻结源码清单和执行器指纹。实跑源码为 `35062a2d0f279da0316d1601e9680e0fa0afc843`，99 项源码清单摘要为 `bbeb1abd9e0e32096bcdc3f6b899046b52853adabafcaed8f5ac00e733be93da`。
 

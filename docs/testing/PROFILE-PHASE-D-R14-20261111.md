@@ -1,7 +1,9 @@
 # R14 非主网注册与 Phase B/D 信封重放
 
-基线为 main `6c34c4d`（R13）。R14 将已经认证的 FM-S3 历史证据接入版本化的
-非主网测试注册表与 Phase B/D 信封。验证者独立提供注册表摘要和 Receipt 列表。
+R14 将已经认证的 FM-S3 历史证据接入版本化的非主网测试注册表与 Phase B/D 信封：
+A/B 两端 17 条 Receipt 的注册与 B/D 信封验证通过、19 个负例均按预期拒绝，
+完整 `make test` 通过 24 组 668 项 Python 测试和 20 次 sanitizer 检查。
+基线为 main `6c34c4d`（R13）。验证者独立提供注册表摘要和 Receipt 列表。
 注册项冻结配置、部署声明、七类测试来源、允许的 Profile、anchor 和 checkpoint。
 
 Phase B 投影冻结 Receipt、CREATE、资金、Lease 和已提交的 ACTIVATE／CONSUME。

@@ -1,9 +1,11 @@
 # R15 创建时冻结非主网部署绑定
 
-基线为 main `df94423`（R14）。R15 实现从 Phase I Intent、Phase I transcript
-到 Phase F Receipt 的候选创建接口。权威在提交时核对配置、来源、Profile、时间、
-请求者及签名，生成新版 ReceiptID，并在 ReplayEnvelope/2 中核对这份冻结证据。
-旧配置按原版本解释。 [创建合约](../../schemas/formal-migration/bound-creation.md)
+R15 实现从 Phase I Intent、Phase I transcript 到 Phase F Receipt 的候选创建接口：
+本机与 `aki2` 各自创建签名账本并提交 14 个事件，两条 Receipt 的创建、判决、结算
+及回放均通过，13 个负例均按预期拒绝，完整 `make test` 通过 24 组 668 项 Python
+测试和 20 次 sanitizer 检查。基线为 main `df94423`（R14）；权威在提交时核对配置、
+来源、Profile、时间、请求者及签名，生成新版 ReceiptID，并在 ReplayEnvelope/2 中
+核对这份冻结证据；旧配置按原版本解释。 [创建合约](../../schemas/formal-migration/bound-creation.md)
 
 原 genesis 承诺了 Receipt 白名单。R15 使用白名单批准底层任务与政策承诺，再把该
 承诺及部署绑定一起写入新版 Receipt。Lease、判决与结算权利沿用新版 ReceiptID。

@@ -1,8 +1,10 @@
 # R16 非主网测试部署的签名撤销
 
-基线为 main `967d6a7`（R15）。部署在 genesis 中选择撤销版本。固定测试签发者
-签署该 genesis 的撤销声明，由 Requester 在现有签名通道提交。撤销随权威日志
-事件提交，重复提交返回原记录。 [撤销合约](../../schemas/formal-migration/deployment-revocation.md)
+R16 实现非主网测试部署的签名撤销：新账本提交 20 个事件，两条 Receipt 完成
+Phase B/D 回放与结算，9 个负例按预期拒绝，`make test` 通过 668 项 Python 测试
+及 20 次 sanitizer 检查。基线为 main `967d6a7`（R15）；部署在 genesis 中选择撤销版本，
+固定测试签发者签署该 genesis 的撤销声明，由 Requester 在现有签名通道提交；
+撤销随权威日志事件提交，重复提交返回原记录。 [撤销合约](../../schemas/formal-migration/deployment-revocation.md)
 
 撤销阻止新的 Receipt、Lease 激活、已发能力的首次消费和结果接纳。未决 Receipt
 通过既有 Phase D 失效条件进入 `UNRESOLVED`，并按冻结政策处理资金。已有终态

@@ -1,8 +1,8 @@
 # RIR 切片 2：安全 SDK 与可观察 I/O（2026-10-23）
 
-结论：限定 I/O 切片完成。用户 Rust → 受信 SDK/入口 → 候选工件 → 限定结构/类型/canonical 检查 → Python 参考执行 → outcome/输出摘要，在 A/B 两台物理主机分别运行通过。该链仍为候选实验，不是完整 RIR/RPR 或生产执行证明。
+限定 I/O 切片完成：用户 Rust → 受信 SDK/入口 → 候选工件 → 限定结构/类型/canonical 检查 → Python 参考执行 → outcome/输出摘要，在 A/B 两台物理主机分别运行通过。该链属候选实验，完整 RIR/RPR 与生产执行的证明另行进行。
 
-基线 `677f244cb289a8b1432ec9ace4803d9deb331ea8`，叠加已有未提交切片 1 和本轮独立实验目录；不改写此前证据。源码入口 [aclt-rir-io-probe](../../experiments/aclt-rir-io-probe/README.md)。使用切片 1 已验收的官方 1.93.1 独立 prefix，未替换系统 Rust，无新增 Cargo/Python/Node 运行依赖。SSH 只控制和回收；本轮是两端独立构建/执行比较，不声称新增跨 LAN 任务接纳协议证据。
+基线 `677f244cb289a8b1432ec9ace4803d9deb331ea8`，叠加已有未提交切片 1 和本轮独立实验目录；此前证据保持原样。源码入口 [aclt-rir-io-probe](../../experiments/aclt-rir-io-probe/README.md)。使用切片 1 已验收的官方 1.93.1 独立 prefix，系统 Rust 保持不变，未新增 Cargo/Python/Node 运行依赖。SSH 只用于控制和回收；本轮为两端独立构建/执行比较，新增跨 LAN 任务接纳协议的证据不在本轮范围。
 
 ## 实际实现边界
 
@@ -37,6 +37,6 @@ make check 已接入纯 Python 回归；显式 `make test-rir-io-probe` 进行�
 
 ## 保持开放
 
-ADR-0006 仍 PROPOSED；P0-1B、G0/G2 不关闭。外壳文本 wire-key、局部 cap 与 supported opcode 集是实验合约，不能反向定义协议。未完成完整 grammar/validator、独立 Rust RPR、全部 22 个 ADR 向量、memory.grow/call_indirect 等扩展、正式 Logical Object/Receipt/Lease、stats-int-v1 或结算。本轮只覆盖固定两页内存与 void 控制子集，保守拒绝完整 ADR 中其他合法程序。
+ADR-0006 仍 PROPOSED；P0-1B、G0/G2 保持开启。外壳文本 wire-key、局部 cap 与 supported opcode 集属实验合约，协议定义以正式规范为准。完整 grammar/validator、独立 Rust RPR、全部 22 个 ADR 向量、memory.grow/call_indirect 等扩展、正式 Logical Object/Receipt/Lease、stats-int-v1 与结算均仍待补齐。本轮只覆盖固定两页内存与 void 控制子集，完整 ADR 中其他合法程序按保守策略拒绝。
 
-下一步在保持这些边界下补独立 Rust 执行对拍，并扩展整数统计负载所需的受限指令/SDK 路径；不得把已有接纳或单机测试直接记为上述缺项通过。
+下一步在保持这些边界下补独立 Rust 执行对拍，并扩展整数统计负载所需的受限指令/SDK 路径；上述缺项须由对应切片的新证据关闭，已有接纳或单机测试不构成其通过依据。
