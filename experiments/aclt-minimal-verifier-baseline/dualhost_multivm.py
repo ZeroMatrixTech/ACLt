@@ -65,6 +65,51 @@ def experiment_lock(path=None):
         yield
 
 
+def os_release():
+    try:
+        for line in Path("/etc/os-release").read_text().splitlines():
+            if line.startswith("PRETTY_NAME="):
+                return line.partition("=")[2].strip().strip('"')
+    except OSError:
+        pass
+    return platform.system()
+
+
+def kvm_available():
+    return os.access("/dev/kvm", os.R_OK | os.W_OK)
+
+
+LOCK_PROBE = (
+    "import fcntl, os\n"
+    "from pathlib import Path\n"
+    "path = Path(os.environ.get('XDG_RUNTIME_DIR') or '/tmp') / 'aclt-experiment.lock'\n"
+    "with path.open('a+b') as lock:\n"
+    "    try:\n"
+    "        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)\n"
+    "    except BlockingIOError:\n"
+    "        print('held')\n"
+    "    else:\n"
+    "        print('released')\n")
+
+
+def probe_b_lock(settings, *, expect="released", attempts=20):
+    """Query B's experiment lock over strict-key SSH; return the observed state.
+
+    The probe only tests the lock (and releases it at once); it is used after the
+    agent session ends to confirm that B released the lock.
+    """
+    state = None
+    for _ in range(attempts):
+        completed = subprocess.run(
+            [*SSH_OPTIONS, settings["ssh_target"], shlex.join(["python3", "-B", "-c", LOCK_PROBE])],
+            capture_output=True, text=True, timeout=30)
+        state = completed.stdout.strip() if completed.returncode == 0 else "unknown"
+        if state == expect:
+            return state
+        time.sleep(0.5)
+    return state
+
+
 def identity():
     return hashlib.sha256(Path("/etc/machine-id").read_bytes()).hexdigest()
 
@@ -135,7 +180,8 @@ def agent(parent, lan, roles):
         print(json.dumps(dict(identity=identity(), kernel=platform.release(), machine=platform.machine(),
                               qemu=subprocess.check_output(["qemu-system-x86_64", "--version"],
                                                            text=True).splitlines()[0],
-                              lock="held")), flush=True)
+                              os=os_release(), kvm=kvm_available(),
+                              python=platform.python_version(), lock="held")), flush=True)
         try:
             for line in sys.stdin:
                 request = json.loads(line)
@@ -171,6 +217,9 @@ def agent(parent, lan, roles):
                                                           stdout=log, stderr=subprocess.STDOUT)
                     disks[role], serials[role], qemus[role] = disk, serial, qemu
                     response = None
+                elif action == "lock":
+                    # The agent holds the B lock for its whole lifetime.
+                    response = "held"
                 elif action == "ready":
                     active = subprocess.check_output(["ss", "-4Hltnp"], text=True)
                     response = [role for role, proc in children.items()

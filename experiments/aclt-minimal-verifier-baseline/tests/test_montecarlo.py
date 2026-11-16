@@ -540,11 +540,22 @@ class MonteCarloRegressionTests(unittest.TestCase):
             "backend": "dualhost", "topology": "t1", "kernel_sha256": "k",
             "initramfs_sha256": "i", "initial_initramfs_sha256": "i",
             "placement": "B", "phases": [{"phase": "run", "initramfs_sha256": "i"}],
+            "started_at": "2026-11-16T10:00:02+00:00", "ended_at": "2026-11-16T10:00:08+00:00",
             "locks": [
-                {"host": "A", "phase": "run", "state": "held"},
-                {"host": "B", "phase": "run", "state": "held"},
-                {"host": "A", "phase": "run", "state": "released"},
-                {"host": "B", "phase": "run", "state": "released"},
+                {"host": "A", "phase": "run", "state": "held", "run_index": 0,
+                 "observed_at": "2026-11-16T10:00:00+00:00"},
+                {"host": "B", "phase": "run", "state": "held", "run_index": 0,
+                 "observed_at": "2026-11-16T10:00:01+00:00"},
+                {"host": "B", "phase": "run", "state": "released", "run_index": 0,
+                 "observed_at": "2026-11-16T10:00:09+00:00"},
+                {"host": "A", "phase": "run", "state": "released", "run_index": 0,
+                 "observed_at": "2026-11-16T10:00:10+00:00"},
+            ],
+            "observations": [
+                {"event": "run_started", "role": "A", "frame_sha256": None,
+                 "observed_at": "2026-11-16T10:00:03+00:00"},
+                {"event": "run_collected", "role": "A", "frame_sha256": None,
+                 "observed_at": "2026-11-16T10:00:07+00:00"},
             ],
         }
         (run_dir / "topology.json").write_text(json.dumps({"phases": [phase]}))
@@ -559,7 +570,7 @@ class MonteCarloRegressionTests(unittest.TestCase):
         (run_dir / "metadata.json").write_text(json.dumps(metadata))
         violations = []
         montecarlo._check_campaign_topology(root, schedule, "dualhost", "t1", violations)
-        self.assertTrue(any("lock is not recorded" in item for item in violations), violations)
+        self.assertTrue(any("lock records do not cover" in item for item in violations), violations)
 
         metadata["locks"] = []
         phase["topology"]["host_b_boot_hashes"]["guest.cpio.gz"] = "j"
@@ -847,6 +858,120 @@ class MonteCarloRegressionTests(unittest.TestCase):
         violations = []
         montecarlo._check_pending_reserve(pending, run_dir, violations)
         self.assertTrue(any("not an uncommitted RESERVE" in item for item in violations))
+
+    # PRA-156-01/03/07: run window, handoff boots, journals, backend binding, comparison.
+
+    def window_metadata(self):
+        return {
+            "started_at": "2026-11-16T10:00:02+00:00", "ended_at": "2026-11-16T10:00:08+00:00",
+            "locks": [
+                {"host": host, "phase": "run", "state": state, "run_index": 4,
+                 "observed_at": f"2026-11-16T10:00:{second:02d}+00:00"}
+                for host, state, second in (("A", "held", 0), ("B", "held", 1),
+                                            ("B", "released", 9), ("A", "released", 10))],
+            "observations": [
+                {"event": f"{phase}_{what}", "role": "A", "frame_sha256": None,
+                 "observed_at": f"2026-11-16T10:00:0{second}+00:00"}
+                for phase, what, second in (("before", "started", 3), ("before", "collected", 4),
+                                            ("after", "started", 5), ("after", "collected", 6))],
+        }
+
+    def window(self, metadata):
+        violations = []
+        montecarlo._check_run_window("run-0004", 4, metadata, "dualhost",
+                                     ("before", "after"), violations)
+        return violations
+
+    def test_run_window_binds_locks_to_the_run(self):
+        self.assertEqual(self.window(self.window_metadata()), [])
+        wrong = self.window_metadata()
+        for row in wrong["locks"]:
+            row["run_index"] = 99
+        self.assertTrue(any("belongs to run 99" in item for item in self.window(wrong)))
+        early = self.window_metadata()
+        early["started_at"] = "2026-11-16T09:59:59+00:00"
+        self.assertTrue(any("outside the common lock window" in item for item in self.window(early)))
+        naive = self.window_metadata()
+        naive["ended_at"] = "2026-11-16T10:00:08"
+        self.assertTrue(any("RFC 3339" in item for item in self.window(naive)))
+        outer = self.window_metadata()
+        outer["locks"][1]["observed_at"] = "2026-11-16T09:59:59+00:00"
+        self.assertTrue(any("not nested" in item for item in self.window(outer)))
+        missing = self.window_metadata()
+        missing["observations"] = missing["observations"][:2]
+        self.assertTrue(any("after: phase start" in item for item in self.window(missing)))
+
+    def test_handoff_needs_fresh_boots_for_every_guest(self):
+        before = {role: f"before-{role}" for role in montecarlo.PROFILE_ROLES}
+        after = {role: f"after-{role}" for role in montecarlo.PROFILE_ROLES}
+        violations = []
+        montecarlo._check_handoff_boots("run-0004", {"before_guest_boot_ids": before,
+                                                     "guest_boot_ids": after}, violations)
+        self.assertEqual(violations, [])
+        montecarlo._check_handoff_boots("run-0004", {"before_guest_boot_ids": before,
+                                                     "guest_boot_ids": dict(before)}, violations)
+        self.assertTrue(any("reused the old coordinator boot" in item for item in violations))
+
+    def test_coordinated_journals_bind_host_guest_and_epochs(self):
+        run_dir = Path(self.tmp.name) / "journals"
+        run_dir.mkdir()
+        events = [{"kind": "START", "writer_epoch": 0}, {"kind": "RESERVE", "writer_epoch": 0},
+                  {"kind": "HANDOFF", "epoch": 1}, {"kind": "RESERVE", "writer_epoch": 1}]
+        for name in ("host.cbor", "guest.cbor", "journal.cbor"):
+            (run_dir / name).write_bytes(c.encode(events))
+        violations = []
+        montecarlo._check_coordinated_journals({"fault": "handoff"}, run_dir, violations)
+        self.assertEqual(violations, [])
+        stale = [dict(event) for event in events]
+        stale[3]["writer_epoch"] = 0
+        (run_dir / "host.cbor").write_bytes(c.encode(stale))
+        montecarlo._check_coordinated_journals({"fault": "handoff"}, run_dir, violations)
+        self.assertTrue(any("host and guest journals differ" in item for item in violations))
+        self.assertTrue(any("advance exactly once" in item for item in violations))
+        violations = []
+        (run_dir / "host.cbor").unlink()
+        montecarlo._check_coordinated_journals({"fault": "no_reply"}, run_dir, violations)
+        self.assertTrue(any("missing or unreadable" in item for item in violations))
+
+    def test_summary_backend_cannot_weaken_the_acceptance_path(self):
+        root = Path(self.tmp.name) / "backend-bind"
+        montecarlo.run_campaign(SEED, 16, root, self.executor, profile=True)
+        self.assertEqual(montecarlo.check_campaign(root, self.executor)["violations"], [])
+        bound = montecarlo.check_campaign(root, self.executor, expected_backend="dualhost")
+        self.assertTrue(any("acceptance expects dualhost" in item for item in bound["violations"]))
+        self.assertTrue(any("no manifest" in item for item in bound["violations"]))
+        (root / "environment.json").write_text(json.dumps({"backend": "dualhost"}))
+        claimed = montecarlo.check_campaign(root, self.executor)
+        self.assertTrue(any("in-process declaration conflicts" in item
+                            for item in claimed["violations"]), claimed["violations"])
+
+    def test_comparison_ignores_clocks_and_boots_but_not_evidence(self):
+        roots = [Path(self.tmp.name) / f"pass-{name}" for name in ("a", "b")]
+        for number, root in enumerate(roots):
+            run_dir = root / "run-0000"
+            run_dir.mkdir(parents=True)
+            (root / "schedule.cbor").write_bytes(c.encode({"seed": 1}))
+            (run_dir / "fault.cbor").write_bytes(c.encode({"fault": "no_reply"}))
+            metadata = dict(self.window_metadata(), fault="no_reply", final_state="NO_REPLY",
+                            guest_boot_ids={"A": f"boot-{number}"})
+            metadata["started_at"] = f"2026-11-16T1{number}:00:02+00:00"
+            for row in metadata["locks"] + metadata["observations"]:
+                row["observed_at"] = f"2026-11-16T1{number}:00:00+00:00"
+            (run_dir / "metadata.json").write_text(json.dumps(metadata))
+            (run_dir / "topology.json").write_text(json.dumps({"phases": [{"phase": "run", "topology": {
+                "placement": {"A": "A", "B": "B"}, "lan_links": {"B": {"A": {"local": ["A-LAN", 40000 + number]}}},
+                "guest_ips": {"A": "<A_GUEST_IP>", "B": "<B_GUEST_IP>"}}}]}))
+            (root / "report.json").write_text(json.dumps({"run": number}))
+        same, differences = montecarlo.compare_campaigns(*roots)
+        self.assertTrue(same, differences)
+        metadata = json.loads((roots[1] / "run-0000" / "metadata.json").read_text())
+        metadata["final_state"] = "PUBLISHED"
+        (roots[1] / "run-0000" / "metadata.json").write_text(json.dumps(metadata))
+        (roots[1] / "run-0000" / "fault.cbor").write_bytes(c.encode({"fault": "worker_exit"}))
+        same, differences = montecarlo.compare_campaigns(*roots)
+        self.assertFalse(same)
+        self.assertEqual(set(differences), {"evidence differs: run-0000/metadata.json",
+                                            "evidence differs: run-0000/fault.cbor"})
 
 
 if __name__ == "__main__":

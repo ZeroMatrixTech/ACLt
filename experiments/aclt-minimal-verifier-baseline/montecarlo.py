@@ -564,7 +564,8 @@ def _phase_topologies(raw: Path, fallback: dict[str, Any]) -> list[dict[str, Any
 
 
 def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Path,
-                         result: dict[str, Any], *, backend: str, topology: str) -> None:
+                         result: dict[str, Any], *, backend: str, topology: str,
+                         profile: dict[str, Any] | None = None) -> None:
     """Turn one multivm evidence tree into the R3 checker's per-run layout."""
     fault = spec["fault"]
     handoff = fault == "handoff"
@@ -595,11 +596,13 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
                  "accepted": len(journal.accepted),
                  "final": journal.final is not None}
     else:
-        _copy(raw / "host-journal.cbor", run_dir / "host.cbor")
         _copy(raw / "coordination.trace", run_dir / "trace.cbor")
-        _copy(root / "journal.cbor", run_dir / "guest.cbor")
         extra = {"triggered": 1, "paused": True, "intents": spec["overlap_after"],
                  "error": "overlapping coordinator epochs"}
+    if overlap or (raw / "host-journal.cbor").is_file():
+        # R1 5.4: host.cbor is the authoritative journal, guest.cbor the coordinator's copy.
+        _copy(raw / "host-journal.cbor", run_dir / "host.cbor")
+        _copy(root / "journal.cbor", run_dir / "guest.cbor")
     outcome = "PAUSED" if overlap else result["general_status"]
     _write_status(run_dir, spec, outcome, **extra)
     if fault in DROPS:
@@ -628,11 +631,8 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
                 _copy(path, destination / path.name)
     initial_image = result.get("initramfs_sha256")
     boot_image = (result.get("successor_initramfs_sha256") if handoff else None) or initial_image
-    timing_path = raw / "timing.json"
-    timing = json.loads(timing_path.read_text()) if timing_path.is_file() else {}
     phase_images = {"before": initial_image, "after": boot_image, "run": boot_image}
     phase_meta = []
-    locks = []
     for record in phase_records:
         item = record["topology"]
         phase_meta.append({
@@ -641,31 +641,33 @@ def _normalize_guest_run(job: Job, spec: dict[str, Any], run_dir: Path, raw: Pat
             "placement": item.get("placement"),
             "remote_roles": sorted(item.get("lan_links", {})),
         })
-        state_a = item.get("host_a_lock", "missing")
-        state_b = item.get("host_b_environment", {}).get("lock", "missing")
-        locks.append({"host": "A", "phase": record["phase"], "state": state_a,
-                      "run_index": spec["index"], "observed_at": timing.get("started_at")})
-        locks.append({"host": "B", "phase": record["phase"], "state": state_b,
-                      "run_index": spec["index"], "observed_at": timing.get("started_at")})
-        locks.append({"host": "A", "phase": record["phase"], "state": "released",
-                      "run_index": spec["index"], "observed_at": timing.get("ended_at")})
-        locks.append({"host": "B", "phase": record["phase"], "state": "released",
-                      "run_index": spec["index"], "observed_at": timing.get("ended_at")})
+    # Lock records and the run window come from the harness's A-side UTC clock (R1 5.5).
+    locks = [dict(row, run_index=spec["index"]) for row in result.get("locks", ())]
+    observations = [dict(row) for row in result.get("observations", ())]
     metadata = {
         "backend": backend,
         "topology": topology,
+        "seed": profile.get("seed") if profile else None,
+        "index": spec["index"],
+        "job_id": profile.get("job_id") if profile else None,
+        "job_sha256": profile.get("job_sha256") if profile else None,
+        "fault": fault,
+        "source_revision": result.get("commit"),
         "source_commit": result.get("commit"),
         "source_manifest_sha256": result.get("source_manifest_sha256"),
         "executor_sha256": result.get("executor_sha256"),
         "kernel_sha256": result.get("kernel_sha256"),
         "initramfs_sha256": boot_image,
         "initial_initramfs_sha256": initial_image,
+        "host_a_environment": result.get("environment"),
+        "host_b_environment": observed.get("host_b_environment"),
         "phases": phase_meta,
         "locks": locks,
+        "observations": observations,
         "final_state": outcome,
         "failure_reason": extra.get("error"),
-        "started_at": timing.get("started_at"),
-        "ended_at": timing.get("ended_at"),
+        "started_at": result.get("started_at"),
+        "ended_at": result.get("ended_at"),
         "placement": observed.get("placement"),
         "remote_roles": sorted(observed.get("lan_links", {})),
         "guest_boot_ids": {role: row.get("boot_id") for role, row in guest.items()},
@@ -925,7 +927,7 @@ def _copy_json(path: Path, value: Any) -> None:
 def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
                topology: str, config: Path | None, kernel: Path, placement: str | None,
                accel: str, timeout: int, executor: Path | None = None,
-               profile: bool = False) -> None:
+               profile: bool = False, profile_record: dict[str, Any] | None = None) -> None:
     shape = TOPOLOGIES[topology]
     remote_roles = tuple(role for role in (placement or "").split(",") if role)
     roles = PROFILE_ROLES if profile else shape["roles"]
@@ -938,7 +940,6 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
             _write_fault(run_dir, spec, triggered=0)
             return
     raw = run_dir / "raw"
-    started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     order = "".join(str(slot) for slot in shape["order"])
     command = [sys.executable, "-B", str(Path(__file__).with_name("multivm.py")), "run",
                "--general", "--guests", str(len(roles)), "--kernel", str(kernel),
@@ -950,7 +951,7 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
     if topology == "t2":
         command.append("--general-six")
     if profile:
-        command += ["--general-workers", "".join(PROFILE_WORKERS)]
+        command += ["--general-workers", "".join(PROFILE_WORKERS), "--coordinated"]
     if backend == "dualhost":
         c.need(config is not None and placement, "dual-host campaign needs config and placement")
         command += ["--dualhost-config", str(config), "--host-b-roles", placement]
@@ -987,10 +988,35 @@ def _run_guest(job: Job, spec: dict[str, Any], run_dir: Path, *, backend: str,
                           error=(completed.stderr.strip().splitlines() or ["guest harness failed"])[-1][:300])
             _write_fault(run_dir, spec, triggered=0)
             return
-    ended_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    _copy_json(raw / "timing.json", {"started_at": started_at, "ended_at": ended_at})
-    _normalize_guest_run(job, spec, run_dir, raw, result, backend=backend, topology=topology)
+    _normalize_guest_run(job, spec, run_dir, raw, result, backend=backend, topology=topology,
+                         profile=profile_record)
     shutil.rmtree(raw, ignore_errors=True)
+
+
+def _host_environment(metadata: dict[str, Any], backend: str) -> dict[str, Any]:
+    host_a = metadata.get("host_a_environment") or {}
+    record: dict[str, Any] = {
+        "host_a": {key: host_a.get(key) for key in
+                   ("os", "kernel", "machine", "qemu", "kvm", "python", "accel")},
+        "source_manifest_sha256": metadata.get("source_manifest_sha256"),
+        "kernel_sha256": metadata.get("kernel_sha256"),
+        "initramfs_sha256": metadata.get("initial_initramfs_sha256")
+        or metadata.get("initramfs_sha256"),
+    }
+    if backend == "dualhost":
+        host_b = metadata.get("host_b_environment") or {}
+        record["host_b"] = dict({key: host_b.get(key) for key in
+                                 ("os", "kernel", "machine", "qemu", "kvm", "python")},
+                                rustc=None)  # B runs the static executor built on A.
+    return record
+
+
+def _profile_environment(root: Path, environment: dict[str, Any],
+                         backend: str) -> dict[str, Any]:
+    first = next((path for path in sorted(root.glob("run-*/metadata.json"))), None)
+    if first is None:
+        return dict(environment)
+    return dict(environment, **_host_environment(json.loads(first.read_text()), backend))
 
 
 def _manifest(root: Path) -> None:
@@ -1043,7 +1069,7 @@ def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None,
     if not profile:
         schedule["environment"] = environment
     (root / "schedule.cbor").write_bytes(c.encode(schedule))
-    if backend != "inprocess":
+    if backend != "inprocess" and not profile:
         (root / "environment.json").write_text(
             json.dumps(environment, indent=2, sort_keys=True) + "\n")
     rows = []
@@ -1064,7 +1090,8 @@ def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None,
             run_placement = (_profile_placement(spec_topology) if profile else placement)
             _run_guest(job, spec, run_dir, backend=backend, topology=spec_topology,
                        config=config, kernel=Path(kernel), placement=run_placement,
-                       accel=accel, timeout=timeout, executor=Path(executor), profile=profile)
+                       accel=accel, timeout=timeout, executor=Path(executor), profile=profile,
+                       profile_record=r4_profile(seed, spec["index"]) if profile else None)
         status = c.decode((run_dir / "status.cbor").read_bytes())
         row = {"index": spec["index"], "fault": spec["fault"], "outcome": status["outcome"]}
         if backend != "inprocess" or profile:
@@ -1072,6 +1099,12 @@ def run_campaign(seed: int, runs: int, root: Path, executor: Path | None = None,
         if backend != "inprocess":
             row["triggered"] = int(status.get("triggered", 0))
         rows.append(row)
+    if backend != "inprocess" and profile:
+        # R1 5.4: both hosts' OS, kernel, QEMU, KVM, Python, Rust, executor and source
+        # digests, and B's boot images; no clock values or transient endpoints.
+        environment = _profile_environment(root, environment, backend)
+        (root / "environment.json").write_text(
+            json.dumps(environment, indent=2, sort_keys=True) + "\n")
     report = {"seed": seed, "runs": rows, "environment": environment}
     if profile:
         report["profile"] = True
@@ -1590,6 +1623,14 @@ def _check_run(spec: dict[str, Any], run_dir: Path, *, executor: Path | None = N
                     violations.append("metadata: guest executor differs from campaign executor")
     if backend != "inprocess":
         if profile is not None:
+            _check_coordinated_journals(spec, run_dir, violations)
+            metadata_path = run_dir / "metadata.json"
+            if metadata_path.is_file():
+                metadata = json.loads(metadata_path.read_text())
+                for key in ("seed", "index", "job_id", "job_sha256", "fault"):
+                    expected = spec["fault"] if key == "fault" else profile[key]
+                    if metadata.get(key) != expected:
+                        violations.append(f"metadata: {key} differs from the rebuilt profile")
             _check_serving(job, spec, run_dir, executor, violations)
         else:
             _check_frames(job, spec, run_dir, executor, violations)
@@ -1717,20 +1758,11 @@ def _check_campaign_topology(root: Path, schedule: dict[str, Any], backend: str,
                     PROFILE_ROLES if profile else TOPOLOGIES[expected_topology]["roles"], remote)
             except Exception as error:
                 violations.append(f"{label}/{phase}: {error}")
-        if backend == "dualhost":
-            locks = metadata.get("locks")
-            if type(locks) is not list:
-                violations.append(f"{label}: no lock observations")
-            else:
-                for phase in expected_phases:
-                    for host in ("A", "B"):
-                        held = any(row.get("host") == host and row.get("phase") == phase
-                                   and row.get("state") == "held" for row in locks)
-                        released = any(row.get("host") == host and row.get("phase") == phase
-                                       and row.get("state") == "released" for row in locks)
-                        if not held or not released:
-                            violations.append(
-                                f"{label}/{phase}: host {host} lock is not recorded held and released")
+        _check_run_window(label, index, metadata, backend, expected_phases, violations)
+        if profile:
+            _check_run_environment(label, root, metadata, backend, violations)
+            if spec["fault"] == "handoff":
+                _check_handoff_boots(label, metadata, violations)
         if spec["fault"] == "handoff":
             before = meta_phases.get("before", {}).get("initramfs_sha256")
             after = meta_phases.get("after", {}).get("initramfs_sha256")
@@ -1742,6 +1774,151 @@ def _check_campaign_topology(root: Path, schedule: dict[str, Any], backend: str,
             run_image = meta_phases.get("run", {}).get("initramfs_sha256")
             if metadata.get("initramfs_sha256") != run_image:
                 violations.append(f"{label}: image differs from the run phase")
+
+
+def _instant(value: Any) -> datetime | None:
+    """Parse an RFC 3339 timestamp that carries a time zone; None if it does not."""
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else None
+
+
+def _check_run_window(label: str, index: int, metadata: dict[str, Any], backend: str,
+                      phases: tuple[str, ...], violations: list[str]) -> None:
+    """R1 5.5: locks belong to this run and enclose its window on the A-side clock."""
+    hosts = ("A", "B") if backend == "dualhost" else ("A",)
+    started, ended = _instant(metadata.get("started_at")), _instant(metadata.get("ended_at"))
+    if started is None or ended is None:
+        violations.append(f"{label}: started_at/ended_at are not RFC 3339 times with a zone")
+        return
+    if started > ended:
+        violations.append(f"{label}: started_at is after ended_at")
+    locks = metadata.get("locks")
+    if type(locks) is not list:
+        violations.append(f"{label}: no lock records")
+        return
+    window: dict[tuple[str, str], datetime] = {}
+    for row in locks:
+        if type(row) is not dict:
+            violations.append(f"{label}: lock record is not a map")
+            continue
+        if row.get("run_index") != index:
+            violations.append(f"{label}: lock record belongs to run {row.get('run_index')}")
+        if row.get("host") not in hosts or row.get("phase") != "run" \
+                or row.get("state") not in ("held", "released"):
+            violations.append(f"{label}: unexpected lock record {row.get('host')}/"
+                              f"{row.get('phase')}/{row.get('state')}")
+            continue
+        key = (row["host"], row["state"])
+        moment = _instant(row.get("observed_at"))
+        if key in window:
+            violations.append(f"{label}: duplicate {row['host']} {row['state']} lock record")
+        elif moment is None:
+            violations.append(f"{label}: {row['host']} {row['state']} lock has no observed time")
+        else:
+            window[key] = moment
+    if any((host, state) not in window for host in hosts for state in ("held", "released")):
+        violations.append(f"{label}: lock records do not cover hosts {', '.join(hosts)} "
+                          f"held and released")
+        return
+    held = max(window[(host, "held")] for host in hosts)
+    released = min(window[(host, "released")] for host in hosts)
+    if backend == "dualhost" and not (window[("A", "held")] <= window[("B", "held")]
+                                      and window[("B", "released")] <= window[("A", "released")]):
+        violations.append(f"{label}: B lock is not nested inside the A lock")
+    if not held <= started <= ended <= released:
+        violations.append(f"{label}: run window is outside the common lock window")
+    observations = metadata.get("observations")
+    if type(observations) is not list:
+        violations.append(f"{label}: no host observations")
+        return
+    events = {}
+    for row in observations:
+        moment = _instant(row.get("observed_at")) if type(row) is dict else None
+        if moment is None:
+            violations.append(f"{label}: host observation has no observed time")
+            continue
+        if not started <= moment <= ended:
+            violations.append(f"{label}: host observation {row.get('event')} is outside the run window")
+        events.setdefault(row.get("event"), []).append(moment)
+    for phase in phases:
+        begin, done = events.get(f"{phase}_started"), events.get(f"{phase}_collected")
+        if not begin or not done or len(begin) != 1 or len(done) != 1 or begin[0] > done[0]:
+            violations.append(f"{label}/{phase}: phase start/collection observations are missing")
+
+
+def _check_run_environment(label: str, root: Path, metadata: dict[str, Any], backend: str,
+                           violations: list[str]) -> None:
+    path = root / "environment.json"
+    if not path.is_file():
+        violations.append(f"{label}: campaign has no environment.json")
+        return
+    recorded = json.loads(path.read_text())
+    for key, value in _host_environment(metadata, backend).items():
+        if recorded.get(key) != value:
+            violations.append(f"{label}: {key} differs from environment.json")
+
+
+def _check_handoff_boots(label: str, metadata: dict[str, Any], violations: list[str]) -> None:
+    """The successor phase is a fresh boot of every guest, coordinator included."""
+    before, after = metadata.get("before_guest_boot_ids"), metadata.get("guest_boot_ids")
+    if type(before) is not dict or type(after) is not dict or set(before) != set(after) \
+            or set(after) != set(PROFILE_ROLES):
+        violations.append(f"{label}: handoff boot identifiers do not cover both phases")
+        return
+    values = [*before.values(), *after.values()]
+    if not all(isinstance(value, str) and value for value in values):
+        violations.append(f"{label}: handoff boot identifier is empty")
+        return
+    if before["A"] == after["A"]:
+        violations.append(f"{label}: successor coordinator reused the old coordinator boot")
+    if set(before.values()) & set(after.values()) or len(set(values)) != len(values):
+        violations.append(f"{label}: handoff phases share a guest boot identifier")
+
+
+def _check_coordinated_journals(spec: dict[str, Any], run_dir: Path,
+                                violations: list[str]) -> None:
+    """R1 5.4: host.cbor is authoritative and guest.cbor its copy; epochs per writer."""
+    try:
+        host = c.decode((run_dir / "host.cbor").read_bytes())
+        guest = c.decode((run_dir / "guest.cbor").read_bytes())
+    except Exception as error:
+        violations.append(f"journals: missing or unreadable host/guest journal: {error}")
+        return
+    if host != guest:
+        violations.append("journals: host and guest journals differ")
+    if spec["fault"] != "overlap" and (run_dir / "journal.cbor").is_file():
+        if c.decode((run_dir / "journal.cbor").read_bytes()) != guest:
+            violations.append("journals: journal.cbor is not the coordinator's journal")
+    epochs = []
+    for position, event in enumerate(host):
+        if event.get("kind") == "HANDOFF":
+            continue
+        try:
+            epochs.append((position, c.uint(event["writer_epoch"])))
+        except (KeyError, c.CodecError):
+            violations.append(f"journals: host event {position} has no valid writer_epoch")
+    handoffs = [position for position, event in enumerate(host) if event.get("kind") == "HANDOFF"]
+    if spec["fault"] == "handoff":
+        if len(handoffs) != 1:
+            violations.append(f"journals: handoff host journal has {len(handoffs)} HANDOFF records")
+            return
+        at = handoffs[0]
+        try:
+            new_epoch = c.uint(host[at]["epoch"])
+        except (KeyError, c.CodecError):
+            violations.append("journals: HANDOFF has no valid epoch")
+            return
+        before = {epoch for position, epoch in epochs if position < at}
+        after = {epoch for position, epoch in epochs if position > at}
+        if len(before) != 1 or after != {new_epoch} or new_epoch != next(iter(before)) + 1:
+            violations.append("journals: writer epochs do not advance exactly once at the HANDOFF")
+    elif handoffs or len({epoch for _, epoch in epochs}) > 1:
+        violations.append("journals: a run without handoff changed writer epoch")
 
 
 def _check_manifest(root: Path, violations: list[str]) -> None:
@@ -1769,7 +1946,42 @@ def _check_manifest(root: Path, violations: list[str]) -> None:
                 violations.append(f"manifest: {name} differs from the recorded digest")
 
 
-def check_campaign(root: Path, executor: Path | None = None) -> dict[str, Any]:
+def _bind_backend(root: Path, declared: str, expected: str | None,
+                  violations: list[str]) -> str:
+    """Decide which backend's checks apply; summaries never weaken the acceptance path.
+
+    An explicit expected backend wins over every declaration.  Without one, an
+    in-process declaration is rejected whenever guest-backend evidence is present.
+    """
+    environment_path = root / "environment.json"
+    recorded = None
+    if environment_path.is_file():
+        try:
+            recorded = json.loads(environment_path.read_text()).get("backend")
+        except Exception:
+            violations.append("backend: environment.json is unreadable")
+    guest_evidence = [name for name, present in (
+        ("environment.json", environment_path.is_file()),
+        ("manifest.sha256", (root / "manifest.sha256").is_file()),
+        ("run metadata", any(root.glob("run-*/metadata.json"))),
+        ("frames", any(root.glob("run-*/frames")))) if present]
+    backend = expected or declared
+    if expected is not None and declared != expected:
+        violations.append(f"backend: report declares {declared}, acceptance expects {expected}")
+    if backend == "inprocess":
+        if guest_evidence:
+            violations.append("backend: in-process declaration conflicts with guest-backend "
+                              f"evidence ({', '.join(guest_evidence)})")
+    else:
+        if recorded != backend:
+            violations.append(f"backend: environment.json records {recorded}, not {backend}")
+        if not (root / "manifest.sha256").is_file():
+            violations.append("backend: guest-backend campaign has no manifest")
+    return backend
+
+
+def check_campaign(root: Path, executor: Path | None = None, *,
+                   expected_backend: str | None = None) -> dict[str, Any]:
     """Replay every run and check the safety-layer invariants without trusting the driver."""
     root = Path(root)
     violations: list[str] = []
@@ -1790,6 +2002,8 @@ def check_campaign(root: Path, executor: Path | None = None) -> dict[str, Any]:
             topology = schedule.get("topology", "t1")
             c.need(topology in TOPOLOGIES, f"unknown topology {topology}")
         c.need(backend in BACKENDS, f"unknown backend {backend}")
+        c.need(expected_backend in (None, *BACKENDS), f"unknown backend {expected_backend}")
+        backend = _bind_backend(root, backend, expected_backend, violations)
         rebuilt = (generate_schedule(seed, PROFILE_RUNS) if profile_mode
                    else generate_schedule(seed, len(specs), topology=topology))
         for key in ("version", "seed", "runs"):
@@ -1818,30 +2032,71 @@ def check_campaign(root: Path, executor: Path | None = None) -> dict[str, Any]:
     return {"runs": len(specs), "seed": seed, "violations": violations}
 
 
-def _evidence_hashes(root: Path) -> dict[str, str]:
-    hashes = {}
+# R1 5.5: fields of metadata.json that take part in cross-pass comparison.
+METADATA_PROJECTION = ("seed", "index", "source_revision", "source_manifest_sha256",
+                       "executor_sha256", "topology", "job_id", "job_sha256", "fault",
+                       "triggered", "final_state", "failure_reason", "placement",
+                       "remote_roles", "kernel_sha256", "initramfs_sha256",
+                       "initial_initramfs_sha256")
+EXCLUDED_FROM_COMPARE = ("report.json", "pass-report.json", "manifest.sha256")
+
+
+def _metadata_projection(value: dict[str, Any]) -> dict[str, Any]:
+    projected = {key: value.get(key) for key in METADATA_PROJECTION}
+    projected["locks"] = [{key: row.get(key) for key in ("host", "phase", "state", "run_index")}
+                          for row in value.get("locks", ()) if type(row) is dict]
+    projected["observations"] = [{key: row.get(key) for key in ("event", "role", "frame_sha256")}
+                                 for row in value.get("observations", ()) if type(row) is dict]
+    return projected
+
+
+def _topology_projection(value: dict[str, Any]) -> dict[str, Any]:
+    """Stable topology: roles, placement and B images; never endpoints, ports or paths."""
+    def stable(item: dict[str, Any]) -> dict[str, Any]:
+        return {"coordinator": item.get("coordinator"), "placement": item.get("placement"),
+                "roles": sorted(item.get("guest_ips", {})),
+                "remote_roles": sorted(item.get("lan_links", {})),
+                "host_b_boot_hashes": item.get("host_b_boot_hashes")}
+    if "phases" not in value:  # campaign root record
+        return value
+    return {"run": stable(value), "phases": [
+        {"phase": record.get("phase"), **stable(record.get("topology") or {})}
+        for record in value.get("phases", ()) if type(record) is dict]}
+
+
+def _comparable(root: Path) -> dict[str, Any]:
+    """Map each evidence path to its deterministic comparison value (R1 5.5)."""
+    values: dict[str, Any] = {}
     for path in sorted(root.rglob("*")):
         if not path.is_file():
             continue
         relative = path.relative_to(root).as_posix()
-        if (relative in ("report.json", "manifest.sha256")
-                or relative.endswith("trace.cbor") or relative.startswith("raw/")
-                or "/raw/" in relative):
+        if (relative in EXCLUDED_FROM_COMPARE or relative.endswith("trace.cbor")
+                or relative.startswith("raw/") or "/raw/" in relative):
             continue
-        hashes[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
-    return hashes
+        if relative.endswith("metadata.json"):
+            values[relative] = _metadata_projection(json.loads(path.read_text()))
+        elif relative.endswith("topology.json"):
+            values[relative] = _topology_projection(json.loads(path.read_text()))
+        else:
+            values[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return values
 
 
 def compare_campaigns(first: Path, second: Path) -> tuple[bool, list[str]]:
-    """Compare the deterministic evidence of two independent campaigns."""
+    """Compare the deterministic projection of two independent campaigns (R1 5.5).
+
+    Wall-clock fields, lock and observation times, boot identifiers, transient
+    endpoints, the summary report and the coordination trace are not compared.
+    """
     first, second = Path(first), Path(second)
     differences = []
     try:
         if (first / "schedule.cbor").read_bytes() != (second / "schedule.cbor").read_bytes():
             differences.append("schedule differs")
-    except OSError as error:
-        return False, [f"schedule comparison failed: {error}"]
-    left, right = _evidence_hashes(first), _evidence_hashes(second)
+        left, right = _comparable(first), _comparable(second)
+    except (OSError, ValueError) as error:
+        return False, [f"comparison failed: {error}"]
     for name in sorted(set(left) | set(right)):
         if left.get(name) != right.get(name):
             differences.append(f"evidence differs: {name}")
@@ -1923,13 +2178,15 @@ def main(argv: list[str] | None = None) -> int:
     check_parser.add_argument("--output", type=Path, required=True)
     check_parser.add_argument("--compare", type=Path)
     check_parser.add_argument("--executor", type=Path)
+    check_parser.add_argument("--backend", choices=BACKENDS,
+                              help="bind the acceptance path to this backend (R4: dualhost)")
 
     args = parser.parse_args(argv)
     if args.command == "check":
-        result = check_campaign(args.output, args.executor)
+        result = check_campaign(args.output, args.executor, expected_backend=args.backend)
         reproducible = None
         if args.compare is not None:
-            second = check_campaign(args.compare, args.executor)
+            second = check_campaign(args.compare, args.executor, expected_backend=args.backend)
             result["violations"].extend(
                 f"compare campaign: {item}" for item in second["violations"])
             reproducible, differences = compare_campaigns(args.output, args.compare)

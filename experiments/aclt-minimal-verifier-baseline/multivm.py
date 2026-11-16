@@ -434,7 +434,19 @@ def environment(accel: str) -> dict:
     return {"host": platform.platform(), "python": platform.python_version(),
             "qemu": subprocess.run(["qemu-system-x86_64", "--version"], check=True,
                                    capture_output=True, text=True).stdout.splitlines()[0],
-            "accel": accel}
+            "accel": accel, "os": dualhost_multivm.os_release(), "kernel": platform.release(),
+            "machine": platform.machine(), "kvm": dualhost_multivm.kvm_available()}
+
+
+def utc_now() -> str:
+    """A-side orchestration clock (R1 5.5): one UTC clock for locks, run window and observations."""
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds")
+
+
+def observe(record: dict, event: str, role: str | None = None, frame_sha256: str | None = None) -> None:
+    record.setdefault("observations", []).append(
+        {"event": event, "role": role, "frame_sha256": frame_sha256, "observed_at": utc_now()})
 
 
 def check_topology(guests: dict, record: dict, *, incomplete=False) -> None:
@@ -602,7 +614,7 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
     suppressed_reply = bool(getattr(args, "general_inject", None)) and \
         general_vm.Injection.parse(args.general_inject).mode == "no_reply"
     authority = None
-    if scenario in ("handoff", "overlap"):
+    if scenario in ("handoff", "overlap") or getattr(args, "coordinated", False):
         authority = coordination.Coordinator(job, output / "host-journal.cbor",
                                              output / "coordination.trace")
 
@@ -612,6 +624,12 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
             raise RunError("general job guest failed")
         guests = {role: json.loads((root / "guest.json").read_bytes()) for role, root in roots.items()}
         check_topology(guests, record)
+        for role in sorted(guests):
+            for hit in guests[role].get("injection", ()):
+                observe(record, f"injected_{hit['mode']}", hit["role"], hit["request_sha256"])
+            for row in guests[role].get("worker_exits", ()):
+                if type(row) is dict:
+                    observe(record, f"worker_exit_{row['exit_status']}", row["role"])
         for name in ("declaration", "plan", "execution"):
             if (roots["A"] / f"{name}.cbor").read_bytes() != getattr(phase_job, name):
                 raise RunError(f"guest changed frozen {name}")
@@ -866,6 +884,7 @@ def run(args: argparse.Namespace) -> dict:
 
         processes = {}
         started = time.monotonic()
+        observe(record, f"{handoff or 'run'}_started", "A")
         general_options = ()
         if general:
             general_options = (
@@ -958,6 +977,7 @@ def run(args: argparse.Namespace) -> dict:
             extract(disks[role], disk_root)
             roots[role] = disk_root / role
         serial = {role: log.read_text(encoding="utf-8", errors="replace") for role, log in logs.items()}
+        observe(record, f"{handoff or 'run'}_collected", "A")
         return roots, serial
 
     def successor_image(source: Path, files) -> Path:
@@ -977,15 +997,36 @@ def run(args: argparse.Namespace) -> dict:
     started = time.monotonic()
     (output / "init").write_text(INIT, encoding="utf-8")
     if general:
-        if settings:
-            with dualhost_multivm.experiment_lock(), dualhost_multivm.Remote(
-                    settings, remote_roles, output) as remote:
-                session = remote
+        # R1 5.5: one A lock (and one B agent session) spans the whole run, every
+        # phase included; lock states and the run window use the A-side UTC clock,
+        # and B's lock state is confirmed over SSH when it is taken and released.
+        locks = record["locks"] = []
+        with dualhost_multivm.experiment_lock():
+            locks.append({"host": "A", "phase": "run", "state": "held", "observed_at": utc_now()})
+            if settings:
+                with dualhost_multivm.Remote(settings, remote_roles, output) as remote:
+                    if remote.environment.get("lock") != "held":
+                        raise RunError("B agent did not report its experiment lock held")
+                    locks.append({"host": "B", "phase": "run", "state": "held",
+                                  "observed_at": utc_now()})
+                    session = remote
+                    record["started_at"] = utc_now()
+                    record.update(run_general(execution, args, boot, executor, initramfs, output,
+                                              record, successor_image))
+                    record["ended_at"] = utc_now()
+                    if remote.call(action="lock") != "held":
+                        raise RunError("B agent lost its experiment lock")
+                state = dualhost_multivm.probe_b_lock(settings)
+                locks.append({"host": "B", "phase": "run", "state": state,
+                              "observed_at": utc_now()})
+                if state != "released":
+                    raise RunError("B experiment lock was not released")
+            else:
+                record["started_at"] = utc_now()
                 record.update(run_general(execution, args, boot, executor, initramfs, output,
                                           record, successor_image))
-        else:
-            record.update(run_general(execution, args, boot, executor, initramfs, output,
-                                      record, successor_image))
+                record["ended_at"] = utc_now()
+        locks.append({"host": "A", "phase": "run", "state": "released", "observed_at": utc_now()})
         record["seconds"] = round(time.monotonic() - started, 2)
         (output / "result.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
         if not args.keep_work:
@@ -1165,6 +1206,8 @@ def main() -> None:
     runner.add_argument("--general-nonce", metavar="HEX", help="frozen 32-byte general execution nonce")
     runner.add_argument("--general-inject", metavar="MODE:SLOT:LOSS",
                         help="abort a remote SOLVE reply: no_reply, worker_exit or tcp_disconnect")
+    runner.add_argument("--coordinated", action="store_true",
+                        help="route every general-job journal write through the host arbitration entry")
     runner.add_argument("--general-workers", metavar="ROLES",
                         help="coordinator-only layout: the worker roles in rotation order, e.g. BCD")
     runner.add_argument("--general-checkpoint", choices=(0, 1, 2), type=int, default=0,
@@ -1215,6 +1258,8 @@ def main() -> None:
             general_vm.Injection.parse(args.general_inject)
         except ValueError as error:
             runner.error(str(error))
+    if args.coordinated and not args.general:
+        runner.error("--coordinated needs --general")
     if args.general_workers is not None:
         workers = args.general_workers
         if (not args.general or args.capacity_sort or len(workers) < 3 or len(set(workers)) != len(workers)
