@@ -19,7 +19,10 @@
 
 回归另在整题单独执行时复查相差一单位的 gas 与输出 trap，并用 Rust 复核 Python 的完整结果。准入的报错顺序只说明检查哪项上限先失败。一般工件的资源界、多个上限同时不足时的精确 trap、宿主故障及整题完整 Outcome 的跨片推导仍待验收。
 
-[证据包](public-evidence/MULTIVM-ROOT-LIMITS-public-evidence.tar.gz) SHA-256 为 `02d4f26ee6af9694c52c45d29d2dce20905e0f459e8a3cad43a8ea00de83d6ad`，包含三来宾原始证据和三组派发前拒绝。默认最简验证机回归重放成功场景，并检查整题上限变动能被检出。
+[证据包](public-evidence/MULTIVM-ROOT-LIMITS-public-evidence.tar.gz) SHA-256 为 `9970cbad4a674bc3cf1e38d2369c6b51dee645009be85af592901d029d8720a7`，包含三来宾原始证据和三组派发前拒绝。默认最简验证机回归重放成功场景，并检查整题上限变动能被检出。
+
+> 2026-11-16：按维护者决定（#128）将本包 3 个串口日志中的上游内核联系人邮箱字段统一替换为 `<redacted-email>` 后重新打包；上列 SHA-256 为脱敏后的包，帧、账目、清单和其他字段未变。
+
 
 ```sh
 python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \

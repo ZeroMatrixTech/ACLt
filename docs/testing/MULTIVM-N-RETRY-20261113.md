@@ -19,6 +19,9 @@ python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
   --solve-budget 34768 --retry-solve --interrupt drop-reply SOLVE-1
 ```
 
-[证据包](public-evidence/MULTIVM-N-RETRY-public-evidence.tar.gz) SHA-256 为 `6be876c58a4ba2f30d3cbbb3fe38ffd62cb46902758019aeda962a80aef78b11`。包含正常对照和三组注入实跑，保留来宾日志、答复、逐次求解账和宿主摘要。回归重放预算边界，并检查无答复尝试被少计时会拒绝。
+[证据包](public-evidence/MULTIVM-N-RETRY-public-evidence.tar.gz) SHA-256 为 `3f3de3b7ffc6e5e9606babc59d8bb7b3df8cacafb5fa7aff73d34d57f73e9016`。包含正常对照和三组注入实跑，保留来宾日志、答复、逐次求解账和宿主摘要。回归重放预算边界，并检查无答复尝试被少计时会拒绝。
+
+> 2026-11-16：按维护者决定（#128）将本包 12 个串口日志中的上游内核联系人邮箱字段统一替换为 `<redacted-email>` 后重新打包；上列 SHA-256 为脱敏后的包，帧、账目、清单和其他字段未变。
+
 
 后续蒙特卡洛模拟可把无答复事件概率作为输入，对每次无答复按其分片额度计入 gas，按同一预算规则统计额外消耗和作业完成率。上述注入数据校验计量规则，故障率仍需另行估计。同宿主来宾的故障也可能相关。

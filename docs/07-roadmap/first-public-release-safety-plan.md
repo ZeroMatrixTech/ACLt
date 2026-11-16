@@ -303,7 +303,7 @@ R4a（[#151](https://github.com/ZeroMatrixTech/ACLt/issues/151)）负责把 R3 �
 
 ## 8. 理论缺口与残余风险
 
-**理论缺口。** TG-6（[#123](https://github.com/ZeroMatrixTech/ACLt/issues/123)）关于故障过程模型的问题保持 <code>OPEN</code>。本规格不估计故障率、不推导重试预算、不给出概率上界，也不把“每 pass 两个固定种子的 32 次运行、违反 0 次”解释为覆盖率。若审计认为“固定种子抽取本身需要统计模型”，按 [PARALLEL-1 §5.6](../08-governance/parallel-workflow.md#56-理论缺口) 登记为 theory-gap，并停止相应概率性结论；R4 的默认报告不产生这类结论。
+**理论缺口。** TG-6（[#123](https://github.com/ZeroMatrixTech/ACLt/issues/123)）关于故障过程模型的问题保持 <code>OPEN</code>。本规格不估计故障率、不推导重试预算、不给出概率上界，也不把“每 pass 两个固定种子的 32 次运行、违反 0 次”解释为覆盖率。若审计认为“固定种子抽取本身需要统计模型”，按 [PARALLEL-1 §5.6](../08-governance/parallel-workflow.md#56-理论缺口2026-11-14-补充) 登记为 theory-gap，并停止相应概率性结论；R4 的默认报告不产生这类结论。
 
 **协调者假设（修订 1，维护者于 2026-11-15 批准，记录于 #150）。** R4 采用两条假设，不对其建模或推导：
 

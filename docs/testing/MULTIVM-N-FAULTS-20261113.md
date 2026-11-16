@@ -10,7 +10,10 @@
 
 两种中断都发生在叶子 1，对应输入区间 `[2, 4)`。叶子 0 的已接受回执仍留在帧证据中，叶子 1、2 均未接受。协调器写出 `failure.json` 并结束作业。宿主重放已完成的请求、响应和接受回执，核对最后请求同时留在双方证据中，以及对应响应、后续帧、归并输出和成功摘要均缺席。预期中断仍以失败状态和退出码 1 表示。证据限定于来宾工作进程退出与应用 TCP 关闭；后续可另行测量链路失联、宿主故障及恢复语义。
 
-[证据包](public-evidence/MULTIVM-N-FAULTS-public-evidence.tar.gz) SHA-256 为 `a30e291bee2195ea234a23251a30fcfba25cacebd0367d41ad54abec251d99d5`。最简验证机回归重放两个中断场景，并检查伪造中断标记、缺少原始请求及提前生成归并输出均会被拒绝。
+[证据包](public-evidence/MULTIVM-N-FAULTS-public-evidence.tar.gz) SHA-256 为 `e1e46e3b320c398be0c6720bcafa8a1a121a4f57135989e6e846e43bfece2ee2`。最简验证机回归重放两个中断场景，并检查伪造中断标记、缺少原始请求及提前生成归并输出均会被拒绝。
+
+> 2026-11-16：按维护者决定（#128）将本包 6 个串口日志中的上游内核联系人邮箱字段统一替换为 `<redacted-email>` 后重新打包；上列 SHA-256 为脱敏后的包，帧、账目、清单和其他字段未变。
+
 
 ```sh
 python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
