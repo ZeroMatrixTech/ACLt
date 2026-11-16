@@ -8,7 +8,7 @@
 
 ## 当前实施入口（2026-11-16）
 
-截至 2026-11-16，R4 安全层蒙特卡洛已完成并合入（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)）；P1-g（#163）、P1-i（#164）、P1-j（#165）与 P1-h1–h4（#166）已完成并合入。发布准备续轮回验（[#161](https://github.com/ZeroMatrixTech/ACLt/issues/161)、[AUD-20261116-03](../08-governance/audits/audit-20261116-03-public-release-recheck.md)）已归档，结论为 FAIL，新增 0 BLOCKER、1 MAJOR、2 MINOR、1 NOTE；其中 1 MAJOR 为 #167 的 DCO 补救，待维护者处理。当前入口是本次文档同步（AUD-20261116-03-002、003）与维护者重新冻结发行说明；之后按 [PREVIEW §10](../releases/PREVIEW-20261106.md#10-发布前检查清单) 选定发布 commit、重跑 CI 并切换可见性。
+截至 2026-11-16，R4 安全层蒙特卡洛已完成并合入（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)）；P1-g（#163）、P1-i（#164）、P1-j（#165）与 P1-h1–h4（#166）已完成并合入。发布准备续轮回验（[#161](https://github.com/ZeroMatrixTech/ACLt/issues/161)、[AUD-20261116-03](../08-governance/audits/audit-20261116-03-public-release-recheck.md)）已归档，时点结论为 FAIL，新增 0 BLOCKER、1 MAJOR、2 MINOR、1 NOTE；其中 1 MAJOR 为 #167 的 DCO 补救，原失败记录见 AUD-20261116-03，补救提交 [02476db](https://github.com/ZeroMatrixTech/ACLt/commit/02476db9a14ec53aac1d4c15413cef37e60a0dec) 已合入当前 main（#167）。当前入口是本次文档同步（AUD-20261116-03-002、003）与维护者重新冻结发行说明；之后按 [PREVIEW §10](../releases/PREVIEW-20261106.md#10-发布前检查清单) 选定发布 commit、重跑 CI 并切换可见性。
 
 最简验证机的乌托邦基线覆盖可信环境中的多机分工、派发、验证和归并。[通用分布式作业契约](distributed-job-contract.md)的首个整数向量切片已在本地三来宾上联合验收身份绑定、跨子树依赖、尝试账和交接发布，见[联合验收报告](../testing/MULTIVM-GENERAL-JOB-20261113.md)。[可信双机条件](minimal-verifier-baseline.md#可信双机验收)适用于物理双机证据。
 
