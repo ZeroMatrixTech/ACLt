@@ -9,6 +9,7 @@
 | 入口 | 工作 | 边界 |
 |---|---|---|
 | `make check` | 模型、配置、流程与交付回归测试，加清单检查 | 不编译或启动 VM |
+| `make check-docs` | 文档快速通道：`make check` 加读取 Markdown 的 Profile/Phase D 检查 | 不编译 state3、多节点与 authority 实验；CI 对仅文档 PR 使用 |
 | `make test` | 上述检查、当前 state3 单机实验及多节点本地检查 | 含 sanitizer；不包含 VM 故障注入 |
 | `make test-singlehost` | 仅当前 Rust/C++ 实验 | 不含 Python 模型/流程组 |
 | `make test-claim-codec` | 候选模板/claim 编码 Python/Rust 对拍 | 需要 Unicode 16.0.0、rustc、OpenSSL；不代表完整 P0-1B |
@@ -20,6 +21,8 @@
 | `make package PACKAGE=/new/path.zip` | 校验后生成增量更新包 | 不自动更新清单；拒绝覆盖同名文件 |
 
 `bash scripts/run-singlehost.sh` 保留为原有单机全量入口（Python 分组、校验与 state3）。`python3 scripts/aclt-flow.py run --force` 可强制重跑证据流程。Make 默认只显示帮助，不使用 sudo。
+
+本地可用 `make -j"$(nproc)" -O test` 并行跑全量；`-O` 防止输出交错，确定性打包仍在测试之后串行执行。并行时 test-authority 使用 `build/worker-ci`，test-singlehost 继续使用 `build/worker`，两者不共享可执行文件。
 
 源码修改后，先检查变更，再运行 `make manifests`，然后执行对应检查。刷新清单不能代替测试；交付脚本变化后运行 `make check` 和打包回归测试。
 
@@ -49,7 +52,7 @@
 
 默认输出 `dist/aclt-singlehost-update.zip` 和同名 `.sha256`。输出已存在、清单失效或交付输入为符号链接时拒绝打包；不会自动重签源码。中途失败的产物需要审查后另行处理。
 
-本地产物放在 `artifacts/`、`build/`、`target/`、`dist/`、`.toolchain/` 和 `.aclt-flow/runs/`，不交付为源码。工作流历史示例中已保存的 `build/`、`artifacts/` 是证据例外。
+本地产物放在 `artifacts/`、`build/`、`target/`、`dist/`、`.toolchain/` 和 `.aclt-flow/runs/`，不交付为源码；并行检查时 authority 的可执行文件位于 `build/worker-ci`，与 test-singlehost 的 `build/worker` 分开。工作流历史示例中已保存的 `build/`、`artifacts/` 是证据例外。
 
 ## 变更与交付
 
