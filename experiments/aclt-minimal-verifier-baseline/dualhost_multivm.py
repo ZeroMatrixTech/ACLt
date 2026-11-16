@@ -65,6 +65,51 @@ def experiment_lock(path=None):
         yield
 
 
+def os_release():
+    try:
+        for line in Path("/etc/os-release").read_text().splitlines():
+            if line.startswith("PRETTY_NAME="):
+                return line.partition("=")[2].strip().strip('"')
+    except OSError:
+        pass
+    return platform.system()
+
+
+def kvm_available():
+    return os.access("/dev/kvm", os.R_OK | os.W_OK)
+
+
+LOCK_PROBE = (
+    "import fcntl, os\n"
+    "from pathlib import Path\n"
+    "path = Path(os.environ.get('XDG_RUNTIME_DIR') or '/tmp') / 'aclt-experiment.lock'\n"
+    "with path.open('a+b') as lock:\n"
+    "    try:\n"
+    "        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)\n"
+    "    except BlockingIOError:\n"
+    "        print('held')\n"
+    "    else:\n"
+    "        print('released')\n")
+
+
+def probe_b_lock(settings, *, expect="released", attempts=20):
+    """Query B's experiment lock over strict-key SSH; return the observed state.
+
+    The probe only tests the lock (and releases it at once); it is used after the
+    agent session ends to confirm that B released the lock.
+    """
+    state = None
+    for _ in range(attempts):
+        completed = subprocess.run(
+            [*SSH_OPTIONS, settings["ssh_target"], shlex.join(["python3", "-B", "-c", LOCK_PROBE])],
+            capture_output=True, text=True, timeout=30)
+        state = completed.stdout.strip() if completed.returncode == 0 else "unknown"
+        if state == expect:
+            return state
+        time.sleep(0.5)
+    return state
+
+
 def identity():
     return hashlib.sha256(Path("/etc/machine-id").read_bytes()).hexdigest()
 
@@ -126,12 +171,17 @@ def agent(parent, lan, roles):
     with experiment_lock(), tempfile.TemporaryDirectory(prefix="aclt-r2-", dir=parent) as name:
         root = Path(name)
         children = {}
+        disks = {}
+        serials = {}
+        qemus = {}
+        generations = {}
         with socket.socket() as endpoint:
             endpoint.bind((lan, 0))
         print(json.dumps(dict(identity=identity(), kernel=platform.release(), machine=platform.machine(),
                               qemu=subprocess.check_output(["qemu-system-x86_64", "--version"],
                                                            text=True).splitlines()[0],
-                              lock="held")), flush=True)
+                              os=os_release(), kvm=kvm_available(),
+                              python=platform.python_version(), lock="held")), flush=True)
         try:
             for line in sys.stdin:
                 request = json.loads(line)
@@ -144,21 +194,32 @@ def agent(parent, lan, roles):
                     if filename not in ("kernel", "guest.cpio.gz"):
                         raise DualHostError("unknown staging object")
                     path = root / filename
-                    with path.open("xb") as stream:
+                    with path.open("wb") as stream:
                         stream.write(base64.b64decode(request["data"], validate=True))
                     response = sha(path)
                 elif action == "launch":
                     role = request["role"]
-                    if role not in roles or role in children:
+                    if role not in roles:
                         raise DualHostError("invalid remote launch role")
+                    if role in children:
+                        stop(children.pop(role))
+                    generations[role] = generations.get(role, 0) + 1
                     disk = root / f"{role}.img"
+                    serial = root / f"{role}-serial.log"
+                    qemu = root / f"{role}-qemu.log"
+                    if disk.exists():
+                        disk.unlink()
                     with disk.open("xb") as stream:
                         stream.truncate(request["disk_size"])
                     subprocess.run(["mkfs.ext4", "-q", "-F", "-L", "evidence", str(disk)], check=True)
-                    with (root / f"{role}-qemu.log").open("wb") as log:
+                    with qemu.open("wb") as log:
                         children[role] = subprocess.Popen(request["argv"], cwd=root, stdin=subprocess.DEVNULL,
                                                           stdout=log, stderr=subprocess.STDOUT)
+                    disks[role], serials[role], qemus[role] = disk, serial, qemu
                     response = None
+                elif action == "lock":
+                    # The agent holds the B lock for its whole lifetime.
+                    response = "held"
                 elif action == "ready":
                     active = subprocess.check_output(["ss", "-4Hltnp"], text=True)
                     response = [role for role, proc in children.items()
@@ -171,12 +232,12 @@ def agent(parent, lan, roles):
                     returncode = children[role].poll()
                     response = None
                     if returncode is not None or action == "diagnostics":
-                        log = root / f"{role}-serial.log"
+                        log = serials[role]
                         response = dict(exit=returncode, serial=log.read_text(errors="replace") if log.exists() else "",
-                                        qemu=(root / f"{role}-qemu.log").read_text(errors="replace"))
+                                        qemu=qemus[role].read_text(errors="replace"))
                         if action == "collect" and returncode == 0:
                             response["disk"] = base64.b64encode(
-                                gzip.compress((root / f"{role}.img").read_bytes(), compresslevel=1)).decode()
+                                gzip.compress(disks[role].read_bytes(), compresslevel=1)).decode()
                 else:
                     raise DualHostError("unknown remote action")
                 print(json.dumps({"result": response}), flush=True)

@@ -23,6 +23,7 @@ import general_vm
 from lan import TIMEOUT, handle_request, run_job, serve
 from multivm_job import IncompleteExchange, assignments, guest_ip, guest_roles, label, peer_operations, run_many
 from tools.formal_migration.s2_transport import receive, send
+from tools.verification_profile import codec as c
 from tools.verification_profile import codec
 
 EVIDENCE = Path("/evidence")
@@ -203,6 +204,8 @@ def run_general(role, port, budget, report, pairs):
     output = EVIDENCE / role
     output.mkdir(mode=0o700)
     drop = pairs.get("aclt_general_drop") == "1"
+    six = pairs.get("aclt_general_six") == "1"
+    inject = general_vm.Injection.parse(pairs.get("aclt_general_inject"))
     nonce = bytes.fromhex(pairs["aclt_execution_nonce"])
     sort_job = sort_contract.SortJob(nonce) if pairs.get("aclt_capacity_sort") == "1" else None
     if sort_job is not None:
@@ -212,17 +215,64 @@ def run_general(role, port, budget, report, pairs):
             (output / "guest.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
             return 0
     if role != "A":
-        report.update(general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop, sort_job=sort_job))
+        # The worker serves in a child process so that worker_exit is a real non-zero
+        # process exit (R1 section 4).  Injection records and serving-side observations
+        # are written durably by the child before it acts; this supervisor restarts it.
+        hits_path = output / "injection.jsonl"
+        observed_path = output / "observations.jsonl"
+        bounds_path = output / "serve-bounds.json"
+        if inject is not None:
+            inject.log_path = hits_path
+            inject.observation_path = observed_path
+        while True:
+            seen = len(general_vm.read_lines(hits_path))
+            child = os.fork()
+            if child == 0:
+                code = 0
+                try:
+                    bounds = general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop,
+                                              sort_job=sort_job, inject=inject, exit_on_fault=True)
+                    bounds_path.write_text(json.dumps(bounds) + "\n", encoding="utf-8")
+                except BaseException:
+                    import traceback
+                    traceback.print_exc()
+                    code = 1
+                finally:
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    os._exit(code)
+            _, status = os.waitpid(child, 0)
+            code = os.waitstatus_to_exitcode(status)
+            if code == general_vm.WORKER_EXIT_CODE:
+                hits = general_vm.read_lines(hits_path)
+                if len(hits) != seen + 1 or hits[-1]["mode"] != "worker_exit":
+                    raise RuntimeError("worker exited without exactly one recorded injection")
+                last = hits[-1]
+                report.setdefault("worker_exits", []).append(
+                    {"role": role, "slot": last["slot"], "attempt": last["attempt"],
+                     "exit_status": code})
+                print(f"GUEST_WORKER_EXIT role={role} status={code}", flush=True)
+                continue
+            if code != 0:
+                raise RuntimeError(f"worker process failed with status {code}")
+            break
+        report.update(json.loads(bounds_path.read_text(encoding="utf-8")))
+        hits = general_vm.read_lines(hits_path)
+        report["fault_triggered"] = len(hits)
+        if inject is not None:
+            report["injection"] = hits
+            report["observations"] = general_vm.read_lines(observed_path)
     else:
         roles = guest_roles(int(pairs["aclt_guests"]))
         job = sort_job or general_vm.fixture(nonce, budget,
-                                 flat=pairs.get("aclt_general_flat") == "1")
+                                 flat=pairs.get("aclt_general_flat") == "1", six=six)
         reuse = None
         source = None
         if pairs.get("aclt_handoff") == "reuse":
             source_path = HANDOFF_INPUT / "source.cbor"
             source_execution = codec.decode(codec.decode(source_path.read_bytes())[0]["execution"])
-            source_job = general_vm.fixture(source_execution["nonce"], source_execution["budget"])
+            source_job = general_vm.fixture(source_execution["nonce"], source_execution["budget"],
+                                            six=six)
             source = general_vm.source_journal(source_job, source_path, EXECUTOR)
             reuse = {slot: slot for slot in range(len(job.tasks))}
         order = tuple(int(slot) for slot in pairs["aclt_general_order"])
@@ -241,9 +291,16 @@ def run_general(role, port, budget, report, pairs):
                 if reply:
                     return receive(connection)
 
+        workers = tuple(pairs.get("aclt_general_workers", ""))
+
         def exchange(owner, raw):
             name = general_vm.wire_name(raw)
+            if workers and owner == role:
+                raise RuntimeError("coordinator-only layout asked the coordinator to serve")
             (output / f"{name}-request.cbor").write_bytes(raw)
+            if inject is not None and owner == role and inject.matches(c.decode(raw)):
+                inject.hit(c.decode(raw), raw, role)
+                raise ConnectionError(f"injected {inject.mode} on the coordinator")
             if sort_job is None:
                 result = general_vm.handle(raw, EXECUTOR) if owner == role else remote(owner, raw)
             else:
@@ -256,6 +313,9 @@ def run_general(role, port, budget, report, pairs):
             checkpoint = int(pairs.get("aclt_general_checkpoint", "0"))
             with ExitStack() as resources:
                 placement = retry_worker = None
+                if workers:
+                    placement = general_vm.coordinator_only(workers, len(job.tasks))
+                    retry_worker = general_vm.retry_after(workers)
                 if sort_job is not None:
                     stored = resources.enter_context(capacity_sort.memory_file())
                     placement = sort_contract.PLACEMENT
@@ -276,11 +336,15 @@ def run_general(role, port, budget, report, pairs):
                     journal, status = general_vm.run(
                         job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
                         checkpoint=checkpoint, placement=placement, retry_worker=retry_worker,
-                        source=source, reuse=reuse, journal_factory=journal_factory,
+                        retry_remote=inject is not None and not workers, source=source, reuse=reuse,
+                        journal_factory=journal_factory,
                     )
                 except coordination.CoordinationError:
-                    journal = general_vm.Journal(job, output / "journal.cbor",
-                                                 codec.decode((output / "journal.cbor").read_bytes()))
+                    path = output / "journal.cbor"
+                    events = codec.decode(path.read_bytes()) if path.is_file() else ()
+                    journal = general_vm.Journal(job, path, events)
+                    if not path.is_file():
+                        path.write_bytes(codec.encode(events))
                     status = "COORDINATION_PAUSED"
         finally:
             for peer in roles[1:]:
@@ -291,6 +355,9 @@ def run_general(role, port, budget, report, pairs):
         if journal.final is not None:
             (output / "publication.cbor").write_bytes(codec.encode(journal.final))
         report["general_status"] = status
+        if inject is not None:
+            report["fault_triggered"] = len(inject.hits)
+            report["injection"] = inject.hits
     (output / "guest.json").write_text(json.dumps(report) + "\n", encoding="utf-8")
     return 0
 

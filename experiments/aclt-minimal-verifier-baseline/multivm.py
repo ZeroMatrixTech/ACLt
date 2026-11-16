@@ -434,7 +434,19 @@ def environment(accel: str) -> dict:
     return {"host": platform.platform(), "python": platform.python_version(),
             "qemu": subprocess.run(["qemu-system-x86_64", "--version"], check=True,
                                    capture_output=True, text=True).stdout.splitlines()[0],
-            "accel": accel}
+            "accel": accel, "os": dualhost_multivm.os_release(), "kernel": platform.release(),
+            "machine": platform.machine(), "kvm": dualhost_multivm.kvm_available()}
+
+
+def utc_now() -> str:
+    """A-side orchestration clock (R1 5.5): one UTC clock for locks, run window and observations."""
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds")
+
+
+def observe(record: dict, event: str, role: str | None = None, frame_sha256: str | None = None) -> None:
+    record.setdefault("observations", []).append(
+        {"event": event, "role": role, "frame_sha256": frame_sha256, "observed_at": utc_now()})
 
 
 def check_topology(guests: dict, record: dict, *, incomplete=False) -> None:
@@ -599,8 +611,10 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         record["single_guest_control"] = result
 
     scenario = getattr(args, "m9", None)
+    suppressed_reply = bool(getattr(args, "general_inject", None)) and \
+        general_vm.Injection.parse(args.general_inject).mode == "no_reply"
     authority = None
-    if scenario in ("handoff", "overlap"):
+    if scenario in ("handoff", "overlap") or getattr(args, "coordinated", False):
         authority = coordination.Coordinator(job, output / "host-journal.cbor",
                                              output / "coordination.trace")
 
@@ -610,11 +624,18 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
             raise RunError("general job guest failed")
         guests = {role: json.loads((root / "guest.json").read_bytes()) for role, root in roots.items()}
         check_topology(guests, record)
+        for role in sorted(guests):
+            for hit in guests[role].get("injection", ()):
+                observe(record, f"injected_{hit['mode']}", hit["role"], hit["request_sha256"])
+            for row in guests[role].get("worker_exits", ()):
+                if type(row) is dict:
+                    observe(record, f"worker_exit_{row['exit_status']}", row["role"])
         for name in ("declaration", "plan", "execution"):
             if (roots["A"] / f"{name}.cbor").read_bytes() != getattr(phase_job, name):
                 raise RunError(f"guest changed frozen {name}")
         journal = general_vm.replay(phase_job, roots, executor, history, source=source,
-                                    check_response=check_sort_response if is_sort else None)
+                                    check_response=check_sort_response if is_sort else None,
+                                    suppressed_reply=suppressed_reply)
         if guard and guard.journal.events != journal.events:
             raise RunError("guest evidence differs from authoritative host journal")
         publication = roots["A"] / "publication.cbor"
@@ -655,6 +676,7 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
                       if entry["state"] == "ACCEPTED")
             files.append(before[owner] / "delivery.img")
         image = successor_image(image, files)
+        record["successor_initramfs_sha256"] = sha256(image)
     roots, guests, journal = phase(output / "after" if history else output, image,
                                    "after" if history else mode, history, source=source, guard=authority)
     if history and (journal.events[len(history)] != {"kind": "HANDOFF", "epoch": 1}
@@ -662,10 +684,12 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         raise RunError("successor did not take over after the checkpoint")
     result = guests["A"]["general_status"]
     expected = ("COORDINATION_PAUSED",) if scenario == "overlap" else ("PUBLISHED", "BUDGET_BLOCKED")
+    if args.general_inject:
+        expected += ("NO_REPLY",)
     if result not in expected or (result == "PUBLISHED") != (journal.final is not None):
         raise RunError(f"unexpected terminal state: {result}")
     if result == "BUDGET_BLOCKED":
-        if not args.general_drop or journal.charged + sum(
+        if not (args.general_drop or args.general_inject) or journal.charged + sum(
                 cap for slot, cap in enumerate(job.caps) if slot not in journal.accepted) <= job.budget:
             raise RunError("guest reported a budget block with enough remaining gas")
     if is_sort:
@@ -673,7 +697,7 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
             job, journal, lambda request: (before if history and request["epoch"] == 0 else roots)
             [sort_contract.PLACEMENT[request["slot"]][0]] / "delivery.img")
     overlap = scenario == "overlap"
-    if overlap and (not authority.paused or len(journal.events) != len(history) + 1):
+    if overlap and (not authority.paused or journal.final is not None):
         raise RunError("overlap did not stop both dispatch and publication")
     if source is not None:
         if (job.declaration_id != source.job.declaration_id or job.plan_id == source.job.plan_id
@@ -689,8 +713,11 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
                 if journal.final else None,
                 solve_order=[event["slot"] for event in journal.events if event["kind"] == "RESERVE"],
                 acceptance_order=list(journal.accepted),
-                handoff=bool(history), before_guests=before_guests,
-                guests=guests, claim="Guest-level trusted execution on one physical host")
+                handoff=bool(history), before_guests=before_guests, guests=guests,
+                claim=("Guest-level trusted execution on two physical hosts of one operator; "
+                       "the hosts are not independent failure domains"
+                       if getattr(args, "dualhost_config", None) else
+                       "Guest-level trusted execution on one physical host"))
 
 
 def run(args: argparse.Namespace) -> dict:
@@ -701,6 +728,8 @@ def run(args: argparse.Namespace) -> dict:
                                                 ("output_limit", args.root_output_limit))
                  if value is not None}
     general = getattr(args, "general", False)
+    general_six = bool(getattr(args, "general_six", False))
+    general_inject = getattr(args, "general_inject", None)
     is_sort = getattr(args, "capacity_sort", False)
     job = None
     execution = None
@@ -713,10 +742,29 @@ def run(args: argparse.Namespace) -> dict:
             execution = sort_contract.SortJob(os.urandom(32))
             leaves = len(execution.tasks)
         else:
-            leaves = len(general_vm.CAPS)
-            budget = args.solve_budget if args.solve_budget is not None else general_vm.DEFAULT_BUDGET
+            leaves = len(general_vm.caps(general_six))
+            default = general_vm.DEFAULT_BUDGET_SIX if general_six else general_vm.DEFAULT_BUDGET
+            budget = args.solve_budget if args.solve_budget is not None else default
             args.solve_budget = budget
-            execution = general_vm.fixture(os.urandom(32), budget, flat=args.general_flat)
+            nonce = os.urandom(32)
+            if getattr(args, "general_nonce", None):
+                try:
+                    nonce = bytes.fromhex(args.general_nonce)
+                except ValueError as error:
+                    raise RunError("general nonce must be hexadecimal") from error
+                if len(nonce) != 32:
+                    raise RunError("general nonce must be 32 bytes")
+            execution = general_vm.fixture(nonce, budget, flat=args.general_flat,
+                                           six=general_six)
+        if general_inject is not None:
+            if args.general_drop or args.m9 or args.general_checkpoint:
+                raise RunError("an injected fault cannot be combined with the drop, M9 or checkpoint scenarios")
+            try:
+                injection = general_vm.Injection.parse(general_inject)
+            except ValueError as error:
+                raise RunError(str(error)) from None
+            if injection.slot >= leaves:
+                raise RunError(f"injected slot must be below {leaves}")
     elif root_caps and not many:
         raise RunError("explicit whole-task limits require three or more guests")
     elif many:
@@ -741,8 +789,8 @@ def run(args: argparse.Namespace) -> dict:
             raise RunError("interruption scenarios require three or more guests")
         target, _ = fault_target(roles, leaves, args.interrupt[1])
     settings = getattr(args, "dualhost_config", None)
-    if settings and (not many or general or args.handoff):
-        raise RunError("dual-host mode requires the nVM statistics runner with three or more guests")
+    if settings and (not many or args.handoff):
+        raise RunError("dual-host mode requires three or more guests and no nVM handoff mode")
     if bool(settings) != bool(getattr(args, "host_b_roles", None)):
         raise RunError("dual-host configuration and placement must be supplied together")
     output = args.output.resolve()
@@ -770,7 +818,11 @@ def run(args: argparse.Namespace) -> dict:
     staging = work / "guest"
     source_manifest_sha256 = stage_sources(staging / "repo", commit, archive, pins)
     executor = output / "executor"
-    subprocess.run(COMPILE + [str(executor)], cwd=staging / "repo", check=True, capture_output=True)
+    if args.executor is not None:
+        shutil.copyfile(args.executor, executor)
+    else:
+        subprocess.run(COMPILE + [str(executor)], cwd=staging / "repo", check=True,
+                       capture_output=True)
     executor.chmod(0o755)
     runtime = (args.runtime_root.resolve() if args.runtime_root
                else build_runtime(work / "runtime", capacity_sort=is_sort))
@@ -801,8 +853,12 @@ def run(args: argparse.Namespace) -> dict:
             record["root_limits"] = job[2]
         record["topology"] = {"coordinator": "A", "guest_ips": {role: guest_ip(role) for role in roles},
                               "transport": "QEMU hub with host-loopback socket links"}
+    session = None
     def boot(directory: Path, image: Path, handoff: str | None = None, *, phase_job=execution, guard=None):
         if settings:
+            if session is not None:
+                return boot_guests(directory, image, handoff, phase_job=phase_job,
+                                   guard=guard, remote=session)
             with dualhost_multivm.experiment_lock(), dualhost_multivm.Remote(settings, remote_roles, output) as remote:
                 return boot_guests(directory, image, handoff, phase_job=phase_job, guard=guard, remote=remote)
         return boot_guests(directory, image, handoff, phase_job=phase_job, guard=guard)
@@ -828,6 +884,7 @@ def run(args: argparse.Namespace) -> dict:
 
         processes = {}
         started = time.monotonic()
+        observe(record, f"{handoff or 'run'}_started", "A")
         general_options = ()
         if general:
             general_options = (
@@ -836,6 +893,9 @@ def run(args: argparse.Namespace) -> dict:
                 f'aclt_general_order={args.general_order}',
                 f'aclt_general_drop={int(args.general_drop)}',
                 f'aclt_general_flat={int(not is_sort and codec.decode(phase_job.plan)["tree"] == list(range(leaves)))}',
+                f'aclt_general_six={int(general_six)}',
+                f'aclt_general_inject={args.general_inject or ""}',
+                f'aclt_general_workers={getattr(args, "general_workers", None) or ""}',
                 f'aclt_coordinated={int(guard is not None)}',
                 f'aclt_general_checkpoint={args.general_checkpoint if handoff == "before" else 0}',
             )
@@ -864,7 +924,14 @@ def run(args: argparse.Namespace) -> dict:
             if remote:
                 record["topology"]["lan_links"] = remote.observe(
                     processes["A"], {role: phase_links[role] for role in remote_roles})
-                write_json(output / "host-topology.json", record["topology"])
+                write_json(output / f"host-topology-{handoff or 'run'}.json",
+                           record["topology"])
+            else:
+                record["topology"].update(
+                    placement={role: "A" for role in roles},
+                    transport="QEMU hub with host-loopback socket links")
+                write_json(output / f"host-topology-{handoff or 'run'}.json",
+                           record["topology"])
             if guard:
                 coordinator = processes["A"]
                 guard.assign(coordinator)
@@ -874,8 +941,13 @@ def run(args: argparse.Namespace) -> dict:
                 def admission():
                     with connection, connection.makefile("rb") as reader, connection.makefile("wb") as writer:
                         inject = None
-                        if getattr(args, "m9", None) == "overlap" and handoff == "after":
-                            inject = lambda: coordination.conflicting_intent(guard)
+                        intents = 0
+                        if getattr(args, "m9", None) == "overlap":
+                            def inject():
+                                nonlocal intents
+                                intents += 1
+                                if intents == 5:
+                                    coordination.conflicting_intent(guard, future=True)
                         coordination.serve(guard, coordinator, reader, writer, on_intent=inject)
 
                 admission_result = pool.submit(admission)
@@ -905,6 +977,7 @@ def run(args: argparse.Namespace) -> dict:
             extract(disks[role], disk_root)
             roots[role] = disk_root / role
         serial = {role: log.read_text(encoding="utf-8", errors="replace") for role, log in logs.items()}
+        observe(record, f"{handoff or 'run'}_collected", "A")
         return roots, serial
 
     def successor_image(source: Path, files) -> Path:
@@ -924,8 +997,36 @@ def run(args: argparse.Namespace) -> dict:
     started = time.monotonic()
     (output / "init").write_text(INIT, encoding="utf-8")
     if general:
-        record.update(run_general(execution, args, boot, executor, initramfs, output, record,
-                                  successor_image))
+        # R1 5.5: one A lock (and one B agent session) spans the whole run, every
+        # phase included; lock states and the run window use the A-side UTC clock,
+        # and B's lock state is confirmed over SSH when it is taken and released.
+        locks = record["locks"] = []
+        with dualhost_multivm.experiment_lock():
+            locks.append({"host": "A", "phase": "run", "state": "held", "observed_at": utc_now()})
+            if settings:
+                with dualhost_multivm.Remote(settings, remote_roles, output) as remote:
+                    if remote.environment.get("lock") != "held":
+                        raise RunError("B agent did not report its experiment lock held")
+                    locks.append({"host": "B", "phase": "run", "state": "held",
+                                  "observed_at": utc_now()})
+                    session = remote
+                    record["started_at"] = utc_now()
+                    record.update(run_general(execution, args, boot, executor, initramfs, output,
+                                              record, successor_image))
+                    record["ended_at"] = utc_now()
+                    if remote.call(action="lock") != "held":
+                        raise RunError("B agent lost its experiment lock")
+                state = dualhost_multivm.probe_b_lock(settings)
+                locks.append({"host": "B", "phase": "run", "state": state,
+                              "observed_at": utc_now()})
+                if state != "released":
+                    raise RunError("B experiment lock was not released")
+            else:
+                record["started_at"] = utc_now()
+                record.update(run_general(execution, args, boot, executor, initramfs, output,
+                                          record, successor_image))
+                record["ended_at"] = utc_now()
+        locks.append({"host": "A", "phase": "run", "state": "released", "observed_at": utc_now()})
         record["seconds"] = round(time.monotonic() - started, 2)
         (output / "result.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
         if not args.keep_work:
@@ -1084,6 +1185,7 @@ def main() -> None:
     runner.add_argument("--runtime-root", type=Path,
                         help="existing guest root with bin/busybox and usr/bin/python3")
     runner.add_argument("--solve-budget", type=int)
+    runner.add_argument("--executor", type=Path, help="use a prebuilt guest executor")
     runner.add_argument("--recursive", action="store_true")
     runner.add_argument("--guests", type=int, default=2, help="guest count; three or more use a tree job")
     runner.add_argument("--accel", choices=("kvm", "tcg"), default="kvm")
@@ -1096,10 +1198,18 @@ def main() -> None:
     runner.add_argument("--m9", choices=("reuse", "handoff", "overlap"), help="run a contract closure scenario")
     runner.add_argument("--general", action="store_true", help="run the integer-vector contract fixture")
     runner.add_argument("--capacity-sort", action="store_true", help="run the fixed capacity-sort contract fixture")
-    runner.add_argument("--general-order", choices=("0123", "3102", "1023", "01", "10"), default="0123",
-                        help="priority by slot; dependencies always gate dispatch")
+    runner.add_argument("--general-order", choices=("0123", "3102", "1023", "012345", "543210", "01", "10"),
+                        default="0123", help="priority by slot; dependencies always gate dispatch")
     runner.add_argument("--general-drop", action="store_true", help="drop B's first solve reply")
     runner.add_argument("--general-flat", action="store_true", help="use the alternative flat merge plan")
+    runner.add_argument("--general-six", action="store_true", help="use the four-guest six-leaf contract fixture")
+    runner.add_argument("--general-nonce", metavar="HEX", help="frozen 32-byte general execution nonce")
+    runner.add_argument("--general-inject", metavar="MODE:SLOT:LOSS",
+                        help="abort a remote SOLVE reply: no_reply, worker_exit or tcp_disconnect")
+    runner.add_argument("--coordinated", action="store_true",
+                        help="route every general-job journal write through the host arbitration entry")
+    runner.add_argument("--general-workers", metavar="ROLES",
+                        help="coordinator-only layout: the worker roles in rotation order, e.g. BCD")
     runner.add_argument("--general-checkpoint", choices=(0, 1, 2), type=int, default=0,
                         help="handoff after this many accepted slots")
     runner.add_argument("--retry-solve", action="store_true",
@@ -1116,11 +1226,12 @@ def main() -> None:
         print(json.dumps(result, indent=2))
         return
     if args.m9:
-        if args.capacity_sort or args.general_drop or args.general_flat or args.general_checkpoint:
+        if (args.capacity_sort or args.general_drop or args.general_flat or args.general_checkpoint
+                or args.general_inject):
             runner.error("M9 scenarios choose their own family, plan and checkpoint")
         args.general = True
         args.general_flat = args.m9 == "reuse"
-        args.general_checkpoint = int(args.m9 != "reuse")
+        args.general_checkpoint = int(args.m9 == "handoff")
     if args.capacity_sort:
         if args.general or args.general_flat or args.general_checkpoint > 1:
             runner.error("capacity sort has its own fixed plan and one-slot checkpoint")
@@ -1132,8 +1243,28 @@ def main() -> None:
     elif args.general_order in ("01", "10"):
         runner.error("two-slot order requires --capacity-sort")
     if not args.general and (args.general_drop or args.general_flat or args.general_checkpoint
+                             or args.general_six or args.general_inject is not None
                              or args.general_order != "0123"):
         runner.error("general scenario options require --general")
+    if args.general_six:
+        if args.general_order in ("01", "10"):
+            runner.error("six leaves require a general order, not the capacity-sort order")
+        if len(args.general_order) != 6:
+            runner.error("six leaves require a six-slot --general-order such as 012345")
+    elif args.general_order in ("012345", "543210"):
+        runner.error("a six-slot order requires --general-six")
+    if args.general_inject is not None:
+        try:
+            general_vm.Injection.parse(args.general_inject)
+        except ValueError as error:
+            runner.error(str(error))
+    if args.coordinated and not args.general:
+        runner.error("--coordinated needs --general")
+    if args.general_workers is not None:
+        workers = args.general_workers
+        if (not args.general or args.capacity_sort or len(workers) < 3 or len(set(workers)) != len(workers)
+                or "A" in workers or not set(workers) <= set(guest_roles(args.guests))):
+            runner.error("--general-workers needs --general and three distinct non-coordinator guest roles")
     if args.general_drop and args.general_checkpoint and not args.general_order.startswith("1"):
         runner.error("start with slot 1 to drop before handoff")
     if args.interrupt is not None and args.interrupt[0] not in ("worker-exit", "disconnect", "drop-reply"):
