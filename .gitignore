@@ -33,9 +33,9 @@ Desktop.ini
 # Direct prototype invocation writes a local report; make uses artifacts/.
 /experiments/aclt-multinode-admission/local-tests.json
 
-# Claude Code: per-item worktrees and per-user settings stay local
-.claude/worktrees/
-.claude/settings.local.json
+# Local agent instructions, skills, worktrees and per-user settings stay local
+AGENTS.md
+.claude/
 
 # Local agent, editor and environment state
 .agents/

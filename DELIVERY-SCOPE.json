@@ -9,8 +9,7 @@
     "scripts",
     "docs",
     "experiments",
-    ".github",
-    ".claude/skills"
+    ".github"
   ],
   "top_level_files": [
     "README.md",
@@ -20,7 +19,6 @@
     "REUSE.toml",
     "Makefile",
     ".gitignore",
-    "AGENTS.md",
     "SECURITY.md",
     "DELIVERY-SCOPE.json",
     "WORKFLOW-SHA256SUMS",
