@@ -1,6 +1,6 @@
 # FM-F0 收尾：流程、命名和路线决定
 
-日期：2026-10-26（Europe/Budapest）；基线 `f5f415f7c65952adba01f7b0c9f21d554b14c264`。
+日期：2026-10-26（Europe/Budapest）；基线 `f5f415f7c65952adba01f7b0c9f21d554b14c264`。本报告记录 FM-F0 的流程、命名与路线收尾：B/Q 合并、正式迁移统一命名与 FM-A 验收编号、ADR-0007 六项首轮路线接受及 INV-07 五项要求补齐均已完成；默认 `make check` 313 项及清单/diff/包核对通过。范围限于文档与决策交接，运行源码、schema、registry、算法与旧证据保持原样。
 
 ## 已完成
 
@@ -20,6 +20,6 @@
 
 ## 检查与留存
 
-只做文档/决策交接，不改运行源码、schema、registry、算法或旧证据。文档核对检查命名、链接、接受范围/待冻结字段、追踪闭合和旧文件 SHA；默认 make check 313 项及清单/diff/包核对通过。测试通过不是 SemanticStatus/部署资格的升级理由。
+本报告的范围是文档与决策交接；运行源码、schema、registry、算法与旧证据保持原字节。文档核对检查命名、链接、接受范围/待冻结字段、追踪闭合和旧文件 SHA；默认 make check 313 项及清单/diff/包核对通过。测试通过属于质量核对，SemanticStatus 与部署资格保持原状态。
 
-操作者本地 `<EVIDENCE_ROOT>/formal-migration-foundation-20261026/` 保存原 main/未提交状态、原 stash 草案字节、维护者决定、修订/校验与交付记录。保留失败及旧草案，不在源码包放凭据/密钥/数据库。本轮不推送、不另建 PR，不实现 FM-S1a，也不批准生产部署。
+操作者本地 `<EVIDENCE_ROOT>/formal-migration-foundation-20261026/` 保存原 main/未提交状态、原 stash 草案字节、维护者决定、修订/校验与交付记录。保留失败及旧草案，不在源码包放凭据/密钥/数据库。本轮未推送，也未另建 PR；FM-S1a 实现与生产部署审批属于后续阶段。
