@@ -12,7 +12,10 @@
 
 两阶段通过。三片各保留一次求解，合计 26049 gas；交接时余量为 17330 gas。两阶段分片、验收和归并使用相同作业 ID。最终归并输出与单机参照逐字节一致，SHA-256 为 `1216b67718f016f305a97cc465db4f34fb268c348fde0f1e75befbf49a347d56`。两阶段启停及交接共 21.79 秒。
 
-[证据包](public-evidence/MULTIVM-HANDOFF-public-evidence.tar.gz) SHA-256 为 `c0b38d968e2232ff865f15ae27354ae962a335ca8b81e5c4aa5d01a0fba8b58a`。默认最简验证机回归重放两阶段证据，检验提前派发和少计 gas 时拒绝交接。离线重放的复核成本独立于作业求解预算。
+[证据包](public-evidence/MULTIVM-HANDOFF-public-evidence.tar.gz) SHA-256 为 `afb61234eaa3286b49d546ad5cfa2238715a956a2aadeccff18664d0b9324201`。默认最简验证机回归重放两阶段证据，检验提前派发和少计 gas 时拒绝交接。离线重放的复核成本独立于作业求解预算。
+
+> 2026-11-16：按维护者决定（#128）将本包 6 个串口日志中的上游内核联系人邮箱字段统一替换为 `<redacted-email>` 后重新打包；上列 SHA-256 为脱敏后的包，帧、账目、清单和其他字段未变。
+
 
 ```sh
 python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \

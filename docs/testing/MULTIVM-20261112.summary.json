@@ -199,7 +199,7 @@
   "document": "docs/testing/MULTIVM-20261112.md",
   "public_evidence": {
     "path": "docs/testing/public-evidence/MULTIVM-20261112-public-evidence.tar.gz",
-    "sha256": "7219e251b4d09d3696ed9b447b651de12f2edd0d0efc408900db379afe1e475e",
+    "sha256": "3194f488c6fcbe577283b9c6790597dc3568d32f5479bc5f8e063f7a153bdedf",
     "files": 75
   },
   "not_closed": [
