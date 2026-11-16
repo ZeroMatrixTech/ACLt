@@ -142,7 +142,7 @@ git worktree add --no-track -b <type>/<topic> .claude/worktrees/<名称> origin/
 4. 本次重跑 `make check`。如果同步带入了代码、测试或 `Makefile` 的变化，改为运行 `make test`。
 5. 推送，并确认 CI 通过。
 
-如果同步带入的变化落在本条目文件集内的非热点文件上，请审计会话补审这次同步提交。
+同步带入的变化若落在本条目文件集内的非热点文件上，由审计会话补审该次同步提交。
 
 ### 5.5 合并与收尾
 
