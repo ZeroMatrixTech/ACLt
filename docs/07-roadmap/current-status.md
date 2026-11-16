@@ -134,7 +134,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 仍阻断 G0 退出的证据包括：RIR/对象 canonical schemas、完整状态机、RIR validator 与 runtime/effects/resource 语义、Rust Profile lowering、验证定理、相关性与最大损失模型、资金/退款/结算矩阵、控制面一致性/恢复和发布撤销流程。
 
-当前允许开展的是 G0 内的工程化规格工作，例如 schema、validator、golden vectors、可执行模型、差分测试脚手架和仿真准备；这些产物不得被表述为 G1 已完成、G2 参考实现已合格或系统鲁棒性已证明。
+当前允许开展的是 G0 内的工程化规格工作，例如 schema、validator、golden vectors、可执行模型、差分测试脚手架和仿真准备；这些产物属于 G0 内的规格工作，不表示 G1 已完成、G2 参考实现已合格或系统鲁棒性已证明。
 
 ### 6.2 2026-08-18 语义结构修订审计
 
@@ -205,6 +205,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-16 | v0.5 | P1-h 文风维护：文档改为百科体第三人称并先写已完成事实；发行说明文字按 #166 更新，列明 OFL-1.1 字体例外并修正四份清单的适用 campaign 范围；最终冻结待四个 P1-h 子条目合入及 #161 续轮回验后由维护者执行；R1 规格的规范性条款原义不变 | [发行说明](../releases/PREVIEW-20261106.md)、[R1 规格](first-public-release-safety-plan.md)、#166 | 不变 |
 | 2026-11-16 | v0.5 | P1-j 将剧场页的三款 Google Fonts 改为仓库内本地字体：移除 3 个外部链接，新增 5 个 WOFF2 子集（合计 243,528 字节）与 3 份 OFL 全文；页面不再向第三方域名发请求，保留系统字体回退；许可检查器把 `.woff2` 纳入受检查类别并接受 `fonts/` 下的 `OFL-1.1` 外置声明 | [fonts](../00-overview/fonts/)、#165 | 公开发布 |
 | 2026-11-16 | v0.5 | 维护者决定（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6920084883)）：ACLt 不是商标，不声明商标，放弃名称冲突检索，接受同名风险（AUD-20261115-007 → ACCEPTED_BY_MAINTAINER）；已告知外部贡献者；AGENTS.md 与 .claude 不推送，从 main 移除、技能改用户级，历史版本保留公开（P1-i）；Google Fonts 改为本地字体（P1-j）；暂不添加英文适配（P1-h）。决定 2、5 由 P1-h 处理；本行只登记决定，不落地 | [#128](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6920084883) | 公开发布 |
 | 2026-11-16 | v0.5 | P1-i：`AGENTS.md` 与 `.claude/skills` 移出跟踪和交付范围，代理技能改由维护者在用户级维护；不改写历史，PARALLEL-1 规则不变 | #164、[PARALLEL-1](../08-governance/parallel-workflow.md) | 不变 |
