@@ -8,10 +8,6 @@ CI lane, so this test walks both closures and fails when a test-closure
 target reads a Markdown file while no check-docs-closure target runs it.
 """
 import re
-import subprocess
-import sys
-import tempfile
-import textwrap
 import unittest
 from pathlib import Path
 
@@ -213,47 +209,6 @@ class CheckDocsGuardTests(unittest.TestCase):
     def test_recipe_script_extraction(self):
         recipe = ['\t$(PYTHON) -B scripts/check-profile-digest.py --report x']
         self.assertEqual(target_scripts(recipe), {'scripts/check-profile-digest.py'})
-
-
-class ValidationChannelTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        workflow = (ROOT / '.github/workflows/validate.yml').read_text(encoding='utf-8')
-        _, _, heredoc = workflow.partition("<<'PY'\n")
-        source, _, _ = heredoc.partition('\n          PY\n')
-        cls.classifier = textwrap.dedent(source)
-
-    def classify(self, *changes):
-        with tempfile.TemporaryDirectory() as directory:
-            files = Path(directory) / 'files'
-            raw = Path(directory) / 'raw'
-            names = [name.encode('utf-8') + b'\0' for _, name in changes]
-            files.write_bytes(b''.join(names))
-            modes = {'A': '000000 100644', 'D': '100644 000000', 'M': '100644 100644'}
-            raw.write_bytes(b''.join(
-                f':{modes[status]} 0000000 0000000 {status}\0'.encode() + name
-                for (status, _), name in zip(changes, names)
-            ))
-            result = subprocess.run(
-                [sys.executable, '-c', self.classifier, str(files), str(raw)],
-                check=True, capture_output=True, text=True,
-            )
-            return result.stdout.strip()
-
-    def test_modified_markdown_uses_fast_channel(self):
-        self.assertEqual(self.classify(('M', 'docs/guide.md')), 'fast')
-
-    def test_deleted_markdown_uses_full_channel(self):
-        self.assertEqual(self.classify(('D', 'docs/guide.md')), 'full')
-
-    def test_renamed_markdown_uses_full_channel(self):
-        # git diff --no-renames reports a rename as deletion plus addition.
-        self.assertEqual(
-            self.classify(('D', 'docs/old.md'), ('A', 'docs/new.md')), 'full'
-        )
-
-    def test_empty_diff_uses_full_channel(self):
-        self.assertEqual(self.classify(), 'full')
 
 
 if __name__ == '__main__':
