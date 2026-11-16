@@ -1,8 +1,8 @@
 # RIR 构建切片 1：Rust → Wasm 双机可复现性（2026-10-23）
 
-结论：最小 no_std 空 run 程序在两台物理主机、每台两个新目录内共四次独立构建成功，原始 Wasm、限定后处理的 Wasm 与候选工件均逐字节相同。这里只验证候选 lowering 构建可行性，不是 RIR validator/RPR、通用 Rust lowering 或 stats-int-v1 的实现验收。
+最小 no_std 空 run 程序在两台物理主机、每台两个新目录内共四次独立构建成功，原始 Wasm、限定后处理的 Wasm 与候选工件均逐字节相同。该结论的范围限于候选 lowering 构建可行性；RIR validator/RPR、通用 Rust lowering 与 stats-int-v1 的实现验收另行进行。
 
-基线 `677f244cb289a8b1432ec9ace4803d9deb331ea8`；使用当前 ADR-0006 PROPOSED 候选作为可行性实验输入，不将它作为已接受规范或 conformance 权威。源程序、候选工具及原始证据在操作者本地 `<EVIDENCE_ROOT>/rir-build-slice1-20261023/`，不改写此前审阅/测试记录。没有运行 VM。
+基线 `677f244cb289a8b1432ec9ace4803d9deb331ea8`；当前 ADR-0006 PROPOSED 候选仅作为可行性实验输入，尚未成为已接受规范或 conformance 权威。源程序、候选工具及原始证据在操作者本地 `<EVIDENCE_ROOT>/rir-build-slice1-20261023/`，此前审阅/测试记录保持原样。本轮未运行 VM。
 
 ## 工具链与环境
 
@@ -60,4 +60,4 @@ ADR-0006 保持 PROPOSED，P0-1B、G0/G2 不关闭。没有执行完整 RIR 22 �
 
 维护入口在两台机器重新各构建两次，独立离线安装器也分别执行通过；四组 raw、normalized 与候选工件均相同，候选 rir_digest 与首次探针相同。保存证据的重新运行被拒绝，原 PASS report 内容不变。收尾源文件摘要和结果见 [机器摘要](rir-build-slice1-closeout-20261023.json)，完整原始证据由操作者保留在 `<EVIDENCE_ROOT>/rir-build-slice1-closeout-20261023/`。已有的 74 项回归加本轮 10 项回归共 84 项；交付清单与覆盖盘点通过。
 
-第一个切片在“最小构建可行性＋可复用入口＋真实双机复现＋保留失败/拒绝覆盖”的范围内完成。ADR 仍 PROPOSED，未把切片完成升级为 G0/G2 或 RIR conformance。下一切片继续为显式输入输出 SDK/执行路径。
+第一个切片在“最小构建可行性＋可复用入口＋真实双机复现＋保留失败/拒绝覆盖”的范围内完成。ADR 仍 PROPOSED；切片完成只覆盖构建可行性，G0/G2 与 RIR conformance 状态维持原状。下一切片继续为显式输入输出 SDK/执行路径。

@@ -1,6 +1,6 @@
 # ADR-0006 审阅建议落实记录（2026-10-23）
 
-基线：21cfb4ab74103fa84510f4423e0bd61011d35328。修订前工作区干净。本轮只修订候选 ADR 和追踪文档，不实现 RIR validator/runtime，不改变已接受规范、V1 处置或 Gate。
+本记录将 ADR-0006 的六条审阅建议（RIR-REV-01—06）落实到候选 ADR 的对应小节，并同步更新候选向量清单。基线为 21cfb4ab74103fa84510f4423e0bd61011d35328，修订前工作区干净。修订范围限于候选 ADR 和追踪文档；RIR validator/runtime 的实现在本轮范围之外，已接受规范、V1 处置与 Gate 保持不变。
 
 | 发现 | 修订落点 | 候选预期 |
 |---|---|---|
@@ -13,6 +13,6 @@
 
 候选向量见 [JSON 清单](rir-adr-revision-vectors-20261023.json)，含最小 Wasm 字节和宿主调用/绑定性质用例。字节来源为前次只读审阅的最小结构反例；前次现有 Wasm 引擎可验证/运行，不代表通过新的 RIR canonical 或 gas 规则。当前清单明确 NOT_RUN_AGAINST_RIR_IMPLEMENTATIONS；其余语义用例须在后续 RIR 双实现中落地。没有用 Python 临时哈希模拟正式 ReceiptID。
 
-路线图只记录上述候选修订；ADR 仍为 PROPOSED，OQ-05 仍 OPEN，P0-1B/G0/G2 状态不变。本轮也未重跑网络或 VM 实验；已有双机证据不能代替 RIR 实现证据。原审阅反例和报告保存在工作区 outputs/rir-adr-review-20261023/，不改写历史审阅结论。
+路线图只记录上述候选修订；ADR 仍为 PROPOSED，OQ-05 仍 OPEN，P0-1B/G0/G2 状态不变。本轮未重跑网络或 VM 实验；已有双机证据不替代 RIR 实现证据。原审阅反例和报告保存在工作区 outputs/rir-adr-review-20261023/，历史审阅结论保持原样。
 
-校验范围：结构/链接/交付清单核对与 make check；不将文档检查计为 RIR conformance。后续先审查本轮候选边界，再开展最小双机 lowering 构建探针和双解释器验证。
+校验范围限于结构/链接/交付清单核对与 make check；文档检查不构成 RIR conformance。后续先审查本轮候选边界，再开展最小双机 lowering 构建探针和双解释器验证。

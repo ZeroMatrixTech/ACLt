@@ -1,6 +1,6 @@
 # store 草案整合与清理
 
-日期：2026-10-26；整合基线 `80db6ac2cb3d2ff2e522cd80b335f3f98e748a38`。维护者要求将 store 并入后清理。原 stash 为 `f0952ea913143a4c0e2c10ffc64bb8fcdc09489c`，共九个文件；不是另一条 round4 历史 stash。
+日期：2026-10-26；整合基线 `80db6ac2cb3d2ff2e522cd80b335f3f98e748a38`。按维护者要求，九个文件的 store stash `f0952ea913143a4c0e2c10ffc64bb8fcdc09489c` 已并入并清理：ADR-0007 的六项路线、接口、不变量、假设与退出边界按决定接受，Formal 计划替换旧基线与错误第四项名称（逐项去向见下表）。该 stash 与 round4 历史 stash 相互独立。
 
 ## 内容去向
 
@@ -16,6 +16,6 @@
 | docs/README.md | 当前 ADR/FM 入口及报告链接；不恢复旧 work4 链接 |
 | SINGLEHOST-SHA256SUMS | 根据最终内容重新生成，不恢复旧哈希 |
 
-以上去向均相对 docs 目录中的对应原目录。唯一实施入口仍为[正式迁移计划](../07-roadmap/formal-migration-plan.md)，本次不新增路线决定、不实现 FM-S1a、不改变 Gate。
+以上去向均相对 docs 目录中的对应原目录。唯一实施入口仍为[正式迁移计划](../07-roadmap/formal-migration-plan.md)；本次范围限于草案整合，路线决定、FM-S1a 实现与 Gate 均保持原状。
 
-操作者本地 `<EVIDENCE_ROOT>/store-integration-20261026/` 留存九文件原字节、tracked patch、stash 元数据和 SHA-256 清单。提交和清单检查完成后，仅删除上述 store stash；其他 stash 不变。不推送远端。
+操作者本地 `<EVIDENCE_ROOT>/store-integration-20261026/` 留存九文件原字节、tracked patch、stash 元数据和 SHA-256 清单。提交和清单检查完成后仅删除上述 store stash，其他 stash 不变；本轮不推送远端。

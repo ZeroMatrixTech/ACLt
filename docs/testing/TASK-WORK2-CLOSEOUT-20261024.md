@@ -1,8 +1,8 @@
 # 第二项工作收尾：最小任务承诺、授权与可重放日志
 
 日期：2026-10-24。工程跟踪标识：`TASK-WORK2`。
-**结论：三个切片组成的第二项工程工作，在实验冻结绑定、启动授权和完整提交/接纳/ACK 重放的限定范围内完成。**
-这不是新的 SemanticStatus/VersionDisposition；ADR-0006 仍 PROPOSED，G0/G2/P0-1B、B/Q 与生产资格不改变。
+**结论：三个切片组成的第二项工程工作，在实验冻结绑定、启动授权和完整提交/接纳/ACK 重放的限定范围内完成**：源码锁覆盖 53 个文件，两端各 24 条承诺探针记录、授权 16 个场景、重放 12 个场景与 7 个篡改反例通过，三片局部回归 A/B 各 69 项、默认 `make check` 合计 196 项（见「本轮重新取证」）。
+SemanticStatus/VersionDisposition 保持原状，ADR-0006 仍为 PROPOSED，G0/G2/P0-1B、B/Q 与生产资格状态不变。
 
 安装前基线 `fe75389784de0e29ce401857bebefdd8ad0065eb`，预检工作区干净。三个任务实验及既有 RIR 实验源文件全部保留原字节；本次新增组合入口、五项工具回归、统一维护/交接文档与证据，不迁移旧库、不提交或推送。
 
@@ -26,7 +26,7 @@
 | ExperimentalTaskCommitment / experimental_task_id | 实验冻结承诺；不是 ComputeReceipt / ReceiptID，Requester 引用不证明身份控制 |
 | ExperimentalExecutionGrant / 单一消费槽位 | 实验 issuer 授权；不是正式 active Lease / ExecutionCapability 或生产 enrollment |
 | causal-event / 哈希流 / signed checkpoint | 实验事件/锚点；不是完整正式 EventRecord 契约或权威抗回滚系统 |
-| submission / acceptance-receipt / ACK | 完整实验结果包的保存与传输确认；不判定运算正确性、不产生 TRUSTED 或结算 |
+| submission / acceptance-receipt / ACK | 完整实验结果包的保存与传输确认；不判定运算正确性、不自动产生 TRUSTED 或结算 |
 | 候选 RIR / outcome / gas | 复用原候选执行子集与固定 Profile；不是完整 RIR/RPR conformance |
 
 正式规范仍是语义权威；上述实验源码与新脚本不定义协议语义。A 可信 issuer/账本是有限部署假设，不新增协议 Principal 或中心验证裁判。task/unit 启动槽位不是抽样资格、身份独立或统计贡献。
@@ -70,8 +70,8 @@ python3 -B scripts/task-work2.py verify \
 
 ## 剩余边界与下一项
 
-保证依赖诚实 pinned worker/config/本地文件系统、A 私钥/时钟、可信 enrollment 和单一不回滚/不分叉账本。任意恶意宿主可以旁路实验程序。无 TLS/DoS 防护、生产密钥注册/撤销/轮换、外部 checkpoint 见证、failover 或真实断电验证；SIGKILL/服务重启只证明对应进程故障范围。两台物理主机仍有相同操作者、LAN、软件/供电等共因，不推导统计独立或 B/Q。
+保证依赖诚实 pinned worker/config/本地文件系统、A 私钥/时钟、可信 enrollment 和单一不回滚/不分叉账本；任意恶意宿主可以旁路实验程序。网络层不提供 TLS 与 DoS 防护；生产密钥注册/撤销/轮换、外部 checkpoint 见证、failover 与真实断电的验证留待后续。SIGKILL/服务重启的证明范围限于对应进程故障。两台物理主机共享同一操作者、LAN、软件与供电等共因，统计独立与 B/Q 不在其推导范围。
 
-第二项不继续扩大规格范围。**下一项建议：同一冻结任务的双端 outcome 与精确比较证据绑定。** 先固定输入、工件、Profile/上限，分别取得双端 outcome，保存可重放比较记录和错绑反例；明确实验身份与正式对象/签署的迁移缺口。相等只支持本次比较，不新增 `REEXEC_EXACT` 方法，不自动产生 TRUSTED，不顺带引入结算。正式对象、完整 validator/conformance、B/Q、经济和生产资格继续独立跟踪。
+第二项的规格范围到此为止。**下一项建议：同一冻结任务的双端 outcome 与精确比较证据绑定。** 先固定输入、工件、Profile/上限，分别取得双端 outcome，保存可重放比较记录和错绑反例；明确实验身份与正式对象/签署的迁移缺口。相等结论的支持范围限于本次比较，不新增 `REEXEC_EXACT` 方法，不自动产生 TRUSTED，也不引入结算。正式对象、完整 validator/conformance、B/Q、经济和生产资格继续独立跟踪。
 
 历史切片：[承诺](TASK-COMMITMENT-SLICE1-20261023.md)、[授权](TASK-AUTHORIZATION-SLICE2-20261024.md)、[因果重放](TASK-REPLAY-SLICE3-20261024.md)。
