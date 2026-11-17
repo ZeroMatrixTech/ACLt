@@ -205,6 +205,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-17 | v0.5 | B0 以 `1533290` 复核 R1–R16 后的 P0-1B 覆盖：119 项 Type A 为 80 implemented / 36 partial / 3 not implemented（SV-27/50/61 未实现），18 个规范摘要均 implemented；SV-41–80 区间的 Type A 项逐项复核维持原状态，补 R6–R16 切片证据与 SV-117/119/121 证据，未修改 validator 行为 | [盘点报告](../testing/P0-1B-INVENTORY-20261117.md)、#185 | 不变 |
 | 2026-11-16 | v0.5 | P1-k：本地验证增加文档快速通道与并行 make——仅 pull_request 且全部改动落在文档白名单时运行 check-docs，push main 与 workflow_dispatch 保持全量；全量改为 `make -j"$(nproc)" -O test`，test-authority 使用独立 `build/worker-ci`，确定性打包仍在测试后串行 | [开发入口](../development.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、#175 | 不变 |
 | 2026-11-16 | v0.5 | 续轮回验（AUD-20261116-03）文档同步：README、CONTRIBUTING、术语表与 OQ-01 的名称表述改为已决政策（ACLt 不是商标，不声明商标，放弃名称冲突检索并接受同名风险）；current-status 入口改为 P1-g/i/j/h 已完成，下一步为本次同步、重新冻结发行说明与发布步骤；公开仓库设置清单改为先用 fork PR 验证缺签阻止合并、补签后最新头通过，再设为必需检查并记录结果 | [README](../../README.md)、[当前状态](current-status.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、[回验报告](../08-governance/audits/audit-20261116-03-public-release-recheck.md)、#161 | 不变 |
 | 2026-11-16 | v0.5 | 发布准备增量回验续轮（AUD-20261116-03）：新增 0 BLOCKER、1 MAJOR、2 MINOR、1 NOTE；发布准备 FAIL | [回验报告](../08-governance/audits/audit-20261116-03-public-release-recheck.md)、#161 | 不变 |

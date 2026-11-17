@@ -1,8 +1,8 @@
 {
-  "review_date": "2026-11-07",
-  "baseline_commit": "d67effcd9aa789329cdc30ecdb602d90c38be5e3",
+  "review_date": "2026-11-17",
+  "baseline_commit": "1533290ed82347a5a5006e4d35a5092d02362780",
   "normative_source": "docs/03-protocol/verification-profile-schema.md",
-  "scope": "覆盖盘点，不是独立 conformance 认证；实现状态以 coverage.json 为唯一登记。",
+  "scope": "2026-11-17 以最新 main 的实施代码与测试复核 R1–R16 后的覆盖盘点，不是独立 conformance 认证；状态以 coverage.json 为唯一登记。",
   "rules": [
     {
       "id": "SV-01",
@@ -698,14 +698,12 @@
       "status": "PARTIAL",
       "requirement": "`DEGRADED` slot 的 `failure_reasons[degraded_from] ⊆ enabling_triggers`（D-06）",
       "implementation": [
-        "tools/verification_profile/selection.py#applicability",
-        "tools/verification_profile/commitments.py#candidate_input"
+        "tools/verification_profile/selection.py#applicability"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_mixed_failure_reasons_cannot_enable_degradation",
-        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule"
+        "tests/verification_profile/test_selection.py#test_mixed_failure_reasons_cannot_enable_degradation"
       ],
-      "gap": "测试原因标签的全集包含判定及混合非触发原因跳过已对拍；测试入口还要求非空失败事实。正式 FailureReason/触发投影、来源 slot 落选记录及 D-06 接线尚未完成。 R8 已有独立 TEST tag 的候选输入胶囊派生与字节绑定，但没有升级现行 ReceiptIntent/1、正式 imports 或通用 ReplayPhaseI，故仍 partial。"
+      "gap": "测试原因标签的全集包含判定及混合非触发原因跳过已对拍；`degraded_from` 的来源 slot 索引、正式 FailureReason/触发投影及 D-06 接线尚未完成。测试入口还要求非空失败事实。"
     },
     {
       "id": "SV-44",
@@ -790,7 +788,8 @@
       "status": "IMPLEMENTED",
       "requirement": "Profile 侧以 `VersionRange` 约束的量，其同名 claim 槽位为 `RUNTIME`（CS-4）",
       "implementation": [
-        "tools/verification_profile/commitments.py#range_slots"
+        "tools/verification_profile/commitments.py#range_slots",
+        "tools/verification_profile/commitments.py#check_spec"
       ],
       "tests": [
         "tests/verification_profile/test_commitments.py#test_version_range_slots_must_be_runtime"
@@ -908,11 +907,13 @@
       "requirement": "每个 `SAFETY_CRITICAL`/`LIVENESS` 假设满足 `Intent ⊑ scope`（AR-4）",
       "implementation": [
         "tools/verification_profile/selection.py#scope_contains",
-        "tools/verification_profile/commitments.py#candidate_input"
+        "tools/verification_profile/commitments.py#candidate_input",
+        "tools/verification_profile/selection.py#applicability"
       ],
       "tests": [
         "tests/verification_profile/test_selection.py#test_scope_subset_direction_and_empty_dimensions",
-        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule"
+        "tests/verification_profile/test_commitments.py#test_candidate_derives_fields_from_one_committed_capsule",
+        "tests/verification_profile/test_selection.py#test_effects_direction_and_informational_exclusion"
       ],
       "gap": "纯 ScopeContains 已覆盖标量相等、半开版本区间和 Intent⊆Scope；仅检查 SAFETY_CRITICAL/LIVENESS，INFO 不影响结果。正式 Intent→DeclaredScope 投影仍缺。 R8 已有独立 TEST tag 的候选输入胶囊派生与字节绑定，但没有升级现行 ReceiptIntent/1、正式 imports 或通用 ReplayPhaseI，故仍 partial。"
     },
@@ -1214,14 +1215,15 @@
       "requirement": "`registry_snapshot_ref` 可解析；`bundle.registry_snapshot` 的三元组与该引用逐位一致（CTX-6）",
       "implementation": [
         "tools/verification_profile/registration.py#check_bundle",
-        "tools/verification_profile/runtime_bindings.py#inspect"
+        "tools/verification_profile/runtime_bindings.py#inspect",
+        "tools/verification_profile/decision_replay.py#replay"
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_registry_content_hash_and_context_identity_are_separate",
         "tests/verification_profile/test_registration.py#test_frozen_vectors",
         "tests/verification_profile/test_runtime_bindings.py#test_frozen_vectors"
       ],
-      "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。 R9 新增完整显式 B bundle 绑定/闭合 DAG 检查，其他相位及正式 imports/部署接线仍未全部验收。"
+      "gap": "R9 新增完整显式 B bundle 绑定/闭合 DAG 检查；D 相位在重放中复用同一等式。I/F 相位信封、正式 imports/部署接线及注册来源真实性仍未全部验收。"
     },
     {
       "id": "SV-75b",
@@ -1308,13 +1310,13 @@
       "status": "PARTIAL",
       "requirement": "全部标识符符合 §3.2 的封闭语法与注册域；表外 ID 形态 MUST 被拒（M-05）",
       "implementation": [
-        "tools/verification_profile/validator.py#validate_l1a_bootstrap"
+        "tools/verification_profile/registration.py#identifier"
       ],
       "tests": [
-        "tests/verification_profile/test_singlehost.py#test_required_unknown_and_identifier_fields",
-        "tests/verification_profile/test_singlehost.py#test_assumption_rows_and_unique_ids"
+        "tests/verification_profile/test_registration.py#test_frozen_vectors",
+        "tests/verification_profile/test_selection.py#test_frozen_vectors"
       ],
-      "gap": "只有 ProfileID/TaskTypeID/AssumptionID 等局部检查；完整封闭 ID 类型和注册域缺失。 新切片补 ClaimTemplateID 语法；注册域仍未实现。 R9 补实际 ClusterMappingRef 的 ID 域检查；其他标识符全集/登记域仍待完成。"
+      "gap": "`identifier` 已覆盖 §3.2 的封闭语法与部分注册域（Profile/Task/Assumption/Registry 等 ID 类型）；注册域完整性（如 ClaimSpecID 的 Profile 内唯一性登记）及其他标识符全集仍待完成。"
     },
     {
       "id": "SV-81",
@@ -1327,9 +1329,12 @@
         "tools/verification_profile/runtime_bindings.py#guard"
       ],
       "tests": [
-        "tests/verification_profile/test_runtime_bindings.py#test_randomness_contract_and_parameters_require_external_pin"
+        "tests/verification_profile/test_runtime_bindings.py#test_randomness_contract_and_parameters_require_external_pin",
+        "tests/verification_profile/test_runtime_bindings.py#test_population_count_matches_frozen_G",
+        "tests/verification_profile/test_runtime_bindings.py#test_population_definition_and_schema_bind_to_profile",
+        "tests/verification_profile/test_runtime_bindings.py#test_receipt_and_all_four_profile_links_are_exact"
       ],
-      "gap": "R9 已实现 PB-1/2 引用比较、PB-4 基数与 pinned TEST commitment 方案/参数集合符合检查；当前参数引用及方案为 opaque TEST imports，正式版本化 population/schema/randomness 合约与具体 verifier 尚未冻结，保留 partial。"
+      "gap": "R9 已实现 PB-1—PB-4 的显式引用、总体基数以及 pinned TEST commitment 方案/参数集合检查；当前参数引用及方案为 opaque TEST imports，正式版本化 population/schema/randomness 合约、来源认证与具体 verifier 尚未冻结，保留 partial。"
     },
     {
       "id": "SV-82",
@@ -1342,7 +1347,8 @@
         "tools/verification_profile/runtime_bindings.py#guard"
       ],
       "tests": [
-        "tests/verification_profile/test_runtime_bindings.py#test_duplicate_units_reject_without_silent_deduplication"
+        "tests/verification_profile/test_runtime_bindings.py#test_duplicate_units_reject_without_silent_deduplication",
+        "tests/verification_profile/test_runtime_bindings.py#test_cluster_mapping_runtime_ref_has_no_version_and_exact_id_domain"
       ],
       "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
@@ -1358,7 +1364,6 @@
         "tools/verification_profile/registration_rules.py#check_rules"
       ],
       "tests": [
-        "tests/verification_profile/test_registration.py#test_frozen_vectors",
         "tests/verification_profile/test_registration.py#test_frozen_vectors",
         "tests/verification_profile/test_registration_rules.py#test_supersedes_requires_complete_identity_in_profile_domain",
         "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
@@ -1376,7 +1381,9 @@
         "tools/verification_profile/selection.py#check_manifest"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_manifest_paths_are_portable_data_not_file_reads"
+        "tests/verification_profile/test_selection.py#test_frozen_vectors",
+        "tests/verification_profile/test_selection.py#test_manifest_paths_are_portable_data_not_file_reads",
+        "tests/verification_profile/test_selection.py#test_manifest_paths_and_cover_sets_are_unique"
       ],
       "gap": "Manifest 唯一嵌套 header，拒绝扁平重复身份、绝对路径、反斜杠、drive 路径和 NUL；文件路径升序唯一。不进行文件系统读取，允许相对父路径作为清单数据。"
     },
@@ -1391,7 +1398,8 @@
         "tools/verification_profile/commitments.py#wire_check"
       ],
       "tests": [
-        "tests/verification_profile/test_commitments.py#test_frozen_vectors"
+        "tests/verification_profile/test_commitments.py#test_frozen_vectors",
+        "tests/verification_profile/test_commitments.py#test_all_runtime_references_are_unversioned_and_typed"
       ],
       "gap": "八种版本化治理对象的唯一 wire shape 已集中检查；Profile 为 FLAT，其余为 NESTED_HEADER。只关闭 header shape owner，不代表全部嵌套 schema 已完成。"
     },
@@ -1436,7 +1444,8 @@
         "tools/verification_profile/selection.py#check_asset"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_frozen_vectors"
+        "tests/verification_profile/test_selection.py#test_frozen_vectors",
+        "tests/verification_profile/test_selection.py#test_policy_digest_includes_candidates_slots_and_exhaustion"
       ],
       "gap": "Policy 唯一嵌套 header wire，expanded_slots 字段必填且进入正式 ContentMap；缺字段/重复身份/未知字段拒绝。"
     },
@@ -1463,7 +1472,8 @@
       "status": "IMPLEMENTED",
       "requirement": "`ExcludedClaimsRegistry.registry_digest` 按 §17.4 重算（owner）",
       "implementation": [
-        "tools/verification_profile/references.py#exclusion_registry_digest"
+        "tools/verification_profile/references.py#exclusion_registry_digest",
+        "tools/verification_profile/references.py#check_excluded"
       ],
       "tests": [
         "tests/verification_profile/test_references.py#test_registry_statement_tamper_rejected_until_fully_rebound",
@@ -1544,12 +1554,19 @@
       "status": "IMPLEMENTED",
       "requirement": "状态转换约束 PB-6—PB-9、RG-1/RG-2 与 NS-1—NS-3，使用显式状态、方法、绑定和因果快照判定（owner，§13.1B.2A）",
       "implementation": [
-        "tools/verification_profile/runtime_bindings.py#guard"
+        "tools/verification_profile/runtime_bindings.py#guard",
+        "tools/verification_profile/phase_b.py#validate_no_snapshot_round"
       ],
       "tests": [
-        "tests/verification_profile/test_runtime_bindings.py#test_four_failure_consequences_do_not_mutate_input"
+        "tests/verification_profile/test_runtime_bindings.py#test_scope_filter_set_difference_is_checked_before_count",
+        "tests/verification_profile/test_runtime_bindings.py#test_filtered_set_must_equal_snapshot_units_not_only_cardinality",
+        "tests/verification_profile/test_runtime_bindings.py#test_frozen_parameters_bind_every_field_including_full_weights",
+        "tests/verification_profile/test_runtime_bindings.py#test_four_failure_consequences_do_not_mutate_input",
+        "tests/verification_profile/test_runtime_bindings.py#test_no_snapshot_paths_keep_full_start_and_terminal_constraints",
+        "tests/verification_profile/test_phase_b.py#test_four_legal_edges_and_method_dispatch",
+        "tests/verification_profile/test_phase_b.py#test_terminal_requires_unique_commit_and_correct_start_order"
       ],
-      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
+      "gap": "PB-6—PB-9、RG-1/RG-2 与无快照轮次的显式输入谓词及正负例已实现；仍使用 TEST Snapshot/事件输入，不认证来源、不写状态，也不产出正式 Decision。"
     },
     {
       "id": "SV-95",
@@ -1574,12 +1591,14 @@
       "status": "PARTIAL",
       "requirement": "I 期 transcript 满足 CC-2I；F 期满足 CC-2F 与 CC-3。CC-1 只由 SV-101 检查",
       "implementation": [
+        "tools/verification_profile/creation.py#check_record",
         "tools/verification_profile/creation.py#inspect"
       ],
       "tests": [
-        "tests/verification_profile/test_creation.py#test_frozen_vectors"
+        "tests/verification_profile/test_creation.py#test_frozen_vectors",
+        "tests/verification_profile/test_creation.py#test_context_registry_and_instant_have_one_owner"
       ],
-      "gap": "固定 audit 的 CC-2I/2F、Profile 三元身份和 Intent/slot 比较已接线；完整五相位类型与其他方法路径未验收。"
+      "gap": "固定 audit 路径已实现 CC-2I、CC-2F、Profile 三元身份及 Intent/selected_slot 比较；通用 I/F 类型与其他方法路径尚未接入。"
     },
     {
       "id": "SV-97",
@@ -1660,12 +1679,14 @@
       "status": "PARTIAL",
       "requirement": "CC-4 与 CC-6：record 绑定当前 Intent/slot，且 `ReplayPhaseI` 的 outcome/failure_reasons 逐位一致",
       "implementation": [
+        "tools/verification_profile/creation.py#check_record",
         "tools/verification_profile/creation.py#replay_fixed_audit_test"
       ],
       "tests": [
-        "tests/verification_profile/test_creation.py#test_forged_self_consistent_record_is_replayed"
+        "tests/verification_profile/test_creation.py#test_forged_self_consistent_record_is_replayed",
+        "tests/verification_profile/test_creation.py#test_no_hidden_clock_or_network_in_test_replay"
       ],
-      "gap": "CC-4 和独立固定 audit TEST 投影已验证；外部 pin 固定仅按 opaque ContractTuple 精确相等准入的合约。不是通用 ReplayPhaseI；完整 admission predicate、scope、gate、降级求值与失败原因 wire 待补。"
+      "gap": "CC-4 和固定 audit TEST 的 CC-6 投影已完成；ReplayPhaseI 仍是 opaque ContractTuple 精确比较，不覆盖通用 admission predicate、scope、gate、降级求值与失败原因 wire。"
     },
     {
       "id": "SV-103",
@@ -1705,12 +1726,16 @@
       "status": "IMPLEMENTED",
       "requirement": "`round_stage` 单调，且方法、payload 与阶段转换满足 RG-1/RG-2",
       "implementation": [
-        "tools/verification_profile/runtime_bindings.py#guard"
+        "tools/verification_profile/runtime_bindings.py#guard",
+        "tools/verification_profile/phase_b.py#validate_no_snapshot_round"
       ],
       "tests": [
-        "tests/verification_profile/test_runtime_bindings.py#test_all_seven_tags_have_positive_and_negative_vectors"
+        "tests/verification_profile/test_runtime_bindings.py#test_all_seven_tags_have_positive_and_negative_vectors",
+        "tests/verification_profile/test_runtime_bindings.py#test_no_snapshot_paths_keep_full_start_and_terminal_constraints",
+        "tests/verification_profile/test_phase_b.py#test_four_legal_edges_and_method_dispatch",
+        "tests/verification_profile/test_phase_b.py#test_snapshot_fields_old_tag_and_invalid_edges_reject"
       ],
-      "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
+      "gap": "round_stage 单调及 RG-1/RG-2 的七个 payload 分支已覆盖；事件来源、状态写入和完整正式 Phase B 另行验收。"
     },
     {
       "id": "SV-106",
@@ -1771,8 +1796,10 @@
       ],
       "tests": [
         "tests/verification_profile/test_registration.py#test_frozen_vectors",
-        "tests/verification_profile/test_registration.py#test_frozen_vectors",
-        "tests/verification_profile/test_runtime_bindings.py#test_frozen_vectors"
+        "tests/verification_profile/test_registration.py#test_both_snapshots_and_context_required",
+        "tests/verification_profile/test_registration.py#test_frontier_structural_checks_do_not_authenticate_proof",
+        "tests/verification_profile/test_runtime_bindings.py#test_cyclic_or_unclosed_dag_is_structurally_rejected",
+        "tests/verification_profile/test_runtime_bindings.py#test_freeze_events_must_be_visible_from_frontier"
       ],
       "gap": "本片只接 audit Phase R；其他方法/相位的信封接线仍缺，测试导入绑定不构成正式 schema import 或完整 SchemaValid。 R9 新增完整显式 B bundle 绑定/闭合 DAG 检查，其他相位及正式 imports/部署接线仍未全部验收。"
     },
@@ -1787,6 +1814,7 @@
         "tools/verification_profile/creation.py#check_causal"
       ],
       "tests": [
+        "tests/verification_profile/test_creation.py#test_progressive_frontiers_and_transitive_ancestry",
         "tests/verification_profile/test_creation.py#test_equal_or_disconnected_events_fail"
       ],
       "gap": "显式已校验 DAG 内 I/F kind、I subject、严格祖先关系已有 Python/Rust 对拍；EventRef、日志 proof 与正式相位来源仍用测试导入，未做正式全路径验收。"
@@ -1858,14 +1886,19 @@
       "status": "PARTIAL",
       "requirement": "重放 method evaluator；重算 condition vector、`FirstTrue`、`CanonicalTerminal`，并要求与 Decision.terminal_state 逐位一致（DE-1—DE-3）",
       "implementation": [
-        "tools/verification_profile/decision_replay.py#inspect",
+        "tools/verification_profile/decision_replay.py#replay",
+        "tools/verification_profile/phase_d_contract.py#project",
+        "tools/verification_profile/phase_d_contract.py#verify",
         "tools/formal_migration/s3_decision_replay.py#project_decision"
       ],
       "tests": [
         "tests/verification_profile/test_decision_replay.py#test_vectors",
-        "scripts/check-fm-decision-replay.py#run"
+        "scripts/check-fm-decision-replay.py#run",
+        "scripts/check-phase-d-contract.py#run",
+        "scripts/check-phase-d-crosscheck.py#main",
+        "scripts/check-phase-d-envelope.py#run"
       ],
-      "gap": "固定 audit-only 测试求值器从内联规范结果字节重算聚合、条件与终态。其他方法、完整正式导入和 Phase D 验收仍待完成。 R11 从已验证的 FM-S3 前缀导出 audit-only 接纳记录，复算并核对权威判决与结算。"
+      "gap": "固定 REEXEC_AUDIT_ONLY evaluator 已有 Python/Rust 重放、R11 来源投影、R12 候选编码、R13 独立对拍和 R14 B/D 信封；其他方法、正式 evaluator/import 合约与完整正式 Phase D 仍缺。"
     },
     {
       "id": "SV-116",
@@ -1890,13 +1923,19 @@
       "status": "PARTIAL",
       "requirement": "`MainnetAssuranceProfile` 的 network、窗口、Profile capability、组件/ExecutionCapability contract/reducer 允许集合与损失上限绑定；未 `ENABLED` 的方法不得产生 `ACCEPT`；新版非主网分支按 §9.2.2 验证部署绑定",
       "implementation": [
-        "tools/verification_profile/deployment.py#check_nonmainnet_binding"
+        "tools/verification_profile/deployment.py#check_nonmainnet_binding",
+        "tools/formal_migration/deployment_creation.py#verify",
+        "tools/formal_migration/phase_d_envelope.py#verify",
+        "tools/formal_migration/s3_revocation.py#transition"
       ],
       "tests": [
         "tests/verification_profile/test_deployment.py#test_declaration_mutation_and_cross_deployment_substitution",
-        "tests/verification_profile/test_deployment.py#test_expiry_revocation_source_and_funding_boundaries"
+        "tests/verification_profile/test_deployment.py#test_expiry_revocation_source_and_funding_boundaries",
+        "scripts/check-phase-d-envelope.py#run",
+        "scripts/check-bound-creation.py#run",
+        "scripts/check-deployment-revocation.py#run"
       ],
-      "gap": "已检查非主网局部绑定与显式事实；正式信封接线、来源证明和主网能力全量验收待完成。"
+      "gap": "已检查非主网候选 I/F/B/D 的固定测试部署绑定、来源引用、窗口、资金上限与签名撤销；仍缺主网 MAP 的 network/窗口/Profile capability、组件/ExecutionCapability contract/reducer 允许集合与损失上限绑定，未 `ENABLED` 方法不得产生 `ACCEPT` 的检查，以及正式 §9.2.2 信封、来源注册/授权与撤销传播/新鲜性验收。"
     },
     {
       "id": "SV-118",
@@ -1906,12 +1945,17 @@
       "status": "PARTIAL",
       "requirement": "`ToSchemaView/FromSchemaView` 可逆；输入满足 primitive/key 限制；`cbor_hex` 与 `schema_view` 向量逐位一致",
       "implementation": [
-        "tools/verification_profile/codec.py#project"
+        "tools/verification_profile/codec.py#project",
+        "tools/verification_profile/codec.py#from_view",
+        "tools/verification_profile/codec.py#from_view_json"
       ],
       "tests": [
-        "tests/verification_profile/test_codec.py#test_view_rejects_wrong_types_and_noncanonical_strings"
+        "tests/verification_profile/test_codec.py#test_frozen_vectors",
+        "tests/verification_profile/test_codec.py#test_view_rejects_wrong_types_and_noncanonical_strings",
+        "tests/verification_profile/test_codec.py#test_view_json_rejects_duplicates_and_invalid_constants",
+        "tests/verification_profile/test_codec.py#test_unknown_types_fail_closed"
       ],
-      "gap": "候选切片 typed Schema View 双向对拍；完整对象 wire-key 表未冻结。"
+      "gap": "候选 ClaimTemplate/claim 切片的 Schema View 可逆、primitive/key 限制和字节对拍已完成；全对象 wire-key 表与五相位投影尚未冻结。"
     },
     {
       "id": "SV-119",
@@ -1921,13 +1965,17 @@
       "status": "PARTIAL",
       "requirement": "按 `log_backend_ref` 验证 checkpoint finality、EventRecord inclusion/consistency，并与 MainnetAssuranceProfile 逐位绑定（EF-6/EF-7）",
       "implementation": [
-        "tools/formal_migration/s3_decision_replay.py#verify"
+        "tools/formal_migration/s3_decision_replay.py#verify",
+        "tools/formal_migration/s2_evidence.py#verify"
       ],
       "tests": [
         "scripts/check-fm-decision-replay.py#run",
-        "tests/formal_migration/test_s3_terminals.py#test_decision_replay_rejects_older_valid_signed_snapshot"
+        "tests/formal_migration/test_s3_terminals.py#test_decision_replay_rejects_older_valid_signed_snapshot",
+        "scripts/check-phase-d-envelope.py#run",
+        "scripts/check-bound-creation.py#run",
+        "scripts/check-deployment-revocation.py#run"
       ],
-      "gap": "FM-S3 测试后端已校验签名 checkpoint、事件前缀包含和外部 anchor 一致性。正式 MAP 日志后端绑定、finality 及全相位集成仍待验收。"
+      "gap": "FM-S2/FM-S3 测试后端已校验签发者 checkpoint 签名、线性前缀重放/包含、预期 checkpoint 精确匹配及外部 anchor 一致性；仍缺按 `MainnetAssuranceProfile.log_backend_ref` 绑定后端、该后端的 checkpoint finality 与逐 EventRecord inclusion/consistency 证明。精确 pin 不是 finality oracle；OQ-04/OQ-05 的时钟/日志终局性合约未冻结，全相位来源认证未验收。"
     },
     {
       "id": "SV-120",
@@ -1953,13 +2001,17 @@
       "requirement": "`ExecutionObservation` 投影：合法 closure 且零有效提交才产生 `EXECUTION_FAILED`；source unavailable/malformed 产生 invalidating",
       "implementation": [
         "tools/verification_profile/decision_replay.py#execution_condition",
-        "tools/formal_migration/s3_decision_replay.py#project_decision"
+        "tools/formal_migration/s3_decision_replay.py#project_decision",
+        "tools/formal_migration/s3_closure.py#validate",
+        "tools/formal_migration/s3_closure.py#exhaustion_event"
       ],
       "tests": [
         "tests/verification_profile/test_decision_replay.py#test_vectors",
-        "scripts/check-fm-decision-replay.py#run"
+        "scripts/check-fm-decision-replay.py#run",
+        "tests/formal_migration/test_s3_terminals.py#test_self_report_does_not_close_and_observer_closure_is_failed",
+        "tests/formal_migration/test_s3_terminals.py#test_closure_preconditions_fail_closed"
       ],
-      "gap": "测试闭合摘要与固定来源引用支持零提交判定和失效投影。正式闭合摘要合同及权威来源验收仍待完成。 R11 已接入 FM-S3 观察方签名闭合及日志事件，作为候选来源验收证据。"
+      "gap": "已实现并测试 source unavailable/malformed/untrusted 的失效投影、合法闭合的 Receipt/合约/摘要/事件绑定，以及零有效提交且未开始验证才产生 `EXECUTION_FAILED`；仍缺正式闭合摘要合同（现为 `ACLT/TEST/R10/ExecutionClosure/1` 测试编码）、观察方/入口的权威来源授权与正式来源验收。"
     }
   ],
   "digests": [
@@ -1971,9 +2023,12 @@
       "layer": "L2",
       "status": "IMPLEMENTED",
       "implementation": [
-        "tools/verification_profile/profile.py#profile_digest"
+        "tools/verification_profile/profile.py#content_map",
+        "tools/verification_profile/profile.py#profile_digest",
+        "tools/verification_profile/profile.py#verify_digest"
       ],
       "tests": [
+        "tests/verification_profile/test_profile_digest.py#test_formal_tag_and_content_input_with_independent_hash",
         "tests/verification_profile/test_profile_digest.py#test_all_frozen_fields_are_projected_and_digest_bound",
         "tests/verification_profile/test_profile_digest.py#test_legacy_digest_is_read_only_and_not_rewritten"
       ],
@@ -1986,8 +2041,15 @@
       "owner": "SV-53b",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/selection.py#content_map",
+        "tools/verification_profile/selection.py#asset_digest",
+        "tools/verification_profile/selection.py#check_asset"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection",
+        "tests/verification_profile/test_selection.py#test_policy_digest_includes_candidates_slots_and_exhaustion"
+      ],
       "gap": "SelectionPolicy 的正式 tag/ContentMap 同时覆盖 ordered_candidates、expanded_slots 与 on_none_applicable；身份/版本不入摘要。"
     },
     {
@@ -1998,10 +2060,14 @@
       "layer": "L2",
       "status": "IMPLEMENTED",
       "implementation": [
-        "tools/verification_profile/codec.py#template_digest"
+        "tools/verification_profile/codec.py#template_digest",
+        "tools/verification_profile/commitments.py#object_digest",
+        "tools/verification_profile/commitments.py#check_digest"
       ],
       "tests": [
-        "tests/verification_profile/test_codec.py#test_frozen_vectors"
+        "tests/verification_profile/test_codec.py#test_frozen_vectors",
+        "tests/verification_profile/test_commitments.py#test_template_enum_contents_are_hashed_without_inventing_semantics",
+        "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection"
       ],
       "gap": "完整 ContentMap_Template 与正式 tag 已重算；原生 value_type/ENUM 内容按原始 CBOR 保留，不猜 ENUM wire。L1a 类型语义和完整注册另验收，摘要 owner 不承担该职责。"
     },
@@ -2013,10 +2079,12 @@
       "layer": "L2",
       "status": "IMPLEMENTED",
       "implementation": [
-        "tools/verification_profile/codec.py#claim_digest"
+        "tools/verification_profile/codec.py#claim_digest",
+        "tools/verification_profile/commitments.py#rendered_digest"
       ],
       "tests": [
-        "tests/verification_profile/test_codec.py#test_claim_transitive_binding"
+        "tests/verification_profile/test_codec.py#test_claim_transitive_binding",
+        "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection"
       ],
       "gap": "正式 RenderedClaim/1 对完整 [template_ref, concrete_bindings] 重算；支持已锁定的通用原生载荷与外部版本引用，不再限定 claim-test-bytes；不验证任务性质。"
     },
@@ -2027,8 +2095,13 @@
       "owner": "SV-54b",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/commitments.py#state_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection",
+        "tests/verification_profile/test_commitments.py#test_snapshot_identity_and_state_digest_are_different_commitments"
+      ],
       "gap": "AssumptionState/1 精确覆盖 [reducer_ref, sorted(rows)]；不把 Receipt/id 混入该派生摘要。源码与字节向量独立对拍。"
     },
     {
@@ -2038,8 +2111,15 @@
       "owner": "SV-71",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/commitments.py#projection",
+        "tools/verification_profile/commitments.py#object_digest",
+        "tools/verification_profile/commitments.py#check_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection",
+        "tests/verification_profile/test_commitments.py#test_snapshot_identity_and_state_digest_are_different_commitments"
+      ],
       "gap": "AssumptionStateSnapshot/1 覆盖 runtime id、Receipt、instant、reducer 和全部行；不同于仅 reducer/rows 的派生状态摘要。"
     },
     {
@@ -2049,8 +2129,14 @@
       "owner": "SV-72",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/references.py#excluded_digest",
+        "tools/verification_profile/references.py#check_excluded"
+      ],
+      "tests": [
+        "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl",
+        "tests/verification_profile/test_references.py#test_selection_digest_owner_after_other_bindings_are_valid"
+      ],
       "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
     },
     {
@@ -2060,8 +2146,14 @@
       "owner": "SV-73",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/registration_rules.py#assumption_set_digest",
+        "tools/verification_profile/registration_rules.py#check_rules"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration_rules.py#test_static_assumption_digest_matches_independent_preimage",
+        "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
+      ],
       "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
     },
     {
@@ -2071,8 +2163,16 @@
       "owner": "SV-74",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/selection.py#content_map",
+        "tools/verification_profile/selection.py#asset_digest",
+        "tools/verification_profile/selection.py#check_asset",
+        "tools/verification_profile/selection.py#check_manifest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection",
+        "tests/verification_profile/test_selection.py#test_manifest_paths_and_cover_sets_are_unique"
+      ],
       "gap": "Manifest 正式 tag/完整 ContentMap 与摘要比较；仅检查已声明清单，不读取文件或给测试资产授予语义注册权。"
     },
     {
@@ -2082,8 +2182,15 @@
       "owner": "SV-88",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/selection.py#content_map",
+        "tools/verification_profile/selection.py#asset_digest",
+        "tools/verification_profile/selection.py#check_edge"
+      ],
+      "tests": [
+        "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection",
+        "tests/verification_profile/test_selection.py#test_edge_four_frozen_semantic_conditions"
+      ],
       "gap": "WeakeningEdge 正式 tag/ContentMap 重算；source/target/class/可选 evidence_ref 均被摘要绑定。"
     },
     {
@@ -2093,8 +2200,14 @@
       "owner": "SV-89",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/references.py#exclusion_registry_digest",
+        "tools/verification_profile/references.py#check_excluded"
+      ],
+      "tests": [
+        "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl",
+        "tests/verification_profile/test_references.py#test_registry_statement_tamper_rejected_until_fully_rebound"
+      ],
       "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
     },
     {
@@ -2104,8 +2217,15 @@
       "owner": "SV-113",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/commitments.py#projection",
+        "tools/verification_profile/commitments.py#object_digest",
+        "tools/verification_profile/commitments.py#check_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection",
+        "tests/verification_profile/test_commitments.py#test_versioned_identity_and_advisory_do_not_change_digest"
+      ],
       "gap": "完整 MAP ContentMap 使用 MainnetAssuranceProfile/1，排除 human_summary 与 ID/Version；只关闭摘要 owner，不接受主网发布、签名或能力启用。"
     },
     {
@@ -2115,8 +2235,14 @@
       "owner": "SV-114",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/commitments.py#decision_input_digest"
+      ],
+      "tests": [
+        "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection",
+        "tests/verification_profile/test_commitments.py#test_input_digest_binds_every_explicit_field",
+        "tests/verification_profile/test_commitments.py#test_reference_only_method_input_is_rejected_even_if_rehashed"
+      ],
       "gap": "DecisionEvaluationInput/1 覆盖完整七字段显式输入和内联 canonical_input 包装；不是 evaluator 重放或 SV-115/完整 Phase D 验收。"
     },
     {
@@ -2126,8 +2252,15 @@
       "owner": "SV-97",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/creation.py#content_map",
+        "tools/verification_profile/creation.py#object_digest",
+        "tools/verification_profile/creation.py#check_object"
+      ],
+      "tests": [
+        "tests/verification_profile/test_creation.py#test_three_domain_hashes_against_independent_projection",
+        "tests/verification_profile/test_creation.py#test_all_frozen_context_and_record_fields_are_hashed"
+      ],
       "gap": "CreationContext 全部冻结字段按正式 tag 重算；运行期 ID 入摘要。正式导入/来源认证与其他相位规则独立验收。"
     },
     {
@@ -2137,8 +2270,14 @@
       "owner": "SV-75b",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/registration.py#registry_digest",
+        "tools/verification_profile/registration.py#check_registry"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_snapshot_hash_preimages_match_normative_projection",
+        "tests/verification_profile/test_registration.py#test_registry_content_hash_and_context_identity_are_separate"
+      ],
       "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
     },
     {
@@ -2148,8 +2287,15 @@
       "owner": "SV-103",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/creation.py#content_map",
+        "tools/verification_profile/creation.py#object_digest",
+        "tools/verification_profile/creation.py#check_object"
+      ],
+      "tests": [
+        "tests/verification_profile/test_creation.py#test_three_domain_hashes_against_independent_projection",
+        "tests/verification_profile/test_creation.py#test_all_frozen_context_and_record_fields_are_hashed"
+      ],
       "gap": "PhaseIValidationRecord 的完整冻结 ContentMap、正式 tag 与摘要比较；记录是否对应有效选择仍由 102/110 分别验收。"
     },
     {
@@ -2159,8 +2305,16 @@
       "owner": "SV-104",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/creation.py#content_map",
+        "tools/verification_profile/creation.py#object_digest",
+        "tools/verification_profile/creation.py#check_record"
+      ],
+      "tests": [
+        "tests/verification_profile/test_creation.py#test_three_domain_hashes_against_independent_projection",
+        "tests/verification_profile/test_creation.py#test_intent_order_and_duplicates_are_semantic",
+        "tests/verification_profile/test_creation.py#test_unknown_intent_fields_and_selector_xor_fail_closed"
+      ],
       "gap": "ReceiptIntent 封闭 ContentMap 与正式 tag，输入数组保序保重复，RI-1 恰一选择引用；record 的 intent_digest 重算比较。导入对象的内部语义不属于此摘要 owner。"
     },
     {
@@ -2170,8 +2324,14 @@
       "owner": "SV-108",
       "layer": "L2",
       "status": "IMPLEMENTED",
-      "implementation": [],
-      "tests": [],
+      "implementation": [
+        "tools/verification_profile/registration.py#frontier_digest",
+        "tools/verification_profile/registration.py#check_frontier"
+      ],
+      "tests": [
+        "tests/verification_profile/test_registration.py#test_snapshot_hash_preimages_match_normative_projection",
+        "tests/verification_profile/test_registration.py#test_runtime_id_is_content_bound_and_version_is_forbidden"
+      ],
       "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
     }
   ],
@@ -2271,5 +2431,184 @@
       "SV-65"
     ],
     "scope": "Frozen method/failure/decision matrices; explicit test imports and adapter-only non-audit reachable terminals; no deployment enablement"
-  }
+  },
+  "later_profile_slice_evidence": [
+    {
+      "id": "PROFILE-R6",
+      "report": "docs/testing/PROFILE-CREATION-R6-20261108.md",
+      "completed_rules": [
+        "SV-97",
+        "SV-101",
+        "SV-103",
+        "SV-104"
+      ],
+      "partial_rules": [
+        "SV-96",
+        "SV-98",
+        "SV-102",
+        "SV-110"
+      ],
+      "scope": "固定 audit I/F 测试接线：§17.4 tag/ContentMap、I/F 身份与 Intent/slot 绑定；仅单 audit Profile、PRIMARY slot、无 gate/降级、INFORMATIONAL 假设。"
+    },
+    {
+      "id": "PROFILE-R7",
+      "report": "docs/testing/PROFILE-SELECTION-R7-20261108.md",
+      "completed_rules": [
+        "SV-12R",
+        "SV-21",
+        "SV-23",
+        "SV-28",
+        "SV-41",
+        "SV-45",
+        "SV-47",
+        "SV-53a",
+        "SV-53b",
+        "SV-74",
+        "SV-85",
+        "SV-87",
+        "SV-88",
+        "SV-120"
+      ],
+      "partial_rules": [
+        "SV-12I",
+        "SV-14",
+        "SV-26",
+        "SV-29I",
+        "SV-43",
+        "SV-55",
+        "SV-58"
+      ],
+      "scope": "注册/选择/绑定规则 13+1 项；Policy、Manifest、WeakeningEdge 与事件 subject 矩阵；不认证来源、不执行 GateOk。"
+    },
+    {
+      "id": "PROFILE-R8",
+      "report": "docs/testing/PROFILE-COMMITMENTS-R8-20261108.md",
+      "completed_rules": [
+        "SV-05",
+        "SV-06",
+        "SV-09",
+        "SV-35",
+        "SV-36",
+        "SV-44",
+        "SV-46",
+        "SV-48",
+        "SV-49",
+        "SV-54b",
+        "SV-70",
+        "SV-71",
+        "SV-78",
+        "SV-86a",
+        "SV-86b",
+        "SV-86c",
+        "SV-95",
+        "SV-113",
+        "SV-114"
+      ],
+      "partial_rules": [
+        "SV-12I",
+        "SV-14",
+        "SV-26",
+        "SV-29I",
+        "SV-43",
+        "SV-54a",
+        "SV-55",
+        "SV-57",
+        "SV-58",
+        "SV-116"
+      ],
+      "scope": "Claim、快照、承诺与 18 摘要 owner；R8 candidate-input 胶囊，非完整 Phase D/来源认证。"
+    },
+    {
+      "id": "PROFILE-R9",
+      "report": "docs/testing/PROFILE-RUNTIME-R9-20261108.md",
+      "completed_rules": [
+        "SV-68",
+        "SV-77",
+        "SV-82",
+        "SV-92",
+        "SV-93",
+        "SV-94",
+        "SV-99",
+        "SV-105",
+        "SV-106",
+        "SV-107"
+      ],
+      "partial_rules": [
+        "SV-69",
+        "SV-81"
+      ],
+      "scope": "Phase B 运行期绑定/冻结状态显式输入守卫；TEST Snapshot/randomness imports，不写状态、不产 Decision。"
+    },
+    {
+      "id": "PROFILE-R10",
+      "report": "docs/testing/PROFILE-DECISION-R10-20261109.md",
+      "completed_rules": [
+        "SV-112"
+      ],
+      "partial_rules": [
+        "SV-115",
+        "SV-121"
+      ],
+      "scope": "REEXEC_AUDIT_ONLY Phase D 审计重放：边界、执行闭合、条件顺序与终态投影。"
+    },
+    {
+      "id": "PROFILE-R11",
+      "report": "docs/testing/PROFILE-AUTHORITY-R11-20261109.md",
+      "completed_rules": [],
+      "partial_rules": [
+        "SV-115",
+        "SV-119",
+        "SV-121"
+      ],
+      "scope": "FM-S3 公开签名快照接入 Phase D 候选输入；checkpoint/anchor/前缀重放与观察方闭合。"
+    },
+    {
+      "id": "PROFILE-R12",
+      "report": "docs/testing/PROFILE-PHASE-D-R12-20261109.md",
+      "completed_rules": [],
+      "partial_rules": [
+        "SV-115"
+      ],
+      "scope": "Phase D 候选编码与 FM-A08 预验收；17 Receipt 候选字节，正式验收 PLANNED_NOT_RUN。"
+    },
+    {
+      "id": "PROFILE-R13",
+      "report": "docs/testing/PROFILE-PHASE-D-R13-20261110.md",
+      "completed_rules": [],
+      "partial_rules": [
+        "SV-115"
+      ],
+      "scope": "R12 候选编码的 Rust 独立重放；17 Receipt 逐字节与 21 负例。"
+    },
+    {
+      "id": "PROFILE-R14",
+      "report": "docs/testing/PROFILE-PHASE-D-R14-20261111.md",
+      "completed_rules": [],
+      "partial_rules": [
+        "SV-115",
+        "SV-117"
+      ],
+      "scope": "非主网测试注册表与 ReplayEnvelope/1 B/D 信封重放；17 Receipt、19 负例，固定测试部署。"
+    },
+    {
+      "id": "PROFILE-R15",
+      "report": "docs/testing/PROFILE-PHASE-D-R15-20261111.md",
+      "completed_rules": [],
+      "partial_rules": [
+        "SV-115",
+        "SV-117"
+      ],
+      "scope": "创建时冻结非主网部署绑定；新版 I/F Receipt、ReplayEnvelope/2、2 Receipt、13 负例。"
+    },
+    {
+      "id": "PROFILE-R16",
+      "report": "docs/testing/PROFILE-PHASE-D-R16-20261111.md",
+      "completed_rules": [],
+      "partial_rules": [
+        "SV-115",
+        "SV-117"
+      ],
+      "scope": "非主网测试部署签名撤销；20 events、2 Receipt、9 负例；双机复验未恢复（aki2 不可达），仅单机。"
+    }
+  ]
 }
