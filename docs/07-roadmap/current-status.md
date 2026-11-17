@@ -205,6 +205,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-17 | v0.5 | P1-m（#183）：SHA 清单只钉代码与证据——`DELIVERY-SCOPE.json` 升为 `aclt.delivery-scope@2`，分类规则改为配置驱动的有序列表；两份根清单只列钉住的 568 个代码、测试、配置与证据文件，219 个 Markdown 与 `docs/` 下其余 16 个非 Markdown 材料只交付、不钉；更新包仍包含全部 804 个交付文件，归档校验逐字节核对钉住文件与不钉文件的一致性；清单只要变化就在 CI 走全量通道 | [开发入口](../development.md)、`DELIVERY-SCOPE.json`、#183 | 不变 |
 | 2026-11-16 | v0.5 | P1-k：本地验证增加文档快速通道与并行 make——仅 pull_request 且全部改动落在文档白名单时运行 check-docs，push main 与 workflow_dispatch 保持全量；全量改为 `make -j"$(nproc)" -O test`，test-authority 使用独立 `build/worker-ci`，确定性打包仍在测试后串行 | [开发入口](../development.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、#175 | 不变 |
 | 2026-11-16 | v0.5 | 续轮回验（AUD-20261116-03）文档同步：README、CONTRIBUTING、术语表与 OQ-01 的名称表述改为已决政策（ACLt 不是商标，不声明商标，放弃名称冲突检索并接受同名风险）；current-status 入口改为 P1-g/i/j/h 已完成，下一步为本次同步、重新冻结发行说明与发布步骤；公开仓库设置清单改为先用 fork PR 验证缺签阻止合并、补签后最新头通过，再设为必需检查并记录结果 | [README](../../README.md)、[当前状态](current-status.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、[回验报告](../08-governance/audits/audit-20261116-03-public-release-recheck.md)、#161 | 不变 |
 | 2026-11-16 | v0.5 | 发布准备增量回验续轮（AUD-20261116-03）：新增 0 BLOCKER、1 MAJOR、2 MINOR、1 NOTE；发布准备 FAIL | [回验报告](../08-governance/audits/audit-20261116-03-public-release-recheck.md)、#161 | 不变 |

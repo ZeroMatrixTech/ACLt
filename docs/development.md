@@ -1,6 +1,6 @@
 # 开发与维护入口
 
-> 更新：2026-11-12。工程操作指南；不改变协议语义、Gate 或历史证据。
+> 更新：2026-11-17。工程操作指南；不改变协议语义、Gate 或历史证据。
 
 ## 统一入口
 
@@ -16,15 +16,15 @@
 | `make test-multinode` | admission 本地检查及消息顺序 | 报告默认在 `artifacts/multinode/`，不启动 VM |
 | `make workflow` | 按输入指纹执行分组并留存证据 | 已通过且未变化的分组可复用 |
 | `make status` | 更新进度看板 | 不运行测试 |
-| `make manifests` | 显式更新当前交付校验清单 | 先审阅源码变更，再审阅清单差异 |
-| `make check-manifests` | 只读校验文件内容和输入清单 | 新增交付输入也会使清单失效 |
-| `make package PACKAGE=/new/path.zip` | 校验后生成增量更新包 | 不自动更新清单；拒绝覆盖同名文件 |
+| `make manifests` | 显式更新当前交付校验清单 | 先审阅源码变更，再审阅清单差异；只有代码、测试、配置或证据变化需要刷新 |
+| `make check-manifests` | 只读校验文件内容和输入清单 | 钉住的代码或证据变化会使清单失效；Markdown 变化不会 |
+| `make package PACKAGE=/new/path.zip` | 校验后生成增量更新包 | 不自动更新清单；拒绝覆盖同名文件；归档包含全部交付文件 |
 
 `bash scripts/run-singlehost.sh` 保留为原有单机全量入口（Python 分组、校验与 state3）。`python3 scripts/aclt-flow.py run --force` 可强制重跑证据流程。Make 默认只显示帮助，不使用 sudo。
 
 本地可用 `make -j"$(nproc)" -O test` 并行跑全量；`-O` 防止输出交错，确定性打包仍在测试之后串行执行。并行时 test-authority 使用 `build/worker-ci`，test-singlehost 继续使用 `build/worker`，两者不共享可执行文件。
 
-源码修改后，先检查变更，再运行 `make manifests`，然后执行对应检查。刷新清单不能代替测试；交付脚本变化后运行 `make check` 和打包回归测试。
+改动钉住的代码、测试、配置或证据后，先检查变更，再运行 `make manifests`，然后执行对应检查。只改 Markdown 时不需要运行 `make manifests`，清单也不应变化；但 Markdown 仍随源码包交付，不能删除或遗漏。刷新清单不能代替测试；交付脚本变化后运行 `make check` 和打包回归测试。
 
 ## 目录职责
 
@@ -46,9 +46,9 @@
 
 ## 清单与更新包
 
-文件选择与过滤集中在 `scripts/repository_files.py`。`update-manifests.py` 负责更新/校验，`package-singlehost.py` 使用同一清单并验证归档内容。
+文件选择、分类与过滤集中在 `scripts/repository_files.py`，分类规则写在 `DELIVERY-SCOPE.json`（schema `aclt.delivery-scope@2`）。`update-manifests.py` 负责更新/校验，`package-singlehost.py` 使用同一规则并验证归档内容。
 
-四份清单分别覆盖 state3、多节点、工作流和更新包。刷新按依赖顺序进行。更新包保留原命名接口；自 2026-11-05 起文件选择以 `DELIVERY-SCOPE.json` 为准，包含全部受管源码输入及历史 state1/state2、`docs/codocs/`（见下文“有界修复后的门禁与交付”），2026-10-14 版“不含旧实验和 codocs”的范围已被替代。解包到新目录可独立运行本地检查；叠加到已有 checkout 时不会删除接收方旧文件。Git 源码 pin 校验（`make verify-source`）仍需完整 Git checkout。
+四份清单分别覆盖 state3、多节点、工作流和更新包。刷新按依赖顺序进行。两份根清单只列判定为 `DIGEST` 的文件，即代码、测试、构建配置、证据数据和测试读取的 fixture；全仓库 `*.md` 与 `docs/` 下其余材料只交付、不钉 digest。每个被跟踪的文件都必须落在 `DIGEST`、`DELIVERY_ONLY` 或 `tracked_exceptions` 之一；规则判断不了的路径会让清单校验失败，而不是静默漏掉。更新包保留原命名接口；自 2026-11-05 起文件选择以 `DELIVERY-SCOPE.json` 为准，包含全部受管源码输入及历史 state1/state2、`docs/codocs/`（见下文“有界修复后的门禁与交付”），2026-10-14 版“不含旧实验和 codocs”的范围已被替代。归档仍包含全部交付文件；校验核对钉住文件的 SHA-256、`SINGLEHOST-SHA256SUMS` 的字节，以及不钉文件与源内容逐字节一致、没有多余或缺失的文件。解包到新目录可独立运行本地检查；叠加到已有 checkout 时不会删除接收方旧文件。Git 源码 pin 校验（`make verify-source`）仍需完整 Git checkout。
 
 默认输出 `dist/aclt-singlehost-update.zip` 和同名 `.sha256`。输出已存在、清单失效或交付输入为符号链接时拒绝打包；不会自动重签源码。中途失败的产物需要审查后另行处理。
 

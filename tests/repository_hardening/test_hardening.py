@@ -100,6 +100,14 @@ class Repository(unittest.TestCase):
         external=self.root/'external';external.mkdir();(external/'secret.py').write_text('not a source input')
         (self.root/'tools').symlink_to(external,target_is_directory=True)
         with self.assertRaises(ValueError):delivery_files(self.root)
+    def test_delivery_policy_version_must_be_current(self):
+        cfg=json.loads((ROOT/'DELIVERY-SCOPE.json').read_text())
+        (self.root/'DELIVERY-SCOPE.json').write_text(json.dumps(dict(cfg,schema='aclt.delivery-scope@1')))
+        with self.assertRaisesRegex(ValueError,'delivery policy version'):delivery_files(self.root)
+    def test_delivery_policy_rule_order_is_enforced(self):
+        cfg=json.loads((ROOT/'DELIVERY-SCOPE.json').read_text())
+        (self.root/'DELIVERY-SCOPE.json').write_text(json.dumps(dict(cfg,classification_order=['digest_patterns','never_digest_patterns'])))
+        with self.assertRaisesRegex(ValueError,'classification order'):delivery_files(self.root)
     def test_unknown_tracked_paths_cannot_hide_outside_inventory(self):
         subprocess.run(['git','init','-q',str(self.root)],check=True)
         (self.root/'new-root.txt').write_text('test');subprocess.run(['git','-C',str(self.root),'add','new-root.txt'],check=True)

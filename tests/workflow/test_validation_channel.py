@@ -111,6 +111,16 @@ class ValidationChannelTests(unittest.TestCase):
         (self.repo / 'README.md').write_text('# changed\n', encoding='utf-8')
         self.assertEqual(self.channel(), 'fast')
 
+    def test_singlehost_manifest_change_takes_full_path(self):
+        # A manifest change means a pinned file changed, so it must never take
+        # the documentation-only fast path.
+        (self.repo / 'SINGLEHOST-SHA256SUMS').write_text('changed\n', encoding='utf-8')
+        self.assertEqual(self.channel(), 'full')
+
+    def test_workflow_manifest_change_takes_full_path(self):
+        (self.repo / 'WORKFLOW-SHA256SUMS').write_text('changed\n', encoding='utf-8')
+        self.assertEqual(self.channel(), 'full')
+
     def test_deleted_whitelisted_markdown_falls_back_to_full(self):
         (self.repo / 'docs/a.md').unlink()
         self.assertEqual(self.channel(), 'full')

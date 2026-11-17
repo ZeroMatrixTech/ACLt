@@ -28,6 +28,14 @@ class RepositoryLayoutTests(unittest.TestCase):
             self.assertTrue((ROOT / name).is_file(), name)
         self.assertFalse((ROOT / 'workflow').exists())
 
+    def test_root_manifests_pin_only_code_and_evidence(self):
+        for name in ('SINGLEHOST-SHA256SUMS', 'WORKFLOW-SHA256SUMS'):
+            for line in (ROOT / name).read_text().splitlines():
+                relative = line.split('  ', 1)[1]
+                with self.subTest(manifest=name, path=relative):
+                    self.assertFalse(relative.endswith('.md'), relative)
+                    self.assertTrue((ROOT / relative).is_file(), relative)
+
     def test_delivery_manifests_match_installed_files(self):
         for root, name in [(ROOT, 'SINGLEHOST-SHA256SUMS'), (ROOT, 'WORKFLOW-SHA256SUMS'),
                            (ROOT / EXPERIMENT, 'SHA256SUMS'),

@@ -1,25 +1,39 @@
-"""One inventory for delivery manifests and packaging (Python standard library)."""
+"""One delivery inventory for manifests and packaging (Python standard library).
+
+The delivery scope and the digest policy both live in ``DELIVERY-SCOPE.json``;
+nothing here hard-codes which tracked paths are pinned.  Every delivery input is
+classified by the ordered rules in that file:
+
+1. ``tracked_exceptions``;
+2. ``never_digest_patterns`` (documentation is delivered but never pinned);
+3. ``digest_patterns`` (code, tests, configuration, evidence and fixtures);
+4. ``delivery_only_patterns`` (delivered, not pinned);
+5. any other delivered path fails closed.
+
+The two root manifests list only the ``DIGEST`` set.  The archive still carries
+every delivery file, so a missing unpinned file is caught by package
+verification rather than by the manifest.
+"""
 from pathlib import Path
 import hashlib
 import json
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools.git_sources import git
-import fnmatch
 
 EXPERIMENT = 'experiments/aclt-minimal-verifier-state3'
 MULTINODE = 'experiments/aclt-multinode-admission'
 AUTHORITY = 'experiments/aclt-authority-admission'
-RIR_BUILD = 'experiments/aclt-rir-build-probe'
-RIR_IO = 'experiments/aclt-rir-io-probe'
-RIR_STATS = 'experiments/aclt-rir-stats-probe'
-TASK_COMMITMENT = 'experiments/aclt-task-commitment'
-TASK_AUTHORIZATION = 'experiments/aclt-task-authorization'
-TASK_REPLAY = 'experiments/aclt-task-replay'
-FUNDING_RESERVATION = 'experiments/aclt-funding-reservation'
-FIXED_SETTLEMENT = 'experiments/aclt-fixed-settlement'
-SETTLEMENT_RECOVERY = 'experiments/aclt-settlement-recovery'
 EXCLUDE = {'target', 'build', '.toolchain', '__pycache__', '.git', 'artifacts', 'dist'}
+
+DIGEST = 'DIGEST'
+DELIVERY_ONLY = 'DELIVERY_ONLY'
+EXCEPTION = 'EXCEPTION'
+CLASSIFICATIONS = (DIGEST, DELIVERY_ONLY, EXCEPTION)
+# Ordered rule keys and the classification each one yields.
+RULES = (('never_digest_patterns', DELIVERY_ONLY),
+         ('digest_patterns', DIGEST),
+         ('delivery_only_patterns', DELIVERY_ONLY))
 
 def files(root, directory):
     base = root / directory
@@ -43,9 +57,31 @@ def manifest(root, paths):
                    for p in sorted(set(paths)))
 
 def policy(root):
-    value=json.loads((root/'DELIVERY-SCOPE.json').read_text())
-    if value['schema']!='aclt.delivery-scope@1':raise ValueError('delivery policy version')
+    value = json.loads((root / 'DELIVERY-SCOPE.json').read_text())
+    if value.get('schema') != 'aclt.delivery-scope@2':
+        raise ValueError('delivery policy version')
+    if value.get('classification_order') != ['tracked_exceptions'] + [key for key, _ in RULES]:
+        raise ValueError('delivery policy classification order')
+    if not isinstance(value.get('tracked_exceptions'), dict):
+        raise ValueError('delivery policy tracked_exceptions')
+    for key, _ in RULES:
+        patterns = value.get(key)
+        if not isinstance(patterns, list) or not patterns:
+            raise ValueError('delivery policy patterns: ' + key)
+        if not all(isinstance(pattern, str) and pattern for pattern in patterns):
+            raise ValueError('delivery policy patterns: ' + key)
     return value
+
+def classify(relative, value):
+    """Return the single classification of a delivery path, or fail closed."""
+    name = relative.as_posix()
+    if name in value['tracked_exceptions']:
+        return EXCEPTION
+    for key, result in RULES:
+        for pattern in value[key]:
+            if relative.full_match(pattern):
+                return result
+    raise ValueError('Unclassified delivery path: ' + name)
 
 def skipped(relative,patterns):
     # Patterns are anchored to known generated locations, never arbitrary build/ names.
@@ -53,41 +89,72 @@ def skipped(relative,patterns):
     if '__pycache__' in parts or '.git' in parts:return True
     return any(relative.full_match(p) for p in patterns if not p.startswith('**/'))
 
-def delivery_files(root):
-    cfg=policy(root);paths=[]
-    for name in cfg['source_directories']:
+def delivery_files(root, value=None):
+    value=policy(root) if value is None else value;paths=[]
+    for name in value['source_directories']:
         base=root/name
         if base.is_symlink() or (base.exists() and not base.is_dir()):raise ValueError('Unsafe source directory: '+name)
         for path in sorted(base.rglob('*')):
             relative=path.relative_to(root)
-            if skipped(relative,cfg['excluded_generated_paths']):continue
+            if skipped(relative,value['excluded_generated_paths']):continue
             if path.is_symlink():raise ValueError('Symlink is not a delivery input: '+str(relative))
             if path.is_file():paths.append(path)
-    for name in cfg['top_level_files']:
+    for name in value['top_level_files']:
         path=root/name
         if path.is_symlink() or any(p.is_symlink() for p in path.parents if p!=root and root in p.parents) or not path.is_file():raise ValueError('Missing/unsafe delivery input: '+name)
         paths.append(path)
     return sorted(set(paths))
 
-def tracked_coverage(root,paths):
+def classified_paths(root, value=None):
+    """Return the policy and one classification per delivery path."""
+    value=policy(root) if value is None else value
+    paths=delivery_files(root,value)
+    kinds={}
+    for path in paths:
+        kind=classify(path.relative_to(root),value)
+        if kind not in CLASSIFICATIONS:raise ValueError('Unknown delivery classification: '+str(kind))
+        kinds[path]=kind
+    return value,kinds
+
+def digest_files(root):
+    """The pinned delivery set, which is exactly what the root manifests list."""
+    _,kinds=classified_paths(root)
+    return [path for path,kind in kinds.items() if kind==DIGEST]
+
+def tracked_coverage(root,paths=None):
     # Do not accidentally use a parent checkout for an unpacked source directory.
     if not (root/'.git').exists() and not (root/'.git').is_symlink():return 'NOT_RUN_NO_CHECKOUT'
     r=git(root,'rev-parse','--show-toplevel')
     if Path(r.stdout.decode().strip()).resolve()!=root.resolve():
         raise ValueError('Git checkout root mismatch')
     names=set(git(root,'ls-files','-z').stdout.decode().rstrip('\0').split('\0'))
-    covered={p.relative_to(root).as_posix() for p in paths}|set(policy(root)['tracked_exceptions'])
+    value=policy(root)
     present={n for n in names if (root/n).exists() or (root/n).is_symlink()}
-    missing=present-covered
-    if missing:raise ValueError('Unclassified tracked delivery paths: '+', '.join(sorted(missing)))
+    scope={p.relative_to(root).as_posix() for p in (delivery_files(root,value) if paths is None else paths)}
+    exceptions=set(value['tracked_exceptions'])
+    uncovered=sorted(present-scope-exceptions)
+    if uncovered:raise ValueError('Tracked paths outside delivery scope: '+', '.join(uncovered))
+    # Every tracked delivery path must fall into exactly one ordered rule.
+    unclassified=[]
+    for name in sorted(present&scope):
+        try:classify(Path(name),value)
+        except ValueError:unclassified.append(name)
+    if unclassified:raise ValueError('Unclassified tracked delivery paths: '+', '.join(unclassified))
     return 'PASS'
 
-def inventories(root):
-    workflow = files(root, 'docs/workflow') + files(root, 'tests/workflow')
-    workflow += [root / name for name in [
+def workflow_inputs(root):
+    paths = files(root, 'docs/workflow') + files(root, 'tests/workflow')
+    return paths + [root / name for name in [
         '.aclt-flow/template.json', '.aclt-flow/.gitignore', 'scripts/aclt-flow.py',
         'scripts/package-singlehost.py', 'scripts/repository_files.py']]
-    delivery=delivery_files(root)
+
+def inventories(root):
+    value=policy(root)
+    delivery=delivery_files(root,value)
+    kinds={path:classify(path.relative_to(root),value) for path in delivery}
+    workflow=workflow_inputs(root)
+    outside=sorted(path.relative_to(root).as_posix() for path in workflow if path not in kinds)
+    if outside:raise ValueError('Workflow inputs outside delivery scope: '+', '.join(outside))
     tracked_coverage(root,delivery)
     return {
         EXPERIMENT + '/SHA256SUMS': (root / EXPERIMENT, [
@@ -96,8 +163,8 @@ def inventories(root):
             p for p in files(root, MULTINODE) if p.name != 'SHA256SUMS']),
         AUTHORITY + '/SHA256SUMS': (root / AUTHORITY, [
             p for p in files(root, AUTHORITY) if p.name != 'SHA256SUMS']),
-        'WORKFLOW-SHA256SUMS': (root, workflow),
-        'SINGLEHOST-SHA256SUMS': (root, delivery),
+        'WORKFLOW-SHA256SUMS': (root, [p for p in workflow if kinds[p] == DIGEST]),
+        'SINGLEHOST-SHA256SUMS': (root, [p for p in delivery if kinds[p] == DIGEST]),
     }
 
 def refresh(root):
