@@ -25,7 +25,7 @@ VM 结果支持来宾间协议、角色分工和来宾级故障场景。物理�
 **后续变化。** 物理双机运行此后已按维护者授权恢复：
 
 - 2026-11-14：容量对照实验与 M3 基线验收各自取得授权；
-- 2026-11-15 起：维护者授权整个首次公开发行阶段占用物理机（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)），阶段结束即终止。
+- 2026-11-15 起：维护者授权整个首次公开发布阶段占用物理机（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128)），阶段结束即终止。
 
 物理机运行仍按 [DUALHOST-SSH-1](dualhost-ssh-validation.md) 执行，并取 [PARALLEL-1 §6.4](parallel-workflow.md#64-共享实验资源) 的排他锁。同宿主多虚拟机路径继续可用，两者的证据分别标明层级。
 
