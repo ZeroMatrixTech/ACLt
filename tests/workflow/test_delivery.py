@@ -270,13 +270,18 @@ class GitCheckoutDeliveryTests(unittest.TestCase):
         self.assertIn('missing from the working tree', result.stderr)
 
     def test_git_removed_delivery_file_is_not_required(self):
-        removed = self.git('rm', '-q', 'docs/workflow/README.md')
+        # Assert against the delivery set at test start, never a fixed count:
+        # a legitimate Markdown addition or removal must not fail this case.
+        removed_path = 'docs/workflow/README.md'
+        expected = {path.relative_to(self.root).as_posix() for path in delivery_files(self.root)}
+        removed = self.git('rm', '-q', removed_path)
         self.assertEqual(removed.returncode, 0, removed.stderr)
         result = self.package()
         self.assertEqual(result.returncode, 0, result.stderr)
         with zipfile.ZipFile(self.archive) as bundle:
-            self.assertNotIn('docs/workflow/README.md', bundle.namelist())
-            self.assertEqual(len(bundle.namelist()), 803)
+            names = set(bundle.namelist())
+        self.assertNotIn(removed_path, names)
+        self.assertEqual(names, (expected - {removed_path}) | {MANIFEST})
 
 
 class ClassificationTests(unittest.TestCase):

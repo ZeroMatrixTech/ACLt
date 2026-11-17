@@ -24,7 +24,7 @@
 
 本地可用 `make -j"$(nproc)" -O test` 并行跑全量；`-O` 防止输出交错，确定性打包仍在测试之后串行执行。并行时 test-authority 使用 `build/worker-ci`，test-singlehost 继续使用 `build/worker`，两者不共享可执行文件。
 
-改动钉住的代码、测试、配置或证据后，先检查变更，再运行 `make manifests`，然后执行对应检查。只改 Markdown 时，两份根清单不需要刷新也不应变化；但 Markdown 仍随源码包交付，不能删除或遗漏。三份实验目录各自的 `SHA256SUMS` 是保留原规则的历史交付物，仍覆盖其目录内的全部文件（含 Markdown），改动这些目录内的文件时按原规则刷新对应清单。刷新清单不能代替测试；交付脚本变化后运行 `make check` 和打包回归测试。
+改动钉住的代码、测试、配置或证据后，先检查变更，再运行 `make manifests`，然后执行对应检查。只改 Markdown 时，两份根清单不需要刷新也不应变化；但 Markdown 仍随源码包交付，不能删除或遗漏。三份实验目录各自的 `SHA256SUMS` 是保留原规则的历史交付物，仍覆盖其目录内的全部文件（含 Markdown）；这些实验清单本身又由 `SINGLEHOST-SHA256SUMS` 钉住，因此改动实验目录内的 Markdown 时必须刷新对应实验清单，并连带刷新 `SINGLEHOST-SHA256SUMS`。刷新清单不能代替测试；交付脚本变化后运行 `make check` 和打包回归测试。
 
 ## 目录职责
 
@@ -48,7 +48,7 @@
 
 文件选择、分类与过滤集中在 `scripts/repository_files.py`，分类规则写在 `DELIVERY-SCOPE.json`（schema `aclt.delivery-scope@2`）。`update-manifests.py` 负责更新/校验，`package-singlehost.py` 使用同一规则并验证归档内容。
 
-四份清单分别覆盖 state3、多节点、工作流和更新包。刷新按依赖顺序进行。两份根清单只列 `DELIVERY-SCOPE.json` 交付范围中判定为 `DIGEST` 的文件，即代码、测试、构建配置、证据数据和测试读取的 fixture；该范围内的 `*.md` 与 `docs/` 下其余材料只交付、不钉 digest。三份实验目录内部的 `SHA256SUMS` 不在两份根清单的规则内，保留原规则并覆盖各自目录内的全部文件（含 Markdown）。每个被跟踪的文件都必须落在 `DIGEST`、`DELIVERY_ONLY` 或 `tracked_exceptions` 之一；规则判断不了的路径会让清单校验失败，而不是静默漏掉。更新包保留原命名接口；自 2026-11-05 起文件选择以 `DELIVERY-SCOPE.json` 为准，包含全部受管源码输入及历史 state1/state2、`docs/codocs/`（见下文“有界修复后的门禁与交付”），2026-10-14 版“不含旧实验和 codocs”的范围已被替代。归档仍包含全部交付文件；校验核对钉住文件的 SHA-256、`SINGLEHOST-SHA256SUMS` 的字节，以及不钉文件与源内容逐字节一致、没有多余或缺失的文件。解包到新目录可独立运行本地检查；叠加到已有 checkout 时不会删除接收方旧文件。Git 源码 pin 校验（`make verify-source`）仍需完整 Git checkout。
+四份清单分别覆盖 state3、多节点、工作流和更新包。刷新按依赖顺序进行。两份根清单只列 `DELIVERY-SCOPE.json` 交付范围中判定为 `DIGEST` 的文件，即代码、测试、构建配置、证据数据和测试读取的 fixture；该范围内的 `*.md` 与 `docs/` 下其余材料只交付、不钉 digest。三份实验目录内部的 `SHA256SUMS` 不在两份根清单的分类规则内，保留原规则并覆盖各自目录内的全部文件（含 Markdown）；这些实验清单本身作为交付文件仍由 `SINGLEHOST-SHA256SUMS` 钉住，刷新它们会连带刷新该根清单。每个被跟踪的文件都必须落在 `DIGEST`、`DELIVERY_ONLY` 或 `tracked_exceptions` 之一；规则判断不了的路径会让清单校验失败，而不是静默漏掉。更新包保留原命名接口；自 2026-11-05 起文件选择以 `DELIVERY-SCOPE.json` 为准，包含全部受管源码输入及历史 state1/state2、`docs/codocs/`（见下文“有界修复后的门禁与交付”），2026-10-14 版“不含旧实验和 codocs”的范围已被替代。归档仍包含全部交付文件；校验核对钉住文件的 SHA-256、`SINGLEHOST-SHA256SUMS` 的字节，以及不钉文件与源内容逐字节一致、没有多余或缺失的文件。解包到新目录可独立运行本地检查；叠加到已有 checkout 时不会删除接收方旧文件。Git 源码 pin 校验（`make verify-source`）仍需完整 Git checkout。
 
 默认输出 `dist/aclt-singlehost-update.zip` 和同名 `.sha256`。输出已存在、清单失效或交付输入为符号链接时拒绝打包；不会自动重签源码。中途失败的产物需要审查后另行处理。
 
