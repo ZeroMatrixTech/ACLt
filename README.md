@@ -1,10 +1,12 @@
 # ACLt Protocol
 
+**ACLt Protocol** — an open, implementation-neutral protocol for heterogeneous, permissionless distributed computation.
+
 > **状态：G0——协议规格化**  
 > **当前语义基线：v0.5**  
 > **首个工程目标：V1 Conformance Target（RIR + Rust Profile + RPR）**<br>
 > **文档性质：Living repository；随证明、仿真、实现和攻击测试持续修订**  
-> **最后更新：2026-11-15**
+> **最后更新：2026-11-17**
 >
 > **成熟度：draft / research baseline。** v0.5 是研究与规范基线；当前没有可部署的软件、节点或服务，也不是生产系统或主网系统。
 
@@ -135,10 +137,10 @@ make workflow    # 按指纹执行并收集各组证据
 
 截至 2026-11-09，已有两条工程路线的候选实现和证据：
 
-- [ADR-0007](docs/05-decisions/ADR-0007-formal-object-migration-foundation.md) 与 [ADR-0008](docs/05-decisions/ADR-0008-fm-s3-interface-decisions.md) 下的候选 FM-S3 audit-only 路径已覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态，双物理机证据见[收尾](docs/testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](docs/testing/FM-S3-TASK-TRAP-20261106.md)和[终态与历史矩阵](docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md)。2026-11-07 收尾时 24 套公开快照可只用仓库复核，见[证据归档收尾](docs/testing/FM-EVIDENCE-CLOSEOUT-20261107.md)；`docs/testing/public-evidence/` 现有 27 个归档，公开范围见[首次公开发行说明](docs/releases/PREVIEW-20261106.md)。
+- [ADR-0007](docs/05-decisions/ADR-0007-formal-object-migration-foundation.md) 与 [ADR-0008](docs/05-decisions/ADR-0008-fm-s3-interface-decisions.md) 下的候选 FM-S3 audit-only 路径已覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态，双物理机证据见[收尾](docs/testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](docs/testing/FM-S3-TASK-TRAP-20261106.md)和[终态与历史矩阵](docs/testing/FM-S3-HISTORICAL-MATRIX-20261106.md)。2026-11-07 收尾时 24 套公开快照可只用仓库复核，见[证据归档收尾](docs/testing/FM-EVIDENCE-CLOSEOUT-20261107.md)；`docs/testing/public-evidence/` 现有 27 个归档，公开范围见[首次公开发布说明](docs/releases/PREVIEW-20261106.md)。
 - P0-1B 的 Profile 规则按 R1–R11 切片实现，Type A 为 80 implemented / 36 partial / 3 not implemented；[R8](docs/testing/PROFILE-COMMITMENTS-R8-20261108.md)补 Claim/快照/承诺绑定，18 个摘要 owner 的现行公式与投影已实现。[R9](docs/testing/PROFILE-RUNTIME-R9-20261108.md)补运行期绑定/冻结与阶段守卫；TEST imports、7 项适用性和完整阶段/来源验收仍有缺口。[R10](docs/testing/PROFILE-DECISION-R10-20261109.md)实现 audit-only Phase D 测试重放。[R11](docs/testing/PROFILE-AUTHORITY-R11-20261109.md)从已验证的 FM-S3 日志前缀复算判决并核对结算。
 
-正式接口、FM-A 正式验收与准入保持 `OPEN`；P0-1B 保持 `STARTED / NOT CLOSED`。首次公开发行的范围、复现方式与已知限制见[首次公开发行说明](docs/releases/PREVIEW-20261106.md)（发行名 `research-preview-1`）。
+正式接口、FM-A 正式验收与准入保持 `OPEN`；P0-1B 保持 `STARTED / NOT CLOSED`。首次公开发布的范围、复现方式与已知限制见[首次公开发布说明](docs/releases/PREVIEW-20261106.md)（发布名 `research-preview-1`）；该版本已于 2026-11-16 发布，见 [GitHub Release](https://github.com/ZeroMatrixTech/ACLt/releases/tag/research-preview-1)。
 
 state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifier-state3/README.md)）。[2026-10-03 集成报告](docs/testing/INTEGRATION-FIX.md)记录 265 个实验场景、13 项模型测试、24 项验证配置测试及 22 项流程/集成测试通过；这是已保存的历史证据，不是本次全量重跑结果。
 
@@ -201,10 +203,10 @@ state3 仍是本地单机回归入口（[说明](experiments/aclt-minimal-verifi
 
 本仓库的全部工件采用 **Apache License 2.0**，SPDX 标识为 `Apache-2.0`，范围包括代码与参考实现、协议规范、项目文档、仓库内的研究文稿、测试向量与证据。代码许可于 2026-08-17 确定；2026-11-14 维护者决定规范、文档与研究文稿沿用同一许可。
 
-另有标注的第三方材料保留其原许可。目前包括 `tools/verification_profile/rust/unicode_data.rs`（由 Unicode 字符数据库生成，适用 `Unicode-3.0`，全文见同目录 `UNICODE-LICENSE.txt`）和 `docs/00-overview/fonts/` 下的五个字体子集（适用 `OFL-1.1`，随附三份 `OFL-*.txt` 原文）。Apache-2.0 第 6 条不授予名称或商标使用权；ACLt 是项目名称，不是商标，项目不声明商标；维护者已于 2026-11-16 决定放弃名称冲突检索并接受同名风险（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6920084883)），名称、商标与兼容性声明不再作为公开发行的阻断项，见下节。贡献采用 Developer Certificate of Origin（DCO），不使用 CLA；外部 fork PR 的每个提交须带与作者一致的 `Signed-off-by`，内部代理提交由维护者在合并时签署，细则见 [CONTRIBUTING §11](CONTRIBUTING.md#11-许可)。安全漏洞的私密报告流程见 [SECURITY.md](SECURITY.md)；利用细节不在公开渠道先行披露。
+另有标注的第三方材料保留其原许可。目前包括 `tools/verification_profile/rust/unicode_data.rs`（由 Unicode 字符数据库生成，适用 `Unicode-3.0`，全文见同目录 `UNICODE-LICENSE.txt`）和 `docs/00-overview/fonts/` 下的五个字体子集（适用 `OFL-1.1`，随附三份 `OFL-*.txt` 原文）。Apache-2.0 第 6 条不授予名称或商标使用权；ACLt 是项目名称，不是商标，项目不声明商标；维护者已于 2026-11-16 决定放弃名称冲突检索并接受同名风险（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6920084883)），名称、商标与兼容性声明不再作为公开发布的阻断项，见下节。贡献采用 Developer Certificate of Origin（DCO），不使用 CLA；外部 fork PR 的每个提交须带与作者一致的 `Signed-off-by`，内部代理提交由维护者在合并时签署，细则见 [CONTRIBUTING §11](CONTRIBUTING.md#11-许可)。安全漏洞的私密报告流程见 [SECURITY.md](SECURITY.md)；利用细节不在公开渠道先行披露。
 
 仓库根目录 `LICENSE` 为 Apache License 2.0 英文全文；2026-11-06 起，文末附录示例中的版权行填写为 `Copyright 2026 北京凌矩阵科技有限责任公司`，许可条款正文未改。源码由文件头 SPDX 标识或 [REUSE.toml](REUSE.toml) 显式路径声明覆盖，由 `make check` 中的覆盖检查核对；第三方材料见 [docs/08-governance/third-party-materials.md](docs/08-governance/third-party-materials.md)；Markdown 等文档由本节与根目录 `LICENSE` 覆盖。存在归属声明或第三方通知要求时再维护 `NOTICE`。官方许可文本与应用说明见 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 和 [Apache Licensing FAQ](https://www.apache.org/foundation/license-faq.html)。
 
 ## 名称说明
 
-当前正式名称为 **ACLt Protocol**；ACLt 是项目名称。DistributedCompute、RUDCP、DCP 和 BigMind 仅用于历史追踪。ACLt 不是商标，项目不声明商标。2026-11-16 维护者决定放弃名称冲突检索并接受同名风险（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6920084883)）；名称、商标与兼容性声明因此不再作为公开发行的阻断项。Apache License 2.0 第 6 条不授予名称或商标许可。域名政策不在该决定范围内。
+当前正式名称为 **ACLt Protocol**；ACLt 是项目名称。DistributedCompute、RUDCP、DCP 和 BigMind 仅用于历史追踪。ACLt 不是商标，项目不声明商标。2026-11-16 维护者决定放弃名称冲突检索并接受同名风险（[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6920084883)）；名称、商标与兼容性声明因此不再作为公开发布的阻断项。Apache License 2.0 第 6 条不授予名称或商标许可。域名政策不在该决定范围内。本项目与同名的 ACLT 电缆加速老化试验标准、1990 年代的 ACLT 多智能体系统无关。
