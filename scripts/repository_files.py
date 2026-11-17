@@ -121,6 +121,16 @@ def digest_files(root):
     _,kinds=classified_paths(root)
     return [path for path,kind in kinds.items() if kind==DIGEST]
 
+def in_delivery_scope(name,value):
+    """True when the policy treats a tracked path as a delivery input."""
+    if name in value['tracked_exceptions'] or name in value['top_level_files']:
+        return True
+    relative=Path(name)
+    for directory in value['source_directories']:
+        if name==directory or name.startswith(directory+'/'):
+            return not skipped(relative,value['excluded_generated_paths'])
+    return False
+
 def tracked_coverage(root,paths=None):
     # Do not accidentally use a parent checkout for an unpacked source directory.
     if not (root/'.git').exists() and not (root/'.git').is_symlink():return 'NOT_RUN_NO_CHECKOUT'
@@ -129,14 +139,22 @@ def tracked_coverage(root,paths=None):
         raise ValueError('Git checkout root mismatch')
     names=set(git(root,'ls-files','-z').stdout.decode().rstrip('\0').split('\0'))
     value=policy(root)
-    present={n for n in names if (root/n).exists() or (root/n).is_symlink()}
-    scope={p.relative_to(root).as_posix() for p in (delivery_files(root,value) if paths is None else paths)}
     exceptions=set(value['tracked_exceptions'])
-    uncovered=sorted(present-scope-exceptions)
-    if uncovered:raise ValueError('Tracked paths outside delivery scope: '+', '.join(uncovered))
+    expected={n for n in names if in_delivery_scope(n,value)}
+    outside=sorted(names-expected)
+    if outside:raise ValueError('Tracked paths outside delivery scope: '+', '.join(outside))
+    # A checkout must not silently package an incomplete delivery set: every
+    # tracked delivery file has to exist in the working tree.  A file removed
+    # through Git leaves the index, so it is no longer required.
+    present={n for n in names if (root/n).exists() or (root/n).is_symlink()}
+    absent=sorted(expected-present-exceptions)
+    if absent:raise ValueError('Tracked delivery files missing from the working tree: '+', '.join(absent))
+    delivered={p.relative_to(root).as_posix() for p in (delivery_files(root,value) if paths is None else paths)}
+    uncovered=sorted((present&expected-exceptions)-delivered)
+    if uncovered:raise ValueError('Tracked delivery paths outside the provided coverage: '+', '.join(uncovered))
     # Every tracked delivery path must fall into exactly one ordered rule.
     unclassified=[]
-    for name in sorted(present&scope):
+    for name in sorted(present&expected&delivered):
         try:classify(Path(name),value)
         except ValueError:unclassified.append(name)
     if unclassified:raise ValueError('Unclassified tracked delivery paths: '+', '.join(unclassified))

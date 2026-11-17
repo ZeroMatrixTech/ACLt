@@ -63,6 +63,7 @@
     "experiments/**",
     ".github/**",
     ".aclt-flow/*",
+    "docs/07-roadmap/fm-s3-audit-dependencies.json",
     "docs/testing/**",
     "docs/testing/public-evidence/**",
     "docs/workflow/example/**"

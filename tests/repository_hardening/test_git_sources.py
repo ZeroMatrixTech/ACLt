@@ -71,5 +71,5 @@ class GitSources(unittest.TestCase):
             'digest_patterns': ['sample'], 'delivery_only_patterns': ['docs/**']}))
         with patch.dict(os.environ, self.env, clear=True):
             self.assertEqual(tracked_coverage(self.repo, [self.repo / 'sample']), 'PASS')
-            with self.assertRaisesRegex(ValueError, 'outside delivery scope'):
+            with self.assertRaisesRegex(ValueError, 'outside the provided coverage'):
                 tracked_coverage(self.repo, [])

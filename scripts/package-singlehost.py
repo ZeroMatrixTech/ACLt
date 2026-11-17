@@ -96,7 +96,10 @@ def main():
     checksum = output.with_suffix(output.suffix + '.sha256')
     if output.exists() or checksum.exists():
         parser.error('Output already exists; choose a new filename')
-    errors = verify(root)
+    try:
+        errors = verify(root)
+    except ValueError as error:
+        parser.error(str(error))
     if errors:
         parser.error('Stale manifests: ' + ', '.join(errors) + '; review and run make manifests')
     value, kinds = classified_paths(root)

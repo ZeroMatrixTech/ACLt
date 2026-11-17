@@ -23,6 +23,17 @@ from repository_files import (DIGEST, classify, delivery_files, policy,
 MANIFEST = 'SINGLEHOST-SHA256SUMS'
 
 
+def copy_ignore(directory, names):
+    """Recreate a clean delivery tree without local build output or VCS data."""
+    relative = Path(directory).relative_to(ROOT).as_posix()
+    blocked = {'.git', 'target', '.toolchain', '__pycache__', 'dist'}
+    if not relative.startswith('docs/workflow/example'):
+        blocked.update({'build', 'artifacts'})
+    if relative == '.aclt-flow':
+        blocked.update({'runs', 'state.json', 'rules-status.json', 'lock'})
+    return blocked.intersection(names)
+
+
 def load_packager():
     spec = importlib.util.spec_from_file_location('package_singlehost',
                                                   ROOT / 'scripts/package-singlehost.py')
@@ -47,15 +58,7 @@ class DeliveryTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / 'repo'
-        def ignore(directory, names):
-            relative = Path(directory).relative_to(ROOT).as_posix()
-            blocked = {'.git', 'target', '.toolchain', '__pycache__', 'dist'}
-            if not relative.startswith('docs/workflow/example'):
-                blocked.update({'build', 'artifacts'})
-            if relative == '.aclt-flow':
-                blocked.update({'runs', 'state.json', 'rules-status.json', 'lock'})
-            return blocked.intersection(names)
-        shutil.copytree(ROOT, self.root, ignore=ignore)
+        shutil.copytree(ROOT, self.root, ignore=copy_ignore)
         refresh(self.root)
         self.archive = self.root / 'dist/aclt-singlehost-update.zip'
 
@@ -145,6 +148,16 @@ class DeliveryTests(unittest.TestCase):
         evidence.write_bytes(evidence.read_bytes() + b'\n')
         self.assertIn(MANIFEST, verify(self.root))
 
+    def test_code_read_roadmap_input_is_pinned(self):
+        # tools/migration_evidence.py reads this plan and its recorded hashes
+        # decide check-migration-evidence, so it must never be delivery-only.
+        relative = Path('docs/07-roadmap/fm-s3-audit-dependencies.json')
+        self.assertEqual(classify(relative, policy(self.root)), DIGEST)
+        self.assertIn(relative.as_posix(), self.digest_names())
+        target = self.root / relative
+        target.write_bytes(target.read_bytes() + b'\n')
+        self.assertIn(MANIFEST, verify(self.root))
+
     def test_new_registration_file_invalidates_manifest(self):
         (self.root / 'registries/verification-profile/new.json').write_text('{}')
         self.assertIn(MANIFEST, verify(self.root))
@@ -217,6 +230,53 @@ class DeliveryTests(unittest.TestCase):
         (self.root / 'registries/linked.json').symlink_to(secret)
         self.assertNotEqual(self.package().returncode, 0)
         self.assertFalse(self.archive.exists())
+
+
+class GitCheckoutDeliveryTests(unittest.TestCase):
+    """A Git checkout must not package an incomplete delivery set."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / 'repo'
+        shutil.copytree(ROOT, self.root, ignore=copy_ignore)
+        refresh(self.root)
+        self.archive = self.root / 'dist/aclt-singlehost-update.zip'
+        self.git('init', '-q')
+        self.git('add', '-A')
+        self.git('-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
+                 'commit', '-qm', 'base')
+
+    def git(self, *args):
+        return subprocess.run(['git', '-C', str(self.root), *args],
+                              capture_output=True, text=True)
+
+    def package(self):
+        return subprocess.run([sys.executable, '-B', str(self.root / 'scripts/package-singlehost.py')],
+                              capture_output=True, text=True)
+
+    def test_missing_tracked_delivery_file_fails_package(self):
+        (self.root / 'docs/workflow/README.md').unlink()
+        result = self.package()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('missing from the working tree', result.stderr)
+        self.assertFalse(self.archive.exists())
+
+    def test_missing_tracked_delivery_file_fails_manifest_check(self):
+        (self.root / 'docs/development.md').unlink()
+        result = subprocess.run([sys.executable, '-B', str(self.root / 'scripts/update-manifests.py'),
+                                 '--check'], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('missing from the working tree', result.stderr)
+
+    def test_git_removed_delivery_file_is_not_required(self):
+        removed = self.git('rm', '-q', 'docs/workflow/README.md')
+        self.assertEqual(removed.returncode, 0, removed.stderr)
+        result = self.package()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        with zipfile.ZipFile(self.archive) as bundle:
+            self.assertNotIn('docs/workflow/README.md', bundle.namelist())
+            self.assertEqual(len(bundle.namelist()), 803)
 
 
 class ClassificationTests(unittest.TestCase):

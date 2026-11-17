@@ -36,6 +36,12 @@ class RepositoryLayoutTests(unittest.TestCase):
                     self.assertFalse(relative.endswith('.md'), relative)
                     self.assertTrue((ROOT / relative).is_file(), relative)
 
+    def test_code_read_roadmap_input_is_pinned(self):
+        # tools/migration_evidence.py reads this plan; its hashes decide the
+        # migration-evidence check, so the manifest must cover it.
+        self.assertIn('  docs/07-roadmap/fm-s3-audit-dependencies.json',
+                      (ROOT / 'SINGLEHOST-SHA256SUMS').read_text())
+
     def test_delivery_manifests_match_installed_files(self):
         for root, name in [(ROOT, 'SINGLEHOST-SHA256SUMS'), (ROOT, 'WORKFLOW-SHA256SUMS'),
                            (ROOT / EXPERIMENT, 'SHA256SUMS'),

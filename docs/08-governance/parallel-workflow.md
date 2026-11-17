@@ -203,7 +203,7 @@ git worktree add --no-track -b <type>/<topic> .claude/worktrees/<名称> origin/
 
 | 文件 | 处理 |
 |---|---|
-| `SINGLEHOST-SHA256SUMS`、`WORKFLOW-SHA256SUMS` | 生成物，不手工合并。先取任一侧，解决其他冲突后运行 `make manifests` 并审阅 diff。两份清单只列 `DELIVERY-SCOPE.json` 判定为钉住（`DIGEST`）的代码、测试、配置与证据；Markdown 和 `docs/` 下其余材料只交付、不钉，只改文档的条目不会改动它们 |
+| `SINGLEHOST-SHA256SUMS`、`WORKFLOW-SHA256SUMS` | 生成物，不手工合并。先取任一侧，解决其他冲突后运行 `make manifests` 并审阅 diff。两份清单只列 `DELIVERY-SCOPE.json` 交付范围中判定为钉住（`DIGEST`）的代码、测试、配置与证据；该范围内的 Markdown 和 `docs/` 下其余材料只交付、不钉（实验目录内部清单不在本条规则内），只改文档的条目不会改动这两份清单 |
 | `docs/07-roadmap/current-status.md` 状态日志 | 双方的行都保留。沿用新行插在表头之后的做法，后合并的条目的行放在上方。不改他人的行 |
 | `current-status.md` 文末日期小节 | 双方小节都保留，按合并先后排列 |
 | `docs/README.md` 索引、`Makefile` 目标 | 取并集；同步后 `make check` 必须通过 |
