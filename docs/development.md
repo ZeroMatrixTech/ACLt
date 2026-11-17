@@ -207,3 +207,5 @@ CI 配置只在 PR、main push 和手动触发时跑完整本地检查和打包�
 ## 首次公开发行打包
 
 首次公开发行源码包用 `make package PACKAGE=/new/path/aclt-research-preview-1-src.zip` 生成，命名与范围见[首次公开发行说明](releases/PREVIEW-20261106.md)。打包前须清单有效、工作区干净且位于待发布 commit；发布前检查清单以该说明为准。发行名称 `research-preview-1` 不是 ProtocolVersion 或 ConformanceTarget。
+
+<!-- fast-path probe: docs Markdown only, no manifest refresh (P1-m revision 1) -->
