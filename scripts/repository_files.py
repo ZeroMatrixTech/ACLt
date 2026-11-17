@@ -166,6 +166,11 @@ def workflow_inputs(root):
         '.aclt-flow/template.json', '.aclt-flow/.gitignore', 'scripts/aclt-flow.py',
         'scripts/package-singlehost.py', 'scripts/repository_files.py']]
 
+def experiment_inputs(root,directory,value):
+    """Experiment manifests follow the same digest rule as the root manifests."""
+    return [p for p in files(root, directory)
+            if p.name != 'SHA256SUMS' and classify(p.relative_to(root), value) == DIGEST]
+
 def inventories(root):
     value=policy(root)
     delivery=delivery_files(root,value)
@@ -175,12 +180,9 @@ def inventories(root):
     if outside:raise ValueError('Workflow inputs outside delivery scope: '+', '.join(outside))
     tracked_coverage(root,delivery)
     return {
-        EXPERIMENT + '/SHA256SUMS': (root / EXPERIMENT, [
-            p for p in files(root, EXPERIMENT) if p.name != 'SHA256SUMS']),
-        MULTINODE + '/SHA256SUMS': (root / MULTINODE, [
-            p for p in files(root, MULTINODE) if p.name != 'SHA256SUMS']),
-        AUTHORITY + '/SHA256SUMS': (root / AUTHORITY, [
-            p for p in files(root, AUTHORITY) if p.name != 'SHA256SUMS']),
+        EXPERIMENT + '/SHA256SUMS': (root / EXPERIMENT, experiment_inputs(root, EXPERIMENT, value)),
+        MULTINODE + '/SHA256SUMS': (root / MULTINODE, experiment_inputs(root, MULTINODE, value)),
+        AUTHORITY + '/SHA256SUMS': (root / AUTHORITY, experiment_inputs(root, AUTHORITY, value)),
         'WORKFLOW-SHA256SUMS': (root, [p for p in workflow if kinds[p] == DIGEST]),
         'SINGLEHOST-SHA256SUMS': (root, [p for p in delivery if kinds[p] == DIGEST]),
     }

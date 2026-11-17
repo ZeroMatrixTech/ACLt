@@ -127,6 +127,36 @@ class DeliveryTests(unittest.TestCase):
         result = self.package()
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def test_experiment_markdown_does_not_invalidate_any_manifest(self):
+        for path in ('experiments/aclt-minimal-verifier-state3/README.md',
+                     'experiments/aclt-multinode-admission/README.md',
+                     'experiments/aclt-authority-admission/README.md'):
+            with (self.root / path).open('a', encoding='utf-8') as out:
+                out.write('\nChanged without refreshing any manifest\n')
+        self.assertEqual(verify(self.root), [])
+        result = self.package()
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_experiment_pinned_file_change_invalidates_experiment_manifest(self):
+        cases = (
+            ('experiments/aclt-minimal-verifier-state3/Cargo.toml',
+             'experiments/aclt-minimal-verifier-state3/SHA256SUMS'),
+            ('experiments/aclt-multinode-admission/check.py',
+             'experiments/aclt-multinode-admission/SHA256SUMS'),
+            ('experiments/aclt-authority-admission/authority.py',
+             'experiments/aclt-authority-admission/SHA256SUMS'),
+        )
+        for relative, manifest in cases:
+            path = self.root / relative
+            before = path.read_bytes()
+            try:
+                path.write_bytes(before + b'\n')
+                # The experiment manifest and the root manifest both pin this
+                # file, so both must become stale together.
+                self.assertEqual(verify(self.root), [manifest, MANIFEST])
+            finally:
+                path.write_bytes(before)
+
     def test_added_and_deleted_markdown_do_not_invalidate_manifest(self):
         (self.root / 'docs/new-note.md').write_text('# new\n', encoding='utf-8')
         (self.root / 'docs/workflow/README.md').unlink()
