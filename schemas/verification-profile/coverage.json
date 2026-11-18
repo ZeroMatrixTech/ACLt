@@ -23,7 +23,8 @@
       "SV-86b",
       "SV-86c",
       "SV-77",
-      "SV-93"
+      "SV-93",
+      "SV-04"
     ],
     "L1b": [
       "SV-10",
@@ -97,7 +98,6 @@
       "SV-80",
       "SV-66",
       "SV-91",
-      "SV-04",
       "SV-98",
       "SV-116"
     ],
@@ -151,7 +151,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-17: 以 1533290ed82347a5a5006e4d35a5092d02362780 的实施代码与测试复核 R1–R16；119 Type A = 80 implemented + 36 partial + 3 not implemented，18 个规范摘要 owner 均 implemented。未修改 validator 行为或规则。",
+  "review_note": "2026-11-18: B0-a（#191）把 SV-04 由 partial 提升为 implemented。依据 #187 盘点（2026-11-17，基线 1533290）记录的规则级证据：`check_parameters` 按四方法封闭参数类型判定 `method_parameters` 变体，12 条 `swapped-params-*` 向量中 9 条直接命中，DIRECT 基线的 3 条由 SV-16 先拒绝并另以判别测试覆盖四方法 12 种替换；原 gap 的 Direct predicate_signature 线上编码与正式 import 冻结分别迁入 SV-118 与 SV-62 的 gap。119 Type A = 81 implemented + 35 partial + 3 not implemented，18 个规范摘要 owner 均 implemented。未修改 validator 行为或规则。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],

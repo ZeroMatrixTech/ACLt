@@ -57,15 +57,17 @@
       "phase": "R",
       "layer": "L1a",
       "kind": "A",
-      "status": "PARTIAL",
+      "status": "IMPLEMENTED",
       "requirement": "`method_parameters` 变体与 `verification_method` 匹配",
       "implementation": [
         "tools/verification_profile/method_rules.py#check_parameters"
       ],
       "tests": [
-        "tests/verification_profile/test_method_matrices.py#test_unfrozen_signature_semantics_are_not_claimed"
+        "tests/verification_profile/test_method_matrices.py#test_unfrozen_signature_semantics_are_not_claimed",
+        "tests/verification_profile/test_method_matrices.py#test_frozen_vectors",
+        "tests/verification_profile/test_method_matrices.py#test_method_parameter_variant_mismatch_is_rejected_by_discriminant"
       ],
-      "gap": "四种参数块的冻结字段和测试 import 已有封闭结构校验；Direct predicate_signature 线上编码与其他正式 import 未冻结，不能完成全局类型验收。"
+      "gap": "四方法变体判别由 `check_parameters` 的封闭参数类型判定覆盖：12 条 `swapped-params-*` 向量中 9 条直接命中该判别，DIRECT 基线的 3 条先被 SV-16 的 determinism/effects 检查拒绝，判别测试另覆盖四方法的 12 种替换。参数块字段的线上表示冻结归 SV-118，正式 import 冻结归 SV-62；完整 SchemaValid、全局类型验收与其他相位仍由各自登记独立验收。"
     },
     {
       "id": "SV-05",
@@ -1020,7 +1022,7 @@
         "tests/verification_profile/test_codec.py#test_claim_transitive_binding",
         "tests/verification_profile/test_references.py#test_external_payload_schema_and_hash_are_both_bound"
       ],
-      "gap": "模板及 audit R3 外部载荷的结构化版本引用已有局部绑定；其他运行对象、外部组件授权和官方 import 全集仍缺。 R9 的 ClusterMappingRef 使用封闭 {id,digest} 与 ClusterMappingID，拒绝 Version 与跨 ID 域；其他引用全集仍未闭合。"
+      "gap": "模板及 audit R3 外部载荷的结构化版本引用已有局部绑定；其他运行对象、外部组件授权和官方 import 全集仍缺。 R9 的 ClusterMappingRef 使用封闭 {id,digest} 与 ClusterMappingID，拒绝 Version 与跨 ID 域；其他引用全集仍未闭合。 method parameter block 的 imported types（`PredicateSignature`/`ResourceBounds`/`EffectID`/`SystemRef`/`ParamsRef`/`BindingRuleRef`/`VerifierRef`/`PopulationDefRef`/`SchemaRef`/`CommitmentSchemeRef` 等）仍由带外 pin 的 TEST schema lock 承载，§3.2.1 的正式 import ID 与解析全集未冻结。"
     },
     {
       "id": "SV-63",
@@ -1955,7 +1957,7 @@
         "tests/verification_profile/test_codec.py#test_view_json_rejects_duplicates_and_invalid_constants",
         "tests/verification_profile/test_codec.py#test_unknown_types_fail_closed"
       ],
-      "gap": "候选 ClaimTemplate/claim 切片的 Schema View 可逆、primitive/key 限制和字节对拍已完成；全对象 wire-key 表与五相位投影尚未冻结。"
+      "gap": "候选 ClaimTemplate/claim 切片的 Schema View 可逆、primitive/key 限制和字节对拍已完成；全对象 wire-key 表与五相位投影尚未冻结，参数块字段的线上表示（含 Direct `predicate_signature`，现以具名 opaque 测试 schema 承载）也尚未冻结。"
     },
     {
       "id": "SV-119",

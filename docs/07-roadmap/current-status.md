@@ -31,7 +31,7 @@
 | Phase I/F/B/D 候选接口 | [R14](../testing/PROFILE-PHASE-D-R14-20261111.md)验证历史 B/D 信封，[R15](../testing/PROFILE-PHASE-D-R15-20261111.md)实现创建时部署绑定并串联授权、判决与结算 | [R16](../testing/PROFILE-PHASE-D-R16-20261111.md)验证候选部署撤销；正式 FM-A08 仍依赖 Profile/来源审批、撤销传播和部署证据 |
 | 首次公开发布（research-preview-1） | [发布说明](../releases/PREVIEW-20261106.md)（文件名保留 `PREVIEW-20261106.md`）与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：README 已加统一成熟度声明与 #101 边界；源码包可重现、包内本地检查可运行 | 仓库已转为公开，公开仓库设置已落地并读回核对；DCO fork 实测（[#181](https://github.com/ZeroMatrixTech/ACLt/pull/181)）确认未签名提交被阻止、补签后通过；标签 `research-preview-1` 指向 [1533290](https://github.com/ZeroMatrixTech/ACLt/commit/1533290ed82347a5a5006e4d35a5092d02362780)，[GitHub Release](https://github.com/ZeroMatrixTech/ACLt/releases/tag/research-preview-1) 于 2026-11-16 发布并记录发布 commit、源码包 SHA-256 与 CI 记录。发布名不是 ProtocolVersion、ConformanceTarget 或部署启用 |
 | 证明验证路线 | [ADR-0009](../05-decisions/ADR-0009-proof-verified-computation-statements.md) `PROPOSED` 草案：以推导证书验证计算陈述，分陈述绑定、推导检查与语义充分性三层；`verification.proof-assisted` 仍为 V1 `DEFERRED` | 评审接口；首个实例依赖 RIR-0 形式语义（PO-11），在此之前只走非主网测试路线 |
-| 验收边界 | P0-1B 为 80/36/3，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
+| 验收边界 | P0-1B 为 81/35/3，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
 
 当前依据：[ADR-0006 分层评审](../05-decisions/reviews/REVIEW-20261028-layered.md)、[三份机器摘要与校验](../testing/MIGRATION-EVIDENCE-20261028.md)、[FM-S3 audit 依赖](fm-s3-audit-dependencies.md)。以下带日期记录为历史，不覆盖本表优先级。
 
@@ -205,6 +205,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-18 | v0.5 | B0-a（#191）：先判定归属再把 SV-04 的缺口迁到负责规则——Direct `predicate_signature` 线上编码冻结归 SV-118、正式 import 冻结归 SV-62，两项写进其 gap 后从 SV-04 移除；SV-04 由 partial 提升为 implemented，119 项 Type A 变为 81 implemented / 35 partial / 3 not implemented；新增判别测试覆盖四方法 12 种参数块替换，未修改 validator 行为 | [盘点报告](../testing/P0-1B-INVENTORY-20261117.md)、#191 | 不变 |
 | 2026-11-17 | v0.5 | P1-m（#183）：SHA 清单只钉代码与证据——`DELIVERY-SCOPE.json` 升为 `aclt.delivery-scope@2`，分类规则改为配置驱动的有序列表；两份根清单与三份实验清单都只列钉住的文件（单机清单 569 行、工作流清单 28 行，三份实验清单分别 39、7、10 行），219 个 Markdown 与 `docs/` 下其余 15 个非 Markdown 材料只交付、不钉；更新包仍包含全部 804 个交付文件，归档校验逐字节核对钉住文件与不钉文件的一致性；清单只要变化就在 CI 走全量通道 | [开发入口](../development.md)、`DELIVERY-SCOPE.json`、#183 | 不变 |
 | 2026-11-17 | v0.5 | B0 以 `1533290` 复核 R1–R16 后的 P0-1B 覆盖：119 项 Type A 为 80 implemented / 36 partial / 3 not implemented（SV-27/50/61 未实现），18 个规范摘要均 implemented；SV-41–80 区间的 Type A 项逐项复核维持原状态，补 R6–R16 切片证据与 SV-117/119/121 证据，未修改 validator 行为 | [盘点报告](../testing/P0-1B-INVENTORY-20261117.md)、#185 | 不变 |
 | 2026-11-17 | v0.5 | P1-l：main 上的发布说明加 `RELEASED` 头注（标签快照正文不变）；软件发布含义的“发行”统一改为“发布”；README、docs/README 与审计索引同步发布状态；CONTRIBUTORS 与公开仓库设置按实际记录更新；第三方材料补 DeepSeek 输出权利依据 | [Release](https://github.com/ZeroMatrixTech/ACLt/releases/tag/research-preview-1)、[发布说明](../releases/PREVIEW-20261106.md)、#182 | 不变 |

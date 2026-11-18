@@ -88,6 +88,21 @@ class MethodMatrixTests(unittest.TestCase):
         value,pin=DRIVER['fixture']('REEXEC_BOUNDED');value['profile']['liveness_parameters']['q_source']='EXTRAPOLATED';DRIVER['seal'](value)
         with self.assertRaisesRegex(c.CodecError,'SV-13:'):r.inspect(c.encode(value),pin)
 
+    def test_method_parameter_variant_mismatch_is_rejected_by_discriminant(self):
+        for method in p.METHODS:
+            for other in p.METHODS:
+                if other==method:continue
+                value,pin=DRIVER['fixture'](method)
+                foreign=DRIVER['fixture'](other)[0]['profile']['method_parameters']
+                if method=='DIRECT_VERIFIED':
+                    masked=copy.deepcopy(value);masked['profile']['method_parameters']=copy.deepcopy(foreign);DRIVER['seal'](masked)
+                    with self.assertRaisesRegex(c.CodecError,'SV-16:'):r.inspect(c.encode(masked),pin)
+                    foreign['determinism']='DETERMINISTIC';foreign['effects']=[]
+                value['profile']['method_parameters']=copy.deepcopy(foreign);DRIVER['seal'](value)
+                with self.assertRaises(c.CodecError) as caught:r.inspect(c.encode(value),pin)
+                self.assertIn('unknown/missing field',str(caught.exception))
+                self.assertNotIn('SV-16:',str(caught.exception))
+
     def test_native_bool_uint_and_validator_reference_bounds(self):
         for key,bad in [('certificate_required',1),('verifier_replication_min',True),('validator_ref','acl.val.stats@18446744073709551616.0.0')]:
             value,pin=DRIVER['fixture']('DIRECT_VERIFIED');value['profile']['method_parameters'][key]=bad;DRIVER['seal'](value)
