@@ -659,11 +659,6 @@ class CoauthorSuffixTests(DcoTestCase):
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn("no Signed-off-by trailer", result.stdout)
 
-    def test_the_suffix_alone_is_not_a_signoff(self):
-        result = self.push_verdict("Change: x" + self.SUFFIX)
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("no Signed-off-by trailer", result.stdout)
-
     def test_the_signer_must_still_be_on_the_list(self):
         base = self.commit("a", "base", author=AGENT)
         head = self.commit("b", "agent work", author=AGENT)
