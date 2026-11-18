@@ -7,8 +7,8 @@
   "coverage": "schemas/verification-profile/coverage.json",
   "source_sha256": {
     "docs/03-protocol/verification-profile-schema.md": "edab977989725b8f5129629d77fe3ddcffc403e36f746d3382dde594f086636a",
-    "schemas/verification-profile/inventory.json": "76e8e01565c81aa4b478bf80fae2d671e94211bb496296f2bbe1271b019182be",
-    "schemas/verification-profile/coverage.json": "5f4bf8e9ce3dd03e1558d93c30296819f0c1050a8c44473459ab965432a443e2"
+    "schemas/verification-profile/inventory.json": "e8dc8d0e159a62ffb0ecbd89b3343e08ab41730315ec2d9d2004971028183281",
+    "schemas/verification-profile/coverage.json": "c211594f5a4edddb6573a4f37fc7f6a85b1a5fa3242b29834b6d8c80159c8836"
   },
   "scope_contract": {
     "method": "REEXEC_AUDIT_ONLY",

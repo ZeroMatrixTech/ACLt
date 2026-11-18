@@ -151,7 +151,7 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-09: R11 后 119 Type A = 80 implemented + 36 partial + 3 not implemented。FM-S3 权威证据接入为 SV-119 新增 partial，为 SV-115/121 补充候选真实来源与结算对照证据。",
+  "review_note": "2026-11-17: 以 1533290ed82347a5a5006e4d35a5092d02362780 的实施代码与测试复核 R1–R16；119 Type A = 80 implemented + 36 partial + 3 not implemented，18 个规范摘要 owner 均 implemented。未修改 validator 行为或规则。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],
