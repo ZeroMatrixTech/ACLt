@@ -48,7 +48,7 @@
 
 文件选择、分类与过滤集中在 `scripts/repository_files.py`，分类规则写在 `DELIVERY-SCOPE.json`（schema `aclt.delivery-scope@2`）。`update-manifests.py` 负责更新/校验，`package-singlehost.py` 使用同一规则并验证归档内容。
 
-四份清单分别覆盖 state3、多节点、工作流和更新包。刷新按依赖顺序进行。四份清单都只列 `DELIVERY-SCOPE.json` 判定为 `DIGEST` 的文件，即代码、测试、构建配置、证据数据和测试读取的 fixture；全仓库 `*.md` 只交付、不钉 digest，三份实验清单按同一规则生成，因此修改实验目录内的 Markdown 也不需要刷新任何清单。每个被跟踪的文件都必须落在 `DIGEST`、`DELIVERY_ONLY` 或 `tracked_exceptions` 之一；规则判断不了的路径会让清单校验失败，而不是静默漏掉。更新包保留原命名接口；自 2026-11-05 起文件选择以 `DELIVERY-SCOPE.json` 为准，包含全部受管源码输入及历史 state1/state2、`docs/codocs/`（见下文“有界修复后的门禁与交付”），2026-10-14 版“不含旧实验和 codocs”的范围已被替代。归档仍包含全部交付文件；校验核对钉住文件的 SHA-256、`SINGLEHOST-SHA256SUMS` 的字节，以及不钉文件与源内容逐字节一致、没有多余或缺失的文件。解包到新目录可独立运行本地检查；叠加到已有 checkout 时不会删除接收方旧文件。Git 源码 pin 校验（`make verify-source`）仍需完整 Git checkout。
+两份根清单（`SINGLEHOST-SHA256SUMS`、`WORKFLOW-SHA256SUMS`）和三份实验清单（state3、多节点、authority）分别覆盖更新包、工作流与三个实验目录。刷新按依赖顺序进行。它们都只列 `DELIVERY-SCOPE.json` 判定为 `DIGEST` 的文件，即代码、测试、构建配置、证据数据和测试读取的 fixture；全仓库 `*.md` 只交付、不钉 digest，三份实验清单按同一规则生成，因此修改实验目录内的 Markdown 也不需要刷新任何清单。每个被跟踪的文件都必须落在 `DIGEST`、`DELIVERY_ONLY` 或 `tracked_exceptions` 之一；规则判断不了的路径会让清单校验失败，而不是静默漏掉。更新包保留原命名接口；自 2026-11-05 起文件选择以 `DELIVERY-SCOPE.json` 为准，包含全部受管源码输入及历史 state1/state2、`docs/codocs/`（见下文“有界修复后的门禁与交付”），2026-10-14 版“不含旧实验和 codocs”的范围已被替代。归档仍包含全部交付文件；校验核对钉住文件的 SHA-256、`SINGLEHOST-SHA256SUMS` 的字节，以及不钉文件与源内容逐字节一致、没有多余或缺失的文件。解包到新目录可独立运行本地检查；叠加到已有 checkout 时不会删除接收方旧文件。Git 源码 pin 校验（`make verify-source`）仍需完整 Git checkout。
 
 默认输出 `dist/aclt-singlehost-update.zip` 和同名 `.sha256`。输出已存在、清单失效或交付输入为符号链接时拒绝打包；不会自动重签源码。中途失败的产物需要审查后另行处理。
 
