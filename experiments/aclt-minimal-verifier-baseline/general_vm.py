@@ -809,34 +809,50 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
             c.need(not [row for row in begins if row["request_sha256"] == sha],
                    "a stale frame executed after the handoff")
 
-    frames = {"sent": [], "received": []}
+    # Frame observations are kept per endpoint class: a worker may retain a reply
+    # that it never sent (the drop), so worker and coordinator counts differ.
+    frames = {"coordinator_requests": [], "worker_requests": [],
+              "coordinator_responses": [], "worker_responses": [],
+              "boot_requests": [], "boot_responses": []}
+    for row in _frame_records(roots["A"]):
+        bucket = "coordinator_requests" if row["direction"] == "request" \
+            else "coordinator_responses"
+        frames[bucket].append(row)
     for role in roles:
+        if role == "A":
+            continue
         for row in _frame_records(roots[role]):
-            bucket = "sent" if (role == "A") == (row["direction"] == "request") else "received"
+            bucket = "worker_requests" if row["direction"] == "request" \
+                else "worker_responses"
             frames[bucket].append(row)
     for row in dispatches:
         if row.get("event") != "activation":
             continue
-        frames["sent"].append(dict(direction="request", action="BOOT",
-                                   bytes=row["request_bytes"], sha256=None))
+        frames["boot_requests"].append(dict(bytes=row["request_bytes"]))
         if row.get("response_bytes") is not None:
-            frames["received"].append(dict(direction="response", action="BOOT",
-                                           bytes=row["response_bytes"], sha256=None))
+            frames["boot_responses"].append(dict(bytes=row["response_bytes"]))
     for role in roles:
+        if role == "A":
+            continue
         for row in read_lines(Path(roots[role]) / "activations.jsonl"):
-            frames["received"].append(dict(direction="request", action="BOOT",
-                                           bytes=row["request_bytes"], sha256=None))
+            frames["boot_requests"].append(dict(bytes=row["request_bytes"]))
             if row.get("accepted"):
-                frames["sent"].append(dict(direction="response", action="BOOT",
-                                           bytes=row["response_bytes"], sha256=None))
+                frames["boot_responses"].append(dict(bytes=row["response_bytes"]))
 
-    classes = {}
+    def totals(rows):
+        return dict(count=len(rows), bytes=sum(row["bytes"] for row in rows))
+
+    across = {}
     for bucket, rows in frames.items():
+        if bucket in ("boot_requests", "boot_responses"):
+            across[bucket] = totals(rows)
+            continue
+        by_action = {}
         for row in rows:
-            key = f"{bucket}/{row['action']}"
-            entry = classes.setdefault(key, dict(count=0, bytes=0))
+            entry = by_action.setdefault(row["action"], dict(count=0, bytes=0))
             entry["count"] += 1
             entry["bytes"] += row["bytes"]
+        across[bucket] = dict(sorted(by_action.items()))
     payload = {}
     for path in Path(roots["A"]).glob("*-request.cbor"):
         name = path.name[: -len("-request.cbor")]
@@ -856,11 +872,11 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
         executions=executions_by_action,
         execution_keys=len(begins),
         rejections=reasons,
-        frames=dict(sorted(classes.items())),
+        frames=across,
         payload=dict(sorted(payload.items())),
         probes=len(probes),
         charged=journal.charged,
         reserved=journal.reserved,
         accepted=sorted(journal.accepted),
-        merge_ns=getattr(journal, "merge_ns", None),
+        merge_ns=json.loads((Path(roots["A"]) / "guest.json").read_text()).get("merge_ns"),
     )
