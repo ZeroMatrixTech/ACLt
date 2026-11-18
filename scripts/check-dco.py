@@ -26,7 +26,11 @@ Earlier history is not rewritten and is out of scope.
 Both the body and commit messages go through the same
 `git interpret-trailers --parse`: a line containing only `---` starts the
 patch section, so anything after it is not a trailer, and CRLF is normalised to
-LF first so the same text is judged the same way.
+LF first so the same text is judged the same way.  When a merged pull request
+had several authors, GitHub appends a `---------` separator and one
+`Co-authored-by` line per author to the squash message; that exact suffix is
+stripped before parsing, so the sign-off written above it is read as the last
+trailer paragraph again.
 
 The sign-off identities live in `.github/dco-maintainers.txt` next to the
 checkout that holds this script.  The workflow runs the script from the trusted
@@ -44,6 +48,8 @@ SCRIPT = "scripts/check-dco.py"
 MAINTAINERS = ".github/dco-maintainers.txt"
 SIGNOFF = re.compile(r"^Signed-off-by:\s*(.+?)\s*<([^<>\s]+@[^<>\s]+)>\s*$", re.MULTILINE)
 IDENTITY = re.compile(r"^(?P<name>.+?)\s*<(?P<email>[^<>\s]+@[^<>\s]+)>$")
+SEPARATOR = "-" * 9
+COAUTHOR = re.compile(r"^Co-authored-by:\s*(?P<name>.+?)\s*<(?P<email>[^<>\s]+@[^<>\s]+)>$")
 ROLES = {"signoff"}
 REPO = "."
 ZERO = "0" * 40
@@ -56,13 +62,49 @@ def git(*args, check=True, stdin=None):
     return result
 
 
+def without_coauthor_suffix(text):
+    """The text minus the co-author block GitHub appends to a squash message.
+
+    A pull request whose commits have more than one author gets a fixed suffix
+    added to the message GitHub builds from its body: a line of exactly nine
+    dashes, a blank line, then one `Co-authored-by: name <e-mail>` line per
+    co-author.  That moves the body sign-off into the second-to-last
+    paragraph, which `git interpret-trailers --parse` does not read.
+
+    Only that shape is stripped.  A separator of any other length, a missing
+    blank line on either side of the separator, or a line inside the suffix
+    that is not a `Co-authored-by` trailer all leave the text unchanged, so
+    every other use of a dash line keeps the verdict it had before.
+    """
+    lines = text.replace("\r\n", "\n").split("\n")
+    end = len(lines)
+    while end and not lines[end - 1].strip():
+        end -= 1
+    first = end
+    while first and COAUTHOR.match(lines[first - 1]):
+        first -= 1
+    if first == end:
+        return text
+    if first < 3 or lines[first - 1].strip() or lines[first - 2] != SEPARATOR:
+        return text
+    if lines[first - 3].strip():
+        # GitHub writes the separator as its own paragraph; anywhere else the
+        # line is ordinary body text and keeps its current meaning.
+        return text
+    body = "\n".join(lines[:first - 2])
+    return body if body.strip() else text
+
+
 def trailers(text):
     """Signed-off-by identities in the text's trailer block, as (name, e-mail)."""
     # Trailer parsing does not read a repository, so this never consults the
     # pull request's Git configuration; CRLF becomes LF so both line endings
-    # reach git as the same bytes.
+    # reach git as the same bytes, and the co-author suffix is dropped first so
+    # the sign-off above it is still the last trailer paragraph.  The body and
+    # the commit checks both call this function, so they judge a text alike.
     result = subprocess.run(["git", "interpret-trailers", "--parse"],
-                            capture_output=True, text=True, input=text.replace("\r\n", "\n"))
+                            capture_output=True, text=True,
+                            input=without_coauthor_suffix(text.replace("\r\n", "\n")))
     if result.returncode != 0:
         raise SystemExit(f"git interpret-trailers --parse failed: {result.stderr.strip()}")
     return [(name, email.lower()) for name, email in SIGNOFF.findall(result.stdout)]

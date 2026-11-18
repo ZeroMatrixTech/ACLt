@@ -69,6 +69,19 @@ def scenarios(agent_head, outside_head):
            "false", agent_head, 1, "no Signed-off-by trailer")
     yield ("patch separator before the sign-off", "Change: x\n\n---\n\n" + SIGNOFF,
            "false", agent_head, 1, "patch section")
+    suffix = "\n\n---------\n\nCo-authored-by: dsh <dsh@localhost>"
+    yield ("GitHub co-author suffix", "Change: x\n\n" + SIGNOFF + suffix, "false", agent_head, 0,
+           "signed off by")
+    yield ("co-author suffix, two authors", "Change: x\n\n" + SIGNOFF + suffix +
+           "\nCo-authored-by: R <r@example.invalid>", "false", agent_head, 0, "signed off by")
+    yield ("co-author suffix, eight dashes", "Change: x\n\n" + SIGNOFF + "\n\n--------\n\n"
+           "Co-authored-by: dsh <dsh@localhost>", "false", agent_head, 1,
+           "no Signed-off-by trailer")
+    yield ("co-author suffix, extra trailer", "Change: x\n\n" + SIGNOFF + "\n\n---------\n\n"
+           "Reviewed-by: R <r@example.invalid>\nCo-authored-by: dsh <dsh@localhost>",
+           "false", agent_head, 1, "no Signed-off-by trailer")
+    yield ("co-author suffix, unsigned above", "Change: x" + suffix, "false", agent_head, 1,
+           "no Signed-off-by trailer")
     yield ("CRLF body", "Change: x\r\n\r\n" + SIGNOFF + "\r\n", "false", agent_head, 0, "signed off by")
     yield ("signer outside the list", "Change: x\n\n" + UNKNOWN, "false", agent_head, 1,
            "not a sign-off identity")
