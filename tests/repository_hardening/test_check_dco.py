@@ -377,6 +377,18 @@ class PushTests(DcoTestCase):
             "separator": "Change: x\n\n---\n\n" + SIGNOFF,
             "middle": "Change: x\n\n" + SIGNOFF + "\n\nmore prose",
             "crlf": "Change: x\r\n\r\n" + SIGNOFF + "\r\n",
+            "coauthor suffix": "Change: x\n\n" + SIGNOFF + "\n\n---------\n\n"
+                               "Co-authored-by: dsh <dsh@localhost>",
+            "coauthor suffix, two authors": "Change: x\n\n" + SIGNOFF + "\n\n---------\n\n"
+                                            "Co-authored-by: dsh <dsh@localhost>\n"
+                                            "Co-authored-by: R <r@example.invalid>",
+            "coauthor suffix, eight dashes": "Change: x\n\n" + SIGNOFF + "\n\n--------\n\n"
+                                             "Co-authored-by: dsh <dsh@localhost>",
+            "coauthor suffix, extra trailer": "Change: x\n\n" + SIGNOFF + "\n\n---------\n\n"
+                                              "Reviewed-by: R <r@example.invalid>\n"
+                                              "Co-authored-by: dsh <dsh@localhost>",
+            "coauthor suffix, unsigned above": "Change: x\n\n---------\n\n"
+                                               "Co-authored-by: dsh <dsh@localhost>",
         }
         for name, text in cases.items():
             with self.subTest(case=name):
@@ -389,6 +401,293 @@ class PushTests(DcoTestCase):
                 target = self.commit("d", text, author=AGENT)
                 push_verdict = self.push(adopt, target).returncode
                 self.assertEqual(body_verdict, push_verdict, name)
+
+
+# The squash message of ece86b5 on main, copied verbatim from
+# "git log -1 --format=%B ece86b5" on 2026-11-18.  GitHub appended that
+# separator and Co-authored-by block after the maintainer's sign-off, so the
+# push check read only the appended block and reported
+# "FAIL: ece86b536bef on main has no Signed-off-by trailer".  Keep the text
+# byte-for-byte identical: it is the fixture for that failure.
+ECE86B5_MESSAGE = """docs: archive the post-release closure recheck (AUD-20261118-01) (#201)
+
+<!-- PARALLEL-1：docs/08-governance/parallel-workflow.md。不要写入凭据、真实
+IP、用户名或本地路径。 -->
+
+Closes #200
+
+Refs #128
+
+## 条目与基线
+
+- Issue：#200（归档 AUD-20261118-01，阶段 #128 关闭前的最后一项收尾）
+- 分支：`docs/archive-aud-20261118-01`
+- 基线：`5b3bc9a065b8c78561d67a76ee6694b2f2de5079`（开分支时）；已按 PARALLEL-1 §5.4
+合并 `origin/main` `203249dee46336181d682fd0fb894194669afdd3`（P1-p #203）
+- 实现代理：dsh；审计按计划卡不再另开一轮，只归档原报告
+- 提交：`0cd1542`（归档与索引）、`69deb44`（同步 main）、`d54392c`（PRA-201-02 修复）
+- 同步只解一处冲突：`docs/07-roadmap/current-status.md` §9 表头下两行并存，P1-p
+在上、AUD-20261118-01 在下
+
+## Change
+
+### 归档与索引（`0cd1542`）
+
+- 新增
+`docs/08-governance/audits/audit-20261118-01-post-release-closure.md`：Codex
+交付件逐字节复制，33,272 字节，SHA-256
+`9829ff904f71e262fcb004d839dc5f5a9995a437a61fbf9b0da7d627d21cf194`，`cmp`
+退出 0；内容、结论与失败证据保持原文。报告里没有指向仓库外本机路径的链接（本地路径只以纯文本出现在 §1 与
+§10），未触发计划卡允许的唯一改写。
+- `docs/08-governance/audits/README.md`：接 AUD-20261116-02/03 那一段之后新增一段：
+
+> 2026-11-18 的阶段 #128 发布后收尾回验见
+[AUD-20261118-01](audit-20261118-01-post-release-closure.md)。报告按原字节归档，保留原结论、发现与失败证据；它不是
+PR 审计，也不是 Gate 退出审计。本轮新增 0 BLOCKER、1 MAJOR（现为
+`ACCEPTED_BY_MAINTAINER`）、0 MINOR，未处理 OPEN 为
+0；报告结论为已无未处理的关闭阻断，本报告归档并加入索引后 #128 可由维护者关闭。
+
+- `docs/README.md`：接 :295（AUD-20261116-03）之后新增一条：
+
+> [2026-11-18 阶段 #128
+发布后收尾回验（AUD-20261118-01）](08-governance/audits/audit-20261118-01-post-release-closure.md)：新增
+0 BLOCKER、1 MAJOR（现为 `ACCEPTED_BY_MAINTAINER`）、0 MINOR，未处理 OPEN 为
+0；已无未处理的关闭阻断，本报告归档并加入索引后 #128 可由维护者关闭。
+
+- `docs/07-roadmap/current-status.md`（热点文件）：§9 新增一行，只转述归档事实、结论与计数，Gate
+栏“不变”。
+
+### 归档字节与文档门禁的兼容（`d54392c`，PRA-201-02）
+
+- 新增 `docs/08-governance/audits/.gitattributes`：对 `audit-*.md` 声明
+`whitespace=-blank-at-eol`。归档报告是原字节记录，P1-k 之后文档通道无条件运行 `git diff
+--check`，保留交付件的 Markdown 硬换行会确定性地让 `local-validation`
+失败；这条仓库规则只豁免归档副本，同目录的索引与后续人工撰写的文件仍按默认检查。
+- `scripts/check-license-coverage.py`：把 `.gitattributes` 加入
+`CONFIG_NAMES`（与 `.gitignore` 同类），文件头的类别列表同步。该文件带 SPDX 头，按配置类受检查。
+- `tests/workflow/test_license_coverage.py`：新增
+`test_gitattributes_is_covered_and_declarable`，与 `.gitignore` 的既有用例同构。
+- `docs/07-roadmap/open-questions.md`：OQ-01“关闭证据”补一句，记录 `.gitattributes`
+纳入配置类及其用途。
+- `SINGLEHOST-SHA256SUMS`、`WORKFLOW-SHA256SUMS`：脚本与测试是钉住文件，按
+`update-manifests.py` 刷新。
+
+## Problem / counterexample
+
+- 阶段 #128 的发布后收尾回验只存在于代理目录，仓库内没有可引用的归档；审计索引停在
+AUD-20261116-03，`docs/README.md` 的 AUD-20261115 条目仍写“发布后收尾回验另行归档”。
+- **PRA-201-02：** 归档报告第 3–7 行是交付件的 Markdown
+硬换行；`.github/workflows/validate.yml` 的文档通道在 `make check-docs` 后无条件执行
+`git diff --check "${BASE}...HEAD"`。按原字节归档会让必需检查 `local-validation`
+必然失败，而删掉空格就不再是逐字节副本。
+- `.gitattributes` 是唯一既能保留字节、又能让该检查放行的已跟踪机制；但许可覆盖检查器此前只把 `.gitignore`
+列为配置类，`.gitattributes` 会被判为 `unclassified tracked file` 而失败。
+- **PRA-201-01（已解除）：** 提交 `0cd1542` 的作者不是受信任身份。P1-p（#203）之后 `dco` 只检查 PR
+正文的签名者，该头部已由维护者签署，此问题随同步解除；未改写已推送历史。
+
+## Status before → after
+
+| 位置 | 之前 | 之后 |
+|---|---|---|
+| 回验报告 | 只在本机代理目录 | 已入库，逐字节等于交付件 |
+| 审计索引 | 最后一条为 AUD-20261116-03 | 新增 AUD-20261118-01 一段 |
+| `docs/README.md` | 最后一条为 AUD-20261116-03 | 新增 AUD-20261118-01 一条 |
+| 状态日志 §9 | 无归档记录 | 新增一行，Gate 不变（同步后与 P1-p 行并存） |
+| `git diff --check`（文档通道） | 命中报告 5 行硬换行，退出 2 | 退出 0；归档字节不变 |
+| `.gitattributes` | 不能引入（许可覆盖判为未分类） | 按配置类受检查，`covered=352 headers=257
+declared=95 excluded=457 missing=0` |
+| DCO | `0cd1542` 作者非受信任身份而失败 | P1-p 后只检查 PR 正文签名者，正文已由维护者签署 |
+
+## Tests or proofs（本次执行）
+
+分支头 `d54392c`（基线 `203249d`），2026-11-18：
+
+| 命令 | 基线 SHA | 退出码 |
+|---|---|---|
+| `python3 -B -m unittest tests.workflow.test_license_coverage` |
+`203249d` | 0（49 项通过） |
+| `python3 -B scripts/check-license-coverage.py --require-git` |
+`203249d` | 0（PASS：covered=352 headers=257 declared=95 excluded=457
+missing=0） |
+| `python3 -B scripts/update-manifests.py` | `203249d` | 0（刷新两份清单） |
+| `python3 -B scripts/update-manifests.py --check` | `203249d` | 0（PASS）
+|
+| `python3 -B scripts/check-repository-evidence.py --repository .` |
+`203249d` | 0（PASS，1008 个本地 prose 链接） |
+| `cmp <交付件>
+docs/08-governance/audits/audit-20261118-01-post-release-closure.md` |
+`203249d` | 0（无输出，逐字节相同） |
+| `git diff --check origin/main...HEAD` | `203249d` | 0（加
+`.gitattributes` 后不再命中归档硬换行） |
+| `make -j"$(nproc)" -O check` | `203249d` | 0（PASS） |
+
+本次改到检查器与测试，按效率规则跑一次 `make check`；未跑 `make test` 全量回归。CI 因含非 Markdown
+文件会走全量通道，结果以 GitHub 为准，不轮询。
+
+## Evidence tags
+
+无。本条目不新增证据提交。
+
+## 理论缺口
+
+无。本条目不依赖任何未建模性质，也不据此关闭 TG-6（#123）或 SV-62/SV-118 的 partial 缺口。
+
+## Residual risk
+
+- 报告结论原样保留：#196 的历史 DCO 漏签按维护者接受的 PR 正文补签作为补救，原 push DCO 失败仍在；本 PR
+不把历史运行写成通过。
+- 报告列出的残余事项（外部贡献者 fork 端到端实测免做、P1-n 合并后线上实测免做、“只有维护者合并”为流程约定、#186 的 DCO
+补救）按原记录保留。
+- `.gitattributes` 规则按模式 `audit-*.md` 豁免该目录下所有归档报告，不限于本条目这一份；索引
+`README.md` 与其他文件不受影响。该规则只影响 whitespace 诊断，不改变任何文件字节。
+- 本条目的 PR 正文在维护者签署后被更新（新增归档字节与门禁一节），签名行原样保留在最末尾；若维护者认为需要重新确认，可在正文或评论中说明。
+- #128 是否关闭由维护者决定；本 PR 只把归档与索引这一前置条件落地。
+
+## Documents updated
+
+
+`docs/08-governance/audits/audit-20261118-01-post-release-closure.md`、`docs/08-governance/audits/README.md`、`docs/README.md`、`docs/07-roadmap/current-status.md`、`docs/08-governance/audits/.gitattributes`、`scripts/check-license-coverage.py`、`tests/workflow/test_license_coverage.py`、`docs/07-roadmap/open-questions.md`、`SINGLEHOST-SHA256SUMS`、`WORKFLOW-SHA256SUMS`
+
+## 合并检查
+
+- [x] 改动文件都在计划卡的文件集内（#200 已按维护者 2026-11-18 决定同步文件集与目标）
+- [x] PARALLEL-1 审计：首轮 0 BLOCKER、1 MAJOR、1 MINOR；PRA-201-01 随 P1-p
+解除，PRA-201-02 本 PR 修复，待增量复核
+- [x] 已按 §5.4 合并 `origin/main` `203249d`，重跑通过
+- [x] CI 通过：以 GitHub 为准（本次走全量通道），未轮询
+- [x] DCO：维护者已在本正文最末尾签署 `Signed-off-by`；P1-p 后 `dco` 只检查签名者，提交作者不再单独要求
+
+
+[![](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://github.com/deepseek-ai/deepseek-harness)
+
+<!-- DCO（CONTRIBUTING §11）：维护者合并前在本行下方另起一段加上签名行 `Signed-off-by: 姓名
+<邮箱>`。只有正文最末尾的 trailer 区才算数；正文中只含 `---` 的行会把之后的内容当成补丁区。代理不填写本段。 -->
+
+Signed-off-by: inpac <inpac@lingmatrix.cn>
+
+---------
+
+Co-authored-by: dsh <dsh@localhost>
+"""
+
+
+class CoauthorSuffixTests(DcoTestCase):
+    """GitHub appends the co-author suffix after the body sign-off at merge time.
+
+    The body check and the push check must both read the sign-off through that
+    suffix, and every other use of a dash line must keep its earlier verdict.
+    """
+
+    SIGNED = "Change: x\n\n" + SIGNOFF
+    SUFFIX = "\n\n---------\n\nCo-authored-by: dsh <dsh@localhost>"
+
+    def commit_verbatim(self, name, message, author=AGENT):
+        """A commit whose message is stored byte for byte, as GitHub writes it."""
+        (self.dir / name).write_text(name + "\n")
+        (self.dir / "message.txt").write_text(message)
+        self.git("add", name)
+        self.git("commit", "-q", "--cleanup=verbatim", "-F", "message.txt", author=author)
+        return self.git("rev-parse", "HEAD")
+
+    def push_verdict(self, message):
+        adopt = self.commit("b", "adopt DCO check", with_script=True, author=AGENT)
+        head = self.commit_verbatim("c", message)
+        return self.push(adopt, head)
+
+    def test_the_real_squash_message_passes_the_push_check(self):
+        result = self.push_verdict(ECE86B5_MESSAGE)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("PASS: 1 commit(s)", result.stdout)
+
+    def test_the_real_message_is_the_one_the_trailer_parser_misses(self):
+        parsed = subprocess.run(["git", "interpret-trailers", "--parse"],
+                                input=ECE86B5_MESSAGE, capture_output=True, text=True)
+        self.assertEqual(parsed.returncode, 0, parsed.stderr)
+        self.assertEqual(parsed.stdout.strip(), "Co-authored-by: dsh <dsh@localhost>")
+
+    def test_the_real_squash_message_passes_the_body_check(self):
+        base = self.commit("a", "base", author=AGENT)
+        head = self.commit("b", "agent work", author=AGENT)
+        result = self.pr(base, head, "false", ECE86B5_MESSAGE)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("signed off by inpac <inpac@lingmatrix.cn>", result.stdout)
+
+    def test_the_committed_fixture_is_kept_verbatim(self):
+        # "git commit -m" would strip and collapse blank lines, which would hide
+        # the very shape under test; this helper commits the bytes as they are.
+        head = self.commit_verbatim("c", ECE86B5_MESSAGE)
+        self.assertEqual(self.git("show", "-s", "--format=%B", head), ECE86B5_MESSAGE.rstrip("\n"))
+
+    def test_several_coauthors_pass(self):
+        message = self.SIGNED + self.SUFFIX + "\nCo-authored-by: Example Author <author@example.invalid>"
+        result = self.push_verdict(message)
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_a_missing_signoff_above_the_suffix_fails(self):
+        result = self.push_verdict("Change: x" + self.SUFFIX)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("no Signed-off-by trailer", result.stdout)
+
+    def test_a_separator_that_is_not_nine_dashes_keeps_the_earlier_verdict(self):
+        for separator in ("--------", "----------", "--------- "):
+            with self.subTest(separator=separator):
+                self.tearDown()
+                self.setUp()
+                suffix = "\n\n" + separator + "\n\nCo-authored-by: dsh <dsh@localhost>"
+                result = self.push_verdict(self.SIGNED + suffix)
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn("no Signed-off-by trailer", result.stdout)
+
+    def test_a_suffix_with_another_trailer_is_not_stripped(self):
+        suffix = ("\n\n---------\n\nReviewed-by: R <r@example.invalid>\n"
+                  "Co-authored-by: dsh <dsh@localhost>")
+        result = self.push_verdict(self.SIGNED + suffix)
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("no Signed-off-by trailer", result.stdout)
+
+    def test_the_separator_must_open_its_own_paragraph(self):
+        # GitHub writes the separator as its own paragraph; glued to the line
+        # above it, the block is ordinary body text and the earlier verdict stands.
+        message = ("Change: x\n\n" + SIGNOFF + "\n---------\n\n"
+                   "Co-authored-by: dsh <dsh@localhost>")
+        result = self.push_verdict(message)
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("no Signed-off-by trailer", result.stdout)
+
+    def test_the_coauthor_lines_must_end_the_message(self):
+        result = self.push_verdict(self.SIGNED + self.SUFFIX + "\nmore prose")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("no Signed-off-by trailer", result.stdout)
+
+    def test_the_suffix_alone_is_not_a_signoff(self):
+        result = self.push_verdict("Change: x" + self.SUFFIX)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("no Signed-off-by trailer", result.stdout)
+
+    def test_the_signer_must_still_be_on_the_list(self):
+        base = self.commit("a", "base", author=AGENT)
+        head = self.commit("b", "agent work", author=AGENT)
+        body = "Change: x\n\n" + UNKNOWN_SIGNOFF + self.SUFFIX
+        result = self.pr(base, head, "false", body)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("not a sign-off identity", result.stdout)
+
+    def test_a_listed_signer_passes_the_body_check_through_the_suffix(self):
+        base = self.commit("a", "base", author=AGENT)
+        head = self.commit("b", "agent work", author=AGENT)
+        body = "Change: x\n\n" + SIGNOFF + self.SUFFIX
+        result = self.pr(base, head, "false", body)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("signed off by inpac <inpac@lingmatrix.cn>", result.stdout)
+
+    def test_crlf_and_lf_are_judged_identically_through_the_suffix(self):
+        base = self.commit("a", "base", author=AGENT)
+        head = self.commit("b", "agent work", author=AGENT)
+        text = "Change: x\n\n" + SIGNOFF + self.SUFFIX
+        lf = self.pr(base, head, "false", text)
+        crlf = self.pr(base, head, "false", text.replace("\n", "\r\n"))
+        self.assertEqual(lf.returncode, 0, lf.stdout)
+        self.assertEqual(lf.stdout, crlf.stdout)
 
 
 class DcoWorkflowTrustTests(unittest.TestCase):
