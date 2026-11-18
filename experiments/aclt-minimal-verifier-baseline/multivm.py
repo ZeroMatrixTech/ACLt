@@ -713,7 +713,7 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         record["source_execution_id"] = source.job.execution_id.hex()
         record["source_charged_gas"] = source.charged
     return dict(status="PASS" if journal.final or overlap else "FAIL", general_status=result,
-                c1=scenario if getattr(args, "general_c1", None) else None,
+                c1=getattr(args, "general_c1", None),
                 merge_ns=guests["A"].get("merge_ns"),
                 declaration_id=job.declaration_id.hex(), plan_id=job.plan_id.hex(),
                 execution_id=job.execution_id.hex(), **{job.charge_field: journal.charged},

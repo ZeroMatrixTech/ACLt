@@ -821,7 +821,8 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
     # that it never sent (the drop), so worker and coordinator counts differ.
     frames = {"coordinator_requests": [], "worker_requests": [],
               "coordinator_responses": [], "worker_responses": [],
-              "boot_requests": [], "boot_responses": []}
+              "boot_requests_sent": [], "boot_requests_received": [],
+              "boot_responses_sent": [], "boot_responses_received": []}
     for row in _frame_records(roots["A"]):
         bucket = "coordinator_requests" if row["direction"] == "request" \
             else "coordinator_responses"
@@ -836,23 +837,23 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
     for row in dispatches:
         if row.get("event") != "activation":
             continue
-        frames["boot_requests"].append(dict(bytes=row["request_bytes"]))
+        frames["boot_requests_sent"].append(dict(bytes=row["request_bytes"]))
         if row.get("response_bytes") is not None:
-            frames["boot_responses"].append(dict(bytes=row["response_bytes"]))
+            frames["boot_responses_received"].append(dict(bytes=row["response_bytes"]))
     for role in roles:
         if role == "A":
             continue
         for row in read_lines(Path(roots[role]) / "activations.jsonl"):
-            frames["boot_requests"].append(dict(bytes=row["request_bytes"]))
+            frames["boot_requests_received"].append(dict(bytes=row["request_bytes"]))
             if row.get("accepted"):
-                frames["boot_responses"].append(dict(bytes=row["response_bytes"]))
+                frames["boot_responses_sent"].append(dict(bytes=row["response_bytes"]))
 
     def totals(rows):
         return dict(count=len(rows), bytes=sum(row["bytes"] for row in rows))
 
     across = {}
     for bucket, rows in frames.items():
-        if bucket in ("boot_requests", "boot_responses"):
+        if bucket.startswith("boot_"):
             across[bucket] = totals(rows)
             continue
         by_action = {}
