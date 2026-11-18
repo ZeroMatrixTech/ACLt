@@ -9,3 +9,5 @@ verification-profile-schema.md 引用的 AUD-20260821-05…09 当前没有对应
 2026-11-06 维护与发布准备检查见 [AUD-20261106-001](audit-20261106-01-repository-maintenance.md)。
 
 2026-11-16 的发布准备增量回验见 [AUD-20261116-02](audit-20261116-02-public-release-recheck.md) 与 [AUD-20261116-03](audit-20261116-03-public-release-recheck.md)。两份报告保留原结论与发现；发布后状态以 [GitHub Release](https://github.com/ZeroMatrixTech/ACLt/releases/tag/research-preview-1) 为准。
+
+2026-11-18 的阶段 #128 发布后收尾回验见 [AUD-20261118-01](audit-20261118-01-post-release-closure.md)。报告按原字节归档，保留原结论、发现与失败证据；它不是 PR 审计，也不是 Gate 退出审计。本轮新增 0 BLOCKER、1 MAJOR（现为 `ACCEPTED_BY_MAINTAINER`）、0 MINOR，未处理 OPEN 为 0；报告结论为已无未处理的关闭阻断，本报告归档并加入索引后 #128 可由维护者关闭。

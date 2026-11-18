@@ -13,7 +13,8 @@ Covered (needs an SPDX header or an explicit REUSE.toml path):
 
 - code suffixes .py, .rs, .sh, .cpp, .cjs, .js, .mjs, .html, .htm;
 - configuration suffixes .yml, .yaml, .toml;
-- the build and VCS names Makefile, GNUmakefile, makefile, .gitignore;
+- the build and VCS names Makefile, GNUmakefile, makefile, .gitignore,
+  .gitattributes;
 - the explicit strict-JSON configuration paths in CONFIG_PATHS.
   JSON has no comment syntax and strict parsers reject comments, so those two
   files can only be declared externally. `.js`, `.mjs` and `.cjs` are treated
@@ -69,7 +70,7 @@ from pathlib import Path, PurePosixPath
 
 CODE_SUFFIXES = frozenset({".py", ".rs", ".sh", ".cpp", ".cjs", ".js", ".mjs", ".html", ".htm"})
 CONFIG_SUFFIXES = frozenset({".yml", ".yaml", ".toml"})
-CONFIG_NAMES = frozenset({"makefile", "gnumakefile", ".gitignore"})
+CONFIG_NAMES = frozenset({"makefile", "gnumakefile", ".gitignore", ".gitattributes"})
 CONFIG_PATHS = frozenset({"DELIVERY-SCOPE.json", ".aclt-flow/template.json"})
 FONT_PATH_PREFIX = "docs/00-overview/fonts/"
 FONT_SUFFIXES = frozenset({".woff2"})
