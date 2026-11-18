@@ -37,11 +37,11 @@
 
 ### 2026-11-18 现状（公开仓库与分支保护）
 
-本小节以上的四条是 2026-11-14 采用时的事实，保留为历史记录。仓库此后公开，GitHub 侧的保护改为经典分支保护加规则集。以下为 2026-11-18 的读回结果；读回命令与结果同时记在[公开仓库设置清单](public-repository-settings.md)的对应条目中。
+本小节以上的四条是 2026-11-14 采用时的事实，保留为历史记录。仓库此后公开，GitHub 侧的保护改为经典分支保护加规则集。以下为 2026-11-18 的读回结果；结果同时记在[公开仓库设置清单](public-repository-settings.md)的对应条目中。
 
-- **仓库已公开。** `visibility` 读回为 `public`；首次公开发布 `research-preview-1` 于 2026-11-16 发布。
+- **仓库已公开。** `visibility` 读回为 `public`；`research-preview-1` 于 2026-11-16 首次公开发布。
 - **经典分支保护（`main`）。** 要求先开 PR 才能合并；经典保护自身的批准数为 0，1 个批准的要求来自下面的规则集。`local-validation` 与 `dco` 是必需检查，分支须与最新 `main` 同步（`strict` 为 true）。`enforce_admins` 为 true；`allow_force_pushes` 与 `allow_deletions` 均为 false。
-- **规则集 “Protect main”（id 20949967）。** `enforcement` 为 `active`，作用于默认分支：需要 1 个批准；推送后旧批准作废；最近一次推送须由推送者以外的人批准；评审讨论须解决；对无归属的变更另需额外批准；禁止删除与 force push；没有常驻绕过者（`bypass_actors` 为空，`current_user_can_bypass` 为 `never`）。
+- **规则集 “Protect main”（id 20949967）。** `enforcement` 为 `active`，作用于默认分支：需要 1 个批准；推送后旧批准作废；最近一次推送须由推送者以外的人批准；评审讨论须解决；对无归属的变更另需额外批准（`require_extra_approval_for_unattributed_changes`）；禁止删除与 force push；没有常驻绕过者（`bypass_actors` 为空，`current_user_can_bypass` 为 `never`）。
 - **合并方式。** 仍然只允许 squash 合并，合并后自动删除源分支；squash 合并说明取自 PR 正文（`squash_merge_commit_message` 为 `PR_BODY`），标题取自 PR 标题（`PR_TITLE`）。
 
 由此，第 5.4 节的合并前同步由 GitHub 强制执行：分支落后于 `main` 时不能合并。
@@ -96,7 +96,7 @@ ACLt 检出内只允许出现被跟踪的文件，以及 `make` 产生的构建�
 - 关闭 SSH 严格主机密钥检查；
 - 把凭据、真实 IP、用户名或本地路径写入仓库、Issue 或 PR。
 
-“只有维护者合并”是流程约定，目前没有技术强制（维护者 2026-11-18 确认，[#128 阶段总结](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6976415527)）：GitHub 侧的要求是必需检查通过、至少 1 个作者以外的批准、评审讨论已解决，以及分支与最新 `main` 同步；它不区分批准人与合并人，也没有只允许维护者推送或合并的限制。各角色按本约定执行，不利用这一点。
+“只有维护者合并”是流程约定，目前没有技术强制（维护者 2026-11-18 确认，[#128 阶段总结](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6976415527)）：GitHub 侧的要求包括必需检查通过、至少 1 个作者以外的批准、评审讨论已解决，以及分支与最新 `main` 同步；它不区分批准人与合并人，也没有只允许维护者推送或合并的限制。各角色按本约定执行，不利用这一点。
 
 确需临时放开某项保护时，由维护者临时修改规则集作为应急手段，事后在阶段 Issue 中记录（2026-11-17 决定，[#128](https://github.com/ZeroMatrixTech/ACLt/issues/128#issuecomment-6953767333)）。临时放开不能替代第 5.3 节的审计，也不把相应变更变成已验证。
 
