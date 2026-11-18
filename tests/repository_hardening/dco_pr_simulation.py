@@ -74,8 +74,8 @@ def scenarios(agent_head, outside_head):
            "signed off by")
     yield ("co-author suffix, two authors", "Change: x\n\n" + SIGNOFF + suffix +
            "\nCo-authored-by: R <r@example.invalid>", "false", agent_head, 0, "signed off by")
-    yield ("co-author suffix, eight dashes", "Change: x\n\n" + SIGNOFF +
-           suffix.replace("--------", "-------"), "false", agent_head, 1,
+    yield ("co-author suffix, eight dashes", "Change: x\n\n" + SIGNOFF + "\n\n--------\n\n"
+           "Co-authored-by: dsh <dsh@localhost>", "false", agent_head, 1,
            "no Signed-off-by trailer")
     yield ("co-author suffix, extra trailer", "Change: x\n\n" + SIGNOFF + "\n\n---------\n\n"
            "Reviewed-by: R <r@example.invalid>\nCo-authored-by: dsh <dsh@localhost>",
