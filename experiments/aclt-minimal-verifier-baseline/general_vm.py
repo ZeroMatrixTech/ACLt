@@ -26,6 +26,101 @@ DROP_MODES = ("no_reply", "worker_exit", "tcp_disconnect")
 STOP = c.encode({"action": "STOP"})
 WORKER_EXIT_CODE = 7
 TIMEOUT = 30
+BOOT_FIELDS = ("action", "epoch", "dispatch")
+
+
+class DispatchUnavailable(RuntimeError):
+    """No serving boot could be activated before a dispatch; no attempt was made."""
+
+
+def _record(path, row):
+    """Append one durable record so it survives a serving process exit."""
+    append_record(path, row)
+
+
+class ServingBoot:
+    """One serving process's boot identity, admission rules and observations.
+
+    The boot is generated once per process start.  Every frozen request carries the
+    boot it was dispatched for, so a request dispatched before a restart is refused
+    without relying on process memory being retained.  The execution and rejection
+    records are observations for evidence; they never admit a request.
+    """
+
+    def __init__(self, role, output, *, restart=False):
+        self.role = role
+        self.output = Path(output)
+        self.boot = os.urandom(32)
+        self.seen = set()
+        self.epoch = None
+        self.restart_enabled = restart
+        self.activations = self.output / "activations.jsonl"
+        self.executions = self.output / "executions.jsonl"
+        self.rejections = self.output / "rejections.jsonl"
+        self.restarts = self.output / "restarts.jsonl"
+        _record(self.output / "boots.jsonl",
+                dict(event="boot", role=role, boot=self.boot.hex()))
+
+    def activate(self, raw):
+        """Accept one BOOT frame; return its reply and epoch, or None and a reason."""
+        request = c.decode(raw)
+        c.fields(request, BOOT_FIELDS)
+        c.need(request["action"] == "BOOT", "not a boot frame")
+        epoch, dispatch = c.uint(request["epoch"]), c.uint(request["dispatch"])
+        if self.epoch is not None and epoch < self.epoch:
+            _record(self.activations, dict(event="activation", dispatch=dispatch, epoch=epoch,
+                                           boot=self.boot.hex(), accepted=False,
+                                           reason="stale-epoch", request_bytes=len(raw)))
+            return None, "stale-epoch"
+        self.epoch = epoch
+        reply = c.encode(dict(boot=self.boot, epoch=epoch, dispatch=dispatch))
+        _record(self.activations, dict(event="activation", dispatch=dispatch, epoch=epoch,
+                                       boot=self.boot.hex(), accepted=True,
+                                       request_bytes=len(raw), response_bytes=len(reply)))
+        return reply, epoch
+
+    def admit(self, request, activation):
+        """Return the rejection reason for a request on an activated connection."""
+        if activation is None:
+            return "unactivated"
+        if request.get("epoch") != activation:
+            return "epoch-mismatch"
+        boot = request.get("boot")
+        if type(boot) is not bytes or boot != self.boot:
+            return "boot-mismatch"
+        key = (request.get("execution_id"), request.get("slot"),
+               request.get("attempt"), request.get("action"))
+        if key in self.seen:
+            return "duplicate"
+        self.seen.add(key)
+        return None
+
+    def reject(self, reason, *, kind=None, raw=None, request=None, activation=None):
+        request = request or {}
+        boot = request.get("boot")
+        _record(self.rejections, dict(
+            event="reject", boot=self.boot.hex(), kind=kind or request.get("action"),
+            reason=reason,
+            execution_id=request["execution_id"].hex() if type(request.get("execution_id")) is bytes else None,
+            slot=request.get("slot"), attempt=request.get("attempt"),
+            request_sha256=hashlib.sha256(raw).hexdigest() if raw is not None else None,
+            request_boot=boot.hex() if type(boot) is bytes else None,
+            request_epoch=request.get("epoch"), activation_epoch=activation))
+
+    def execute(self, raw, executor):
+        """Execute one admitted request, recording both sides of the actual call."""
+        request = c.decode(raw)
+        row = dict(boot=self.boot.hex(), execution_id=bytes(request["execution_id"]).hex(),
+                   slot=request["slot"], attempt=request["attempt"], action=request["action"],
+                   request_sha256=hashlib.sha256(raw).hexdigest())
+        _record(self.executions, dict(event="execute-begin", **row))
+        response = handle(raw, executor)
+        _record(self.executions, dict(event="execute-end",
+                                      response_sha256=hashlib.sha256(response).hexdigest(), **row))
+        return response
+
+    def restart(self):
+        _record(self.restarts, dict(event="restart", role=self.role, boot=self.boot.hex()))
 
 
 def caps(six=False):
@@ -93,15 +188,15 @@ class Injection:
         if response is not None:
             row["response_sha256"] = hashlib.sha256(response).hexdigest()
         self.hits.append(row)
-        _append_line(self.log_path, row)
+        append_record(self.log_path, row)
 
     def observe(self, request, role, event):
         """Record what the serving side did after the injection (closed, ...)."""
-        _append_line(self.observation_path, {"event": event, "role": role,
+        append_record(self.observation_path, {"event": event, "role": role,
                                              "slot": request["slot"], "attempt": request["attempt"]})
 
 
-def _append_line(path, row):
+def append_record(path, row):
     """Persist one record durably so it survives a worker process exit."""
     if path is None:
         return
@@ -194,9 +289,50 @@ def standalone_probe(job, gas_limit):
     return c.decode(solve(ask(artifact, data, limits), artifact, data).outcome)
 
 
-def run(job, roles, path, exchange, *, order, checkpoint=0, previous=None,
+def next_worker(worker, verifier, roles, retry_worker, retry_remote):
+    """Select the next serving role after a failed dispatch (R1 5.2 retry rules)."""
+    if retry_worker is not None:
+        return retry_worker(worker)
+    if retry_remote:
+        candidates = [role for role in roles[1:] if role not in (worker, verifier)]
+        return candidates[0] if candidates else next(
+            role for role in roles if role not in (worker, verifier))
+    return next(role for role in roles if role not in (worker, verifier))
+
+
+def activate(dispatch, worker, verifier, roles, epoch, *, slot, attempt, action,
+             retry_worker, retry_remote):
+    """Activate one serving boot before a dispatch, or None when no candidate answers.
+
+    A failed activation is a pre-dispatch failure: no request was sent and no journal
+    attempt exists yet, so the caller can either try another candidate role or stop
+    with DISPATCH_UNAVAILABLE without charging the execution budget.
+    """
+    candidate = worker
+    tried = set()
+    while candidate not in tried:
+        tried.add(candidate)
+        try:
+            boot, session = dispatch.open(candidate, epoch, slot=slot, attempt=attempt,
+                                          action=action)
+        except OSError:
+            candidate = next_worker(candidate, verifier, roles, retry_worker, retry_remote)
+        else:
+            return candidate, boot, session
+    return None
+
+
+def run(job, roles, path, exchange=None, *, order, checkpoint=0, previous=None,
         placement=None, retry_worker=None, retry_remote=False, source=None, reuse=None,
-        journal_factory=Journal):
+        journal_factory=Journal, dispatch=None):
+    """Drive one execution in the trusted-host experiment.
+
+    With a dispatch object every SOLVE and VERIFY is frozen for the serving boot that
+    was just activated in the same exchange, so a request dispatched before a worker
+    restart cannot be executed after it.  The legacy exchange callable keeps the
+    pre-C1 request shape for replay models and for archived evidence.
+    """
+    c.need(dispatch is not None or exchange is not None, "run needs an exchange or a dispatch")
     c.need(reuse is None or source is not None, "reuse needs verified source evidence")
     history = c.decode(previous.read_bytes()) if previous else ()
     journal = journal_factory(job, path, history, source=source)
@@ -222,32 +358,69 @@ def run(job, roles, path, exchange, *, order, checkpoint=0, previous=None,
         worker, verifier = placement[slot]
         attempt = 1
         while True:
-            request = journal.frame(slot, attempt, "SOLVE")
-            try:
-                journal.add("RESERVE", slot=slot, attempt=attempt, worker=worker, request=request)
-            except BudgetError:
-                return journal, "BUDGET_BLOCKED"
-            try:
-                response = exchange(worker, request)
-            except OSError:
-                journal.add("NO_REPLY", slot=slot, attempt=attempt)
-                if attempt == 2:
-                    return journal, "NO_REPLY"
-                attempt += 1
-                if retry_worker is not None:
-                    worker = retry_worker(worker)
-                elif retry_remote:
-                    candidates = [role for role in roles[1:] if role not in (worker, verifier)]
-                    worker = candidates[0] if candidates else next(
-                        role for role in roles if role not in (worker, verifier))
-                else:
-                    worker = next(role for role in roles if role not in (worker, verifier))
-                continue
+            if dispatch is None:
+                request = journal.frame(slot, attempt, "SOLVE")
+                try:
+                    journal.add("RESERVE", slot=slot, attempt=attempt, worker=worker, request=request)
+                except BudgetError:
+                    return journal, "BUDGET_BLOCKED"
+                try:
+                    response = exchange(worker, request)
+                except OSError:
+                    journal.add("NO_REPLY", slot=slot, attempt=attempt)
+                    if attempt == 2:
+                        return journal, "NO_REPLY"
+                    attempt += 1
+                    worker = next_worker(worker, verifier, roles, retry_worker, retry_remote)
+                    continue
+            else:
+                opened = activate(dispatch, worker, verifier, roles, journal.epoch,
+                                  slot=slot, attempt=attempt, action="SOLVE",
+                                  retry_worker=retry_worker, retry_remote=retry_remote)
+                if opened is None:
+                    return journal, "DISPATCH_UNAVAILABLE"
+                worker, boot, session = opened
+                request = journal.frame(slot, attempt, "SOLVE", boot=boot)
+                try:
+                    journal.add("RESERVE", slot=slot, attempt=attempt, worker=worker,
+                                request=request, boot=boot)
+                except BudgetError:
+                    session.close()
+                    return journal, "BUDGET_BLOCKED"
+                except BaseException:
+                    session.close()
+                    raise
+                try:
+                    response = session.request(request)
+                except OSError:
+                    session.close()
+                    journal.add("NO_REPLY", slot=slot, attempt=attempt)
+                    if attempt == 2:
+                        return journal, "NO_REPLY"
+                    attempt += 1
+                    worker = next_worker(worker, verifier, roles, retry_worker, retry_remote)
+                    continue
+                except BaseException:
+                    session.close()
+                    raise
+                session.close()
             journal.add("ANSWER", slot=slot, attempt=attempt, response=response)
             answer = journal.attempts[slot, attempt]["answer"]
-            request = journal.frame(slot, attempt, "VERIFY", answer)
-            response = exchange(verifier, request)
-            journal.add("ACCEPT", slot=slot, attempt=attempt, verifier=verifier, request=request, response=response)
+            if dispatch is None:
+                request = journal.frame(slot, attempt, "VERIFY", answer)
+                response = exchange(verifier, request)
+                journal.add("ACCEPT", slot=slot, attempt=attempt, verifier=verifier,
+                            request=request, response=response)
+            else:
+                boot, session = dispatch.open(verifier, journal.epoch, slot=slot,
+                                              attempt=attempt, action="VERIFY")
+                request = journal.frame(slot, attempt, "VERIFY", answer, boot=boot)
+                try:
+                    response = session.request(request)
+                finally:
+                    session.close()
+                journal.add("ACCEPT", slot=slot, attempt=attempt, verifier=verifier,
+                            request=request, response=response, boot=boot)
             break
         if len(journal.accepted) == checkpoint:
             return journal, "CHECKPOINT"
@@ -261,29 +434,70 @@ def wire_name(raw):
 
 
 def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=None,
-          exit_on_fault=False):
-    """Serve the authenticated-by-topology peer in this trusted VM experiment."""
-    seen = set()
-    with closing(socket.create_server((guest_ip(role), port))) as listener:
+          exit_on_fault=False, restart=False, address=None, peer=None):
+    """Serve the authenticated-by-topology peer in this trusted VM experiment.
+
+    Each connection opens with one BOOT frame that binds this serving boot and the
+    epoch to the request that follows.  A request that cannot be bound to this boot
+    is recorded and refused without executing it; the serving process stays up.
+    """
+    worker = ServingBoot(role, output, restart=restart)
+    host = guest_ip(role) if address is None else address
+    coordinator = guest_ip("A") if peer is None else peer
+    with closing(socket.create_server((host, port))) as listener:
         listener.settimeout(120)
         while True:
             connection, address = listener.accept()
             with connection:
                 connection.settimeout(TIMEOUT)
-                c.need(address[0] == guest_ip("A"), "unexpected coordinator address")
-                raw = receive(connection)
+                c.need(address[0] == coordinator, "unexpected coordinator address")
+                bounds = dict(local_socket_ip=connection.getsockname()[0],
+                              peer_socket_ip=address[0])
+                try:
+                    raw = receive(connection)
+                except OSError:
+                    # A readiness probe may connect and close without a frame; it must not
+                    # stop the service or count as an attempt.
+                    continue
                 if raw == STOP:
-                    return dict(local_socket_ip=connection.getsockname()[0], peer_socket_ip=address[0])
+                    return bounds
                 request = c.decode(raw)
-                key = (request["execution_id"], request["slot"], request["attempt"], request["action"])
-                c.need(key not in seen, "duplicate attempt request")
-                seen.add(key)
+                action = request.get("action")
+                if action == "RESTART":
+                    if not worker.restart_enabled:
+                        worker.reject("unknown-action", kind="RESTART", raw=raw, request=request)
+                        continue
+                    worker.restart()
+                    if exit_on_fault:
+                        # A real non-zero exit; the in-guest supervisor starts a new serving
+                        # process, so later requests can only be bound to a new boot.
+                        sys.stdout.flush()
+                        os._exit(WORKER_EXIT_CODE)
+                    raise WorkerExit(role, "RESTART", bounds["local_socket_ip"], bounds["peer_socket_ip"])
+                if action != "BOOT":
+                    worker.reject("unactivated", raw=raw, request=request)
+                    continue
+                reply, activation = worker.activate(raw)
+                if reply is None:
+                    continue
+                send(connection, reply)
+                try:
+                    raw = receive(connection)
+                except OSError:
+                    continue
+                if raw == STOP:
+                    return bounds
+                request = c.decode(raw)
+                reason = worker.admit(request, activation)
+                if reason is not None:
+                    worker.reject(reason, raw=raw, request=request, activation=activation)
+                    continue
                 name = wire_name(raw)
                 (output / f"{name}-request.cbor").write_bytes(raw)
                 if inject is not None and inject.matches(request):
                     if inject.mode == "no_reply":
                         # Generate and keep the reply, record the suppression, never send it.
-                        response = handle(raw, executor)
+                        response = worker.execute(raw, executor)
                         (output / f"{name}-response.cbor").write_bytes(response)
                         inject.hit(request, raw, role, response)
                         continue
@@ -294,7 +508,7 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                             # kernel closes its sockets and the supervisor observes the status.
                             sys.stdout.flush()
                             os._exit(WORKER_EXIT_CODE)
-                        raise WorkerExit(role, name, connection.getsockname()[0], address[0])
+                        raise WorkerExit(role, name, bounds["local_socket_ip"], bounds["peer_socket_ip"])
                     if inject.mode == "tcp_disconnect":
                         try:
                             connection.shutdown(socket.SHUT_RDWR)
@@ -306,7 +520,7 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                 drop = drop_first_b and name == "0-1-1-SOLVE"
                 response_path = output / f"{name}-response.cbor"
                 if sort_job is None:
-                    response = handle(raw, executor)
+                    response = worker.execute(raw, executor)
                     response_path.write_bytes(response)
                     if not drop:
                         send(connection, response)
@@ -347,12 +561,17 @@ def replay(job, roots, executor, previous=(), *, check_response=None, source=Non
                 c.need(not (roots["A"] / response_file).exists(),
                        "coordinator retained a reply it did not receive")
                 if suppressed_reply and role != "A":
-                    # no_reply: the worker generated the reply and withheld it.
+                    # no_reply or drop: the worker generated the reply and withheld it.
                     expected[role].add(response_file)
                     c.need((roots[role] / response_file).is_file(),
                            "suppressed reply was not retained by the worker")
-                    c.need((roots[role] / response_file).read_bytes() == handle(raw, executor),
-                           "suppressed reply differs from the recomputed reply")
+                    withheld = (roots[role] / response_file).read_bytes()
+                    if check_response is None:
+                        c.need(withheld == handle(raw, executor),
+                               "suppressed reply differs from the recomputed reply")
+                    else:
+                        # The sort family needs its own retained-image check here.
+                        check_response(raw, withheld, roots[role], True)
                 else:
                     c.need(not (roots[role] / response_file).exists(),
                            "missing reply has a response frame")
@@ -381,3 +600,266 @@ def source_journal(job, path, executor):
         if event["kind"] == "ACCEPT":
             c.need(handle(event["request"], executor) == event["response"], "source verification differs")
     return source
+
+
+def _frame_records(root):
+    """Return the retained request/response frames of one endpoint with sizes."""
+    rows = []
+    for path in sorted(Path(root).glob("*-*.cbor")):
+        name = path.name
+        if name.endswith("-request.cbor"):
+            action = name[: -len("-request.cbor")].rsplit("-", 1)[-1]
+            direction = "request"
+        elif name.endswith("-response.cbor"):
+            action = name[: -len("-response.cbor")].rsplit("-", 1)[-1]
+            direction = "response"
+        else:
+            continue
+        rows.append(dict(direction=direction, action=action, bytes=path.stat().st_size,
+                         sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+    return rows
+
+
+def _payload_bytes(path):
+    """Application payload carried by one retained request frame (derived value)."""
+    try:
+        value = c.decode(path.read_bytes())
+    except Exception:
+        return 0
+    total = 0
+    for key in ("artifact", "data", "dependency", "answer"):
+        item = value.get(key)
+        if type(item) is bytes:
+            total += len(item)
+    return total
+
+
+def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
+    """Check one recorded C1 run and return its split observation summary.
+
+    The checks bind every frozen request to the serving boot that was activated
+    immediately before it, require at most one execution per (execution, slot,
+    attempt, action), and require every recorded resend to be refused without an
+    execution.  Execution counts and refusal reasons come from the workers' durable
+    records, never from the coordinator's accounting.
+    """
+    c.need(scenario in ("restart", "duplicate", "stale"), "unknown C1 scenario")
+    roles = tuple(roots)
+    c.need("A" in roles and len(roles) >= 3, "C1 evidence needs the coordinator and two workers")
+    boots = {}
+    for role in roles:
+        rows = read_lines(Path(roots[role]) / "boots.jsonl")
+        boots[role] = [row["boot"] for row in rows]
+        if role != "A":
+            c.need(boots[role], f"{role} recorded no serving boot")
+        c.need(len(set(boots[role])) == len(boots[role]), f"{role} repeated a boot identifier")
+
+    activations = {}
+    for role in roles:
+        if role == "A":
+            continue
+        for row in read_lines(Path(roots[role]) / "activations.jsonl"):
+            if not row.get("accepted"):
+                continue
+            key = row["dispatch"]
+            c.need(key not in activations, f"dispatch {key} was activated twice")
+            activations[key] = dict(role=role, epoch=row["epoch"], boot=row["boot"])
+
+    dispatches = read_lines(Path(roots["A"]) / "dispatch.jsonl")
+    activated = {}
+    for row in dispatches:
+        if row.get("event") != "activation":
+            continue
+        sequence = row["sequence"]
+        if row["role"] == "A":
+            continue
+        c.need(sequence in activations, f"A dispatched {sequence} that no worker activated")
+        worker = activations[sequence]
+        c.need(worker["role"] == row["role"] and worker["epoch"] == row["epoch"]
+               and worker["boot"] == row["boot"],
+               f"dispatch {sequence} binding differs between A and {row['role']}")
+        activated[(row["role"], row["slot"], row["attempt"], row["action"])] = row["boot"]
+
+    for event in journal.events:
+        if event["kind"] == "RESERVE":
+            key = (event["worker"], event["slot"], event["attempt"], "SOLVE")
+        elif event["kind"] == "ACCEPT":
+            key = (event["verifier"], event["slot"], event["attempt"], "VERIFY")
+        else:
+            continue
+        c.need("boot" in event, f"{key} has no serving boot")
+        c.need(event["boot"].hex() == activated.get(key),
+               f"{key} boot differs from the activation that preceded it")
+
+    executions = []
+    for role in roles:
+        if role == "A":
+            continue
+        for row in read_lines(Path(roots[role]) / "executions.jsonl"):
+            c.need(row["event"] in ("execute-begin", "execute-end"), "unknown execution record")
+            executions.append(row)
+    begins = [row for row in executions if row["event"] == "execute-begin"]
+    key_fields = ("boot", "execution_id", "slot", "attempt", "action")
+    keys = [tuple(row[field] for field in key_fields) for row in begins]
+    c.need(len(keys) == len(set(keys)), "one boot executed the same attempt twice")
+    attempt_keys = [(row["execution_id"], row["slot"], row["attempt"], row["action"])
+                    for row in begins]
+    c.need(len(attempt_keys) == len(set(attempt_keys)),
+           "one attempt and action executed on more than one boot")
+    for row in begins:
+        ends = [other for other in executions
+                if other["event"] == "execute-end"
+                and all(other[field] == row[field] for field in key_fields)]
+        c.need(len(ends) == 1, "an execution has no unique completion record")
+
+    rejections = []
+    for role in roles:
+        if role == "A":
+            continue
+        for row in read_lines(Path(roots[role]) / "rejections.jsonl"):
+            rejections.append((role, row))
+            c.need(row.get("reason") in ("unactivated", "epoch-mismatch", "boot-mismatch",
+                                         "duplicate", "stale-epoch", "unknown-action"),
+                   "unknown refusal reason")
+            if row.get("reason") != "unknown-action" and row.get("request_sha256"):
+                same = [begin for begin in begins
+                        if begin["boot"] == row["boot"]
+                        and begin["request_sha256"] == row["request_sha256"]]
+                c.need(not same, "a refused request was executed by the refusing boot")
+
+    for event in journal.events:
+        if event["kind"] != "RESERVE":
+            continue
+        name = wire_name(event["request"])
+        path = Path(roots[event["worker"]]) / f"{name}-response.cbor"
+        if not path.is_file():
+            continue
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        matches = [row for row in executions
+                   if row["event"] == "execute-end" and row["boot"] == event["boot"].hex()
+                   and row["response_sha256"] == digest]
+        c.need(len(matches) == 1, f"{name} retained reply has no unique execution record")
+
+    probes = read_lines(Path(roots["A"]) / "resends.jsonl")
+    if scenario in ("restart", "duplicate"):
+        reserve = next((event for event in journal.events
+                        if event["kind"] == "RESERVE"
+                        and (event["slot"], event["attempt"]) == target), None)
+        c.need(reserve is not None, "the dropped attempt has no reservation")
+        c.need(journal.attempts[target]["state"] == "NO_REPLY",
+               "the dropped attempt is not recorded as unanswered")
+        old_boot, old_sha = reserve["boot"].hex(), hashlib.sha256(reserve["request"]).hexdigest()
+        retries = [event for event in journal.events
+                   if event["kind"] == "RESERVE"
+                   and (event["slot"], event["attempt"]) == (target[0], target[1] + 1)]
+        c.need(len(retries) == 1 and retries[0]["boot"].hex() != old_boot,
+               "the retry did not use a different serving boot")
+        executed = [row for row in begins if row["boot"] == old_boot
+                    and row["request_sha256"] == old_sha]
+        c.need(len(executed) == 1, "the dropped attempt did not execute exactly once")
+        expected = "boot-mismatch" if scenario == "restart" else "duplicate"
+        for kind, reason in (("bare", "unactivated"), ("boot", expected)):
+            rows = [row for row in probes
+                    if row.get("probe") == kind and row.get("request_sha256") == old_sha]
+            c.need(len(rows) == 1 and rows[0]["outcome"] == "refused",
+                   f"{kind} resend was not refused")
+            c.need(any(row.get("request_sha256") == old_sha and row.get("reason") == reason
+                       for _, row in rejections),
+                   f"{kind} resend has no {reason} refusal record")
+        if scenario == "restart":
+            restarts = [row for row in probes if row.get("event") == "restart"]
+            c.need(len(restarts) == 1 and restarts[0]["previous_boot"] == old_boot
+                   and restarts[0]["boot"] != old_boot,
+                   "the restart record does not separate the two serving boots")
+        c.need(not [row for row in begins if row["request_sha256"] == old_sha
+                    and row["boot"] != old_boot],
+               "a resent frame executed on another boot")
+    else:
+        handoff = next((index for index, event in enumerate(journal.events)
+                        if event["kind"] == "HANDOFF"), None)
+        c.need(handoff is not None, "the stale scenario has no handoff")
+        prefix = journal.events[:handoff]
+        stale = [(event["worker"], event["request"]) for event in prefix
+                 if event["kind"] == "RESERVE"]
+        stale += [(event["verifier"], event["request"]) for event in prefix
+                  if event["kind"] == "ACCEPT"]
+        c.need(stale, "the stale scenario retained no pre-handoff request")
+        for role, raw in stale:
+            sha = hashlib.sha256(raw).hexdigest()
+            epoch = c.decode(raw)["epoch"]
+            rows = {kind: [row for row in probes
+                           if row.get("probe") == kind and row.get("request_sha256") == sha]
+                    for kind in ("bare", "old-boot", "boot")}
+            c.need(len(rows["bare"]) == 1 and rows["bare"][0]["outcome"] == "refused",
+                   "the stale frame was not refused when replayed alone")
+            c.need(len(rows["old-boot"]) == 1
+                   and rows["old-boot"][0]["outcome"] == "activation-refused",
+                   "the stale activation was not refused")
+            c.need(len(rows["boot"]) == 1 and rows["boot"][0]["outcome"] == "refused",
+                   "the stale frame was not refused after a current activation")
+            c.need(any(row.get("request_sha256") == sha and row.get("reason") == "unactivated"
+                       for _, row in rejections), "the stale frame has no unactivated refusal")
+            c.need(any(row.get("request_sha256") == sha and row.get("reason") == "epoch-mismatch"
+                       for _, row in rejections), "the stale frame has no epoch-mismatch refusal")
+            c.need(any(row.get("epoch") == epoch and row.get("accepted") is False
+                       and row.get("reason") == "stale-epoch"
+                       for other in roles if other != "A"
+                       for row in read_lines(Path(roots[other]) / "activations.jsonl")),
+                   "the stale epoch has no stale-epoch activation refusal")
+            c.need(not [row for row in begins if row["request_sha256"] == sha],
+                   "a stale frame executed after the handoff")
+
+    frames = {"sent": [], "received": []}
+    for role in roles:
+        for row in _frame_records(roots[role]):
+            bucket = "sent" if (role == "A") == (row["direction"] == "request") else "received"
+            frames[bucket].append(row)
+    for row in dispatches:
+        if row.get("event") == "activation":
+            frames["sent"].append(dict(direction="request", action="BOOT",
+                                       bytes=row["request_bytes"], sha256=None))
+        elif row.get("event") == "outcome" and row.get("response_bytes") is not None:
+            frames["received"].append(dict(direction="response", action="BOOT",
+                                           bytes=row["response_bytes"], sha256=None))
+    for role in roles:
+        for row in read_lines(Path(roots[role]) / "activations.jsonl"):
+            frames["received"].append(dict(direction="request", action="BOOT",
+                                           bytes=row["request_bytes"], sha256=None))
+            if row.get("accepted"):
+                frames["sent"].append(dict(direction="response", action="BOOT",
+                                           bytes=row["response_bytes"], sha256=None))
+
+    classes = {}
+    for bucket, rows in frames.items():
+        for row in rows:
+            key = f"{bucket}/{row['action']}"
+            entry = classes.setdefault(key, dict(count=0, bytes=0))
+            entry["count"] += 1
+            entry["bytes"] += row["bytes"]
+    payload = {}
+    for path in Path(roots["A"]).glob("*-request.cbor"):
+        name = path.name[: -len("-request.cbor")]
+        action = name.rsplit("-", 1)[-1]
+        entry = payload.setdefault(action, dict(count=0, bytes=0))
+        entry["count"] += 1
+        entry["bytes"] += _payload_bytes(path)
+    reasons = {}
+    for _, row in rejections:
+        reasons[row["reason"]] = reasons.get(row["reason"], 0) + 1
+    executions_by_action = {}
+    for row in begins:
+        executions_by_action[row["action"]] = executions_by_action.get(row["action"], 0) + 1
+    return dict(
+        scenario=scenario,
+        boots={role: len(boots[role]) for role in roles},
+        executions=executions_by_action,
+        execution_keys=len(begins),
+        rejections=reasons,
+        frames=dict(sorted(classes.items())),
+        payload=dict(sorted(payload.items())),
+        probes=len(probes),
+        charged=journal.charged,
+        reserved=journal.reserved,
+        accepted=sorted(journal.accepted),
+        merge_ns=getattr(journal, "merge_ns", None),
+    )
