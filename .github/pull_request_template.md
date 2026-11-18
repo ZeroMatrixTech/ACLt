@@ -39,6 +39,6 @@ Closes #
 - [ ] PARALLEL-1 审计没有未关闭的 `BLOCKER` / `MAJOR`
 - [ ] 已用 `/aclt-sync` 与最新 `main` 同步，本次重跑通过
 - [ ] CI 通过
-- [ ] DCO：外部贡献的每个提交都已签署，维护者已在本地运行 `scripts/check-dco.py` 核验；维护者已在本正文最末尾另起一段加上自己的 `Signed-off-by`，`dco` 检查通过（CONTRIBUTING §11）
+- [ ] DCO：外部贡献的每个提交都已签署，维护者已在本地运行 `scripts/check-dco.py` 核验；签名者（维护者，或签名名单中由维护者授权的人类协作者）已在本正文最末尾另起一段加上 `Signed-off-by`，`dco` 检查通过（CONTRIBUTING §11）
 
-<!-- DCO（CONTRIBUTING §11）：维护者合并前在本行下方另起一段加上签名行 `Signed-off-by: 姓名 <邮箱>`。只有正文最末尾的 trailer 区才算数；正文中只含 `---` 的行会把之后的内容当成补丁区。代理不填写本段。 -->
+<!-- DCO（CONTRIBUTING §11）：签名者（维护者，或签名名单中由维护者授权的人类协作者）合并前在本行下方另起一段加上签名行 `Signed-off-by: 姓名 <邮箱>`。只有正文最末尾的 trailer 区才算数；正文中只含 `---` 的行会把之后的内容当成补丁区。代理不填写本段。 -->

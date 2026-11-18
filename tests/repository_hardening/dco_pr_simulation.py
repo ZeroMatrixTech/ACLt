@@ -71,9 +71,10 @@ def scenarios(agent_head, outside_head):
            "false", agent_head, 1, "patch section")
     yield ("CRLF body", "Change: x\r\n\r\n" + SIGNOFF + "\r\n", "false", agent_head, 0, "signed off by")
     yield ("signer outside the list", "Change: x\n\n" + UNKNOWN, "false", agent_head, 1,
-           "not a maintainer sign-off identity")
+           "not a sign-off identity")
     yield ("empty body", "", "false", agent_head, 1, "body is empty")
-    yield ("non-maintainer commit unsigned", signed, "false", outside_head, 1, AUTHOR[1])
+    yield ("unsigned commit on a repository branch", signed, "false", outside_head, 0,
+           "same-repository pull request")
     yield ("fork commit unsigned", signed, "true", agent_head, 1, "Signed-off-by trailer matching")
 
 
