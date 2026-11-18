@@ -7,8 +7,8 @@
   "coverage": "schemas/verification-profile/coverage.json",
   "source_sha256": {
     "docs/03-protocol/verification-profile-schema.md": "edab977989725b8f5129629d77fe3ddcffc403e36f746d3382dde594f086636a",
-    "schemas/verification-profile/inventory.json": "e8dc8d0e159a62ffb0ecbd89b3343e08ab41730315ec2d9d2004971028183281",
-    "schemas/verification-profile/coverage.json": "c211594f5a4edddb6573a4f37fc7f6a85b1a5fa3242b29834b6d8c80159c8836"
+    "schemas/verification-profile/inventory.json": "6f789a354e403a96c02a617d1a048cae0cc3e1884e21699dab5914af3529b2ef",
+    "schemas/verification-profile/coverage.json": "0eaf19ce1cfc8427aa25bf31bd5086c7fa1262473a1646099bc893886fc2c853"
   },
   "scope_contract": {
     "method": "REEXEC_AUDIT_ONLY",
@@ -1484,8 +1484,8 @@
     }
   ],
   "global_coverage_unchanged": {
-    "implemented": 80,
-    "partial": 36,
+    "implemented": 81,
+    "partial": 35,
     "not_implemented": 3
   },
   "type_a_count": 119,
