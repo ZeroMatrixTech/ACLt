@@ -1,25 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
-# Sign-off and commit identities for the DCO check (CONTRIBUTING section 11;
-# P1-n, P1-p).
+# Sign-off identities for the DCO check (CONTRIBUTING section 11; P1-n, P1-p).
 #
 # This file is read from the trusted checkout of the target branch only, so a
 # pull request that edits it is still judged by the target branch's copy. One
-# identity per line as "<role> Name <e-mail>"; blank lines and lines starting
+# identity per line as "signoff Name <e-mail>"; blank lines and lines starting
 # with # are ignored, and any other line fails the check instead of being
 # skipped.
 #
-#   signoff  may sign the squash-merge message in the pull request body; a
-#            sign-off identity is also exempt from per-commit sign-offs.
-#   author   maintainer-owned commit identity (agents commit with this one);
-#            exempt from per-commit sign-offs in same-repository pull requests,
-#            but not allowed to sign the body.
-#
-# Two identities may sign the pull request body: the maintainer, and the human
-# collaborator the maintainer has authorised (Ankar). A signature is the
-# signer's DCO 1.1 confirmation for that contribution. Agents commit with the
-# maintainer's local Git identity, add no Signed-off-by themselves, and never
-# sign the body. A sign-off only clears the merge check; which role may merge
-# is unchanged (CONTRIBUTING section 11).
+# Only the signer is checked. Two identities may sign the pull request body:
+# the maintainer, and the human collaborator the maintainer has authorised
+# (Ankar). A signature is the signer's DCO 1.1 confirmation for that
+# contribution. Agents add no Signed-off-by themselves and never sign the body.
+# The body sign-off confirms the whole pull request, so commits on a branch of
+# this repository need no per-commit trailer; a fork pull request still needs
+# one per commit (CONTRIBUTING section 11). A sign-off only clears the merge
+# check; which role may merge is unchanged.
 signoff inpac <inpac@lingmatrix.cn>
 signoff Ankar <ankarnassia@lingmatrix.cn>
-author inPac <tenneidp@gmail.com>

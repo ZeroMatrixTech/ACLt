@@ -152,7 +152,7 @@ class PullRequestBodyTests(DcoTestCase):
         base, head = self.agent_pr()
         result = self.pr(base, head, "false", "Change: x\n\n" + UNKNOWN_SIGNOFF)
         self.assertEqual(result.returncode, 1)
-        self.assertIn("not a maintainer sign-off identity", result.stdout)
+        self.assertIn("not a sign-off identity", result.stdout)
 
     def test_empty_body_fails(self):
         base, head = self.agent_pr()
@@ -185,8 +185,7 @@ class PullRequestBodyTests(DcoTestCase):
         self.assertEqual(with_real_list.returncode, 1)
         # The same body passes once the trusted checkout lists the signer, which
         # proves the verdict follows the trusted list rather than the PR copy.
-        trusted = self.trusted_checkout("signoff attacker <attacker@example.invalid>\n"
-                                        "author inPac <tenneidp@gmail.com>\n")
+        trusted = self.trusted_checkout("signoff attacker <attacker@example.invalid>\n")
         with_pr_list = self.pr(base, head, "false", body, script=trusted)
         self.assertEqual(with_pr_list.returncode, 0, with_pr_list.stdout)
 
@@ -217,32 +216,46 @@ class MaintainerListTests(DcoTestCase):
         trusted = self.trusted_checkout(with_list=False)
         result = self.pr(base, head, "false", "Change: x\n\n" + SIGNOFF, script=trusted)
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("cannot read the maintainer list", result.stderr)
+        self.assertIn("cannot read the sign-off list", result.stderr)
 
     def test_list_without_a_signoff_identity_fails_closed(self):
         base = self.commit("a", "base", author=AGENT)
         head = self.commit("b", "agent", author=AGENT)
-        trusted = self.trusted_checkout("author inPac <tenneidp@gmail.com>\n")
+        trusted = self.trusted_checkout("# no identities yet\n")
         result = self.pr(base, head, "false", "Change: x\n\n" + SIGNOFF, script=trusted)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("no signoff identity", result.stderr)
 
+    def test_author_role_is_unknown(self):
+        base = self.commit("a", "base", author=AGENT)
+        head = self.commit("b", "agent work", author=AGENT)
+        trusted = self.trusted_checkout("signoff inpac <inpac@lingmatrix.cn>\n"
+                                        "author inPac <tenneidp@gmail.com>\n")
+        result = self.pr(base, head, "false", "Change: x\n\n" + SIGNOFF, script=trusted)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unknown role 'author'; expected signoff", result.stderr)
+
     def test_repository_list_keeps_the_initial_identities(self):
         text = MAINTAINERS.read_text()
         self.assertIn("signoff inpac <inpac@lingmatrix.cn>", text)
-        self.assertIn("author inPac <tenneidp@gmail.com>", text)
 
     def test_repository_list_carries_the_authorised_collaborator(self):
         text = MAINTAINERS.read_text()
         self.assertIn("signoff Ankar <ankarnassia@lingmatrix.cn>", text)
+
+    def test_repository_list_registers_signers_only(self):
+        entries = [line for line in MAINTAINERS.read_text().splitlines()
+                   if line.strip() and not line.strip().startswith("#")]
+        self.assertEqual(len(entries), 2)
+        for line in entries:
+            self.assertTrue(line.startswith("signoff "), line)
 
     def test_two_signoff_identities_either_may_sign_the_body(self):
         base = self.commit("a", "base", author=AGENT)
         head = self.commit("b", "agent work", author=AGENT)
         trusted = self.trusted_checkout(
             "signoff inpac <inpac@lingmatrix.cn>\n"
-            "signoff Ankar <ankarnassia@lingmatrix.cn>\n"
-            "author inPac <tenneidp@gmail.com>\n")
+            "signoff Ankar <ankarnassia@lingmatrix.cn>\n")
         for signoff, signer in ((SIGNOFF, "inpac <inpac@lingmatrix.cn>"),
                                 (SIGNOFF_ANKAR, "Ankar <ankarnassia@lingmatrix.cn>")):
             with self.subTest(signer=signer):
@@ -252,43 +265,40 @@ class MaintainerListTests(DcoTestCase):
 
 
 class SameRepositoryCommitTests(DcoTestCase):
-    def body(self):
-        return "Change: x\n\n" + SIGNOFF
+    """A branch pull request is confirmed by the body sign-off; commits are not
+    inspected, whatever their authors are."""
 
-    def test_maintainer_identity_commits_need_no_signoff(self):
-        base = self.commit("a", "base", author=AGENT)
-        head = self.commit("b", "agent work", author=AGENT)
-        result = self.pr(base, head, "false", self.body())
-        self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertIn("authored by a maintainer identity", result.stdout)
+    def body(self, signoff=SIGNOFF):
+        return "Change: x\n\n" + signoff
 
-    def test_author_match_is_case_insensitive(self):
+    def test_commits_of_any_author_need_no_per_commit_signoff(self):
         base = self.commit("a", "base", author=AGENT)
-        head = self.commit("b", "agent work", author=("InPac", "Tenneidp@Gmail.com"))
+        head = self.commit("b", "agent work", author=("dsh", "dsh@localhost"))
+        for signoff in (SIGNOFF, SIGNOFF_ANKAR):
+            with self.subTest(signoff=signoff):
+                result = self.pr(base, head, "false", self.body(signoff))
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn("same-repository pull request", result.stdout)
+
+    def test_commit_by_an_outside_author_passes(self):
+        base = self.commit("a", "base", author=AGENT)
+        head = self.commit("b", "outside work", author=AUTHOR)
         self.assertEqual(self.pr(base, head, "false", self.body()).returncode, 0)
 
-    def test_other_author_commit_needs_a_matching_signoff(self):
-        base = self.commit("a", "base", author=AGENT)
-        unsigned = self.commit("b", "outside work", author=AUTHOR)
-        result = self.pr(base, unsigned, "false", self.body())
-        self.assertEqual(result.returncode, 1)
-        self.assertIn(AUTHOR[1], result.stdout)
-        signed = self.commit("c", "outside work signed\n\nSigned-off-by: {0} <{1}>".format(*AUTHOR),
-                             author=AUTHOR)
-        result = self.pr(unsigned, signed, "false", self.body())
-        self.assertEqual(result.returncode, 0, result.stdout)
-
-    def test_merge_commit_by_a_non_maintainer_author_needs_a_signoff(self):
+    def test_merge_commit_by_an_outside_author_passes(self):
         base = self.commit("a", "base", author=AGENT)
         self.git("checkout", "-q", "-b", "side")
-        self.commit("s", "side", author=AUTHOR)
+        self.commit("s", "side", author=("dsh", "dsh@localhost"))
         self.git("checkout", "-q", "main")
         self.commit("m", "main", author=AGENT)
         self.git("merge", "-q", "--no-ff", "-m", "merge without sign-off", "side", author=AUTHOR)
         merge = self.git("rev-parse", "HEAD")
-        result = self.pr(base, merge, "false", self.body())
-        self.assertEqual(result.returncode, 1)
-        self.assertIn(merge[:12], result.stdout)
+        self.assertEqual(self.pr(base, merge, "false", self.body()).returncode, 0)
+
+    def test_an_unsigned_body_still_fails(self):
+        base = self.commit("a", "base", author=AGENT)
+        head = self.commit("b", "agent work", author=("dsh", "dsh@localhost"))
+        self.assertEqual(self.pr(base, head, "false", "Change: x").returncode, 1)
 
 
 class ForkCommitTests(DcoTestCase):
@@ -359,8 +369,8 @@ class PushTests(DcoTestCase):
         self.assertIn(unsigned[:12], result.stdout)
 
     def test_body_check_and_push_check_parse_the_same_text(self):
-        # Only the parsing is shared: the body must also be signed by a
-        # maintainer identity, while the push fallback accepts any sign-off.
+        # Only the parsing is shared: the body must also be signed by a listed
+        # sign-off identity, while the push fallback accepts any sign-off.
         cases = {
             "signed": "Change: x\n\n" + SIGNOFF,
             "unsigned": "Change: x",

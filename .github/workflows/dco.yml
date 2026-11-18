@@ -20,7 +20,9 @@ name: DCO sign-off
 # the check when the signer adds it. The list holds the maintainer and the human
 # collaborator the maintainer authorised, and it comes from inside the trusted
 # checkout, so a pull request that edits that file is still judged by the target
-# branch's copy.
+# branch's copy.  Only the signer is checked: commits on a branch of this
+# repository are covered by the body sign-off, while a fork pull request still
+# needs a matching sign-off on every commit.
 #
 # Until a fork pull request has shown on the public repository that this check
 # blocks merging when a sign-off is missing and passes on the fixed head, its
