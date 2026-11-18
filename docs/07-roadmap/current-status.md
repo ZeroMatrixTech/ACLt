@@ -205,6 +205,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-18 | v0.5 | P1-n：`dco` 改为在 PR 阶段检查正文末尾的维护者签名——正文即 squash 合并说明，签名身份取自目标分支受信任检出中的 `.github/dco-maintainers.txt`（初始只有 `inpac <inpac@lingmatrix.cn>`）；新增 `edited` 触发重跑；本仓库分支中非维护者作者的提交仍需与作者一致的签名，fork 规则与推送兜底检查不变 | `.github/workflows/dco.yml`、`scripts/check-dco.py`、`CONTRIBUTING.md` §11、[PARALLEL-1](../08-governance/parallel-workflow.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、#195 | 不变 |
 | 2026-11-18 | v0.5 | B0-a（#191）：先判定归属再把 SV-04 的缺口迁到负责规则——Direct `predicate_signature` 线上编码冻结归 SV-118、正式 import 冻结归 SV-62，两项写进其 gap 后从 SV-04 移除；SV-04 由 partial 提升为 implemented，119 项 Type A 变为 81 implemented / 35 partial / 3 not implemented；新增判别测试覆盖四方法 12 种参数块替换，未修改 validator 行为 | [盘点报告](../testing/P0-1B-INVENTORY-20261117.md)、#191 | 不变 |
 | 2026-11-17 | v0.5 | P1-m（#183）：SHA 清单只钉代码与证据——`DELIVERY-SCOPE.json` 升为 `aclt.delivery-scope@2`，分类规则改为配置驱动的有序列表；两份根清单与三份实验清单都只列钉住的文件（单机清单 569 行、工作流清单 28 行，三份实验清单分别 39、7、10 行），219 个 Markdown 与 `docs/` 下其余 15 个非 Markdown 材料只交付、不钉；更新包仍包含全部 804 个交付文件，归档校验逐字节核对钉住文件与不钉文件的一致性；清单只要变化就在 CI 走全量通道 | [开发入口](../development.md)、`DELIVERY-SCOPE.json`、#183 | 不变 |
 | 2026-11-17 | v0.5 | B0 以 `1533290` 复核 R1–R16 后的 P0-1B 覆盖：119 项 Type A 为 80 implemented / 36 partial / 3 not implemented（SV-27/50/61 未实现），18 个规范摘要均 implemented；SV-41–80 区间的 Type A 项逐项复核维持原状态，补 R6–R16 切片证据与 SV-117/119/121 证据，未修改 validator 行为 | [盘点报告](../testing/P0-1B-INVENTORY-20261117.md)、#185 | 不变 |
