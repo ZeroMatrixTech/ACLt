@@ -457,7 +457,7 @@ class C1Driver:
 
     def wait_boot(self, owner, epoch, previous_boot):
         deadline = time.monotonic() + CONNECT_TIMEOUT
-        attempts, sent_bytes, received_bytes = 0, 0, 0
+        attempts, replies, sent_bytes, received_bytes = 0, 0, 0, 0
         while True:
             frame = c.encode(dict(action="BOOT", epoch=epoch,
                                   dispatch=self.probe_sequence()))
@@ -466,8 +466,9 @@ class C1Driver:
             except OSError:
                 if time.monotonic() >= deadline:
                     self.record(dict(event="wait_boot", role=owner, epoch=epoch,
-                                     attempts=attempts, sent_bytes=sent_bytes,
-                                     received_bytes=received_bytes, outcome="failed"))
+                                     attempts=attempts, replies=replies,
+                                     sent_bytes=sent_bytes, received_bytes=received_bytes,
+                                     outcome="failed"))
                     raise
                 time.sleep(0.2)
                 continue
@@ -476,12 +477,14 @@ class C1Driver:
                 attempts += 1
                 sent_bytes += len(frame)
                 raw = receive(connection)
+                replies += 1
                 received_bytes += len(raw)
             except OSError:
                 if time.monotonic() >= deadline:
                     self.record(dict(event="wait_boot", role=owner, epoch=epoch,
-                                     attempts=attempts, sent_bytes=sent_bytes,
-                                     received_bytes=received_bytes, outcome="failed"))
+                                     attempts=attempts, replies=replies,
+                                     sent_bytes=sent_bytes, received_bytes=received_bytes,
+                                     outcome="failed"))
                     raise
                 time.sleep(0.2)
                 continue
@@ -490,9 +493,9 @@ class C1Driver:
             boot = c.digest_bytes(c.decode(raw)["boot"])
             if boot != previous_boot:
                 self.record(dict(event="wait_boot", role=owner, epoch=epoch,
-                                 attempts=attempts, sent_bytes=sent_bytes,
-                                 received_bytes=received_bytes, outcome="changed",
-                                 boot=boot.hex()))
+                                 attempts=attempts, replies=replies,
+                                 sent_bytes=sent_bytes, received_bytes=received_bytes,
+                                 outcome="changed", boot=boot.hex()))
                 return boot
             if time.monotonic() >= deadline:
                 raise RuntimeError("serving boot did not change after the restart")

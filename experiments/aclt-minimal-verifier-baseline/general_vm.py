@@ -895,76 +895,93 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
     # Frames actually sent and received, taken from each side's own records.  Retained
     # frame files are reported apart: a retained reply may never have been sent, and a
     # repeated probe send leaves no extra file.
-    def add(store, cls, size):
+    def add(store, cls, count, size):
+        if not count:
+            return
         entry = store.setdefault(cls, dict(count=0, bytes=0))
-        entry["count"] += 1
+        entry["count"] += count
         entry["bytes"] += size
 
     coordinator_sent, coordinator_received = {}, {}
     worker_sent, worker_received = {}, {}
     for row in dispatches:
         if row.get("event") == "activation":
-            add(coordinator_sent, "BOOT", row["request_bytes"])
+            add(coordinator_sent, "BOOT", 1, row["request_bytes"])
             if row.get("response_bytes") is not None:
-                add(coordinator_received, "BOOT", row["response_bytes"])
+                add(coordinator_received, "BOOT", 1, row["response_bytes"])
         elif row.get("event") == "outcome":
-            add(coordinator_sent, row["action"], row["request_bytes"])
+            add(coordinator_sent, row["action"], 1, row["request_bytes"])
             if row.get("response_bytes") is not None:
-                add(coordinator_received, row["action"], row["response_bytes"])
+                add(coordinator_received, row["action"], 1, row["response_bytes"])
         elif row.get("event") == "stop" and row.get("sent_bytes"):
-            add(coordinator_sent, "STOP", row["sent_bytes"])
+            add(coordinator_sent, "STOP", 1, row["sent_bytes"])
     for row in probes:
         event = row.get("event")
         if event == "probe":
             if row.get("boot_bytes"):
-                add(coordinator_sent, "BOOT", row["boot_bytes"])
+                add(coordinator_sent, "BOOT", 1, row["boot_bytes"])
             if row.get("boot_reply_bytes"):
-                add(coordinator_received, "BOOT", row["boot_reply_bytes"])
+                add(coordinator_received, "BOOT", 1, row["boot_reply_bytes"])
             if row.get("raw_sent_bytes"):
-                add(coordinator_sent, row["request_action"], row["raw_sent_bytes"])
+                add(coordinator_sent, row["request_action"], 1, row["raw_sent_bytes"])
             if row.get("reply_bytes"):
-                add(coordinator_received, row["request_action"], row["reply_bytes"])
+                add(coordinator_received, row["request_action"], 1, row["reply_bytes"])
         elif event == "wait_boot":
             if row.get("sent_bytes"):
-                add(coordinator_sent, "BOOT", row["sent_bytes"])
+                add(coordinator_sent, "BOOT", row.get("attempts") or 0, row["sent_bytes"])
             if row.get("received_bytes"):
-                add(coordinator_received, "BOOT", row["received_bytes"])
+                add(coordinator_received, "BOOT", row.get("replies") or 0,
+                    row["received_bytes"])
         elif event == "restart_sent" and row.get("sent_bytes"):
-            add(coordinator_sent, "RESTART", row["sent_bytes"])
+            add(coordinator_sent, "RESTART", 1, row["sent_bytes"])
     worker_withheld, withheld_keys = {}, set()
     for role in roles:
         if role == "A":
             continue
         for row in read_lines(Path(roots[role]) / "withheld.jsonl"):
-            add(worker_withheld, row["action"], row["response_bytes"])
+            add(worker_withheld, row["action"], 1, row["response_bytes"])
             withheld_keys.add((row["boot"], row["execution_id"], row["slot"],
                                row["attempt"], row["action"]))
     for role in roles:
         if role == "A":
             continue
         for row in read_lines(Path(roots[role]) / "activations.jsonl"):
-            add(worker_received, "BOOT", row["request_bytes"])
+            add(worker_received, "BOOT", 1, row["request_bytes"])
             if row.get("accepted"):
-                add(worker_sent, "BOOT", row["response_bytes"])
+                add(worker_sent, "BOOT", 1, row["response_bytes"])
         for row in read_lines(Path(roots[role]) / "executions.jsonl"):
             if row["event"] == "execute-begin":
-                add(worker_received, row["action"], row["request_bytes"])
+                add(worker_received, row["action"], 1, row["request_bytes"])
                 continue
             key = (row["boot"], row["execution_id"], row["slot"], row["attempt"], row["action"])
             if key in withheld_keys:
                 continue
-            add(worker_sent, row["action"], row["response_bytes"])
+            add(worker_sent, row["action"], 1, row["response_bytes"])
         for row in read_lines(Path(roots[role]) / "rejections.jsonl"):
             if row.get("request_bytes"):
-                add(worker_received, row.get("kind") or "UNKNOWN", row["request_bytes"])
+                add(worker_received, row.get("kind") or "UNKNOWN", 1, row["request_bytes"])
         for row in read_lines(Path(roots[role]) / "controls.jsonl"):
-            add(worker_received, row["event"].upper(), row["request_bytes"])
+            add(worker_received, row["event"].upper(), 1, row["request_bytes"])
     zero = dict(count=0, bytes=0)
+    in_flight = {}
     for sent, received, label in ((coordinator_sent, worker_received, "coordinator to worker"),
                                   (worker_sent, coordinator_received, "worker to coordinator")):
+        difference = {}
         for cls in sorted(set(sent) | set(received)):
-            c.need(sent.get(cls, zero) == received.get(cls, zero),
-                   f"{label} {cls} frames differ between the sending and receiving records")
+            sent_row, received_row = sent.get(cls, zero), received.get(cls, zero)
+            c.need(received_row["count"] <= sent_row["count"]
+                   and received_row["bytes"] <= sent_row["bytes"],
+                   f"{label} {cls} frames were received but not recorded as sent")
+            if sent_row != received_row:
+                difference[cls] = dict(count=sent_row["count"] - received_row["count"],
+                                       bytes=sent_row["bytes"] - received_row["bytes"])
+        in_flight[label] = difference
+    if scenario != "restart":
+        # Without a serving-process restart no frame may be lost in flight, so both
+        # sides must agree exactly.
+        for label, difference in in_flight.items():
+            c.need(not difference,
+                   f"{label} frames differ between the sending and receiving records: {difference}")
 
     def totals_by_action(rows):
         result = {}
@@ -1010,7 +1027,7 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
         rejections=reasons,
         frames=dict(coordinator_sent=coordinator_sent, coordinator_received=coordinator_received,
                     worker_sent=worker_sent, worker_received=worker_received,
-                    worker_withheld=worker_withheld, retained=retained),
+                    worker_withheld=worker_withheld, in_flight=in_flight, retained=retained),
         payload=dict(sorted(payload.items())),
         probes=len(probes),
         charged=journal.charged,
