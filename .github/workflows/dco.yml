@@ -7,12 +7,27 @@ name: DCO sign-off
 # not use github.event.pull_request.base.sha. The pull request is checked out
 # into pr/ as data only; nothing from it is executed, no secrets are used, and
 # the token is read-only and not persisted.
+#
+# The pull request body is untrusted. It is the only such field this check
+# reads: the step below passes it in the PR_BODY environment variable and the
+# trusted script picks it up by name (--body-env), so it is never interpolated
+# into a run: command, never executed, and never written to GITHUB_ENV or
+# GITHUB_OUTPUT. The title and the head branch name are not used at all.
+#
+# The squash merge takes its commit message from the pull request body, so the
+# body must end with a Signed-off-by trailer from a maintainer sign-off
+# identity before the merge; the edited activity type reruns the check when the
+# maintainer adds it. The maintainer identities come from
+# .github/dco-maintainers.txt inside the trusted checkout, so a pull request
+# that edits that file is still judged by the target branch's copy.
+#
 # Until a fork pull request has shown on the public repository that this check
 # blocks merging when a sign-off is missing and passes on the fixed head, its
 # result for external pull requests is advisory; the maintainer verifies
 # locally before merging (CONTRIBUTING section 11).
 on:
   pull_request_target:
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 permissions:
@@ -46,7 +61,8 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
           HEAD: ${{ github.event.pull_request.head.sha }}
           FORK: ${{ github.event.pull_request.head.repo.fork }}
-        run: python3 -B trusted/scripts/check-dco.py --repo pr pr --base "$BASE" --head "$HEAD" --fork "$FORK"
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python3 -B trusted/scripts/check-dco.py --repo pr pr --base "$BASE" --head "$HEAD" --fork "$FORK" --body-env PR_BODY
       - name: Check main sign-offs
         if: github.event_name == 'push'
         env:
