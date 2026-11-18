@@ -446,5 +446,12 @@ class DcoWorkflowTrustTests(unittest.TestCase):
         self.assertIn("GITHUB_ENV", header)
 
 
+class DocumentationConsistencyTests(unittest.TestCase):
+    def test_local_verification_command_carries_the_body_environment(self):
+        contributing = (ROOT / "CONTRIBUTING.md").read_text()
+        self.assertIn("--body-env PR_BODY", contributing)
+        self.assertIn('PR_BODY="$(cat', contributing)
+
+
 if __name__ == "__main__":
     unittest.main()

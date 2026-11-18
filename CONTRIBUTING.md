@@ -193,9 +193,19 @@ squash 合并的提交说明取自 PR 正文（`squash_merge_commit_message = PR
 
 - **合并前的签名检查（2026-11-18 起，P1-n）：** `.github/workflows/dco.yml` 在 PR 阶段读取当前 PR 正文，用与推送检查相同的解析方式（`git interpret-trailers --parse`）判断正文最末尾的 trailer 区是否含 `Signed-off-by: 姓名 <邮箱>`，且签名身份属于 `.github/dco-maintainers.txt` 的 `signoff` 一类（初始只有 `inpac <inpac@lingmatrix.cn>`）。`dco` 是必需检查，未通过时合并按钮不可用；维护者编辑正文加上签名后，`edited` 事件自动重跑检查。检查脚本与名单都取自目标分支的受信任检出，PR 修改名单不影响它自己的检查；PR 正文是不受信数据，只经环境变量传给脚本，不执行，也不写入 `GITHUB_ENV` 或 `GITHUB_OUTPUT`。
 - **签名写法：** 签名作为正文最末尾的独立一段，前面空一行。正文中只含 `---` 的行会让 Git 把之后的内容当作补丁区，写在其后的签名不会被识别（提交 `7232164` 即因此漏签）；CRLF 与 LF 的判定相同。
-- **外部贡献**（来自 fork 的 PR）：每个提交都要在提交说明末尾的 trailer 区带有 `Signed-off-by: 姓名 <邮箱>`，邮箱与提交作者一致，合并提交也不例外；写在正文中间的签署行不算数。用 `git commit -s` 即可自动添加。维护者合并前在 PR 正文末尾加上自己的签名，并在本地独立核验提交签名：`python3 -B scripts/check-dco.py pr --base <目标分支提交> --head <PR 头部提交> --fork true`（需要先 `git fetch origin pull/<编号>/head`）。**在仓库公开后用一次 fork PR 实测确认“缺签时合并受阻、补签后最新头部通过”之前，这项检查对外部 PR 只作提示**。
+- **外部贡献**（来自 fork 的 PR）：每个提交都要在提交说明末尾的 trailer 区带有 `Signed-off-by: 姓名 <邮箱>`，邮箱与提交作者一致，合并提交也不例外；写在正文中间的签署行不算数。用 `git commit -s` 即可自动添加。维护者合并前在 PR 正文末尾加上自己的签名，并在 `main` 的检出里独立核验提交签名与正文签名（命令见本节末；名单从脚本所在检出读取，PR 正文只作为数据载入，不要拼进 shell 命令）。**在仓库公开后用一次 fork PR 实测确认“缺签时合并受阻、补签后最新头部通过”之前，这项检查对外部 PR 只作提示**。
 - **本仓库分支上的工作**（维护者与 AI 代理）：代理产生的提交不加 `Signed-off-by`。维护者在合并前于 PR 正文末尾加上自己的签名，该行随 squash 合并成为 `main` 上的提交说明。本仓库分支的 PR 中，作者不属于 `.github/dco-maintainers.txt` 维护者身份的提交（例如外部贡献者直接在本仓库分支提交）仍需与作者一致的签名。
 - **推送兜底：** `dco.yml` 仍检查推送到 `main` 的提交是否带 `Signed-off-by`，用于发现合并时被改掉的签名。
 - **起算点：** 自引入 `scripts/check-dco.py` 的提交之后开始检查，此前的历史提交不追溯，也不改写。
+
+外部 PR 的本地核验（在 `main` 的检出里执行；`<编号>`、`<正文文件>`、`<目标分支提交>`、`<PR 头部提交>` 由维护者填写）：
+
+```sh
+git fetch origin pull/<编号>/head
+gh pr view <编号> --json body --jq .body > <正文文件>
+PR_BODY="$(cat <正文文件>)" python3 -B scripts/check-dco.py pr \
+  --base <目标分支提交> --head <PR 头部提交> --fork true --body-env PR_BODY
+```
+
 
 第三方代码与依赖的接受规则、`NOTICE` 维护规则另行确定，见 OQ-01。在规则完成前，外部贡献应逐项确认来源、版权归属和许可证兼容性，不得合入来源或授权不明的内容。
