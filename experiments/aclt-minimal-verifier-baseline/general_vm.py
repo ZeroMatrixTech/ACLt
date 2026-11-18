@@ -815,10 +815,11 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
             bucket = "sent" if (role == "A") == (row["direction"] == "request") else "received"
             frames[bucket].append(row)
     for row in dispatches:
-        if row.get("event") == "activation":
-            frames["sent"].append(dict(direction="request", action="BOOT",
-                                       bytes=row["request_bytes"], sha256=None))
-        elif row.get("event") == "outcome" and row.get("response_bytes") is not None:
+        if row.get("event") != "activation":
+            continue
+        frames["sent"].append(dict(direction="request", action="BOOT",
+                                   bytes=row["request_bytes"], sha256=None))
+        if row.get("response_bytes") is not None:
             frames["received"].append(dict(direction="response", action="BOOT",
                                            bytes=row["response_bytes"], sha256=None))
     for role in roles:
