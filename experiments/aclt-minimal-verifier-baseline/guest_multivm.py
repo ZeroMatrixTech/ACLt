@@ -458,9 +458,10 @@ class C1Driver:
     def wait_boot(self, owner, epoch, previous_boot):
         deadline = time.monotonic() + CONNECT_TIMEOUT
         attempts, replies, sent_bytes, received_bytes = 0, 0, 0, 0
+        exchanges = []
         while True:
-            frame = c.encode(dict(action="BOOT", epoch=epoch,
-                                  dispatch=self.probe_sequence()))
+            dispatch = self.probe_sequence()
+            frame = c.encode(dict(action="BOOT", epoch=epoch, dispatch=dispatch))
             try:
                 connection = self.connect_peer(owner)
             except OSError:
@@ -468,7 +469,7 @@ class C1Driver:
                     self.record(dict(event="wait_boot", role=owner, epoch=epoch,
                                      attempts=attempts, replies=replies,
                                      sent_bytes=sent_bytes, received_bytes=received_bytes,
-                                     outcome="failed"))
+                                     frames=exchanges, outcome="failed"))
                     raise
                 time.sleep(0.2)
                 continue
@@ -476,7 +477,10 @@ class C1Driver:
                 send(connection, frame)
                 attempts += 1
                 sent_bytes += len(frame)
+                exchange = dict(dispatch=dispatch, sent_bytes=len(frame), reply_bytes=0)
+                exchanges.append(exchange)
                 raw = receive(connection)
+                exchange["reply_bytes"] = len(raw)
                 replies += 1
                 received_bytes += len(raw)
             except OSError:
@@ -484,7 +488,7 @@ class C1Driver:
                     self.record(dict(event="wait_boot", role=owner, epoch=epoch,
                                      attempts=attempts, replies=replies,
                                      sent_bytes=sent_bytes, received_bytes=received_bytes,
-                                     outcome="failed"))
+                                     frames=exchanges, outcome="failed"))
                     raise
                 time.sleep(0.2)
                 continue
@@ -495,7 +499,7 @@ class C1Driver:
                 self.record(dict(event="wait_boot", role=owner, epoch=epoch,
                                  attempts=attempts, replies=replies,
                                  sent_bytes=sent_bytes, received_bytes=received_bytes,
-                                 outcome="changed", boot=boot.hex()))
+                                 frames=exchanges, outcome="changed", boot=boot.hex()))
                 return boot
             if time.monotonic() >= deadline:
                 raise RuntimeError("serving boot did not change after the restart")

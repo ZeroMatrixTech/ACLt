@@ -732,27 +732,39 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
             continue
         for row in read_lines(Path(roots[role]) / "executions.jsonl"):
             c.need(row["event"] in ("execute-begin", "execute-end"), "unknown execution record")
-            executions.append(row)
-    begins = [row for row in executions if row["event"] == "execute-begin"]
+            executions.append((role, row))
+    begins = [(role, row) for role, row in executions if row["event"] == "execute-begin"]
+    ends = [(role, row) for role, row in executions if row["event"] == "execute-end"]
     key_fields = ("boot", "execution_id", "slot", "attempt", "action")
-    keys = [tuple(row[field] for field in key_fields) for row in begins]
-    c.need(len(keys) == len(set(keys)), "one boot executed the same attempt twice")
-    frames_by_boot = [(row["boot"], row["request_sha256"]) for row in begins]
+    keys = [(role,) + tuple(row[field] for field in key_fields) for role, row in begins]
+    c.need(len(keys) == len(set(keys)), "one serving role recorded the same attempt twice")
+    frames_by_boot = [(role, row["boot"], row["request_sha256"]) for role, row in begins]
     c.need(len(frames_by_boot) == len(set(frames_by_boot)),
-           "one boot executed the same frozen request twice")
-    attempt_keys = [(row["execution_id"], row["slot"], row["attempt"], row["action"])
-                    for row in begins]
+           "one serving role recorded the same frozen request twice")
+    attempt_keys = [(role, row["execution_id"], row["slot"], row["attempt"], row["action"])
+                    for role, row in begins]
     c.need(len(attempt_keys) == len(set(attempt_keys)),
-           "one attempt and action executed on more than one boot")
-    for row in begins:
-        ends = [other for other in executions
-                if other["event"] == "execute-end"
-                and all(other[field] == row[field] for field in key_fields)]
-        c.need(len(ends) == 1, "an execution has no unique completion record")
+           "one attempt and action was recorded on more than one serving role")
+
+    def end_key(role, row):
+        return (role,) + tuple(row[field] for field in key_fields)
+
+    begins_by_key, ends_by_key = {}, {}
+    for role, row in begins:
+        begins_by_key.setdefault(end_key(role, row), []).append(row)
+    for role, row in ends:
+        ends_by_key.setdefault(end_key(role, row), []).append(row)
+    c.need(all(len(rows) == 1 for rows in begins_by_key.values()),
+           "a serving role recorded the same begin twice")
+    c.need(all(len(rows) == 1 for rows in ends_by_key.values()),
+           "a serving role recorded the same completion twice")
+    c.need(set(ends_by_key) == set(begins_by_key),
+           "begin and completion records do not pair one to one")
 
     # Every execution the journal and the retained frames require must have both
-    # records, bound to the same attempt, boot, request and reply.  Missing, orphaned
-    # or misbound records are refused; recomputing a frame cannot replace them.
+    # records, bound to the same serving role, attempt, boot, request and reply.
+    # Missing, orphaned or misbound records are refused; recomputing a frame cannot
+    # replace them.
     expected = []
     for index, event in enumerate(journal.events):
         if handoff is not None and index < handoff:
@@ -780,32 +792,27 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
                          event["request"], path))
     c.need(all(role != "A" for role, *_ in expected),
            "the C1 evidence expects no coordinator-side execution")
-    by_key = {}
-    for row in begins:
-        by_key.setdefault((row["boot"], row["request_sha256"]), []).append(row)
     for role, boot, action, slot, attempt, raw, path in expected:
+        request = c.decode(raw)
         request_sha = hashlib.sha256(raw).hexdigest()
-        records = by_key.get((boot, request_sha), [])
+        identity = (role, boot, request["execution_id"].hex(), slot, attempt, action)
+        records = begins_by_key.get(identity, [])
         c.need(len(records) == 1,
-               f"{action} {request_sha[:12]} has no unique execution record")
+               f"{action} {request_sha[:12]} has no unique execution record for {role}")
         record = records[0]
-        c.need((record["action"], record["slot"], record["attempt"]) == (action, slot, attempt),
-               f"{action} {request_sha[:12]} execution record is bound to another attempt")
+        c.need(record["request_sha256"] == request_sha,
+               f"{action} {request_sha[:12]} execution record binds another request")
         c.need(record.get("request_bytes") == len(raw),
                f"{action} {request_sha[:12]} execution record has another request size")
-        ends = [other for other in executions
-                if other["event"] == "execute-end"
-                and all(other[field] == record[field] for field in key_fields)]
-        c.need(len(ends) == 1,
-               f"{action} {request_sha[:12]} has no unique completion record")
+        completion = ends_by_key[identity][0]
         reply = path.read_bytes()
-        c.need(ends[0]["response_sha256"] == hashlib.sha256(reply).hexdigest(),
+        c.need(completion["response_sha256"] == hashlib.sha256(reply).hexdigest(),
                f"{action} {request_sha[:12]} completion record binds another reply")
-        c.need(ends[0].get("response_bytes") == len(reply),
+        c.need(completion.get("response_bytes") == len(reply),
                f"{action} {request_sha[:12]} completion record has another reply size")
-    expected_keys = {(boot, hashlib.sha256(raw).hexdigest())
+    expected_keys = {(role, boot, hashlib.sha256(raw).hexdigest())
                      for role, boot, action, slot, attempt, raw, path in expected}
-    c.need({(row["boot"], row["request_sha256"]) for row in begins} == expected_keys,
+    c.need({(role, row["boot"], row["request_sha256"]) for role, row in begins} == expected_keys,
            "execution records do not match the retained dispatches")
 
     rejections = []
@@ -820,7 +827,7 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
             if row.get("reason") in ("boot-mismatch", "epoch-mismatch") \
                     and row.get("request_sha256"):
                 # A frame for another boot or epoch may never execute where it was refused.
-                same = [begin for begin in begins
+                same = [begin for _, begin in begins
                         if begin["boot"] == row["boot"]
                         and begin["request_sha256"] == row["request_sha256"]]
                 c.need(not same, "a refused foreign-boot or stale-epoch frame was executed")
@@ -839,7 +846,7 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
                    and (event["slot"], event["attempt"]) == (target[0], target[1] + 1)]
         c.need(len(retries) == 1 and retries[0]["boot"].hex() != old_boot,
                "the retry did not use a different serving boot")
-        executed = [row for row in begins if row["boot"] == old_boot
+        executed = [row for _, row in begins if row["boot"] == old_boot
                     and row["request_sha256"] == old_sha]
         c.need(len(executed) == 1, "the dropped attempt did not execute exactly once")
         expected = "boot-mismatch" if scenario == "restart" else "duplicate"
@@ -856,7 +863,7 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
             c.need(len(restarts) == 1 and restarts[0]["previous_boot"] == old_boot
                    and restarts[0]["boot"] != old_boot,
                    "the restart record does not separate the two serving boots")
-        c.need(not [row for row in begins if row["request_sha256"] == old_sha
+        c.need(not [row for _, row in begins if row["request_sha256"] == old_sha
                     and row["boot"] != old_boot],
                "a resent frame executed on another boot")
     else:
@@ -889,7 +896,7 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
                        for other in roles if other != "A"
                        for row in read_lines(Path(roots[other]) / "activations.jsonl")),
                    "the stale epoch has no stale-epoch activation refusal")
-            c.need(not [row for row in begins if row["request_sha256"] == sha],
+            c.need(not [row for _, row in begins if row["request_sha256"] == sha],
                    "a stale frame executed after the handoff")
 
     # Frames actually sent and received, taken from each side's own records.  Retained
@@ -962,26 +969,46 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
                 add(worker_received, row.get("kind") or "UNKNOWN", 1, row["request_bytes"])
         for row in read_lines(Path(roots[role]) / "controls.jsonl"):
             add(worker_received, row["event"].upper(), 1, row["request_bytes"])
+    # The only record-locatable loss is a wait-boot exchange with a process that was
+    # restarting: no serving activation for that dispatch means the frame was not
+    # received, and an accepted dispatch without a reply means the reply was not
+    # received.  Every other difference between the two sides must be zero.
+    activation_lookup = {}
+    for role in roles:
+        if role == "A":
+            continue
+        for row in read_lines(Path(roots[role]) / "activations.jsonl"):
+            activation_lookup[(role, row["dispatch"])] = row
+    allowance = {"coordinator to worker": {}, "worker to coordinator": {}}
+    for row in probes:
+        if row.get("event") != "wait_boot":
+            continue
+        for frame in row.get("frames") or ():
+            activation = activation_lookup.get((row["role"], frame["dispatch"]))
+            if activation is None:
+                add(allowance["coordinator to worker"], "BOOT", 1, frame["sent_bytes"])
+            elif activation.get("accepted") and not frame.get("reply_bytes"):
+                add(allowance["worker to coordinator"], "BOOT", 1, activation["response_bytes"])
+
     zero = dict(count=0, bytes=0)
     in_flight = {}
     for sent, received, label in ((coordinator_sent, worker_received, "coordinator to worker"),
                                   (worker_sent, coordinator_received, "worker to coordinator")):
         difference = {}
-        for cls in sorted(set(sent) | set(received)):
+        for cls in sorted(set(sent) | set(received) | set(allowance[label])):
             sent_row, received_row = sent.get(cls, zero), received.get(cls, zero)
             c.need(received_row["count"] <= sent_row["count"]
                    and received_row["bytes"] <= sent_row["bytes"],
                    f"{label} {cls} frames were received but not recorded as sent")
-            if sent_row != received_row:
-                difference[cls] = dict(count=sent_row["count"] - received_row["count"],
-                                       bytes=sent_row["bytes"] - received_row["bytes"])
+            observed = dict(count=sent_row["count"] - received_row["count"],
+                            bytes=sent_row["bytes"] - received_row["bytes"])
+            expected = allowance[label].get(cls, zero)
+            c.need(observed == expected,
+                   f"{label} {cls} frames differ without a recorded restart exchange: "
+                   f"{observed} vs an allowance of {expected}")
+            if observed != zero:
+                difference[cls] = observed
         in_flight[label] = difference
-    if scenario != "restart":
-        # Without a serving-process restart no frame may be lost in flight, so both
-        # sides must agree exactly.
-        for label, difference in in_flight.items():
-            c.need(not difference,
-                   f"{label} frames differ between the sending and receiving records: {difference}")
 
     def totals_by_action(rows):
         result = {}
@@ -1017,7 +1044,7 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
     for _, row in rejections:
         reasons[row["reason"]] = reasons.get(row["reason"], 0) + 1
     executions_by_action = {}
-    for row in begins:
+    for _, row in begins:
         executions_by_action[row["action"]] = executions_by_action.get(row["action"], 0) + 1
     return dict(
         scenario=scenario,

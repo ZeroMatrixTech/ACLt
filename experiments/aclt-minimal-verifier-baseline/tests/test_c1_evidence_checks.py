@@ -109,7 +109,7 @@ class RecordedRunTests(unittest.TestCase):
                         keep.append(row)
                     path.write_text("".join(json.dumps(row, sort_keys=True) + "\n"
                                              for row in keep))
-                with self.assertRaisesRegex(c.CodecError, "execution record"):
+                with self.assertRaisesRegex(c.CodecError, "execution record|do not pair"):
                     self.check(base, "restart")
 
     def test_misbound_verify_completion_fails(self):
@@ -140,6 +140,48 @@ class RecordedRunTests(unittest.TestCase):
             stream.write(json.dumps(begin, sort_keys=True) + "\n")
             stream.write(json.dumps(end, sort_keys=True) + "\n")
         with self.assertRaisesRegex(c.CodecError, "execution records do not match"):
+            self.check(base, "restart")
+
+
+    def test_wrong_execution_id_fails(self):
+        base = self.copy("restart")
+        changed = False
+        for root in workers_of(base).values():
+            path = root / "executions.jsonl"
+            rows = [json.loads(line) for line in path.read_text().splitlines() if line]
+            for row in rows:
+                if row["action"] == "VERIFY":
+                    row["execution_id"] = "44" * 32
+                    changed = True
+            path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows))
+        self.assertTrue(changed)
+        with self.assertRaisesRegex(c.CodecError, "no unique execution record"):
+            self.check(base, "restart")
+
+    def test_records_moved_to_another_role_fail(self):
+        base = self.copy("restart")
+        source = base / "C/C" / "executions.jsonl"
+        target = base / "B/B" / "executions.jsonl"
+        rows = [json.loads(line) for line in source.read_text().splitlines() if line]
+        moved = [row for row in rows if row["action"] == "VERIFY"]
+        self.assertTrue(moved)
+        source.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows
+                                 if row["action"] != "VERIFY"))
+        with target.open("a") as stream:
+            for row in moved:
+                stream.write(json.dumps(row, sort_keys=True) + "\n")
+        with self.assertRaisesRegex(c.CodecError, "no unique execution record"):
+            self.check(base, "restart")
+
+    def test_orphan_completion_record_fails(self):
+        base = self.copy("restart")
+        path = base / "C/C" / "executions.jsonl"
+        end = dict(event="execute-end", boot="00" * 32, execution_id="55" * 32,
+                   slot=9, attempt=1, action="VERIFY", request_sha256="66" * 32,
+                   request_bytes=1, response_sha256="77" * 32, response_bytes=1)
+        with path.open("a") as stream:
+            stream.write(json.dumps(end, sort_keys=True) + "\n")
+        with self.assertRaisesRegex(c.CodecError, "do not pair one to one"):
             self.check(base, "restart")
 
 
