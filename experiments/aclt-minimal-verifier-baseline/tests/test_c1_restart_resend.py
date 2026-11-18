@@ -422,5 +422,109 @@ class ServedProcessTests(unittest.TestCase):
                          ["restart"])
 
 
+
+class GuestDispatchTests(unittest.TestCase):
+    """The guest-side dispatch and probe driver against a real serving process."""
+
+    @classmethod
+    def setUpClass(cls):
+        work = TemporaryDirectory()
+        cls.addClassCleanup(work.cleanup)
+        cls.work = Path(work.name)
+        cls.executor = cls.work / "executor"
+        build_executor(PROBE / "src/independent_executor.rs", cls.executor)
+
+    def setUp(self):
+        root = TemporaryDirectory()
+        self.addCleanup(root.cleanup)
+        self.root = Path(root.name)
+        self.job = fixture(bytes(32), DEFAULT_BUDGET)
+        self.worker_out = self.root / "worker"
+        self.coord_out = self.root / "A"
+        self.worker_out.mkdir()
+        self.coord_out.mkdir()
+        self.port = self.free_port()
+        self.worker = self.start()
+        self.addCleanup(self.stop)
+        self.wait_ready()
+
+    def free_port(self):
+        listener = socket.socket()
+        try:
+            listener.bind(("127.0.0.1", 0))
+            return listener.getsockname()[1]
+        finally:
+            listener.close()
+
+    def start(self):
+        environment = dict(os.environ)
+        environment["PYTHONPATH"] = str(PROBE.parents[1])
+        return subprocess.Popen(
+            [sys.executable, "-c",
+             "import sys; from pathlib import Path; from general_vm import serve; "
+             "serve('C', int(sys.argv[1]), Path(sys.argv[3]), Path(sys.argv[2]), "
+             "drop_first_b=False, address='127.0.0.1', peer='127.0.0.1')",
+             str(self.port), str(self.worker_out), str(self.executor)],
+            cwd=PROBE.parents[1] / "experiments/aclt-minimal-verifier-baseline",
+            env=environment, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    def stop(self):
+        if self.worker.poll() is None:
+            self.worker.terminate()
+            self.worker.wait(10)
+
+    def wait_ready(self):
+        deadline = time.monotonic() + 15
+        while True:
+            try:
+                with socket.create_connection(("127.0.0.1", self.port), timeout=5):
+                    return
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.05)
+
+    def connect(self, owner):
+        return socket.create_connection(("127.0.0.1", self.port), timeout=5)
+
+    def dispatch(self):
+        import guest_multivm
+        return guest_multivm.C1Dispatch(self.connect, self.coord_out, "A")
+
+    def test_dispatch_round_trip_records_the_binding(self):
+        dispatch = self.dispatch()
+        boot, session = dispatch.open("C", 0, slot=1, attempt=1, action="SOLVE")
+        request = Journal(self.job, self.root / "frame.cbor").frame(1, 1, "SOLVE", boot=boot)
+        response = session.request(request)
+        session.close()
+        self.assertTrue(response)
+        rows = read_lines(self.coord_out / "dispatch.jsonl")
+        self.assertEqual([row["event"] for row in rows], ["activation", "outcome"])
+        self.assertEqual(rows[0]["boot"], boot.hex())
+        self.assertEqual(rows[1]["outcome"], "answered")
+        begins = [row for row in read_lines(self.worker_out / "executions.jsonl")
+                  if row["event"] == "execute-begin"]
+        self.assertEqual([row["boot"] for row in begins], [boot.hex()])
+
+    def test_duplicate_probes_are_refused_without_another_execution(self):
+        import guest_multivm
+        dispatch = self.dispatch()
+        driver = guest_multivm.C1Driver("duplicate", connect_peer=self.connect,
+                                        output=self.coord_out)
+        boot, session = dispatch.open("C", 0, slot=1, attempt=1, action="SOLVE")
+        request = Journal(self.job, self.root / "frame.cbor").frame(1, 1, "SOLVE", boot=boot)
+        session.request(request)
+        driver.after_failure(session, request)
+        session.close()
+        probes = read_lines(self.coord_out / "resends.jsonl")
+        self.assertEqual([row["probe"] for row in probes], ["bare", "boot"])
+        self.assertEqual([row["outcome"] for row in probes], ["refused", "refused"])
+        refusals = read_lines(self.worker_out / "rejections.jsonl")
+        self.assertEqual([row["reason"] for row in refusals], ["unactivated", "duplicate"])
+        begins = [row for row in read_lines(self.worker_out / "executions.jsonl")
+                  if row["event"] == "execute-begin"]
+        self.assertEqual(len(begins), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
