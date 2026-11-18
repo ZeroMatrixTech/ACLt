@@ -205,6 +205,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-18 | v0.5 | 归档阶段 #128 的发布后收尾回验（AUD-20261118-01）：报告按原字节入库，审计索引与 `docs/README.md` 同步；报告新增 0 BLOCKER、1 MAJOR（现为 `ACCEPTED_BY_MAINTAINER`）、0 MINOR，未处理 OPEN 为 0，结论为已无未处理的关闭阻断，#196 的历史 DCO 漏签按维护者接受的 PR 正文补签补救 | [回验报告](../08-governance/audits/audit-20261118-01-post-release-closure.md)、[审计索引](../08-governance/audits/README.md)、#128 | 不变 |
 | 2026-11-18 | v0.5 | P1-o：把发布后定下的协作规则写进 PARALLEL-1——新增 §2 的 2026-11-18 现状（公开仓库、经典分支保护与规则集“Protect main”的读回）、人类协作者角色与 §5.6 的建模分工、worktree 移到仓库外、合并权限为流程约定、同步推送后需重新批准；§8 第 5 步标注完成 | [PARALLEL-1](../08-governance/parallel-workflow.md)、`CONTRIBUTING.md`、[公开仓库设置](../08-governance/public-repository-settings.md)、#198 | 不变 |
 | 2026-11-18 | v0.5 | P1-n：`dco` 改为在 PR 阶段检查正文末尾的维护者签名——正文即 squash 合并说明，签名身份取自目标分支受信任检出中的 `.github/dco-maintainers.txt`（初始只有 `inpac <inpac@lingmatrix.cn>`）；新增 `edited` 触发重跑；本仓库分支中非维护者作者的提交仍需与作者一致的签名，fork 规则与推送兜底检查不变 | `.github/workflows/dco.yml`、`scripts/check-dco.py`、`CONTRIBUTING.md` §11、[PARALLEL-1](../08-governance/parallel-workflow.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、#195 | 不变 |
 | 2026-11-18 | v0.5 | B0-a（#191）：先判定归属再把 SV-04 的缺口迁到负责规则——Direct `predicate_signature` 线上编码冻结归 SV-118、正式 import 冻结归 SV-62，两项写进其 gap 后从 SV-04 移除；SV-04 由 partial 提升为 implemented，119 项 Type A 变为 81 implemented / 35 partial / 3 not implemented；新增判别测试覆盖四方法 12 种参数块替换，未修改 validator 行为 | [盘点报告](../testing/P0-1B-INVENTORY-20261117.md)、#191 | 不变 |
