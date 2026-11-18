@@ -60,7 +60,10 @@ jobs:
               channel="$(python3 - "$files" "$raw" <<'PY'
           import os, sys
           ROOT = {"README.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md",
-                  "CONTRIBUTORS.md", "SINGLEHOST-SHA256SUMS", "WORKFLOW-SHA256SUMS"}
+                  "CONTRIBUTORS.md"}
+          # SINGLEHOST-SHA256SUMS and WORKFLOW-SHA256SUMS are deliberately not
+          # whitelisted: they change only when a pinned code or evidence file
+          # changes, so any manifest edit must take the full channel.
           def allowed(p):
               if p in ROOT: return True
               if p.startswith(".github/ISSUE_TEMPLATE/"): return True

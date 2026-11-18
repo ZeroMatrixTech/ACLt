@@ -97,7 +97,7 @@ ACLt Protocol 当前处于 G0 规格化阶段。贡献的首要目标不是快�
 
 ## 5. 推荐工作流
 
-工程操作统一见[开发与维护指南](docs/development.md)：先审阅变更并用 `make manifests` 刷新清单，`make check` 运行 Python 回归与校验，`make test` 运行当前全部本地检查。打包不再自动刷新清单。
+工程操作统一见[开发与维护指南](docs/development.md)：改动代码、测试、配置或证据后，先审阅变更并用 `make manifests` 刷新清单；只改 Markdown 的 PR 不需要更新任何清单。`make check` 运行 Python 回归与校验，`make test` 运行当前全部本地检查。打包不再自动刷新清单。
 
 开发与交接前按 [运行与协作环境规范](docs/08-governance/environment-standard.md)核对 ENV-1、工具链版本、代码基线及验收记录。
 

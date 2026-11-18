@@ -1,5 +1,5 @@
 {
-  "schema": "aclt.delivery-scope@1",
+  "schema": "aclt.delivery-scope@2",
   "scope": "Source delivery including historical archives; active runtime entry remains state3/FM, not historical state1/state2/VM paths.",
   "source_directories": [
     "tools",
@@ -36,8 +36,40 @@
     "experiments/*/.toolchain/**",
     "experiments/aclt-multinode-admission/local-tests.json"
   ],
+  "classification_order": [
+    "tracked_exceptions",
+    "never_digest_patterns",
+    "digest_patterns",
+    "delivery_only_patterns"
+  ],
   "tracked_exceptions": {
     "SINGLEHOST-SHA256SUMS": "Digest manifest cannot hash itself; the external archive checksum covers its bytes."
   },
-  "trust_boundary": "Checksums establish inventory/byte consistency, not publisher authenticity. No external signing root is established. Git coverage is checked only when the repository itself is a Git checkout; archive verification reports that dimension NOT_RUN."
+  "never_digest_patterns": [
+    "**/*.md"
+  ],
+  "digest_patterns": [
+    "Makefile",
+    "LICENSE",
+    "REUSE.toml",
+    ".gitignore",
+    "DELIVERY-SCOPE.json",
+    "WORKFLOW-SHA256SUMS",
+    "scripts/**",
+    "tools/**",
+    "tests/**",
+    "schemas/**",
+    "registries/**",
+    "experiments/**",
+    ".github/**",
+    ".aclt-flow/*",
+    "docs/07-roadmap/fm-s3-audit-dependencies.json",
+    "docs/testing/**",
+    "docs/testing/public-evidence/**",
+    "docs/workflow/example/**"
+  ],
+  "delivery_only_patterns": [
+    "docs/**"
+  ],
+  "trust_boundary": "Checksums establish inventory/byte consistency, not publisher authenticity. No external signing root is established. Git coverage is checked only when the repository itself is a Git checkout; archive verification reports that dimension NOT_RUN. Files outside the digest set are covered by the whole source archive SHA-256 recorded in the release and by Git history."
 }

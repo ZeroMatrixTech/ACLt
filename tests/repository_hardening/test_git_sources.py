@@ -63,8 +63,13 @@ class GitSources(unittest.TestCase):
 
     def test_tracked_coverage_under_container_ownership(self):
         (self.repo / 'DELIVERY-SCOPE.json').write_text(json.dumps({
-            'schema': 'aclt.delivery-scope@1', 'tracked_exceptions': {}}))
+            'schema': 'aclt.delivery-scope@2',
+            'source_directories': [], 'top_level_files': ['sample'],
+            'classification_order': ['tracked_exceptions', 'never_digest_patterns',
+                                     'digest_patterns', 'delivery_only_patterns'],
+            'tracked_exceptions': {}, 'never_digest_patterns': ['**/*.md'],
+            'digest_patterns': ['sample'], 'delivery_only_patterns': ['docs/**']}))
         with patch.dict(os.environ, self.env, clear=True):
             self.assertEqual(tracked_coverage(self.repo, [self.repo / 'sample']), 'PASS')
-            with self.assertRaisesRegex(ValueError, 'Unclassified tracked'):
+            with self.assertRaisesRegex(ValueError, 'outside the provided coverage'):
                 tracked_coverage(self.repo, [])

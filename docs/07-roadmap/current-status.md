@@ -205,6 +205,7 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-17 | v0.5 | P1-m（#183）：SHA 清单只钉代码与证据——`DELIVERY-SCOPE.json` 升为 `aclt.delivery-scope@2`，分类规则改为配置驱动的有序列表；两份根清单与三份实验清单都只列钉住的文件（单机清单 569 行、工作流清单 28 行，三份实验清单分别 39、7、10 行），219 个 Markdown 与 `docs/` 下其余 15 个非 Markdown 材料只交付、不钉；更新包仍包含全部 804 个交付文件，归档校验逐字节核对钉住文件与不钉文件的一致性；清单只要变化就在 CI 走全量通道 | [开发入口](../development.md)、`DELIVERY-SCOPE.json`、#183 | 不变 |
 | 2026-11-17 | v0.5 | B0 以 `1533290` 复核 R1–R16 后的 P0-1B 覆盖：119 项 Type A 为 80 implemented / 36 partial / 3 not implemented（SV-27/50/61 未实现），18 个规范摘要均 implemented；SV-41–80 区间的 Type A 项逐项复核维持原状态，补 R6–R16 切片证据与 SV-117/119/121 证据，未修改 validator 行为 | [盘点报告](../testing/P0-1B-INVENTORY-20261117.md)、#185 | 不变 |
 | 2026-11-17 | v0.5 | P1-l：main 上的发布说明加 `RELEASED` 头注（标签快照正文不变）；软件发布含义的“发行”统一改为“发布”；README、docs/README 与审计索引同步发布状态；CONTRIBUTORS 与公开仓库设置按实际记录更新；第三方材料补 DeepSeek 输出权利依据 | [Release](https://github.com/ZeroMatrixTech/ACLt/releases/tag/research-preview-1)、[发布说明](../releases/PREVIEW-20261106.md)、#182 | 不变 |
 | 2026-11-16 | v0.5 | P1-k：本地验证增加文档快速通道与并行 make——仅 pull_request 且全部改动落在文档白名单时运行 check-docs，push main 与 workflow_dispatch 保持全量；全量改为 `make -j"$(nproc)" -O test`，test-authority 使用独立 `build/worker-ci`，确定性打包仍在测试后串行 | [开发入口](../development.md)、[公开仓库设置](../08-governance/public-repository-settings.md)、#175 | 不变 |
