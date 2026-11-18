@@ -236,6 +236,12 @@ class LicenseCoverageTests(unittest.TestCase):
         self.write_reuse("version = 1\n" + self.declaration(".gitignore"))
         self.assertEqual((self.result().covered, self.result().declared), (2, 1))
 
+    def test_gitattributes_is_covered_and_declarable(self):
+        self.write(".gitattributes", "*.md text\n")
+        self.assert_rejected(".gitattributes")
+        self.write_reuse("version = 1\n" + self.declaration(".gitattributes"))
+        self.assertEqual((self.result().covered, self.result().declared), (2, 1))
+
     def test_config_json_requires_declaration(self):
         self.write("DELIVERY-SCOPE.json", '{"source_directories": []}\n')
         self.assert_rejected("DELIVERY-SCOPE.json")

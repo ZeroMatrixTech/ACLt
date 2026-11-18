@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright 2026 北京凌矩阵科技有限责任公司
+#
+# Archived audit reports are byte-exact copies of the reports delivered by the
+# audit session. Some of them carry Markdown hard breaks (two trailing spaces
+# on consecutive blockquote lines). The documentation channel of
+# local-validation runs "git diff --check" on the increment, which would fail
+# on those records. Records keep their bytes: only the archived copies are
+# exempt, and the index and any authored file in this directory keep the
+# default check.
+audit-*.md whitespace=-blank-at-eol
