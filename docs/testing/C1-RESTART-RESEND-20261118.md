@@ -1,6 +1,6 @@
 # 最简验证机 · C1 工作服务重启、重发与旧轮次拒绝（来宾级）
 
-> 状态：本报告记录 [#208](https://github.com/ZeroMatrixTech/ACLt/issues/208)（C1）的**来宾级**验收。政策语义按计划卡第 1 项和 2026-11-18 维护者对设计说明的确认实现。**物理双机的重启场景未运行**（维护者 2026-11-18 决定先交来宾级证据），计划卡验收第 2 项中的物理级部分未达成，本报告不作相反声明。
+> 状态：本报告记录 [#208](https://github.com/ZeroMatrixTech/ACLt/issues/208)（C1）的**来宾级**验收（[维护者 2026-11-18 的验收调整](https://github.com/ZeroMatrixTech/ACLt/issues/208#issuecomment-6991535193)、[计划卡修订 2](https://github.com/ZeroMatrixTech/ACLt/issues/208#issuecomment-6991538256)）。政策语义按计划卡第 1 项和 2026-11-18 维护者对设计说明的确认实现。**物理双机的重启场景未运行**，不在本 PR 范围内，计划卡验收第 2 项中的物理级部分保留为未达成，本报告不作相反声明。
 
 ## 结论
 
@@ -12,7 +12,7 @@
 | 2 duplicate | 丢弃求解答复 → 不重启 → 重投同一帧；协调者补算 | 发布 | 41,170 gas | SOLVE 5 / VERIFY 4 | `unactivated`、`duplicate` |
 | 3 stale | 无在途交接后重投旧轮次的 SOLVE 与 VERIFY 原帧 | 发布 | 32,938 gas | SOLVE 3 / VERIFY 3 | `unactivated`、`epoch-mismatch`、`stale-epoch` |
 
-- 同一 `(execution, slot, attempt, action)` 在三个场景中都没有执行两次；被拒绝的帧没有任何执行记录。
+- 同一 `(execution, slot, attempt, action)` 在三个场景中都没有执行两次；**拒绝没有新增执行**。同一原帧在旧 boot 或首次投递上的执行单独列在执行次数表中，不与「被拒」混写。
 - 旧轮次帧没有产生接纳：`stale` 的 after 阶段没有新增 `RESERVE`/`ACCEPT`，`charged` 与无探测时相同（32,938 gas）。
 - 执行次数取自工作服务在执行前后落盘的 `execute-begin`/`execute-end` 记录，**不与账目互推**；账目行只用于对照。
 
@@ -55,11 +55,11 @@
 
 ## 执行次数（真实观测）
 
-| 场景 | SOLVE 执行 | VERIFY 执行 | 被执行两次的 (slot, attempt, action) | 被拒帧的执行 |
-|---|---:|---:|---|---|
-| restart | 5 | 4 | 无 | 0 |
-| duplicate | 5 | 4 | 无 | 0 |
-| stale | 3 | 3（after 阶段） | 无 | 0 |
+| 场景 | SOLVE 执行 | VERIFY 执行 | 被执行两次的 (slot, attempt, action) | 拒绝新增执行 | 同一原帧早先的执行 |
+|---|---:|---:|---|---:|---|
+| restart | 5 | 4 | 无 | 0 | 片 1 尝试 1 在旧 boot 上执行 1 次（其后被重发探测，未再执行） |
+| duplicate | 5 | 4 | 无 | 0 | 片 1 尝试 1 在同一 boot 上执行 1 次（重发探测被拒为 duplicate） |
+| stale | 3 | 3（after 阶段） | 无 | 0 | 片 1 的 SOLVE/VERIFY 在 before 阶段各执行 1 次（after 阶段的重投未执行） |
 
 逐尝试（协调者日志；执行次数以工作服务记录核对）：
 
@@ -73,36 +73,47 @@
 
 ## C-06 分栏观测
 
-计量单位、采集位置与派生/观测分开列；**不合并单位，也不据此推出故障率、完成率或经济结论**。
+计量单位、采集位置与派生/观测分开列；**不合并单位，也不据此推出故障率、完成率或经济结论**。下表全部是本次运行的实际记录：发送与接收分别来自两侧自己的记录，保留帧存量与实际发送量分开，保留但未发送的答复单列。
 
 | 类别 | restart | duplicate | stale | 单位 | 采集位置 |
 |---|---:|---:|---:|---|---|
 | 求解执行次数 | 5 | 5 | 3 | 次 | 工作来宾 `executions.jsonl`（begin） |
-| 复核执行次数 | 4 | 4 | 3 | 次 | 同上 |
-| 求解读数上限 | 8,232 / 8,232 / 8,242 / 8,232 | 同 | 同 | gas | 计划 caps |
-| 该执行计费 | 41,170 | 41,170 | 32,938 | gas | 协调者日志 `charged`（含未答复尝试按上限计入） |
-| 归并耗时 | 993,213 | 874,935 | 547,694 | ns（墙钟） | 协调来宾 `guest.json` `merge_ns` |
-| 协调者请求帧 SOLVE | 5 / 3,476 | 5 / 3,476 | 3 / 2,104 | 帧 / 字节 | 协调者根 `*-SOLVE-request.cbor` |
-| 协调者请求帧 VERIFY | 4 / 3,210 | 4 / 3,210 | 3 / 2,419 | 帧 / 字节 | 同上 |
-| 工作服务请求帧 SOLVE | 5 / 3,476 | 5 / 3,476 | 3 / 2,104 | 帧 / 字节 | 各工作来宾根 |
-| 工作服务请求帧 VERIFY | 4 / 3,210 | 4 / 3,210 | 3 / 2,419 | 帧 / 字节 | 同上 |
-| 协调者答复帧 SOLVE | 4 / 588 | 4 / 588 | 3 / 441 | 帧 / 字节 | 协调者根（少 1 帧即被丢弃的答复） |
-| 协调者答复帧 VERIFY | 4 / 232 | 4 / 232 | 3 / 174 | 帧 / 字节 | 同上 |
-| 工作服务答复帧 SOLVE | 5 / 735 | 5 / 735 | 3 / 441 | 帧 / 字节 | 各工作来宾根（含保留但未发送的答复） |
-| 工作服务答复帧 VERIFY | 4 / 232 | 4 / 232 | 3 / 174 | 帧 / 字节 | 同上 |
-| BOOT 请求（协调者发出） | 9 / 270 | 9 / 270 | 6 / 180 | 帧 / 字节 | `A/A/dispatch.jsonl` |
-| BOOT 请求（工作服务收到） | 11 / 338 | 10 / 304 | 10 / 316 | 帧 / 字节 | 各工作来宾 `activations.jsonl`（含场景探测） |
-| BOOT 答复（工作服务发出） | 11 / 635 | 10 / 574 | 8 / 464 | 帧 / 字节 | 同上（仅接受的激活有答复） |
-| BOOT 答复（协调者收到） | 9 / 513 | 9 / 513 | 6 / 342 | 帧 / 字节 | `A/A/dispatch.jsonl` |
+| 复核执行次数 | 4 | 4 | 3（after） | 次 | 同上 |
+| 该执行计费 | 41,170 | 41,170 | 32,938 | gas | 协调者日志 `charged` |
+| 归并耗时 | 563,753 | 532,969 | 601,104 | ns（墙钟） | 协调来宾 `guest.json` `merge_ns` |
+| 协调者发送 SOLVE | 7 / 4,848 | 7 / 4,848 | 5 / 3,476 | 帧 / 字节 | `dispatch.jsonl` + `resends.jsonl` |
+| 协调者发送 VERIFY | 4 / 3,210 | 4 / 3,210 | 5 / 4,001 | 帧 / 字节 | 同上 |
+| 协调者发送 BOOT | 12 / 372 | 10 / 304 | 10 / 316 | 帧 / 字节 | 同上（含探测与等待新 boot） |
+| 协调者发送 RESTART | 1 / 16 | — | — | 帧 / 字节 | `resends.jsonl` |
+| 协调者发送 STOP | 3 / 39 | 3 / 39 | 3 / 39 | 帧 / 字节 | `dispatch.jsonl` |
+| 协调者接收 SOLVE | 4 / 588 | 4 / 588 | 3 / 441 | 帧 / 字节 | 同上 |
+| 协调者接收 VERIFY | 4 / 232 | 4 / 232 | 3 / 174 | 帧 / 字节 | 同上 |
+| 协调者接收 BOOT | 11 / 635 | 10 / 574 | 8 / 464 | 帧 / 字节 | 同上 |
+| 工作服务接收 SOLVE | 7 / 4,848 | 7 / 4,848 | 5 / 3,476 | 帧 / 字节 | `executions` begin + `rejections` |
+| 工作服务接收 VERIFY | 4 / 3,210 | 4 / 3,210 | 5 / 4,001 | 帧 / 字节 | 同上 |
+| 工作服务接收 BOOT | 11 / 338 | 10 / 304 | 10 / 316 | 帧 / 字节 | `activations.jsonl` |
+| 工作服务接收 RESTART | 1 / 16 | — | — | 帧 / 字节 | `controls.jsonl` |
+| 工作服务接收 STOP | 3 / 39 | 3 / 39 | 3 / 39 | 帧 / 字节 | 同上 |
+| 工作服务发送 SOLVE | 4 / 588 | 4 / 588 | 3 / 441 | 帧 / 字节 | `executions` end（不含 withhold） |
+| 工作服务发送 VERIFY | 4 / 232 | 4 / 232 | 3 / 174 | 帧 / 字节 | 同上 |
+| 工作服务发送 BOOT | 11 / 635 | 10 / 574 | 8 / 464 | 帧 / 字节 | `activations.jsonl` |
+| 在途差（发送−接收） | BOOT 1 / 34，其余 0 | 0 | 0 | 帧 / 字节 | 两侧记录相减；restart 的 1 帧发往正在退出的服务进程 |
+| 保留但未发送的答复 | SOLVE 1 / 147 | SOLVE 1 / 147 | — | 帧 / 字节 | `withheld.jsonl` |
+| 保留帧：协调者请求 | SOLVE 5 / VERIFY 4 | 同 | SOLVE 3 / VERIFY 3 | 帧 | 协调者根 `*-request.cbor` |
+| 保留帧：协调者答复 | SOLVE 4 / VERIFY 4 | 同 | SOLVE 3 / VERIFY 3 | 帧 | 同上 |
+| 保留帧：工作服务请求 | SOLVE 5 / VERIFY 4 | 同 | SOLVE 3 / VERIFY 3 | 帧 | 各工作来宾根 |
+| 保留帧：工作服务答复 | SOLVE 5 / VERIFY 4 | 同 | SOLVE 3 / VERIFY 3 | 帧 | 同上（含未发送的 1 条） |
 | 应用净荷 SOLVE（派生） | 5 / 1,640 | 5 / 1,640 | 3 / 1,002 | 字节 | 帧内 artifact、data、dependency |
 | 应用净荷 VERIFY（派生） | 4 / 1,321 | 4 / 1,321 | 3 / 1,002 | 字节 | 帧内 answer |
-| 控制开销 SOLVE 请求（派生） | 1,836 | 1,836 | 1,102 | 字节 | 帧字节减净荷 |
+| 控制开销（派生） | 发送帧字节 − 净荷 | 同 | 同 | 字节 | 相减 |
 | 失败或被拒绝的尝试 | 1 `NO_REPLY` + 2 拒绝 | 1 + 2 | 0 + 4 请求拒绝 + 2 激活拒绝 | 次 | 协调者日志、`rejections.jsonl`、`activations.jsonl` |
 | 未知用量 | 复核自身 gas；TCP/重传与连接开销；重试等待 | 同 | 同 | — | 未观测，不估算 |
 
+两侧记录由检查器交叉核对：接收次数与字节不得超过发送；restart 允许重启窗口内的在途差并单列，duplicate 与 stale 要求两侧完全一致。协调者实际发送的 SOLVE 比保留帧多 2 帧（重发探测实际发出的裸帧与 BOOT+原帧，它们不产生新的保留帧）；stale 的 VERIFY 同样多 2 帧。
+
 ## 既有证据回放与回归
 
-- `make test-minimal-verifier`：**182 tests, OK**，本地 106.3 s（改动前 163 tests、81.6 s；新增 19 项，约 +25 s：C1 模块 16 项与既有证据重放 3 项）。新增的 `tests/test_general_evidence_replay.py` 把重放固化进本地与 CI：`MULTIVM-GENERAL-JOB` 五场景、`MULTIVM-CONTRACT-CLOSURE` 的 source/reuse、handoff 两阶段与 overlap、`MULTIVM-SORT-CONTRACT` 两阶段（含 `sort_contract.replay_response` 与保留镜像核对），逐字节通过。
+- `make test-minimal-verifier`：**187 tests, OK**，本地 108.7 s（改动前 163 tests、81.6 s；新增 24 项、约 +27 s：C1 模块 17 项、既有证据重放 3 项、证据检查器负例 4 项）。检查器负例从公开包解出 restart 证据后删除全部/单条 VERIFY 记录、错绑答复摘要、插入孤儿记录，均被拒绝。新增的 `tests/test_general_evidence_replay.py` 把重放固化进本地与 CI：`MULTIVM-GENERAL-JOB` 五场景、`MULTIVM-CONTRACT-CLOSURE` 的 source/reuse、handoff 两阶段与 overlap、`MULTIVM-SORT-CONTRACT` 两阶段（含 `sort_contract.replay_response` 与保留镜像核对），逐字节通过。
 - 既有 n-job 家族证据包（MULTIVM-20261112、N、ROOT-LIMITS、N-FAULTS、N-RETRY、HANDOFF）由套件中原有的重放测试覆盖，本次全部通过。
 - 全量 `make -j"$(nproc)" -O test` 在补齐清单与证据包后运行一次，退出 0（墙钟 2 分 57 秒，`-O` 并行输出）。
 - `R4-SAFETY-MC` 公开证据包的 `check`：改动前（`main` `1085fd3`）与本次提交结果一致——四个 campaign 各 1 条违反（`manifest: executor differs from the recorded digest`），compare 为 2 条且 `reproducible=no`；四份 `sha256sum -c --ignore-missing manifest.sha256` 均通过。原因是公开包按 R4 报告声明不含摘要相同的执行器，公开包上的完整 check 重放不可行；这不是本次改动引入的差异。
@@ -129,8 +140,8 @@ python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
 
 ## 证据与标签
 
-- 本次实跑源码提交：`9aa998a0b7c847adfba1835896d00959b4af62f7`；证据标签 `evidence/20261118-c1-restart-resend` 指向该提交，squash 合并后仍可取得。
-- 公开证据包：[C1-RESTART-RESEND-public-evidence.tar.gz](public-evidence/C1-RESTART-RESEND-public-evidence.tar.gz)，SHA-256 `5f3dbae0bb75834d02b3488d1e27a113c7fda95c42d661c7afdaed93a390232c`；包含三个场景的两端证据根、串口日志、宿主拓扑与结果记录、`checks/` 下的本地套件与 R4 检查日志，以及说明文件。来宾 initramfs 与执行器二进制不随包发布（执行器内嵌操作者构建路径，与 R4 包一致）。
+- 本次实跑源码提交：`60226f8`（审计修复后的重跑）；证据标签 `evidence/20261118-c1-restart-resend-r2` 指向该提交，squash 合并后仍可取得。首轮证据提交 `9aa998a` 及其标签 `evidence/20261118-c1-restart-resend` 保留，但其包在本轮审计发现 PRA-212-01/03 后已被本包取代。
+- 公开证据包：[C1-RESTART-RESEND-public-evidence.tar.gz](public-evidence/C1-RESTART-RESEND-public-evidence.tar.gz)，SHA-256 `9d5b0dff107a86845860d32d3576aaf5d1d9c8097aa7c3ec6ba3d4017b2a4b2f`；包含三个场景的两端证据根、串口日志、宿主拓扑与结果记录、`checks/` 下的本地套件与 R4 检查日志，以及说明文件。来宾 initramfs 与执行器二进制不随包发布（执行器内嵌操作者构建路径，与 R4 包一致）。
 - 脱敏：内核镜像路径与其它本地路径替换为 `<kernel>`/`<local-path>`；串口日志中的上游内核联系人邮箱替换为 `<redacted-email>`；不含凭据、真实主机地址或操作者姓名。
 
 ## 边界与不得宣称
@@ -142,6 +153,8 @@ python3 -B experiments/aclt-minimal-verifier-baseline/multivm.py run \
 - 新运行的冻结请求含随机 `boot`，不跨运行逐字节复现；任何跨运行比较须先排除该字段。
 - 不推出故障率、完成概率、重试预算合理性或任何经济结论（TG-6、TG-7 仍 OPEN）；不改正式协议规范。
 
-## 未达成的验收项
+## 验收调整（维护者决定，2026-11-18）
 
-- 计划卡验收第 2 项要求「物理双机至少一个重启场景通过并留有证据」。本轮按维护者 2026-11-18 的决定先交来宾级证据，**该项未运行、未达成**；由维护者决定后续安排。其余验收项（三类场景在本地与来宾级符合政策、无同一 attempt 被执行两次、拒绝均有原因、C-06 分栏完整、既有证据回放通过）在本报告中逐条对应。
+- [维护者决定](https://github.com/ZeroMatrixTech/ACLt/issues/208#issuecomment-6991535193)：本 PR 的验收范围为**来宾级**证据；**物理双机重启场景不在本 PR 范围内、未运行、未声称通过**，保留为计划卡未达成项，作为后续独立条目义务另行排期（条目编号由维护者指派）；`R4-SAFETY-MC` 公开包的已知限制（缺摘要相同的执行器）在本 PR 内被接受，只记录与改动前一致的结果和四份 manifest 校验通过，不声称该 `check` 通过。
+- [计划卡修订 2](https://github.com/ZeroMatrixTech/ACLt/issues/208#issuecomment-6991538256) 同步该范围；报告与 PR 引用它。
+- 其余验收项（三类场景在本地与来宾级符合政策；无同一 attempt 被执行两次；拒绝均有原因且不新增执行；C-06 分栏完整；既有证据回放通过）在本报告中逐条对应。
