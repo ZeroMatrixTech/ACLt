@@ -294,6 +294,7 @@ v0.5 是当前 ProtocolVersion 语义基线，V1 是建立在其上的首个 Con
 - [2026-11-16 首次公开发布准备增量回验（AUD-20261116-02）](08-governance/audits/audit-20261116-02-public-release-recheck.md)：新增 0 BLOCKER、0 MAJOR、3 MINOR、1 NOTE；发布准备结论 FAIL。
 - [2026-11-16 首次公开发布准备增量回验续轮（AUD-20261116-03）](08-governance/audits/audit-20261116-03-public-release-recheck.md)：新增 0 BLOCKER、1 MAJOR、2 MINOR、1 NOTE；发布准备结论 FAIL；1 MAJOR 为 #167 的 DCO 补救，已合入 main。
 - [2026-11-18 阶段 #128 发布后收尾回验（AUD-20261118-01）](08-governance/audits/audit-20261118-01-post-release-closure.md)：新增 0 BLOCKER、1 MAJOR（现为 `ACCEPTED_BY_MAINTAINER`）、0 MINOR，未处理 OPEN 为 0；已无未处理的关闭阻断，本报告归档并加入索引后 #128 可由维护者关闭。
+- [2026-11-18 #101 闭合后仓库假设专项审计（AUD-20261117-01）](08-governance/audits/audit-20261117-01-post-closure-assumptions.md)：未发现把固定协调者、固定统计工件、固定 gas 推导或来宾级证据无条件提升为正式协议通用保证的实质性表述；BLOCKER 0、MAJOR 0、MINOR 1、NOTE 10；唯一 MINOR 的状态页范围说明已修正，#101 不因此关闭。
 - [2026-11-06 仓库维护记录](08-governance/audits/audit-20261106-01-repository-maintenance.md)与[首次公开发布说明](releases/PREVIEW-20261106.md)：索引与入口同步、发布准备检查；发布名为 `research-preview-1`，已于 2026-11-16 发布（[GitHub Release](https://github.com/ZeroMatrixTech/ACLt/releases/tag/research-preview-1)）。
 
 - [P0-1B Profile 注册上下文第二片](testing/PROFILE-REGISTRATION-R2-20261107.md)：嵌套字段、显式 schema lock、注册/事件快照摘要与闭合 DAG；限定 audit Phase R。
