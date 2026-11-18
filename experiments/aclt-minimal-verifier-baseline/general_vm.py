@@ -680,7 +680,13 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
                f"dispatch {sequence} binding differs between A and {row['role']}")
         activated[(row["role"], row["slot"], row["attempt"], row["action"])] = row["boot"]
 
-    for event in journal.events:
+    handoff = next((index for index, event in enumerate(journal.events)
+                    if event["kind"] == "HANDOFF"), None)
+    for index, event in enumerate(journal.events):
+        if handoff is not None and index < handoff:
+            # Retained history belongs to the previous coordinator phase and its own
+            # dispatch records; only the current phase is bound to this evidence root.
+            continue
         if event["kind"] == "RESERVE":
             key = (event["worker"], event["slot"], event["attempt"], "SOLVE")
         elif event["kind"] == "ACCEPT":
@@ -779,8 +785,6 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
                     and row["boot"] != old_boot],
                "a resent frame executed on another boot")
     else:
-        handoff = next((index for index, event in enumerate(journal.events)
-                        if event["kind"] == "HANDOFF"), None)
         c.need(handoff is not None, "the stale scenario has no handoff")
         prefix = journal.events[:handoff]
         stale = [(event["worker"], event["request"]) for event in prefix
