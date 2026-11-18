@@ -15,11 +15,12 @@ name: DCO sign-off
 # GITHUB_OUTPUT. The title and the head branch name are not used at all.
 #
 # The squash merge takes its commit message from the pull request body, so the
-# body must end with a Signed-off-by trailer from a maintainer sign-off
-# identity before the merge; the edited activity type reruns the check when the
-# maintainer adds it. The maintainer identities come from
-# .github/dco-maintainers.txt inside the trusted checkout, so a pull request
-# that edits that file is still judged by the target branch's copy.
+# body must end with a Signed-off-by trailer from a sign-off identity in
+# .github/dco-maintainers.txt before the merge; the edited activity type reruns
+# the check when the signer adds it. The list holds the maintainer and the human
+# collaborator the maintainer authorised, and it comes from inside the trusted
+# checkout, so a pull request that edits that file is still judged by the target
+# branch's copy.
 #
 # Until a fork pull request has shown on the public repository that this check
 # blocks merging when a sign-off is missing and passes on the fixed head, its

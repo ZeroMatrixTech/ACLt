@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-# Maintainer identities for the DCO check (CONTRIBUTING section 11; P1-n).
+# Sign-off and commit identities for the DCO check (CONTRIBUTING section 11;
+# P1-n, P1-p).
 #
 # This file is read from the trusted checkout of the target branch only, so a
 # pull request that edits it is still judged by the target branch's copy. One
@@ -13,8 +14,12 @@
 #            exempt from per-commit sign-offs in same-repository pull requests,
 #            but not allowed to sign the body.
 #
-# The maintainer is the only signoff identity. Agents commit with the
-# maintainer's local Git identity and add no Signed-off-by themselves; the
-# maintainer adds the sign-off to the pull request body before merging.
+# Two identities may sign the pull request body: the maintainer, and the human
+# collaborator the maintainer has authorised (Ankar). A signature is the
+# signer's DCO 1.1 confirmation for that contribution. Agents commit with the
+# maintainer's local Git identity, add no Signed-off-by themselves, and never
+# sign the body. A sign-off only clears the merge check; which role may merge
+# is unchanged (CONTRIBUTING section 11).
 signoff inpac <inpac@lingmatrix.cn>
+signoff Ankar <ankarnassia@lingmatrix.cn>
 author inPac <tenneidp@gmail.com>

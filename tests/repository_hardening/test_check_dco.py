@@ -18,6 +18,7 @@ MAINTAINERS = ROOT / ".github" / "dco-maintainers.txt"
 AUTHOR = ("Example Author", "author@example.invalid")
 AGENT = ("inPac", "tenneidp@gmail.com")
 SIGNOFF = "Signed-off-by: inpac <inpac@lingmatrix.cn>"
+SIGNOFF_ANKAR = "Signed-off-by: Ankar <ankarnassia@lingmatrix.cn>"
 UNKNOWN_SIGNOFF = "Signed-off-by: Someone Else <other@example.invalid>"
 
 
@@ -230,6 +231,24 @@ class MaintainerListTests(DcoTestCase):
         text = MAINTAINERS.read_text()
         self.assertIn("signoff inpac <inpac@lingmatrix.cn>", text)
         self.assertIn("author inPac <tenneidp@gmail.com>", text)
+
+    def test_repository_list_carries_the_authorised_collaborator(self):
+        text = MAINTAINERS.read_text()
+        self.assertIn("signoff Ankar <ankarnassia@lingmatrix.cn>", text)
+
+    def test_two_signoff_identities_either_may_sign_the_body(self):
+        base = self.commit("a", "base", author=AGENT)
+        head = self.commit("b", "agent work", author=AGENT)
+        trusted = self.trusted_checkout(
+            "signoff inpac <inpac@lingmatrix.cn>\n"
+            "signoff Ankar <ankarnassia@lingmatrix.cn>\n"
+            "author inPac <tenneidp@gmail.com>\n")
+        for signoff, signer in ((SIGNOFF, "inpac <inpac@lingmatrix.cn>"),
+                                (SIGNOFF_ANKAR, "Ankar <ankarnassia@lingmatrix.cn>")):
+            with self.subTest(signer=signer):
+                result = self.pr(base, head, "false", "Change: x\n\n" + signoff, script=trusted)
+                self.assertEqual(result.returncode, 0, result.stdout)
+                self.assertIn("signed off by " + signer, result.stdout)
 
 
 class SameRepositoryCommitTests(DcoTestCase):
