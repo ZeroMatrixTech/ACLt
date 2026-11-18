@@ -702,6 +702,9 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
     key_fields = ("boot", "execution_id", "slot", "attempt", "action")
     keys = [tuple(row[field] for field in key_fields) for row in begins]
     c.need(len(keys) == len(set(keys)), "one boot executed the same attempt twice")
+    frames_by_boot = [(row["boot"], row["request_sha256"]) for row in begins]
+    c.need(len(frames_by_boot) == len(set(frames_by_boot)),
+           "one boot executed the same frozen request twice")
     attempt_keys = [(row["execution_id"], row["slot"], row["attempt"], row["action"])
                     for row in begins]
     c.need(len(attempt_keys) == len(set(attempt_keys)),
@@ -721,11 +724,12 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
             c.need(row.get("reason") in ("unactivated", "epoch-mismatch", "boot-mismatch",
                                          "duplicate", "stale-epoch", "unknown-action"),
                    "unknown refusal reason")
-            if row.get("reason") != "unknown-action" and row.get("request_sha256"):
+            if row.get("reason") in ("boot-mismatch", "epoch-mismatch")                     and row.get("request_sha256"):
+                # A frame for another boot or epoch may never execute where it was refused.
                 same = [begin for begin in begins
                         if begin["boot"] == row["boot"]
                         and begin["request_sha256"] == row["request_sha256"]]
-                c.need(not same, "a refused request was executed by the refusing boot")
+                c.need(not same, "a refused foreign-boot or stale-epoch frame was executed")
 
     for event in journal.events:
         if event["kind"] != "RESERVE":
