@@ -295,6 +295,37 @@ class DispatchTests(unittest.TestCase):
         self.assertFalse(journal.attempts)
         self.assertEqual((journal.charged, journal.reserved), (0, 0))
 
+    def test_partial_unreachability_never_uses_the_frozen_verifier_as_solver(self):
+        # Slot 0 freezes (solver C, verifier B).  Only B answers the boot exchange, so
+        # the fallback chain B -> D -> C reaches the verifier; it must be refused rather
+        # than dispatched as the solver.
+        class Partial:
+            def __init__(self, workers, reachable):
+                self.workers = workers
+                self.reachable = reachable
+                self.opened = []
+
+            def open(self, role, epoch, *, slot, attempt, action):
+                self.opened.append((role, slot, attempt, action))
+                if role not in self.reachable:
+                    raise ConnectionError("worker is down")
+                worker = self.workers[role]
+                frame = c.encode(dict(action="BOOT", epoch=epoch, dispatch=len(self.opened)))
+                reply, activation = worker.activate(frame)
+                if reply is None:
+                    raise ConnectionError("activation refused")
+                return worker.boot, MemorySession(worker, activation, self.executor)
+
+        dispatch = Partial(self.workers, {"B"})
+        journal, status = run(self.job, ROLES, self.root / "partial.cbor", order=(0,),
+                              placement=(("C", "B"), ("C", "B"), ("C", "B"), ("C", "B")),
+                              retry_worker=self.retry, dispatch=dispatch)
+        self.assertEqual(status, "DISPATCH_UNAVAILABLE")
+        self.assertFalse(journal.attempts)
+        self.assertEqual((journal.charged, journal.reserved), (0, 0))
+        self.assertNotIn(("B", 0, 1, "SOLVE"), dispatch.opened)
+        self.assertEqual([event["kind"] for event in journal.events], ["START"])
+
 
 class ServedProcessTests(unittest.TestCase):
     """A real serving process: a restart changes the boot and keeps the records."""

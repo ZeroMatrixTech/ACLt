@@ -104,6 +104,7 @@ class ServingBoot:
             execution_id=request["execution_id"].hex() if type(request.get("execution_id")) is bytes else None,
             slot=request.get("slot"), attempt=request.get("attempt"),
             request_sha256=hashlib.sha256(raw).hexdigest() if raw is not None else None,
+            request_bytes=len(raw) if raw is not None else None,
             request_boot=boot.hex() if type(boot) is bytes else None,
             request_epoch=request.get("epoch"), activation_epoch=activation))
 
@@ -112,15 +113,32 @@ class ServingBoot:
         request = c.decode(raw)
         row = dict(boot=self.boot.hex(), execution_id=bytes(request["execution_id"]).hex(),
                    slot=request["slot"], attempt=request["attempt"], action=request["action"],
-                   request_sha256=hashlib.sha256(raw).hexdigest())
+                   request_sha256=hashlib.sha256(raw).hexdigest(), request_bytes=len(raw))
         _record(self.executions, dict(event="execute-begin", **row))
         response = handle(raw, executor)
-        _record(self.executions, dict(event="execute-end",
+        _record(self.executions, dict(event="execute-end", response_bytes=len(response),
                                       response_sha256=hashlib.sha256(response).hexdigest(), **row))
         return response
 
-    def restart(self):
-        _record(self.restarts, dict(event="restart", role=self.role, boot=self.boot.hex()))
+    def withhold(self, raw, response):
+        """Record a reply that was generated but deliberately not sent."""
+        request = c.decode(raw)
+        _record(self.output / "withheld.jsonl", dict(
+            event="withhold", boot=self.boot.hex(),
+            execution_id=bytes(request["execution_id"]).hex(),
+            slot=request["slot"], attempt=request["attempt"], action=request["action"],
+            request_sha256=hashlib.sha256(raw).hexdigest(),
+            response_sha256=hashlib.sha256(response).hexdigest(),
+            response_bytes=len(response)))
+
+    def restart(self, request_bytes):
+        _record(self.restarts, dict(event="restart", role=self.role, boot=self.boot.hex(),
+                                    request_bytes=request_bytes))
+        self.control("restart", request_bytes)
+
+    def control(self, event, request_bytes):
+        _record(self.output / "controls.jsonl",
+                dict(event=event, role=self.role, request_bytes=request_bytes))
 
 
 def caps(six=False):
@@ -310,8 +328,14 @@ def activate(dispatch, worker, verifier, roles, epoch, *, slot, attempt, action,
     """
     candidate = worker
     tried = set()
-    while candidate not in tried:
+    while candidate is not None and candidate not in tried:
         tried.add(candidate)
+        if candidate == verifier:
+            # The frozen verification role is part of the placement.  Dispatching the
+            # solve to it would leave an illegal solver/verifier combination and a
+            # reserved attempt behind, so treat it as no legitimate candidate.
+            candidate = next_worker(candidate, verifier, roles, retry_worker, retry_remote)
+            continue
         try:
             boot, session = dispatch.open(candidate, epoch, slot=slot, attempt=attempt,
                                           action=action)
@@ -460,6 +484,7 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                     # stop the service or count as an attempt.
                     continue
                 if raw == STOP:
+                    worker.control("stop", len(raw))
                     return bounds
                 request = c.decode(raw)
                 action = request.get("action")
@@ -467,7 +492,7 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                     if not worker.restart_enabled:
                         worker.reject("unknown-action", kind="RESTART", raw=raw, request=request)
                         continue
-                    worker.restart()
+                    worker.restart(len(raw))
                     if exit_on_fault:
                         # A real non-zero exit; the in-guest supervisor starts a new serving
                         # process, so later requests can only be bound to a new boot.
@@ -486,6 +511,7 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                 except OSError:
                     continue
                 if raw == STOP:
+                    worker.control("stop", len(raw))
                     return bounds
                 request = c.decode(raw)
                 reason = worker.admit(request, activation)
@@ -499,6 +525,7 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                         # Generate and keep the reply, record the suppression, never send it.
                         response = worker.execute(raw, executor)
                         (output / f"{name}-response.cbor").write_bytes(response)
+                        worker.withhold(raw, response)
                         inject.hit(request, raw, role, response)
                         continue
                     inject.hit(request, raw, role)
@@ -522,7 +549,9 @@ def serve(role, port, executor, output, *, drop_first_b, sort_job=None, inject=N
                 if sort_job is None:
                     response = worker.execute(raw, executor)
                     response_path.write_bytes(response)
-                    if not drop:
+                    if drop:
+                        worker.withhold(raw, response)
+                    else:
                         send(connection, response)
                 else:
                     from sort_contract import respond
@@ -721,6 +750,64 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
                 and all(other[field] == row[field] for field in key_fields)]
         c.need(len(ends) == 1, "an execution has no unique completion record")
 
+    # Every execution the journal and the retained frames require must have both
+    # records, bound to the same attempt, boot, request and reply.  Missing, orphaned
+    # or misbound records are refused; recomputing a frame cannot replace them.
+    expected = []
+    for index, event in enumerate(journal.events):
+        if handoff is not None and index < handoff:
+            continue
+        if event["kind"] == "RESERVE":
+            role, action = event["worker"], "SOLVE"
+            disposition = [other for other in journal.events
+                           if other["kind"] in ("ANSWER", "NO_REPLY")
+                           and (other["slot"], other["attempt"]) == (event["slot"], event["attempt"])]
+            c.need(len(disposition) == 1, "an attempt has no unique disposition")
+            path = Path(roots[role]) / f"{wire_name(event['request'])}-response.cbor"
+            if disposition[0]["kind"] == "ANSWER":
+                c.need(path.is_file(), "an answered solve retained no reply")
+            if not path.is_file():
+                # No retained reply means the serving side never wrote one, so no
+                # execution record may exist for it either.
+                continue
+        elif event["kind"] == "ACCEPT":
+            role, action = event["verifier"], "VERIFY"
+            path = Path(roots[role]) / f"{wire_name(event['request'])}-response.cbor"
+            c.need(path.is_file(), "an accepted verification retained no reply")
+        else:
+            continue
+        expected.append((role, event["boot"].hex(), action, event["slot"], event["attempt"],
+                         event["request"], path))
+    c.need(all(role != "A" for role, *_ in expected),
+           "the C1 evidence expects no coordinator-side execution")
+    by_key = {}
+    for row in begins:
+        by_key.setdefault((row["boot"], row["request_sha256"]), []).append(row)
+    for role, boot, action, slot, attempt, raw, path in expected:
+        request_sha = hashlib.sha256(raw).hexdigest()
+        records = by_key.get((boot, request_sha), [])
+        c.need(len(records) == 1,
+               f"{action} {request_sha[:12]} has no unique execution record")
+        record = records[0]
+        c.need((record["action"], record["slot"], record["attempt"]) == (action, slot, attempt),
+               f"{action} {request_sha[:12]} execution record is bound to another attempt")
+        c.need(record.get("request_bytes") == len(raw),
+               f"{action} {request_sha[:12]} execution record has another request size")
+        ends = [other for other in executions
+                if other["event"] == "execute-end"
+                and all(other[field] == record[field] for field in key_fields)]
+        c.need(len(ends) == 1,
+               f"{action} {request_sha[:12]} has no unique completion record")
+        reply = path.read_bytes()
+        c.need(ends[0]["response_sha256"] == hashlib.sha256(reply).hexdigest(),
+               f"{action} {request_sha[:12]} completion record binds another reply")
+        c.need(ends[0].get("response_bytes") == len(reply),
+               f"{action} {request_sha[:12]} completion record has another reply size")
+    expected_keys = {(boot, hashlib.sha256(raw).hexdigest())
+                     for role, boot, action, slot, attempt, raw, path in expected}
+    c.need({(row["boot"], row["request_sha256"]) for row in begins} == expected_keys,
+           "execution records do not match the retained dispatches")
+
     rejections = []
     for role in roles:
         if role == "A":
@@ -730,25 +817,13 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
             c.need(row.get("reason") in ("unactivated", "epoch-mismatch", "boot-mismatch",
                                          "duplicate", "stale-epoch", "unknown-action"),
                    "unknown refusal reason")
-            if row.get("reason") in ("boot-mismatch", "epoch-mismatch")                     and row.get("request_sha256"):
+            if row.get("reason") in ("boot-mismatch", "epoch-mismatch") \
+                    and row.get("request_sha256"):
                 # A frame for another boot or epoch may never execute where it was refused.
                 same = [begin for begin in begins
                         if begin["boot"] == row["boot"]
                         and begin["request_sha256"] == row["request_sha256"]]
                 c.need(not same, "a refused foreign-boot or stale-epoch frame was executed")
-
-    for event in journal.events:
-        if event["kind"] != "RESERVE":
-            continue
-        name = wire_name(event["request"])
-        path = Path(roots[event["worker"]]) / f"{name}-response.cbor"
-        if not path.is_file():
-            continue
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        matches = [row for row in executions
-                   if row["event"] == "execute-end" and row["boot"] == event["boot"].hex()
-                   and row["response_sha256"] == digest]
-        c.need(len(matches) == 1, f"{name} retained reply has no unique execution record")
 
     probes = read_lines(Path(roots["A"]) / "resends.jsonl")
     if scenario in ("restart", "duplicate"):
@@ -817,51 +892,103 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
             c.need(not [row for row in begins if row["request_sha256"] == sha],
                    "a stale frame executed after the handoff")
 
-    # Frame observations are kept per endpoint class: a worker may retain a reply
-    # that it never sent (the drop), so worker and coordinator counts differ.
-    frames = {"coordinator_requests": [], "worker_requests": [],
-              "coordinator_responses": [], "worker_responses": [],
-              "boot_requests_sent": [], "boot_requests_received": [],
-              "boot_responses_sent": [], "boot_responses_received": []}
-    for row in _frame_records(roots["A"]):
-        bucket = "coordinator_requests" if row["direction"] == "request" \
-            else "coordinator_responses"
-        frames[bucket].append(row)
+    # Frames actually sent and received, taken from each side's own records.  Retained
+    # frame files are reported apart: a retained reply may never have been sent, and a
+    # repeated probe send leaves no extra file.
+    def add(store, cls, size):
+        entry = store.setdefault(cls, dict(count=0, bytes=0))
+        entry["count"] += 1
+        entry["bytes"] += size
+
+    coordinator_sent, coordinator_received = {}, {}
+    worker_sent, worker_received = {}, {}
+    for row in dispatches:
+        if row.get("event") == "activation":
+            add(coordinator_sent, "BOOT", row["request_bytes"])
+            if row.get("response_bytes") is not None:
+                add(coordinator_received, "BOOT", row["response_bytes"])
+        elif row.get("event") == "outcome":
+            add(coordinator_sent, row["action"], row["request_bytes"])
+            if row.get("response_bytes") is not None:
+                add(coordinator_received, row["action"], row["response_bytes"])
+        elif row.get("event") == "stop" and row.get("sent_bytes"):
+            add(coordinator_sent, "STOP", row["sent_bytes"])
+    for row in probes:
+        event = row.get("event")
+        if event == "probe":
+            if row.get("boot_bytes"):
+                add(coordinator_sent, "BOOT", row["boot_bytes"])
+            if row.get("boot_reply_bytes"):
+                add(coordinator_received, "BOOT", row["boot_reply_bytes"])
+            if row.get("raw_sent_bytes"):
+                add(coordinator_sent, row["request_action"], row["raw_sent_bytes"])
+            if row.get("reply_bytes"):
+                add(coordinator_received, row["request_action"], row["reply_bytes"])
+        elif event == "wait_boot":
+            if row.get("sent_bytes"):
+                add(coordinator_sent, "BOOT", row["sent_bytes"])
+            if row.get("received_bytes"):
+                add(coordinator_received, "BOOT", row["received_bytes"])
+        elif event == "restart_sent" and row.get("sent_bytes"):
+            add(coordinator_sent, "RESTART", row["sent_bytes"])
+    worker_withheld, withheld_keys = {}, set()
     for role in roles:
         if role == "A":
             continue
-        for row in _frame_records(roots[role]):
-            bucket = "worker_requests" if row["direction"] == "request" \
-                else "worker_responses"
-            frames[bucket].append(row)
-    for row in dispatches:
-        if row.get("event") != "activation":
-            continue
-        frames["boot_requests_sent"].append(dict(bytes=row["request_bytes"]))
-        if row.get("response_bytes") is not None:
-            frames["boot_responses_received"].append(dict(bytes=row["response_bytes"]))
+        for row in read_lines(Path(roots[role]) / "withheld.jsonl"):
+            add(worker_withheld, row["action"], row["response_bytes"])
+            withheld_keys.add((row["boot"], row["execution_id"], row["slot"],
+                               row["attempt"], row["action"]))
     for role in roles:
         if role == "A":
             continue
         for row in read_lines(Path(roots[role]) / "activations.jsonl"):
-            frames["boot_requests_received"].append(dict(bytes=row["request_bytes"]))
+            add(worker_received, "BOOT", row["request_bytes"])
             if row.get("accepted"):
-                frames["boot_responses_sent"].append(dict(bytes=row["response_bytes"]))
+                add(worker_sent, "BOOT", row["response_bytes"])
+        for row in read_lines(Path(roots[role]) / "executions.jsonl"):
+            if row["event"] == "execute-begin":
+                add(worker_received, row["action"], row["request_bytes"])
+                continue
+            key = (row["boot"], row["execution_id"], row["slot"], row["attempt"], row["action"])
+            if key in withheld_keys:
+                continue
+            add(worker_sent, row["action"], row["response_bytes"])
+        for row in read_lines(Path(roots[role]) / "rejections.jsonl"):
+            if row.get("request_bytes"):
+                add(worker_received, row.get("kind") or "UNKNOWN", row["request_bytes"])
+        for row in read_lines(Path(roots[role]) / "controls.jsonl"):
+            add(worker_received, row["event"].upper(), row["request_bytes"])
+    zero = dict(count=0, bytes=0)
+    for sent, received, label in ((coordinator_sent, worker_received, "coordinator to worker"),
+                                  (worker_sent, coordinator_received, "worker to coordinator")):
+        for cls in sorted(set(sent) | set(received)):
+            c.need(sent.get(cls, zero) == received.get(cls, zero),
+                   f"{label} {cls} frames differ between the sending and receiving records")
 
-    def totals(rows):
-        return dict(count=len(rows), bytes=sum(row["bytes"] for row in rows))
-
-    across = {}
-    for bucket, rows in frames.items():
-        if bucket.startswith("boot_"):
-            across[bucket] = totals(rows)
-            continue
-        by_action = {}
+    def totals_by_action(rows):
+        result = {}
         for row in rows:
-            entry = by_action.setdefault(row["action"], dict(count=0, bytes=0))
+            entry = result.setdefault(row["action"], dict(count=0, bytes=0))
             entry["count"] += 1
             entry["bytes"] += row["bytes"]
-        across[bucket] = dict(sorted(by_action.items()))
+        return dict(sorted(result.items()))
+
+    worker_request_files, worker_response_files = [], []
+    for role in roles:
+        if role == "A":
+            continue
+        for row in _frame_records(roots[role]):
+            (worker_request_files if row["direction"] == "request"
+             else worker_response_files).append(row)
+    retained = {
+        "coordinator_requests": totals_by_action(
+            [row for row in _frame_records(roots["A"]) if row["direction"] == "request"]),
+        "coordinator_responses": totals_by_action(
+            [row for row in _frame_records(roots["A"]) if row["direction"] == "response"]),
+        "worker_requests": totals_by_action(worker_request_files),
+        "worker_responses": totals_by_action(worker_response_files),
+    }
     payload = {}
     for path in Path(roots["A"]).glob("*-request.cbor"):
         name = path.name[: -len("-request.cbor")]
@@ -881,7 +1008,9 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
         executions=executions_by_action,
         execution_keys=len(begins),
         rejections=reasons,
-        frames=across,
+        frames=dict(coordinator_sent=coordinator_sent, coordinator_received=coordinator_received,
+                    worker_sent=worker_sent, worker_received=worker_received,
+                    worker_withheld=worker_withheld, retained=retained),
         payload=dict(sorted(payload.items())),
         probes=len(probes),
         charged=journal.charged,

@@ -356,13 +356,18 @@ class C1Dispatch:
         try:
             connection = self.connect_peer(owner)
         except OSError:
+            self.record(dict(event="stop", role=owner, sent_bytes=0, outcome="unreachable"))
             return
+        sent = 0
         try:
             send(connection, general_vm.STOP)
+            sent = len(general_vm.STOP)
         except OSError:
             pass
         finally:
             connection.close()
+        self.record(dict(event="stop", role=owner, sent_bytes=sent,
+                         outcome="sent" if sent else "failed"))
 
 
 class C1Driver:
@@ -389,26 +394,28 @@ class C1Driver:
         return self.sequence
 
     def send_frames(self, owner, frames):
-        sent, replies = 0, []
+        sent, replies, sent_bytes, received_bytes = 0, [], 0, 0
         connection = self.connect_peer(owner)
         try:
             for raw in frames:
                 send(connection, raw)
                 sent += 1
-                replies.append(receive(connection))
+                sent_bytes += len(raw)
+                reply = receive(connection)
+                replies.append(reply)
+                received_bytes += len(reply)
         except OSError:
             pass
         finally:
             connection.close()
-        return sent, replies
+        return sent, replies, sent_bytes, received_bytes
 
     def probe(self, owner, raw, *, kind, epoch):
-        frames = []
-        if kind != "bare":
-            frames.append(c.encode(dict(action="BOOT", epoch=epoch,
-                                        dispatch=self.probe_sequence())))
+        boot_frame = None if kind == "bare" else c.encode(
+            dict(action="BOOT", epoch=epoch, dispatch=self.probe_sequence()))
+        frames = [] if boot_frame is None else [boot_frame]
         frames.append(raw)
-        sent, replies = self.send_frames(owner, frames)
+        sent, replies, sent_bytes, received_bytes = self.send_frames(owner, frames)
         answered = len(replies) == len(frames)
         if kind == "bare":
             outcome = "answered" if answered else "refused"
@@ -417,41 +424,64 @@ class C1Driver:
         else:
             outcome = "answered" if answered else "refused"
         activation_boot = None
-        if kind != "bare" and replies:
+        if boot_frame is not None and replies:
             reply = c.decode(replies[0])
             boot = reply.get("boot")
             activation_boot = boot.hex() if type(boot) is bytes else None
+        raw_sent = sent == len(frames)
         self.record(dict(event="probe", scenario=self.scenario, probe=kind, role=owner,
                          epoch=epoch, request_sha256=hashlib.sha256(raw).hexdigest(),
+                         request_action=codec.decode(raw)["action"],
                          request_bytes=len(raw), frames=len(frames), sent=sent,
-                         replies=len(replies), outcome=outcome,
+                         sent_bytes=sent_bytes, replies=len(replies),
+                         received_bytes=received_bytes, outcome=outcome,
+                         boot_bytes=len(boot_frame) if (boot_frame is not None and sent >= 1) else 0,
+                         boot_reply_bytes=(len(replies[0]) if (boot_frame is not None and replies) else 0),
+                         raw_sent_bytes=len(raw) if raw_sent else 0,
+                         reply_bytes=len(replies[-1]) if answered else 0,
                          activation_boot=activation_boot))
 
     def restart(self, owner):
+        frame = c.encode({"action": "RESTART"})
+        sent = 0
         connection = self.connect_peer(owner)
         try:
-            send(connection, c.encode({"action": "RESTART"}))
+            send(connection, frame)
+            sent = len(frame)
         except OSError:
             pass
         finally:
             connection.close()
+        self.record(dict(event="restart_sent", role=owner, sent_bytes=sent,
+                         outcome="sent" if sent else "failed"))
 
     def wait_boot(self, owner, epoch, previous_boot):
         deadline = time.monotonic() + CONNECT_TIMEOUT
+        attempts, sent_bytes, received_bytes = 0, 0, 0
         while True:
+            frame = c.encode(dict(action="BOOT", epoch=epoch,
+                                  dispatch=self.probe_sequence()))
             try:
                 connection = self.connect_peer(owner)
             except OSError:
                 if time.monotonic() >= deadline:
+                    self.record(dict(event="wait_boot", role=owner, epoch=epoch,
+                                     attempts=attempts, sent_bytes=sent_bytes,
+                                     received_bytes=received_bytes, outcome="failed"))
                     raise
                 time.sleep(0.2)
                 continue
             try:
-                send(connection, c.encode(dict(action="BOOT", epoch=epoch,
-                                               dispatch=self.probe_sequence())))
+                send(connection, frame)
+                attempts += 1
+                sent_bytes += len(frame)
                 raw = receive(connection)
+                received_bytes += len(raw)
             except OSError:
                 if time.monotonic() >= deadline:
+                    self.record(dict(event="wait_boot", role=owner, epoch=epoch,
+                                     attempts=attempts, sent_bytes=sent_bytes,
+                                     received_bytes=received_bytes, outcome="failed"))
                     raise
                 time.sleep(0.2)
                 continue
@@ -459,6 +489,10 @@ class C1Driver:
                 connection.close()
             boot = c.digest_bytes(c.decode(raw)["boot"])
             if boot != previous_boot:
+                self.record(dict(event="wait_boot", role=owner, epoch=epoch,
+                                 attempts=attempts, sent_bytes=sent_bytes,
+                                 received_bytes=received_bytes, outcome="changed",
+                                 boot=boot.hex()))
                 return boot
             if time.monotonic() >= deadline:
                 raise RuntimeError("serving boot did not change after the restart")
