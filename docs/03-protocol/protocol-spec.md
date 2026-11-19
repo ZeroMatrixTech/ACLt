@@ -207,11 +207,11 @@ Aggregate MUST 产生可复算证据链。多个假设同时失效时 MUST 保�
 - `FUNDING_EXHAUSTED`；
 - `FAILED_PLANNING`。
 
-Receipt 登记前的结果是 `CreateReceiptResult`，不是 Receipt 终态，也不产生 ReceiptID：
+`CreateReceiptResult` 是创建操作的返回类型，不是 Receipt 终态：
 
-- `ACCEPTED(receipt_id)`；
-- `REJECTED_AT_CREATE(reason)`；
-- `UNSUPPORTED(reason)`。
+- `ACCEPTED(receipt_id)`：成功创建并登记 Receipt，返回 ReceiptID；
+- `REJECTED_AT_CREATE(reason)`：创建失败，不产生 ReceiptID；
+- `UNSUPPORTED(reason)`：当前版本不支持，创建失败，不产生 ReceiptID。
 
 `REJECTED_AT_CREATE` 与 `UNSUPPORTED` MUST NOT 在 Receipt 登记后进入，也 MUST NOT 出现在 `CanonicalTerminal` 或任何终态集合中。终态集合和层级仍需状态机冻结。`TRUSTED` MUST 绑定 `network_id`、assurance 版本和 `ExcludedClaims`，MUST NOT 被解释为绝对正确或主网外保证。
 

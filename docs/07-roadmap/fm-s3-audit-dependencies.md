@@ -1,7 +1,9 @@
 # FM-S3 的 audit-only 依赖入口
 
-日期：2026-10-28；2026-11-07 同步覆盖与来源清单。这是实施依赖清单，不是规则实现或规范状态升级。
+日期：2026-10-28；2026-11-07 同步覆盖与来源清单；2026-11-19 刷新 SR-1 后的规范源码 pin。这是实施依赖清单，不是规则实现或规范状态升级。
 [机器清单](fm-s3-audit-dependencies.json)按现有 inventory 的全部编号逐项分类；要求、实现状态和原测试路径只引用原 inventory，不在此复制另一份权威。
+
+2026-11-19：SR-1（#216）对 `verification-profile-schema.md` 的 §3.2.1、§17.3、§17.4、§17.5B 文本修订已核对：SV 编号、119 项 Type A 计数、audit scope 与四个 audit 终态均未改变，工作包划分也不受影响。机器清单只把 `docs/03-protocol/verification-profile-schema.md` 的 `source_sha256` 更新到 `597ef56ca6f7d600766965a847e734bfc6774f7af6a05e6203fae8d22e4258fd`；另两个 pin 与全部 `acceptance` 仍为计划状态。
 
 ## 限定范围
 
