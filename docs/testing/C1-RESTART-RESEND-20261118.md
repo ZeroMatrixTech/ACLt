@@ -115,7 +115,7 @@
 
 - `make test-minimal-verifier`：**190 tests, OK**，本地 103.4 s（改动前 163 tests、81.6 s；新增 27 项、约 +22 s：C1 模块 17 项、既有证据重放 3 项、证据检查器负例 7 项）。检查器负例从公开包解出 restart 证据后删除全部/单条 VERIFY 记录、错绑答复摘要、改执行 ID、把一组记录从 C 搬到 B、只插入结束记录或成对孤儿记录，均被拒绝。新增的 `tests/test_general_evidence_replay.py` 把重放固化进本地与 CI：`MULTIVM-GENERAL-JOB` 五场景、`MULTIVM-CONTRACT-CLOSURE` 的 source/reuse、handoff 两阶段与 overlap、`MULTIVM-SORT-CONTRACT` 两阶段（含 `sort_contract.replay_response` 与保留镜像核对），逐字节通过。
 - 既有 n-job 家族证据包（MULTIVM-20261112、N、ROOT-LIMITS、N-FAULTS、N-RETRY、HANDOFF）由套件中原有的重放测试覆盖，本次全部通过。
-- 全量 `make -j"$(nproc)" -O test` 在补齐清单与证据包后运行一次，退出 0（墙钟 2 分 57 秒，`-O` 并行输出）。
+- 全量 `make -j"$(nproc)" -O test`：首轮（163 tests 树）2 分 57 秒，第二轮（`179ae75`）2 分 45.7 秒，均退出 0。本轮（`1d72d11`）按维护者「不做非必要测试」未重跑全量；本轮改动的检查器与驱动由 190 项套件与 7 项检查器负例覆盖。
 - `R4-SAFETY-MC` 公开证据包的 `check`：改动前（`main` `1085fd3`）与本次提交结果一致——四个 campaign 各 1 条违反（`manifest: executor differs from the recorded digest`），compare 为 2 条且 `reproducible=no`；四份 `sha256sum -c --ignore-missing manifest.sha256` 均通过。原因是公开包按 R4 报告声明不含摘要相同的执行器，公开包上的完整 check 重放不可行；这不是本次改动引入的差异。
 - `montecarlo.py` 未改动；`make test` 中 R4/montecarlo 的现有测试全部通过。**新协议下的 R4 式 campaign 未经本条目验证**，日后重跑前需另行确认 `montecarlo check` 的兼容性。
 
