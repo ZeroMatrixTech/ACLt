@@ -267,7 +267,7 @@ Committed + Settled + RefundReserved
 
 ### 未决事项
 
-终态—权利矩阵、故障归因、退款和外部通道失败语义仍为 `OPEN/P0`。
+终态—权利矩阵、退款和外部通道失败语义仍为 `OPEN/P0`。结算层的 `AttributionClass` 已由 [VerificationProfile Schema](../03-protocol/verification-profile-schema.md) §10.1 冻结；履约证据层的归因仍为 `OPEN`（OQ-10）。
 
 ## 12. INV-08：旧 epoch 隔离
 

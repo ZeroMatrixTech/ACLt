@@ -360,8 +360,8 @@ P0-1B 不得从字段名猜测类型。以下标量与容器为本文件所有�
 | `Instant` | `int`，Unix epoch UTC 毫秒；只作为显式输入，不授权 validator 读取墙钟 |
 | `SemVer` | `[major:uint, minor:uint, patch:uint]`，恰好三项 |
 | `Rational` | `[numerator:int, denominator:uint]`，`denominator>0` 且既约 |
-| `TimeRange` | `{start:Instant, end:Instant}`，半开区间且 `start<end` |
-| `VersionRange` | `{min_inclusive:SemVer, max_exclusive:SemVer?}`；无上界时省略 `max_exclusive`，禁止 null |
+| `TimeRange` | 数据模型视图为 `{start:Instant, end:Instant}`，半开区间且 `start<end`；线上形式为 §17.3 的 2 元数组 |
+| `VersionRange` | 数据模型视图为 `{min_inclusive:SemVer, max_exclusive:SemVer?}`；无上界时省略 `max_exclusive`，禁止 null；线上形式为 §17.3 的整数键 map |
 | `T?` | 字段可省略；在场时必须为 `T`；禁止以 null 表示缺失 |
 | `[T]` | 有序数组；是否要求非空/排序/去重由字段规则明确声明 |
 | `Set<T>` | 按 `acl.enc.p0-1@1` 编码字节升序、无重复的数组 |
@@ -2941,7 +2941,7 @@ encoding_profile_id = "acl.enc.p0-1@1"
 | `SemVer` | 3 元数组 `[major: uint, minor: uint, patch: uint]` | P0-1 不含 pre-release / build metadata |
 | `VersionRange` | CBOR map，整数键：`{0: SemVer, 1: SemVer?}` | 键 0 = `min_inclusive`；键 1 = `max_exclusive`，**无上界时整个键省略**；在场时 `min_inclusive < max_exclusive` |
 | `Instant` | CBOR int | Unix epoch 起的毫秒数，UTC。**不使用 RFC3339 字符串**，以消除格式化歧义 |
-| `TimeRange` | 2 元数组 `[start: Instant, end: Instant]` | 半开区间，`start < end` |
+| `TimeRange` | 2 元数组 `[start: Instant, end: Instant]`（唯一线上形式） | 半开区间，`start < end` |
 | 集合 | CBOR array | 元素按其编码字节字典序升序；无重复 |
 | 有序 map | CBOR map | 键按编码字节字典序升序 |
 
@@ -2982,7 +2982,7 @@ H_{\mathrm{tag}}(x)=\mathrm{SHA256}\big(\ \mathrm{u8}(|\mathrm{tag}|)\ \|\ \math
 
 SV-42 按 §13.2 **仅负责容器 canonicality**（map 键序、集合/规范 pair-array 排序去重、既约 `Rational`）；primitive 禁令归 SV-25，整数范围、最短整数与 bignum 禁令归 SV-52，**不再声称覆盖全部摘要**；SV-41 收窄为「slot index 唯一、gate 按 slot 携带」，**不再检查 `policy_digest`**（该职责归 SV-53b）；SV-54 拆为 SV-54a（结构覆盖，L1b）与 SV-54b（摘要重算，L2）。
 
-新增 tag MUST 提升 `encoding_profile_id` 的版本号。tag 复用 MUST NOT 发生。
+对象版本的 tag 与编码 Profile 版本彼此独立：新增对象版本的 tag 不要求提升 `encoding_profile_id`，只有编码规则变化时才 MUST 提升（例如 Profile v2 使用 `ACLt/P0-1/Profile/2`，`encoding_profile_id` 仍为 `acl.enc.p0-1@1`）。已发布摘要不变。tag 复用 MUST NOT 发生。
 
 ### 17.5A bignum 禁令与运行时资本的职责分界
 
@@ -3019,12 +3019,14 @@ L1b 是 draft-4 遗漏的一层。它 MUST 是**确定性纯函数**：同一输
 ToSchemaView(canonical_cbor, object_wire_key_table) -> JSONValue
 ```
 
-- 规范对象的 CBOR map key 必须先由该对象唯一的 wire-key 表映射为文本字段名；未知/重复/不可逆 key 在投影前拒绝；
+- 规范对象的 CBOR map key 按下述 wire-key 通则映射为文本字段名；未知/重复/不可逆 key 在投影前拒绝；
 - `bstr` 映射为小写偶数位十六进制字符串；
 - `int/uint` 映射为规范十进制字符串，`-0`、前导零和 `+` 号禁止；
 - `Rational` 映射为两个规范十进制字符串组成的定长数组；
 - array 保持顺序；bool/string 保持 JSON 同类值；null、float、tag 与 indefinite-length 在 L2 拒绝，不进入 Schema View；
 - 必须满足 `FromSchemaView(ToSchemaView(x)) = x`；每个 VPCV 同时携带 `cbor_hex` 与 `schema_view`，两实现必须逐位一致。
+
+**wire-key 通则（2026-11-19 冻结）**：在 `acl.enc.p0-1@1` 下，规范对象 CBOR map 的字段键与字段名文本相同，即 `object_wire_key_table` 为恒等映射。现有整数键例外只有 `VersionRange` 的 0/1（§17.3）。该通则不提供逆映射所需的字段类型表：`FromSchemaView` 仍需要类型信息才能区分 bstr 十六进制、整数十进制与 `String`；该问题由 TG-8（#213）处理。
 
 L2 先验证原始 CBOR 可被安全、唯一地投影；L1a 再验证 Schema View；L1b 消费同一 Schema View 与显式 bundle。投影算法自身是 Type A/L2 owner，不得由不同 JSON Schema 实现自行定义。
 
@@ -3835,7 +3837,7 @@ P0-1A 在完成本文件的独立入口审计后，可以判定 `READY FOR P0-1B
 | ADR-0005 已接受但正文仍写“未开始/待裁定” | ADR 增加 D-01—D-10 采纳矩阵，D-02 固定采用 (a)，状态同步 | ADR-0005 §6；本文件 §0、§2 |
 | ADR-0005 要求保留多原因，draft-11 仍只保存单 verdict | 冻结 `CauseSet + versioned reducer -> EffectiveVerdict`；摘要同时绑定事实集与归约器 | §5.2、SV-54a/54b、SV-57、VPCV-R |
 | `ConformanceManifest` / `RegistrySnapshot` 的结构与 wire-shape 表冲突 | 两对象统一使用嵌套 `VersionedUVPHeader` | §3.3.2、§3.4、§3.5、SV-85 |
-| `Rational`、`VersionRange`、`TimeRange` 有两套基础定义 | 统一 denominator 为 uint、范围为非空半开区间、字段名为 `min_inclusive` | §3.2.1、§17.3 |
+| `Rational`、`VersionRange`、`TimeRange` 有两套基础定义 | `Rational` 与 `VersionRange` 的统一已在本轮完成（denominator 为 uint、范围为非空半开区间、字段名为 `min_inclusive`）。`TimeRange` 的语义当时已统一，线上形式仍未冻结；2026-11-19 的修订将唯一线上形式固定为 2 元数组，旧 map 向量保留为历史（§29.3） | §3.2.1、§17.3、§29.3 |
 | MAP 的“运行中减权”与注册对象不可变冲突 | 新 Receipt 通过新版本处置；既有 Receipt 通过所需假设撤销 fail closed | §3.6 MAP-3 |
 | Lease 继承只有文字要求，MAP 未绑定 capability contract | MAP 新增 `execution_capability_contract_ref`；冻结最小 payload、双点校验和 Type A/Type B 边界 | §3.6、§13.1A.1、SV-111 |
 | 运行时资本误写成 Profile `Rational` | 明确资本使用 `finite-population-boundary-lr-v1` 无位宽格式 | §17.5A、§17.8 |
@@ -3855,3 +3857,13 @@ REEXEC_BOUNDED mainnet capability: DISABLED by default
 ```
 
 允许 P0-1B 使用固定、显式标注的测试参数实现 Schema、纯 validator、摘要和向量；生产部署只能由已绑定的 `MainnetAssuranceProfile` 在其有限条件内启用能力。
+
+### 29.3 2026-11-19 R1 第一轮裁定修订
+
+本节记录 [REPO-AUDIT R1 第一轮裁定](https://github.com/ZeroMatrixTech/ACLt/issues/211#issuecomment-6991230132)中属于本文件规范文本的事项（工作项 [#216](https://github.com/ZeroMatrixTech/ACLt/issues/216)）：
+
+- **`TimeRange` 线上形式**（裁定 2）：§17.3 的 2 元数组是唯一线上形式；§3.2.1 的命名键 map 是数据模型视图。注册路径的规范行为是只接受数组，原 20 条 map 形式向量按裁定保留为历史向量；实现与向量迁移由 B1 处理，迁移时标为旧形式，不覆盖，也不就地重算。本次冻结不改变 `encoding_profile_id`（仍为 `acl.enc.p0-1@1`），也不重算已发布摘要。§29.1 中“已统一”的说法按本节更正。
+- **wire-key 通则**（裁定 3）：§17.5B 冻结恒等映射。本文件当前冻结的整数键例外只有 `VersionRange` 的 0/1（§17.3）；仓库内候选切片与 FM 基础对象均使用恒等文本键（`schemas/verification-profile/claim-codec-slice.json`、`schemas/formal-migration/foundation.json`），未发现其他例外。逆映射所需的字段类型表由 TG-8（#213）处理。
+- **对象版本 tag 与编码 Profile 版本**（裁定 5）：§17.4 澄清两者独立；新增对象版本的 tag 不要求提升 `encoding_profile_id`，只有编码规则变化才提升；已发布摘要不变。
+
+本次修订不改动 §20—§28 的历史审计响应原文，也不改变任何已发布摘要、向量或代码。

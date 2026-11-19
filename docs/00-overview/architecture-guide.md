@@ -171,7 +171,7 @@ flowchart LR
 ACLt/
 ├── README.md                        项目总入口
 ├── CONTRIBUTING.md                  贡献流程、同步要求和审查标准
-├── LICENSE                          仓库全部工件的许可证文本（Apache-2.0）
+├── LICENSE                          项目工件的许可证文本（Apache-2.0；第三方材料保留原许可）
 ├── docs/
 │   ├── README.md                    文档索引、权威范围、冲突处理
 │   ├── 00-overview/                 为什么做、术语、系统边界
@@ -214,13 +214,13 @@ ACLt/
 |---|---|---|
 | 协议文档与架构 | 已有 v0.5 文档骨架、职责边界和 16 条不变量 | 完整状态机或所有规范都已可执行。 |
 | 有限总体验证模型 | 有递推、闭式、全枚举、DP 对拍和精确有理数向量 | 真实无许可网络已满足部署前提。 |
-| P0-1A | 状态文档记录 `PASS / CLOSED` | 整个 P0-1 或 G0 已关闭。 |
-| P0-1B | `STARTED / NOT CLOSED`；有初始 Schema、种子、validator 和测试 | 所有规则、编码与摘要已实现。 |
+| P0-1A | 状态见[当前状态](../07-roadmap/current-status.md) | 整个 P0-1 或 G0 已关闭。 |
+| P0-1B | 状态与计数见[当前状态](../07-roadmap/current-status.md) | 所有规则、编码与摘要已实现。 |
 | 注册表种子 | 有 claim 模板、排除项和 disabled assurance 数据 | 已存在正式 ACTIVE 主网注册表。 |
-| G0 | 进行中 | 已具备合格的 G2 参考实现。 |
-| G1—G6 | 状态快照记录为未开始 | 仿真、网络、容灾或对抗验证已经验收。 |
+| G0 | 状态见[当前状态](../07-roadmap/current-status.md) | 已具备合格的 G2 参考实现。 |
+| G1—G6 | 状态见[当前状态](../07-roadmap/current-status.md) | 仿真、网络、容灾或对抗验证已经验收。 |
 
-P0-1B 当前覆盖清单明确列出：L1b 的 SV-10、SV-11、SV-57、SV-76 已实现；部分 L1a 规则和 SV-54a 只部分覆盖；L2 尚未实现。canonical CBOR、18 个摘要、完整五相位对象、全量 Type A 规则以及第二语言对拍仍有缺口。参考 validator 的 `--production` 会主动拒绝，避免把局部检查当作完整生产校验。
+P0-1B 的覆盖计数、缺口与已实现规则以[当前状态](../07-roadmap/current-status.md)和[覆盖清单](../../schemas/verification-profile/coverage.json)为准。参考 validator 的 `--production` 会主动拒绝，避免把局部检查当作完整生产校验。
 
 阅读状态时分清三个问题：`DECIDED` 表示设计已接受；V1 `CORE` 表示必须实现；测试通过表示某个检查有证据。三者不能互相替代。
 

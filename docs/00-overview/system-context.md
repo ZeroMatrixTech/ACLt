@@ -100,7 +100,7 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 |---|---|---|---|
 | 1. 选择版本与政策 | Requester 选择兼容的 ProtocolVersion、验证、资金、结算政策和适用的主网保障 Profile | 可解析的任务创建输入 | `REJECTED_AT_CREATE` |
 | 2. 登记任务 | Requester 规范化并签署包含 RIRVersion/Profile/Digest 的 ComputeReceipt | 不可变 ReceiptID | `REJECTED_AT_CREATE` / `UNSUPPORTED` |
-| 3. Compile 与规划 | Lowering、Decomposition、Packing/Plan 形成并验证候选工件 | 规范 RIR、合法 WorkPlan / Assignment | `FAILED_PLANNING` / `UNSUPPORTED` |
+| 3. Compile 与规划 | Lowering、Decomposition、Packing/Plan 形成并验证候选工件 | 规范 RIR、合法 WorkPlan / Assignment | `FAILED_PLANNING` |
 | 4. 准入与 Dispatch | Admit/Schedule 处理证据、能力、不确定度和限额 | ExposureDecision、Lease proposal | 排队、拒绝或 `EXPIRED` |
 | 5. 接受与执行 | Provider 显式接受 Lease；系统派生 ExecutionCapability；Dispatch 与 RPR 分别校验后执行 | active Lease、ExecutionCapability、Result、Checkpoint 或失败证据 | proposal 失效、能力校验失败、重租约、`FAILED`、`EXPIRED` |
 | 6. 冻结验证总体 | Sample 前建立 EligibilitySnapshot | 可审计总体、分层与随机承诺 | `UNRESOLVED` |
@@ -108,6 +108,8 @@ ACLt 不为下列职能建立固定特权角色。任何 Principal 都可以尝�
 | 8. 提交唯一终态 | Aggregate 应用预声明停止规则 | `TRUSTED` 或 `UNRESOLVED` | 事务重试，不得双终态 |
 | 9. 结算 | Settle 应用 FundingPolicy 和 SettlementPolicy | 最多一次 Settlement | `FUNDING_EXHAUSTED` 或可重试实现失败 |
 | 10. 追加证据 | UpdateEvidence 记录可归责事件 | 新 PerformanceEvidence | 证据不足时暂缓能力更新 |
+
+`REJECTED_AT_CREATE` 与 `UNSUPPORTED` 属于 `CreateReceiptResult`（阶段 1–2），不是终态；Receipt 登记后不得进入 `UNSUPPORTED`（ADR-0005 D-02(a)）。
 
 ## 7. 外部依赖与适配器
 

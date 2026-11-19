@@ -19,20 +19,7 @@
 
 ## 2. 任务验证 Registry
 
-每个 Receipt MUST 引用一个版本化 `VerificationProfile`；具体证据方法作为其 `VerificationType`。Registry 至少需要描述：
-
-Profile、Claim、ExcludedClaims、MainnetAssurance、五相位 validator 与 canonical encoding 的当前权威语义见 [`verification-profile-schema.md`](verification-profile-schema.md)。该文件已关闭 P0-1A；P0-1B 实现覆盖仍在进行。
-
-- 适用任务族和输入/输出语义；
-- 适用 RIRVersion、执行 Profile、runtime/effects 与规范结果表示；
-- 结果等价或聚类规则；
-- 验证器输入、输出和错误模型；
-- 是否确定性、可重执行、可抽样或依赖证明；
-- 资源、环境和独立故障来源；
-- 允许的 Aggregation 与终态；
-- `VerifiedClaim`、`ExcludedClaims` 与 Requester 可见确认；
-- 安全参数、活性参数、成本接口和假设状态；
-- 负例、已知盲点和升级规则。
+每个 Receipt MUST 引用一个版本化 `VerificationProfile`；具体证据方法作为其 `VerificationType`。Registry 的对象类型、快照结构与校验规则以 [`verification-profile-schema.md`](verification-profile-schema.md) 的 §3.1、§3.5、§5 与 §6 为权威；Profile、Claim、ExcludedClaims、MainnetAssurance、五相位 validator 与 canonical encoding 的当前权威语义见同一文件。该文件已关闭 P0-1A；P0-1B 实现覆盖仍在进行。
 
 为避免与首个工程目标 `V1` 混淆，不再使用 `V0–V3` 作为验证类型占位编号。候选类别仅表示方法族，具体 Registry ID 尚未冻结：
 
