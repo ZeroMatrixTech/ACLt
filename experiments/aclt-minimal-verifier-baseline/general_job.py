@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import os
 import struct
+import time
 from threading import RLock
 
 from baseline import ARTIFACT_TAG, QUESTION_TAG, ask, solve, verify
@@ -163,8 +164,11 @@ def handle(raw, executor):
     action = request["action"]
     c.need(action in ("SOLVE", "VERIFY"), "unknown job action")
     c.fields(request, ("action", "execution_id", "slot", "attempt", "epoch",
-                       "question", "artifact", "data", "dependency") + (("answer",) if action == "VERIFY" else ()))
+                       "question", "artifact", "data", "dependency") + (("answer",) if action == "VERIFY" else ()),
+             ("boot",))
     c.digest_bytes(request["execution_id"])
+    if "boot" in request:
+        c.digest_bytes(request["boot"])
     if request["dependency"] != b"":
         c.digest_bytes(request["dependency"])
     for field in ("slot", "attempt", "epoch"):
@@ -200,6 +204,7 @@ class Journal:
         self.charged = 0
         self.reserved = 0
         self.final = None
+        self.merge_ns = None
         for event in events:
             self.apply(event)
             self.events.append(event)
@@ -209,12 +214,14 @@ class Journal:
         return {slot for slot in range(len(self.job.tasks)) if slot not in self.accepted
                 and (slot not in dependencies or dependencies[slot] in self.accepted)}
 
-    def frame(self, slot, attempt, action, answer=None):
+    def frame(self, slot, attempt, action, answer=None, boot=None):
         fields = self.job.question(slot, self.accepted)
         fields.update(action=action, execution_id=self.job.execution_id, slot=slot,
                       attempt=attempt, epoch=self.epoch)
         if answer is not None:
             fields["answer"] = answer
+        if boot is not None:
+            fields["boot"] = c.digest_bytes(boot)
         return c.encode(fields)
 
     def apply(self, event):
@@ -246,7 +253,9 @@ class Journal:
         if kind == "PUBLISH":
             c.fields(event, ("kind",))
             c.need(len(self.accepted) == len(self.job.tasks) and not self.reserved, "incomplete evidence")
+            started = time.monotonic_ns()
             output = self.job.merge_output(self.accepted)
+            self.merge_ns = time.monotonic_ns() - started
             evidence = [self.accepted[i]["evidence"] for i in leaves(c.decode(self.job.plan)["tree"])]
             self.final = dict(execution_id=self.job.execution_id, declaration_id=self.job.declaration_id,
                               plan_id=self.job.plan_id, output=output,
@@ -266,7 +275,9 @@ class Journal:
         key = (slot, number)
         attempt = self.attempts.get(key)
         if kind == "RESERVE":
-            c.fields(event, ("kind", "slot", "attempt", "worker", "request"))
+            c.fields(event, ("kind", "slot", "attempt", "worker", "request"), ("boot",))
+            if "boot" in event:
+                c.digest_bytes(event["boot"])
             c.need(slot in self.ready() and number in (1, 2) and attempt is None, "attempt not ready")
             first = self.attempts.get((slot, 1))
             c.need(number == 1 or first and first["state"] == "NO_REPLY", "retry requires unanswered first attempt")
@@ -275,7 +286,8 @@ class Journal:
             required = cap if number == 1 else cap + future
             if self.charged + self.reserved + required > self.job.budget:
                 raise BudgetError("insufficient solve budget")
-            c.need(event["request"] == self.frame(slot, number, "SOLVE"), "wrong frozen solve request")
+            c.need(event["request"] == self.frame(slot, number, "SOLVE", boot=event.get("boot")),
+                   "wrong frozen solve request")
             self.reserved += cap
             self.attempts[key] = dict(state="RESERVED", request=event["request"], worker=event["worker"])
         elif kind == "NO_REPLY":
@@ -294,11 +306,14 @@ class Journal:
             # The cap stays reserved until the independent verifier validates the outcome.
             attempt.update(state="ANSWER", answer=answer, outcome=outcome)
         elif kind == "ACCEPT":
-            c.fields(event, ("kind", "slot", "attempt", "verifier", "request", "response"))
+            c.fields(event, ("kind", "slot", "attempt", "verifier", "request", "response"), ("boot",))
+            if "boot" in event:
+                c.digest_bytes(event["boot"])
             c.need(attempt and attempt["state"] == "ANSWER" and slot not in self.accepted,
                    "slot cannot accept this attempt")
             c.need(event["verifier"] != attempt["worker"], "verification must use a distinct role")
-            c.need(event["request"] == self.frame(slot, number, "VERIFY", attempt["answer"]),
+            c.need(event["request"] == self.frame(slot, number, "VERIFY", attempt["answer"],
+                                                 boot=event.get("boot")),
                    "wrong frozen verify request")
             verdict = response_for(event["request"], event["response"], "verdict")
             outcome = attempt["outcome"]
@@ -359,6 +374,7 @@ class Journal:
                 os.fsync(directory)
             finally:
                 os.close(directory)
-            for name in ("events", "epoch", "attempts", "accepted", "charged", "reserved", "final"):
+            for name in ("events", "epoch", "attempts", "accepted", "charged", "reserved", "final",
+                         "merge_ns"):
                 setattr(self, name, getattr(updated, name))
             return self.final

@@ -611,8 +611,10 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         record["single_guest_control"] = result
 
     scenario = getattr(args, "m9", None)
-    suppressed_reply = bool(getattr(args, "general_inject", None)) and \
-        general_vm.Injection.parse(args.general_inject).mode == "no_reply"
+    # no_reply and the drop both leave a generated reply at the serving side.
+    suppressed_reply = bool(getattr(args, "general_drop", False)) or (
+        bool(getattr(args, "general_inject", None))
+        and general_vm.Injection.parse(args.general_inject).mode == "no_reply")
     authority = None
     if scenario in ("handoff", "overlap") or getattr(args, "coordinated", False):
         authority = coordination.Coordinator(job, output / "host-journal.cbor",
@@ -644,6 +646,10 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
                 raise RunError("incomplete run published an output")
         elif publication.read_bytes() != codec.encode(journal.final):
             raise RunError("publication differs from replay")
+        c1 = getattr(args, "general_c1", None)
+        if c1 and (bool(history) if c1 == "stale" else not history):
+            record["c1_evidence"] = general_vm.check_restart_resend(
+                roots, journal, executor, scenario=c1)
         return roots, guests, journal
 
     history = ()
@@ -707,6 +713,8 @@ def run_general(job, args, boot, executor, image, output, record, successor_imag
         record["source_execution_id"] = source.job.execution_id.hex()
         record["source_charged_gas"] = source.charged
     return dict(status="PASS" if journal.final or overlap else "FAIL", general_status=result,
+                c1=getattr(args, "general_c1", None),
+                merge_ns=guests["A"].get("merge_ns"),
                 declaration_id=job.declaration_id.hex(), plan_id=job.plan_id.hex(),
                 execution_id=job.execution_id.hex(), **{job.charge_field: journal.charged},
                 output=json.loads(json.dumps(journal.final["output"], default=bytes.hex))
@@ -736,6 +744,19 @@ def run(args: argparse.Namespace) -> dict:
     if general:
         if not many or args.handoff or args.interrupt or args.retry_solve or args.leaves or root_caps:
             raise RunError("general job requires at least three guests and its own fault and handoff options")
+        c1 = getattr(args, "general_c1", None)
+        if c1 is not None:
+            if not getattr(args, "general_workers", None):
+                raise RunError("C1 scenarios require a coordinator-only worker layout")
+            if is_sort:
+                raise RunError("C1 scenarios do not apply to the capacity sort family")
+            if getattr(args, "m9", None) or args.general_inject:
+                raise RunError("C1 scenarios cannot be combined with M9 or an injected fault")
+            if c1 in ("restart", "duplicate"):
+                if not args.general_drop or args.general_checkpoint:
+                    raise RunError("restart and duplicate scenarios need the drop and no checkpoint")
+            elif args.general_drop or args.general_checkpoint != 1:
+                raise RunError("the stale scenario needs checkpoint 1 and no drop")
         if is_sort:
             if len(roles) != 3 or args.solve_budget is not None:
                 raise RunError("capacity sort requires three guests and a frozen record budget")
@@ -898,6 +919,7 @@ def run(args: argparse.Namespace) -> dict:
                 f'aclt_general_workers={getattr(args, "general_workers", None) or ""}',
                 f'aclt_coordinated={int(guard is not None)}',
                 f'aclt_general_checkpoint={args.general_checkpoint if handoff == "before" else 0}',
+                f'aclt_c1={getattr(args, "general_c1", None) or ""}',
             )
         listener = pool = None
         try:
@@ -1206,6 +1228,8 @@ def main() -> None:
     runner.add_argument("--general-nonce", metavar="HEX", help="frozen 32-byte general execution nonce")
     runner.add_argument("--general-inject", metavar="MODE:SLOT:LOSS",
                         help="abort a remote SOLVE reply: no_reply, worker_exit or tcp_disconnect")
+    runner.add_argument("--general-c1", choices=("restart", "duplicate", "stale"),
+                        help="run one C1 restart/resend scenario with its experiment probes")
     runner.add_argument("--coordinated", action="store_true",
                         help="route every general-job journal write through the host arbitration entry")
     runner.add_argument("--general-workers", metavar="ROLES",

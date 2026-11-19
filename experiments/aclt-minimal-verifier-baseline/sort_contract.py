@@ -119,7 +119,9 @@ def checked_request(job, raw):
     action = request["action"]
     c.need(action in ("SOLVE", "VERIFY"), "unknown job action")
     c.fields(request, ("action", "execution_id", "slot", "attempt", "epoch", "question")
-             + (("answer",) if action == "VERIFY" else ()))
+             + (("answer",) if action == "VERIFY" else ()), ("boot",))
+    if "boot" in request:
+        c.digest_bytes(request["boot"])
     slot = c.uint(request["slot"])
     c.need(request["execution_id"] == job.execution_id
            and request["question"] == question(job.execution_id, slot), "wrong frozen sort question")
