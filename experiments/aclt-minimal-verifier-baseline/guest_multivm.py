@@ -200,6 +200,342 @@ def run_topology(role: str, pairs: dict, port: int, budget: int | None, leaves: 
     return 0
 
 
+class DispatchSession:
+    """One dispatch: the frozen request follows the activation on the same connection."""
+
+    def __init__(self, dispatch, connection, sequence, epoch, owner, slot, attempt, action, boot):
+        self.dispatch = dispatch
+        self.connection = connection
+        self.sequence = sequence
+        self.epoch = epoch
+        self.owner = owner
+        self.slot = slot
+        self.attempt = attempt
+        self.action = action
+        self.boot = boot
+        self.closed = False
+
+    def request(self, raw):
+        name = general_vm.wire_name(raw)
+        request_sha = hashlib.sha256(raw).hexdigest()
+        (self.dispatch.output / f"{name}-request.cbor").write_bytes(raw)
+        try:
+            if self.dispatch.relay is None:
+                send(self.connection, raw)
+                response = receive(self.connection)
+            else:
+                response = sort_contract.exchange_payload(self.connection, raw, self.dispatch.relay)
+        except OSError as error:
+            self.dispatch.record_outcome(self, request_sha, len(raw), "no_reply",
+                                         error=type(error).__name__)
+            if self.dispatch.driver is not None:
+                self.dispatch.driver.after_failure(self, raw)
+            raise
+        (self.dispatch.output / f"{name}-response.cbor").write_bytes(response)
+        self.dispatch.record_outcome(self, request_sha, len(raw), "answered",
+                                     response=response)
+        return response
+
+    def close(self):
+        if not self.closed:
+            self.closed = True
+            try:
+                self.connection.close()
+            except OSError:
+                pass
+
+
+class LocalSession:
+    """The coordinator's own serving slot: same admission and records, no socket."""
+
+    def __init__(self, dispatch, sequence, epoch, owner, slot, attempt, action, activation):
+        self.dispatch = dispatch
+        self.sequence = sequence
+        self.epoch = epoch
+        self.owner = owner
+        self.slot = slot
+        self.attempt = attempt
+        self.action = action
+        self.activation = activation
+        self.boot = dispatch.local.boot
+
+    def request(self, raw):
+        request = c.decode(raw)
+        name = general_vm.wire_name(raw)
+        request_sha = hashlib.sha256(raw).hexdigest()
+        (self.dispatch.output / f"{name}-request.cbor").write_bytes(raw)
+        reason = self.dispatch.local.admit(request, self.activation)
+        if reason is not None:
+            self.dispatch.local.reject(reason, raw=raw, request=request,
+                                       activation=self.activation)
+            self.dispatch.record_outcome(self, request_sha, len(raw), "refused", reason=reason)
+            raise ConnectionError("local serving refused the request")
+        if self.dispatch.inject is not None and self.dispatch.inject.matches(request):
+            self.dispatch.inject.hit(request, raw, self.owner)
+            self.dispatch.record_outcome(self, request_sha, len(raw), "no_reply", error="injected")
+            raise ConnectionError("injected local serving fault")
+        response = self.dispatch.local.execute(raw, EXECUTOR)
+        (self.dispatch.output / f"{name}-response.cbor").write_bytes(response)
+        self.dispatch.record_outcome(self, request_sha, len(raw), "answered", response=response)
+        return response
+
+    def close(self):
+        pass
+
+
+class C1Dispatch:
+    """Bridge between general_vm.run and the serving boots (C-03 request binding)."""
+
+    def __init__(self, connect_peer, output, coordinator, *, inject=None):
+        self.connect_peer = connect_peer
+        self.output = output
+        self.coordinator = coordinator
+        self.inject = inject
+        self.relay = None
+        self.driver = None
+        self.sequence = 0
+        self.trace = output / "dispatch.jsonl"
+        self.local = None
+
+    def record(self, row):
+        general_vm.append_record(self.trace, row)
+
+    def record_outcome(self, session, request_sha, request_bytes, outcome, *, response=None,
+                       reason=None, error=None):
+        row = dict(event="outcome", sequence=session.sequence, epoch=session.epoch,
+                   role=session.owner, slot=session.slot, attempt=session.attempt,
+                   action=session.action, boot=session.boot.hex(),
+                   request_sha256=request_sha, request_bytes=request_bytes, outcome=outcome)
+        if response is not None:
+            row.update(response_sha256=hashlib.sha256(response).hexdigest(),
+                       response_bytes=len(response))
+        if reason is not None:
+            row["reason"] = reason
+        if error is not None:
+            row["error"] = error
+        self.record(row)
+
+    def activation(self, sequence, epoch, owner, slot, attempt, action, boot,
+                   request_bytes, response_bytes):
+        self.record(dict(event="activation", sequence=sequence, epoch=epoch, role=owner,
+                         slot=slot, attempt=attempt, action=action, boot=boot.hex(),
+                         request_bytes=request_bytes, response_bytes=response_bytes))
+
+    def open(self, owner, epoch, *, slot, attempt, action):
+        self.sequence += 1
+        sequence = self.sequence
+        boot_frame = c.encode(dict(action="BOOT", epoch=epoch, dispatch=sequence))
+        if owner == self.coordinator:
+            if self.local is None:
+                self.local = general_vm.ServingBoot(owner, self.output)
+            reply, activation = self.local.activate(boot_frame)
+            c.need(reply is not None, "local serving refused the activation")
+            boot = self.local.boot
+            self.activation(sequence, epoch, owner, slot, attempt, action, boot,
+                            len(boot_frame), len(reply))
+            return boot, LocalSession(self, sequence, epoch, owner, slot, attempt, action,
+                                      activation)
+        connection = self.connect_peer(owner)
+        try:
+            send(connection, boot_frame)
+            raw = receive(connection)
+        except BaseException:
+            connection.close()
+            raise
+        reply = c.decode(raw)
+        c.fields(reply, ("boot", "epoch", "dispatch"))
+        boot = c.digest_bytes(reply["boot"])
+        c.need(c.uint(reply["epoch"]) == epoch and c.uint(reply["dispatch"]) == sequence,
+               "activation reply differs from the dispatch")
+        self.activation(sequence, epoch, owner, slot, attempt, action, boot,
+                        len(boot_frame), len(raw))
+        return boot, DispatchSession(self, connection, sequence, epoch, owner, slot, attempt,
+                                     action, boot)
+
+    def stop(self, owner):
+        try:
+            connection = self.connect_peer(owner)
+        except OSError:
+            self.record(dict(event="stop", role=owner, sent_bytes=0, outcome="unreachable"))
+            return
+        sent = 0
+        try:
+            send(connection, general_vm.STOP)
+            sent = len(general_vm.STOP)
+        except OSError:
+            pass
+        finally:
+            connection.close()
+        self.record(dict(event="stop", role=owner, sent_bytes=sent,
+                         outcome="sent" if sent else "failed"))
+
+
+class C1Driver:
+    """Deliver the C-03 probes: restarts, resent frames and stale-epoch frames.
+
+    Each probe records what was sent and what answered.  The refusing side records
+    the reason, so this driver never claims one.
+    """
+
+    def __init__(self, scenario, *, connect_peer, output, previous=None, target=(1, 1)):
+        self.scenario = scenario
+        self.connect_peer = connect_peer
+        self.output = output
+        self.previous = previous
+        self.target = target
+        self.trace = output / "resends.jsonl"
+        self.sequence = 1000000
+
+    def record(self, row):
+        general_vm.append_record(self.trace, row)
+
+    def probe_sequence(self):
+        self.sequence += 1
+        return self.sequence
+
+    def send_frames(self, owner, frames):
+        sent, replies, sent_bytes, received_bytes = 0, [], 0, 0
+        connection = self.connect_peer(owner)
+        try:
+            for raw in frames:
+                send(connection, raw)
+                sent += 1
+                sent_bytes += len(raw)
+                reply = receive(connection)
+                replies.append(reply)
+                received_bytes += len(reply)
+        except OSError:
+            pass
+        finally:
+            connection.close()
+        return sent, replies, sent_bytes, received_bytes
+
+    def probe(self, owner, raw, *, kind, epoch):
+        boot_frame = None if kind == "bare" else c.encode(
+            dict(action="BOOT", epoch=epoch, dispatch=self.probe_sequence()))
+        frames = [] if boot_frame is None else [boot_frame]
+        frames.append(raw)
+        sent, replies, sent_bytes, received_bytes = self.send_frames(owner, frames)
+        answered = len(replies) == len(frames)
+        if kind == "bare":
+            outcome = "answered" if answered else "refused"
+        elif not replies:
+            outcome = "activation-refused"
+        else:
+            outcome = "answered" if answered else "refused"
+        activation_boot = None
+        if boot_frame is not None and replies:
+            reply = c.decode(replies[0])
+            boot = reply.get("boot")
+            activation_boot = boot.hex() if type(boot) is bytes else None
+        raw_sent = sent == len(frames)
+        self.record(dict(event="probe", scenario=self.scenario, probe=kind, role=owner,
+                         epoch=epoch, request_sha256=hashlib.sha256(raw).hexdigest(),
+                         request_action=codec.decode(raw)["action"],
+                         request_bytes=len(raw), frames=len(frames), sent=sent,
+                         sent_bytes=sent_bytes, replies=len(replies),
+                         received_bytes=received_bytes, outcome=outcome,
+                         boot_bytes=len(boot_frame) if (boot_frame is not None and sent >= 1) else 0,
+                         boot_reply_bytes=(len(replies[0]) if (boot_frame is not None and replies) else 0),
+                         raw_sent_bytes=len(raw) if raw_sent else 0,
+                         reply_bytes=len(replies[-1]) if answered else 0,
+                         activation_boot=activation_boot))
+
+    def restart(self, owner):
+        frame = c.encode({"action": "RESTART"})
+        sent = 0
+        connection = self.connect_peer(owner)
+        try:
+            send(connection, frame)
+            sent = len(frame)
+        except OSError:
+            pass
+        finally:
+            connection.close()
+        self.record(dict(event="restart_sent", role=owner, sent_bytes=sent,
+                         outcome="sent" if sent else "failed"))
+
+    def wait_boot(self, owner, epoch, previous_boot):
+        deadline = time.monotonic() + CONNECT_TIMEOUT
+        attempts, replies, sent_bytes, received_bytes = 0, 0, 0, 0
+        exchanges = []
+        while True:
+            dispatch = self.probe_sequence()
+            frame = c.encode(dict(action="BOOT", epoch=epoch, dispatch=dispatch))
+            try:
+                connection = self.connect_peer(owner)
+            except OSError:
+                if time.monotonic() >= deadline:
+                    self.record(dict(event="wait_boot", role=owner, epoch=epoch,
+                                     attempts=attempts, replies=replies,
+                                     sent_bytes=sent_bytes, received_bytes=received_bytes,
+                                     frames=exchanges, outcome="failed"))
+                    raise
+                time.sleep(0.2)
+                continue
+            try:
+                send(connection, frame)
+                attempts += 1
+                sent_bytes += len(frame)
+                exchange = dict(dispatch=dispatch, sent_bytes=len(frame), reply_bytes=0)
+                exchanges.append(exchange)
+                raw = receive(connection)
+                exchange["reply_bytes"] = len(raw)
+                replies += 1
+                received_bytes += len(raw)
+            except OSError:
+                if time.monotonic() >= deadline:
+                    self.record(dict(event="wait_boot", role=owner, epoch=epoch,
+                                     attempts=attempts, replies=replies,
+                                     sent_bytes=sent_bytes, received_bytes=received_bytes,
+                                     frames=exchanges, outcome="failed"))
+                    raise
+                time.sleep(0.2)
+                continue
+            finally:
+                connection.close()
+            boot = c.digest_bytes(c.decode(raw)["boot"])
+            if boot != previous_boot:
+                self.record(dict(event="wait_boot", role=owner, epoch=epoch,
+                                 attempts=attempts, replies=replies,
+                                 sent_bytes=sent_bytes, received_bytes=received_bytes,
+                                 frames=exchanges, outcome="changed", boot=boot.hex()))
+                return boot
+            if time.monotonic() >= deadline:
+                raise RuntimeError("serving boot did not change after the restart")
+            time.sleep(0.2)
+
+    def after_failure(self, session, raw):
+        if self.scenario not in ("restart", "duplicate"):
+            return
+        if (session.slot, session.attempt, session.action) != (*self.target, "SOLVE"):
+            return
+        owner = session.owner
+        if self.scenario == "restart":
+            self.restart(owner)
+            boot = self.wait_boot(owner, session.epoch, session.boot)
+            self.record(dict(event="restart", scenario=self.scenario, role=owner,
+                             epoch=session.epoch, previous_boot=session.boot.hex(),
+                             boot=boot.hex(),
+                             request_sha256=hashlib.sha256(raw).hexdigest()))
+        self.probe(owner, raw, kind="bare", epoch=session.epoch)
+        self.probe(owner, raw, kind="boot", epoch=session.epoch)
+
+    def after_run(self, journal):
+        if self.scenario != "stale" or self.previous is None:
+            return
+        events = codec.decode(self.previous.read_bytes())
+        probes = [(event["worker"], event["request"]) for event in events
+                  if event["kind"] == "RESERVE"]
+        probes += [(event["verifier"], event["request"]) for event in events
+                   if event["kind"] == "ACCEPT"]
+        for owner, raw in probes:
+            epoch = c.decode(raw)["epoch"]
+            self.probe(owner, raw, kind="bare", epoch=epoch)
+            self.probe(owner, raw, kind="old-boot", epoch=epoch)
+            self.probe(owner, raw, kind="boot", epoch=journal.epoch)
+
+
 def run_general(role, port, budget, report, pairs):
     output = EVIDENCE / role
     output.mkdir(mode=0o700)
@@ -208,6 +544,9 @@ def run_general(role, port, budget, report, pairs):
     inject = general_vm.Injection.parse(pairs.get("aclt_general_inject"))
     nonce = bytes.fromhex(pairs["aclt_execution_nonce"])
     sort_job = sort_contract.SortJob(nonce) if pairs.get("aclt_capacity_sort") == "1" else None
+    scenario = pairs.get("aclt_c1") or None
+    if sort_job is not None and scenario is not None:
+        raise RuntimeError("the C1 restart scenarios do not apply to the sort family")
     if sort_job is not None:
         if pairs.get("aclt_handoff") == "control":
             capacity_sort.single(output)
@@ -216,22 +555,25 @@ def run_general(role, port, budget, report, pairs):
             return 0
     if role != "A":
         # The worker serves in a child process so that worker_exit is a real non-zero
-        # process exit (R1 section 4).  Injection records and serving-side observations
-        # are written durably by the child before it acts; this supervisor restarts it.
+        # process exit (R1 section 4).  Injection records, restart records and serving
+        # observations are written durably before the child acts; the supervisor restarts it.
         hits_path = output / "injection.jsonl"
         observed_path = output / "observations.jsonl"
+        restarts_path = output / "restarts.jsonl"
         bounds_path = output / "serve-bounds.json"
         if inject is not None:
             inject.log_path = hits_path
             inject.observation_path = observed_path
         while True:
             seen = len(general_vm.read_lines(hits_path))
+            restarted = len(general_vm.read_lines(restarts_path))
             child = os.fork()
             if child == 0:
                 code = 0
                 try:
                     bounds = general_vm.serve(role, port, EXECUTOR, output, drop_first_b=drop,
-                                              sort_job=sort_job, inject=inject, exit_on_fault=True)
+                                              sort_job=sort_job, inject=inject, exit_on_fault=True,
+                                              restart=scenario == "restart")
                     bounds_path.write_text(json.dumps(bounds) + "\n", encoding="utf-8")
                 except BaseException:
                     import traceback
@@ -245,12 +587,17 @@ def run_general(role, port, budget, report, pairs):
             code = os.waitstatus_to_exitcode(status)
             if code == general_vm.WORKER_EXIT_CODE:
                 hits = general_vm.read_lines(hits_path)
-                if len(hits) != seen + 1 or hits[-1]["mode"] != "worker_exit":
-                    raise RuntimeError("worker exited without exactly one recorded injection")
-                last = hits[-1]
-                report.setdefault("worker_exits", []).append(
-                    {"role": role, "slot": last["slot"], "attempt": last["attempt"],
-                     "exit_status": code})
+                restarts = general_vm.read_lines(restarts_path)
+                if len(hits) == seen + 1 and hits[-1]["mode"] == "worker_exit":
+                    last = hits[-1]
+                    row = {"role": role, "reason": "worker_exit", "slot": last["slot"],
+                           "attempt": last["attempt"], "exit_status": code}
+                elif len(restarts) == restarted + 1 and restarts[-1].get("event") == "restart":
+                    row = {"role": role, "reason": "restart", "exit_status": code,
+                           "boot": restarts[-1].get("boot")}
+                else:
+                    raise RuntimeError("worker exited without exactly one injection or restart record")
+                report.setdefault("worker_exits", []).append(row)
                 print(f"GUEST_WORKER_EXIT role={role} status={code}", flush=True)
                 continue
             if code != 0:
@@ -259,13 +606,15 @@ def run_general(role, port, budget, report, pairs):
         report.update(json.loads(bounds_path.read_text(encoding="utf-8")))
         hits = general_vm.read_lines(hits_path)
         report["fault_triggered"] = len(hits)
+        if scenario is not None:
+            report["c1_scenario"] = scenario
         if inject is not None:
             report["injection"] = hits
             report["observations"] = general_vm.read_lines(observed_path)
     else:
         roles = guest_roles(int(pairs["aclt_guests"]))
         job = sort_job or general_vm.fixture(nonce, budget,
-                                 flat=pairs.get("aclt_general_flat") == "1", six=six)
+                                             flat=pairs.get("aclt_general_flat") == "1", six=six)
         reuse = None
         source = None
         if pairs.get("aclt_handoff") == "reuse":
@@ -280,44 +629,29 @@ def run_general(role, port, budget, report, pairs):
 
         report["connections"] = {}
 
-        def remote(owner, raw, *, reply=True, stored=None):
-            with connect(guest_ip(owner), port) as connection:
-                connection.settimeout(general_vm.TIMEOUT)
-                report["connections"][owner] = dict(local_ip=connection.getsockname()[0],
-                                                     peer_ip=connection.getpeername()[0])
-                if stored is not None:
-                    return sort_contract.exchange_payload(connection, raw, stored)
-                send(connection, raw)
-                if reply:
-                    return receive(connection)
+        def connect_peer(owner):
+            connection = connect(guest_ip(owner), port)
+            connection.settimeout(general_vm.TIMEOUT)
+            report["connections"][owner] = dict(local_ip=connection.getsockname()[0],
+                                                peer_ip=connection.getpeername()[0])
+            return connection
 
-        workers = tuple(pairs.get("aclt_general_workers", ""))
-
-        def exchange(owner, raw):
-            name = general_vm.wire_name(raw)
-            if workers and owner == role:
-                raise RuntimeError("coordinator-only layout asked the coordinator to serve")
-            (output / f"{name}-request.cbor").write_bytes(raw)
-            if inject is not None and owner == role and inject.matches(c.decode(raw)):
-                inject.hit(c.decode(raw), raw, role)
-                raise ConnectionError(f"injected {inject.mode} on the coordinator")
-            if sort_job is None:
-                result = general_vm.handle(raw, EXECUTOR) if owner == role else remote(owner, raw)
-            else:
-                result = remote(owner, raw, stored=stored)
-            (output / f"{name}-response.cbor").write_bytes(result)
-            return result
+        dispatch = C1Dispatch(connect_peer, output, role, inject=inject)
+        if scenario is not None:
+            dispatch.driver = C1Driver(scenario, connect_peer=connect_peer, output=output,
+                                       previous=previous)
 
         # Finish the operation stream even on a blocked budget or checkpoint.
         try:
             checkpoint = int(pairs.get("aclt_general_checkpoint", "0"))
             with ExitStack() as resources:
                 placement = retry_worker = None
-                if workers:
+                if workers := tuple(pairs.get("aclt_general_workers", "")):
                     placement = general_vm.coordinator_only(workers, len(job.tasks))
                     retry_worker = general_vm.retry_after(workers)
                 if sort_job is not None:
                     stored = resources.enter_context(capacity_sort.memory_file())
+                    dispatch.relay = stored
                     placement = sort_contract.PLACEMENT
                     retry_worker = sort_contract.retry_on_same_worker
                     if previous:
@@ -334,10 +668,10 @@ def run_general(role, port, budget, report, pairs):
                     journal_factory = partial(coordination.GuestJournal, reader=device, writer=device)
                 try:
                     journal, status = general_vm.run(
-                        job, roles, output / "journal.cbor", exchange, order=order, previous=previous,
+                        job, roles, output / "journal.cbor", order=order, previous=previous,
                         checkpoint=checkpoint, placement=placement, retry_worker=retry_worker,
-                        retry_remote=inject is not None and not workers, source=source, reuse=reuse,
-                        journal_factory=journal_factory,
+                        retry_remote=inject is not None and not workers, source=source,
+                        reuse=reuse, journal_factory=journal_factory, dispatch=dispatch,
                     )
                 except coordination.CoordinationError:
                     path = output / "journal.cbor"
@@ -346,15 +680,20 @@ def run_general(role, port, budget, report, pairs):
                     if not path.is_file():
                         path.write_bytes(codec.encode(events))
                     status = "COORDINATION_PAUSED"
+                if dispatch.driver is not None and status != "COORDINATION_PAUSED":
+                    dispatch.driver.after_run(journal)
         finally:
             for peer in roles[1:]:
-                remote(peer, general_vm.STOP, reply=False)
+                dispatch.stop(peer)
         (output / "declaration.cbor").write_bytes(job.declaration)
         (output / "plan.cbor").write_bytes(job.plan)
         (output / "execution.cbor").write_bytes(job.execution)
         if journal.final is not None:
             (output / "publication.cbor").write_bytes(codec.encode(journal.final))
         report["general_status"] = status
+        report["merge_ns"] = getattr(journal, "merge_ns", None)
+        if scenario is not None:
+            report["c1_scenario"] = scenario
         if inject is not None:
             report["fault_triggered"] = len(inject.hits)
             report["injection"] = inject.hits
