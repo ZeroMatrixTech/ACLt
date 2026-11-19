@@ -744,7 +744,7 @@ def check_restart_resend(roots, journal, executor, *, scenario, target=(1, 1)):
     attempt_keys = [(role, row["execution_id"], row["slot"], row["attempt"], row["action"])
                     for role, row in begins]
     c.need(len(attempt_keys) == len(set(attempt_keys)),
-           "one attempt and action was recorded on more than one serving role")
+           "one serving role recorded the same attempt on more than one boot")
 
     def end_key(role, row):
         return (role,) + tuple(row[field] for field in key_fields)
