@@ -50,7 +50,7 @@ SourcePackage、Lowering 和候选 RIR 的准备发生在 `Proposed` 之前；�
 | 4. 能力与暴露 | 估计任务族能力并原子预留额度 | 证据版本、资源和限额有效 | ExposureDecision | 排队/拒绝/EXPIRED |
 | 5. Provider Dispatch | Schedule 产生 Lease proposal，Provider 显式接受；Dispatch/RPR 校验 Lease 派生 capability | epoch、期限、scope 与暴露有效 | 生效 active Lease 与 ExecutionCapability | proposal 失效、释放额度 |
 | 6. 执行与恢复 | RPR Execute、heartbeat、checkpoint | 当前 active Lease | Result/Checkpoint/Failure | retry/FAILED/EXPIRED |
-| 7. 验证快照 | 冻结总体、分层、相关性和随机性 | 有效候选结果与策略 | EligibilitySnapshot | UNSUPPORTED/UNRESOLVED |
+| 7. 验证快照 | 冻结总体、分层、相关性和随机性 | 有效候选结果与策略 | EligibilitySnapshot | UNRESOLVED |
 | 8. 序贯验证 | Sample、Verify、Aggregate | Snapshot 未破坏 | ConfidenceState | 扩样/UNRESOLVED |
 | 9. 终态 | 原子提交唯一状态 | 停止或边界条件 | TerminalState | 事务重试 |
 | 10. 结算 | 计算权利并最多一次提交 | 终态、政策、资金有效 | Settlement | FUNDING_EXHAUSTED/暂停 |
@@ -69,6 +69,8 @@ Receipt 登记前必须明确：
 - 有限总体与 Nmax 的政策来源；
 - FundingPolicy、SettlementPolicy 和预算；
 - ProtocolVersion 与 canonical encoding。
+
+完整字段清单以 [`protocol-spec.md` §5](../03-protocol/protocol-spec.md) 为准；其中 Exposure、Availability 与 Deployment assurance 三组同样必须在登记前明确。
 
 登记后任何实质变化必须生成新 ReceiptID。修正文书不能改变原任务义务。
 
@@ -147,11 +149,11 @@ N_{max}=\min(N_{population},N_{budget},N_{policy})
 | `FAILED` | 执行或系统条件失败且不能继续 | 按故障归因 | 不适用 |
 | `EXPIRED` | 最终期限到达 | 按责任矩阵 | 不适用 |
 | `FUNDING_EXHAUSTED` | 授权资金阻止继续或结算 | 仅按剩余额度和政策 | 不适用 |
-| `REJECTED_AT_CREATE` | 创建条件不合法 | 不进入执行服务 | 不适用 |
 | `FAILED_PLANNING` | 没有合法 WorkPlan | 仅按创建/规划政策 | 不适用 |
-| `UNSUPPORTED` | 当前版本无合规验证或执行语义 | 不进入相关阶段 | 不适用 |
 
 每个 Receipt 最多提交一个互斥协议终态。
+
+`REJECTED_AT_CREATE` 与 `UNSUPPORTED` 属于 `CreateReceiptResult`，不是 Receipt 终态，也不得在 Receipt 登记后进入（ADR-0005 D-02(a)）。
 
 ## 10. 结算阶段
 

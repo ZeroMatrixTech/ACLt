@@ -300,7 +300,9 @@ $$
 
 `Nmax` 不具有默认的 51% 含义，也不单独证明验证安全。
 
-## 8. 终态
+## 8. 终态与创建结果
+
+本节区分 Receipt 终态与创建结果。`REJECTED_AT_CREATE` 与 `UNSUPPORTED` 属于 `CreateReceiptResult`，不是 Receipt 终态，也不得在 Receipt 登记后进入（ADR-0005 D-02(a)）。
 
 ### `TRUSTED`
 
@@ -328,11 +330,11 @@ $$
 
 ### `REJECTED_AT_CREATE`
 
-任务在创建阶段不满足协议、兼容性、安全或资金前置条件，因此不进入执行生命周期。
+任务在创建阶段不满足协议、兼容性、安全或资金前置条件，因此不进入执行生命周期。它是 `CreateReceiptResult`，不产生 ReceiptID，也不是 Receipt 终态。
 
 ### `UNSUPPORTED`
 
-当前 ProtocolVersion 没有为该任务语义提供符合要求的执行或验证类型。实现不得把它降级为普通多数投票。
+当前 ProtocolVersion 没有为该任务语义提供符合要求的执行或验证类型。它是 `CreateReceiptResult`，只在 Receipt 登记前产生；登记后不得进入，也不是 Receipt 终态。实现不得把它降级为普通多数投票。
 
 ## 9. 实现与维护术语
 

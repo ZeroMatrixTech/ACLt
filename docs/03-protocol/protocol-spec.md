@@ -61,31 +61,33 @@ Logical Object MUST 通过显式引用进入 Task 输入。相同 digest 不得�
 
 ## 4. 核心对象
 
-| 对象 | 必需语义 | 冻结点 | SemanticStatus | V1 |
-|---|---|---|---|---|
-| `ProtocolVersion` | Schema、状态机、不变量、验证、资金和兼容规则 | 发布签名/摘要 | `OPEN`，Priority `P0` | `CORE` |
-| `PrincipalRecord` | 公钥、状态、声明、控制关联引用 | 每次决策读取版本 | `OPEN`，Priority `P0` | `CORE` |
-| `LogicalObject` | 类型、版本、canonical content、digest、因果和可用性 | 对象发布/引用 | 不可变接口 `DECIDED`；Schema `OPEN` | `CORE` |
-| `ComputeReceipt` | ContractTuple、规范 RIR、Logical Object 输入、环境、资源、验证、期限、预算、政策 | ReceiptID 登记 | 接口 `INVARIANT`；Schema `OPEN` | `CORE` |
-| `FundingPolicy` | 费用、储备、补贴、可选发行或混合及上限 | Receipt 登记 | 类型 `DECIDED`；细节 `OPEN` | `CORE` |
-| `SettlementPolicy` | 各终态费用、退款、权利和故障归因 | Receipt 登记 | `OPEN`，Priority `P0` | `CORE` |
-| `WorkPlan` / `Assignment` | 工作单元、依赖、合并、失败和验证上下文 | 合法性检查后发布 | 三阶段边界 `DECIDED`；Schema `OPEN` | `CORE` |
-| `PerformanceEvidence` | 任务族、环境、结果、归责、来源、时间 | 追加时 | 接口 `DECIDED` | `CORE` |
-| `CapabilityEstimate` | 条件能力分布/区间、不确定度、有效期 | 决策绑定证据版本 | `CANDIDATE`，Priority `P1` | `CORE` |
-| `ExposureDecision` | 并发、价值、尝试、损失、集群和有效期 | Lease 前 | 接口 `DECIDED`；算法 `OPEN` | `CORE` |
-| `Lease` | Assignment、Provider、epoch、期限、条件权利 | Provider 接受 | 握手边界 `DECIDED`；Schema `OPEN` | `CORE` |
-| `ExecutionCapability` | active Lease 的 Receipt/epoch/execution tuple/scope/expiry 绑定 | Lease 生效时派生 | 边界 `DECIDED`；Schema `OPEN` | `CORE` |
-| `Attempt` | 一次有界执行及其状态和原因 | 终止时 | `OPEN`，Priority `P0` | `CORE` |
-| `Checkpoint` | 可恢复状态、摘要、格式和环境 | 接收时 | `OPEN`，Priority `P0` | `CORE` |
-| `ResultSubmission` | 结果、摘要、epoch、证据、幂等键 | 校验接收 | `OPEN`，Priority `P0` | `CORE` |
-| `EligibilitySnapshot` | 有限总体、排除、分层、相关性、随机承诺 | 首次 draw 前 | 接口 `INVARIANT`；Schema `OPEN` | `CORE` |
-| `VerificationEvidence` | 方法、输入、输出、来源、成本、关联 | 接收时 | `OPEN`，Priority `P0` | `CORE` |
-| `VerificationDecision` | TRUSTED/UNRESOLVED、策略和完整证据链 | 原子终态提交 | `OPEN`，Priority `P0` | `CORE` |
-| `AssumptionEvaluation` | 完整 CauseSet、reducer 版本和派生 EffectiveVerdict | 判决求值时 | 分层 `DECIDED`；Schema `OPEN` | `CORE` |
-| `VerificationProfile` | Claim、排除项、方法、参数、假设、失败与终态映射 | Receipt 创建前注册并绑定 | P0-1A `CLOSED`；P0-1B `STARTED` | `CORE` |
-| `MainnetAssuranceProfile` | network、允许 Profile/组件、有效期、能力处置和损失预算 | 主网发布/Receipt 绑定前 | P0-1A `CLOSED`；部署实例 `CANDIDATE` | `CORE` |
-| `Settlement` | 权利人、金额、来源、唯一键、状态 | Commit | `OPEN`，Priority `P0` | `CORE` |
-| `EventRecord` | 状态变化、因果引用、版本、签名/摘要 | 追加时 | 接口 `INVARIANT`；Schema `OPEN` | `CORE` |
+下表只描述对象的语义与冻结点。V1 的 `VersionDisposition` 只由 [`v1-profile.md`](v1-profile.md) 按 FeatureKey 登记，本表不复制 V1 处置。
+
+| 对象 | 必需语义 | 冻结点 | SemanticStatus |
+|---|---|---|---|
+| `ProtocolVersion` | Schema、状态机、不变量、验证、资金和兼容规则 | 发布签名/摘要 | `OPEN`，Priority `P0` |
+| `PrincipalRecord` | 公钥、状态、声明、控制关联引用 | 每次决策读取版本 | `OPEN`，Priority `P0` |
+| `LogicalObject` | 类型、版本、canonical content、digest、因果和可用性 | 对象发布/引用 | 不可变接口 `DECIDED`；Schema `OPEN` |
+| `ComputeReceipt` | ContractTuple、规范 RIR、Logical Object 输入、环境、资源、验证、期限、预算、政策 | ReceiptID 登记 | 接口 `INVARIANT`；Schema `OPEN` |
+| `FundingPolicy` | 费用、储备、补贴、可选发行或混合及上限 | Receipt 登记 | 类型 `DECIDED`；细节 `OPEN` |
+| `SettlementPolicy` | 各终态费用、退款、权利和故障归因 | Receipt 登记 | `OPEN`，Priority `P0` |
+| `WorkPlan` / `Assignment` | 工作单元、依赖、合并、失败和验证上下文 | 合法性检查后发布 | 三阶段边界 `DECIDED`；Schema `OPEN` |
+| `PerformanceEvidence` | 任务族、环境、结果、归责、来源、时间 | 追加时 | 接口 `DECIDED` |
+| `CapabilityEstimate` | 条件能力分布/区间、不确定度、有效期 | 决策绑定证据版本 | `CANDIDATE`，Priority `P1` |
+| `ExposureDecision` | 并发、价值、尝试、损失、集群和有效期 | Lease 前 | 接口 `DECIDED`；算法 `OPEN` |
+| `Lease` | Assignment、Provider、epoch、期限、条件权利 | Provider 接受 | 握手边界 `DECIDED`；Schema `OPEN` |
+| `ExecutionCapability` | active Lease 的 Receipt/epoch/execution tuple/scope/expiry 绑定 | Lease 生效时派生 | 边界 `DECIDED`；Schema `OPEN` |
+| `Attempt` | 一次有界执行及其状态和原因 | 终止时 | `OPEN`，Priority `P0` |
+| `Checkpoint` | 可恢复状态、摘要、格式和环境 | 接收时 | `OPEN`，Priority `P0` |
+| `ResultSubmission` | 结果、摘要、epoch、证据、幂等键 | 校验接收 | `OPEN`，Priority `P0` |
+| `EligibilitySnapshot` | 有限总体、排除、分层、相关性、随机承诺 | 首次 draw 前 | 接口 `INVARIANT`；Schema `OPEN` |
+| `VerificationEvidence` | 方法、输入、输出、来源、成本、关联 | 接收时 | `OPEN`，Priority `P0` |
+| `VerificationDecision` | TRUSTED/UNRESOLVED、策略和完整证据链 | 原子终态提交 | `OPEN`，Priority `P0` |
+| `AssumptionEvaluation` | 完整 CauseSet、reducer 版本和派生 EffectiveVerdict | 判决求值时 | 分层 `DECIDED`；Schema `OPEN` |
+| `VerificationProfile` | Claim、排除项、方法、参数、假设、失败与终态映射 | Receipt 创建前注册并绑定 | P0-1A `CLOSED`；P0-1B `STARTED` |
+| `MainnetAssuranceProfile` | network、允许 Profile/组件、有效期、能力处置和损失预算 | 主网发布/Receipt 绑定前 | P0-1A `CLOSED`；部署实例 `CANDIDATE` |
+| `Settlement` | 权利人、金额、来源、唯一键、状态 | Commit | `OPEN`，Priority `P0` |
+| `EventRecord` | 状态变化、因果引用、版本、签名/摘要 | 追加时 | 接口 `INVARIANT`；Schema `OPEN` |
 
 协议 MUST NOT 定义 `Rank`、`ReputationState`、`VerifierAuthority` 或 `FoundationDecision` 权威对象。
 
@@ -194,20 +196,24 @@ RPR MUST 在执行前 fail-closed 验证 RIR 与 Profile，并默认隐藏 Host 
 
 Aggregate MUST 产生可复算证据链。多个假设同时失效时 MUST 保存规范 `CauseSet`，由冻结 reducer 派生唯一 `EffectiveVerdict`。满足预声明停止条件时 MAY 提交条件性 `TRUSTED`；否则在上限或假设失效时 MUST 提交 `UNRESOLVED` 或其他准确终态。
 
-## 12. 终态
+## 12. 终态与创建结果
 
-每个 Receipt MUST 最多提交一个互斥协议终态：
+每个成功登记的 Receipt MUST 最多提交一个互斥协议终态：
 
 - `TRUSTED`；
 - `UNRESOLVED`；
 - `FAILED`；
 - `EXPIRED`；
 - `FUNDING_EXHAUSTED`；
-- `REJECTED_AT_CREATE`；
-- `FAILED_PLANNING`；
-- `UNSUPPORTED`。
+- `FAILED_PLANNING`。
 
-终态集合和层级仍需状态机冻结。`TRUSTED` MUST 绑定 `network_id`、assurance 版本和 `ExcludedClaims`，MUST NOT 被解释为绝对正确或主网外保证。
+Receipt 登记前的结果是 `CreateReceiptResult`，不是 Receipt 终态，也不产生 ReceiptID：
+
+- `ACCEPTED(receipt_id)`；
+- `REJECTED_AT_CREATE(reason)`；
+- `UNSUPPORTED(reason)`。
+
+`REJECTED_AT_CREATE` 与 `UNSUPPORTED` MUST NOT 在 Receipt 登记后进入，也 MUST NOT 出现在 `CanonicalTerminal` 或任何终态集合中。终态集合和层级仍需状态机冻结。`TRUSTED` MUST 绑定 `network_id`、assurance 版本和 `ExcludedClaims`，MUST NOT 被解释为绝对正确或主网外保证。
 
 ## 13. 资金与结算
 

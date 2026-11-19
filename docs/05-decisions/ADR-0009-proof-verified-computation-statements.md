@@ -9,7 +9,7 @@
 
 - **项目方向**：2026-11-11 维护者提出的方向：Provider 给出计算命题 F 的空前件逻辑后承陈述 `⊢ F`；验证对象是该陈述，而不是直接验证 F；用机械化的语义差分实现。本 ADR 把该方向落成可评审的接口。
 - **候选条款**：§3—§9 由助手起草，SemanticStatus 为 `CANDIDATE`。按[审计程序](../08-governance/audit-procedure.md) §4，接受前属于未接受草案，不得作为实现或 conformance 的规范依据。
-- **版本处置不变**：[V1 Profile](../03-protocol/v1-profile.md) 中 `verification.proof-assisted` 保持 `DEFERRED`。改为 `CORE` 须另有证据、兼容性分析与 ADR（v1-profile §8）。本草案只为非主网测试路线提供候选实例。
+- **版本处置不变**：V1 Profile 尚未登记 `verification.proof-assisted`；[Profile Schema](../03-protocol/verification-profile-schema.md) §16.2 的非权威建议表把它列为 `DEFERRED`。改为 `CORE` 须另有证据、兼容性分析与 ADR（v1-profile §8）。本草案只为非主网测试路线提供候选实例。
 - **不修改规范**：不修改协议规范、不变量、威胁模型、Gate 或主网资格。接受时的同步项见 §11。
 
 ## 1. 背景
