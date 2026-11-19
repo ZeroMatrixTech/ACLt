@@ -3862,7 +3862,7 @@ REEXEC_BOUNDED mainnet capability: DISABLED by default
 
 本节记录 [REPO-AUDIT R1 第一轮裁定](https://github.com/ZeroMatrixTech/ACLt/issues/211#issuecomment-6991230132)中属于本文件规范文本的事项（工作项 [#216](https://github.com/ZeroMatrixTech/ACLt/issues/216)）：
 
-- **`TimeRange` 线上形式**（裁定 2）：§17.3 的 2 元数组是唯一线上形式；§3.2.1 的命名键 map 是数据模型视图。注册路径只接受数组，原 20 条 map 形式向量保留为历史向量，标为旧形式，不覆盖，也不就地重算。本次冻结不改变 `encoding_profile_id`（仍为 `acl.enc.p0-1@1`），也不重算已发布摘要。§29.1 中“已统一”的说法按本节更正。
+- **`TimeRange` 线上形式**（裁定 2）：§17.3 的 2 元数组是唯一线上形式；§3.2.1 的命名键 map 是数据模型视图。注册路径的规范行为是只接受数组，原 20 条 map 形式向量按裁定保留为历史向量；实现与向量迁移由 B1 处理，迁移时标为旧形式，不覆盖，也不就地重算。本次冻结不改变 `encoding_profile_id`（仍为 `acl.enc.p0-1@1`），也不重算已发布摘要。§29.1 中“已统一”的说法按本节更正。
 - **wire-key 通则**（裁定 3）：§17.5B 冻结恒等映射。本文件当前冻结的整数键例外只有 `VersionRange` 的 0/1（§17.3）；仓库内候选切片与 FM 基础对象均使用恒等文本键（`schemas/verification-profile/claim-codec-slice.json`、`schemas/formal-migration/foundation.json`），未发现其他例外。逆映射所需的字段类型表由 TG-8（#213）处理。
 - **对象版本 tag 与编码 Profile 版本**（裁定 5）：§17.4 澄清两者独立；新增对象版本的 tag 不要求提升 `encoding_profile_id`，只有编码规则变化才提升；已发布摘要不变。
 
