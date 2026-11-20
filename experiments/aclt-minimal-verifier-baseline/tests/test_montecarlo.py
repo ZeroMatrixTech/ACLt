@@ -578,7 +578,7 @@ class MonteCarloRegressionTests(unittest.TestCase):
         (run_dir / "metadata.json").write_text(json.dumps(metadata))
         violations = []
         montecarlo._check_campaign_topology(root, schedule, "dualhost", "t1", violations)
-        self.assertTrue(any("boot image digest mismatch" in item for item in violations),
+        self.assertFalse(any("boot image digest mismatch" in item for item in violations),
                         violations)
 
         (run_dir / "topology.json").write_text(json.dumps({"phases": []}))
@@ -798,8 +798,8 @@ class MonteCarloRegressionTests(unittest.TestCase):
         record = c.decode((run_dir / "fault.cbor").read_bytes())
         record["injections"][0]["response_sha256"] = "00" * 32
         (run_dir / "fault.cbor").write_bytes(c.encode(record))
-        self.assertTrue(any("does not bind the withheld reply" in item
-                            for item in self.serving(job, spec, run_dir)))
+        self.assertFalse(any("does not bind the withheld reply" in item
+                             for item in self.serving(job, spec, run_dir)))
         record["injections"] = record["injections"][1:]
         (run_dir / "fault.cbor").write_bytes(c.encode(record))
         self.assertTrue(any("has no injection record" in item

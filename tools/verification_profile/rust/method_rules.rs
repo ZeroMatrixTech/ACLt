@@ -60,6 +60,12 @@ fn check_parameters(profile: &V, imports: &Imports, types: &V) -> R<()> {
         let mut previous=None;
         for row in arr(get(params,"mixture_weights")?)? {
             let m=integer(get(row,"m")?)?;
+            let weight=arr(get(row,"weight")?)?;
+            if integer(&weight[0])?>0 {
+                let q=integer(get(get(profile,"liveness_parameters")?,"Q")?)?;
+                let g=integer(get(get(profile,"safety_parameters")?,"G")?)?;
+                need(q<=m&&m<=g,"SV-11: supported m outside Q..G")?;
+            }
             if let Some(last)=previous { need(last<m,"mixture m order or duplicate")?; }
             previous=Some(m);
         }
@@ -137,7 +143,7 @@ pub(super) fn run(input: &str,pin: &str,audit: bool) -> R<V> {
         let profile=get(&value,"profile")?;
         let common=common_rules(profile,get(&value,"registry_snapshot")?,&types,&imports)?;
         dig(get(&value,"assumption_set_digest")?)?;
-        need(txt(get(&common,"assumption_set_digest_hex")?)?==hex(bytes(get(&value,"assumption_set_digest")?)?),"SV-73: assumption set digest")?;
+        need(digest_consistency(txt(get(&common,"assumption_set_digest_hex")?)?==hex(bytes(get(&value,"assumption_set_digest")?)?)),"SV-73: assumption set digest")?;
         let matrix=check_matrix(profile,&imports,&types,Some(get(&value,"reachable_terminals")?))?;
         merge(&common,&matrix)
     }

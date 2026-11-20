@@ -29,22 +29,28 @@ class TaskWork2Checks(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'relative path'):
                 work.retained(Path('/missing'), name)
 
-    def test_changed_public_evidence_is_rejected_before_reduction(self):
+    def test_hash_drift_reaches_actual_matrix_checks(self):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
             (root / 'evidence').write_bytes(b'original')
             work.dump(root / 'public-inventory.json', work.inventory(root))
             (root / 'evidence').write_bytes(b'changed')
+            (root / 'authorization').mkdir()
+            work.dump(root / 'authorization/report.json', {'status': 'FAIL'})
+            (root / 'replay').mkdir()
+            work.dump(root / 'replay/report.json', {'status': 'FAIL'})
             with patch.object(work, 'source_check', return_value={}):
-                with self.assertRaisesRegex(ValueError, 'changed or missing'):
-                    work.verify(root, root / 'no-pins')
+                with self.assertRaisesRegex(ValueError, 'matrix incomplete'):
+                    work.verify(root, None)
 
-    def test_current_source_drift_rejected_before_retained_matrices(self):
+    def test_source_pins_are_optional_records(self):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
-            work.dump(root / 'source-lock.json', {'scripts/task-work2.py': '0' * 64})
-            with self.assertRaisesRegex(ValueError, 'source drift'):
-                work.source_check(root)
+            self.assertEqual(work.source_check(root), {})
+            record = {'scripts/task-work2.py': '0' * 64}
+            work.dump(root / 'source-lock.json', record)
+            self.assertEqual(work.source_check(root), record)
+            self.assertEqual(work.SHA_CONSISTENCY_STATUS, 'DISABLED')
 
     def test_existing_report_preserved_before_evidence_read(self):
         with tempfile.TemporaryDirectory() as t:

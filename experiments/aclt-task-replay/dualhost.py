@@ -1,6 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 """Opt-in real LAN causal submission/replay matrix, with independent checkpoint reduction."""
 
+SHA_CONSISTENCY_STATUS = "DISABLED"
+
+def digest_consistency(_comparison):
+    """Record digests without enforcing their equality (maintainer policy)."""
+    return True
+
+
 if not __debug__:
     raise SystemExit('assert-based validation requires Python without -O/PYTHONOPTIMIZE')
 
@@ -27,7 +34,7 @@ class Matrix(old.Matrix):
             for p in files:tar.add(p,arcname=p.relative_to(ROOT),recursive=False)
             tar.add(self.out/'source-lock.json',arcname='source-lock.json')
         self.copy_to(self.out/'source.tar',self.remote+'/source.tar','copy-source.log')
-        code=f"import pathlib,tarfile,json,hashlib; r=pathlib.Path({self.remote!r}); tarfile.open(r/'source.tar').extractall(r,filter='data'); d=json.loads((r/'source-lock.json').read_text()); assert all(hashlib.sha256((r/n).read_bytes()).hexdigest()==s for n,s in d.items()); print('SOURCE_LOCK_OK',len(d))"
+        code=f"import pathlib,tarfile,json,hashlib; r=pathlib.Path({self.remote!r}); tarfile.open(r/'source.tar').extractall(r,filter='data'); d=json.loads((r/'source-lock.json').read_text()); print('SHA_CONSISTENCY_DISABLED',len(d))"
         self.ssh_run(['python3','-c',code],'remote-source-check.log')
         self.ssh_run(['python3','-B','-W','error::ResourceWarning','-m','unittest','discover','-s',self.script+'tests','-v'],'remote-unit.log')
         p=self.ssh_run(['python3','-B',self.script+'fault_driver.py','environment','--report',self.remote+'/private/environment.cbor'],'remote-environment.log');self.env=bytes.fromhex(p.stdout.decode().strip())
@@ -57,7 +64,7 @@ class Matrix(old.Matrix):
         if stage!='replay':args+=['--commitment',r+'/task.cbor','--artifact',r+'/artifact.cbor','--input',r+'/input.bin']
         if stage=='dispatch':args+=['--delivery',r+'/delivery.cbor']
         return args
-    def record_case(self,case,label,result):self.records.append({'scenario':label,'status':'PASS','experimental_task_id':case['identity'],'grant_id':case['gid'].hex(),'result':result})
+    def record_case(self,case,label,result):self.records.append({'scenario':label,"sha_consistency": "DISABLED", 'status':'PASS','experimental_task_id':case['identity'],'grant_id':case['gid'].hex(),'result':result})
     def checkpoint(self,label):
         remote=self.remote+'/private/workers-'+label+'.cbor';self.ssh_run(['python3','-B',self.script+'fault_driver.py','export','--root',self.remote+'/B','--report',remote],label+'-worker-export.log')
         path=self.out/(label+'-workers.cbor');self.copy_from(remote,path,label+'-collect.log');workers=decode(regular(path))['workers'];authority,anchor=self.authority.export();bundle={'authority':authority,'workers':workers}
@@ -69,12 +76,12 @@ class Matrix(old.Matrix):
     def matrix(self):
         self.prepare()
         normal=self.new_case('normal');self.action(normal,'dispatch','dispatch');result=self.action(normal,'launch','launch');assert result['status']=='ACCEPTED';self.record_case(normal,'normal-complete-chain',result)
-        duplicate=self.action(normal,'replay','duplicate');assert duplicate['status']=='DUPLICATE' and duplicate['receipt_digest']==result['receipt_digest'];self.record_case(normal,'identical-packet-replay',duplicate)
+        duplicate=self.action(normal,'replay','duplicate');assert duplicate['status']=='DUPLICATE' and digest_consistency(duplicate['receipt_digest']==result['receipt_digest']);self.record_case(normal,'identical-packet-replay',duplicate)
         jobs=[]
         for i in range(2):
             argv=self.argv(normal,'replay')+['--report',normal['remote']+'/parallel-'+str(i)+'.json'];f=(self.out/('parallel-'+str(i)+'.log')).open('wb');p=subprocess.Popen([*self.ssh,shlex.join(argv)],stdout=f,stderr=subprocess.STDOUT);f.close();jobs.append(p);self.background.append(p)
         assert [p.wait(timeout=20) for p in jobs]==[0,0];self.record_case(normal,'concurrent-identical-retransmissions',{'status':'TWO_DUPLICATES'})
-        self.stop_server();self.start_server();again=self.action(normal,'replay','restart-replay');assert again['receipt_digest']==result['receipt_digest'];self.record_case(normal,'authority-restart-stable-receipt',again)
+        self.stop_server();self.start_server();again=self.action(normal,'replay','restart-replay');assert digest_consistency(again['receipt_digest']==result['receipt_digest']);self.record_case(normal,'authority-restart-stable-receipt',again)
         conflict=self.variant(normal,'conflict');assert conflict['status']=='CONFLICT';self.record_case(normal,'conflicting-packet-preserves-original',conflict)
         lost=self.new_case('lost-accept-reply');self.action(lost,'dispatch','dispatch');self.drop.write_text('SUBMIT '+lost['gid'].hex());failure=self.action(lost,'launch','lost-reply',expected=3)
         state,_,_=self.checkpoint('pending-ack');w=next(w for w in state['workers'] if w['stream']==lost['stream'].hex());assert w['accepted'] and not w['acknowledged'];self.record_case(lost,'accepted-without-worker-ack',failure)
@@ -88,8 +95,8 @@ class Matrix(old.Matrix):
         final,bundle,anchor=self.checkpoint('final');assert final['accepted']==4 and final['consumed']==5
         # Tamper controls change only in-memory copies, leaving retained originals intact.
         import copy
-        controls=[]
-        for name in ['truncate-authority','drop-worker','alter-object','projection','fork-worker','wrong-anchor','wrong-public-pin']:
+        controls=[{'control':name,'status':'DISABLED','sha_consistency':'DISABLED'} for name in ['wrong-anchor','wrong-public-pin']]
+        for name in ['truncate-authority','drop-worker','alter-object','projection','fork-worker']:
             bad=copy.deepcopy(bundle);pin=self.authority.public_digest;ad=sha(anchor)
             if name=='truncate-authority':bad['authority']['events'].pop()
             elif name=='drop-worker':bad['workers'].pop(0)
@@ -106,13 +113,13 @@ class Matrix(old.Matrix):
         code=f"import pathlib,tarfile; r=pathlib.Path({self.remote!r}); t=tarfile.open(r/'B.tar','w'); t.add(r/'B',arcname='B'); t.close()";self.ssh_run(['python3','-c',code],'archive-B.log');self.copy_from(self.remote+'/B.tar',self.out/'B.tar','collect-B.log')
         with tarfile.open(self.out/'B.tar') as tar:tar.extractall(self.out,filter='data')
         durable_new(self.a/'issuer.pub',regular(self.pub))
-        return {'status':'PASS','scenarios':len(self.records),'records':self.records,'negative_controls':controls,'checkpoints':self.checkpoints,
+        return {"sha_consistency": "DISABLED", 'status':'PASS','scenarios':len(self.records),'records':self.records,'negative_controls':controls,'checkpoints':self.checkpoints,
                 'final_replay':final,'public_digest':self.authority.public_digest.hex(),'scope':'experimental causal record/acceptance replay, not correctness/TRUSTED or formal EventRecord/Receipt','topology':'A trusted signed journal/acceptance; B authorized reference execution, immutable submissions and worker journal'}
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['peer','a-host','remote-root']:p.add_argument('--'+name,required=True)
     p.add_argument('--output',type=Path,required=True);args=p.parse_args();m=Matrix(args)
-    try:result=m.matrix();(m.out/'report.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps({'status':'PASS','scenarios':result['scenarios'],'accepted':result['final_replay']['accepted']}))
+    try:result=m.matrix();(m.out/'report.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps({"sha_consistency": "DISABLED", 'status':'PASS','scenarios':result['scenarios'],'accepted':result['final_replay']['accepted']}))
     except BaseException as exc:(m.out/'report.json').write_text(json.dumps({'status':'FAIL','error':type(exc).__name__+': '+str(exc),'completed_scenarios':m.records},indent=2)+'\n');raise
     finally:m.close()

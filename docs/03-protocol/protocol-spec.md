@@ -1,5 +1,8 @@
 # ACLt Protocol 规范草案
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 规范状态：v0.5 G0 draft  
 > 文档状态：Living normative skeleton  
 > 最后更新：2026-08-21
@@ -55,7 +58,7 @@ ACLt Abstract Machine MUST 被建模为协议对象和状态转换的规范抽�
 - 创建时间/逻辑顺序及适用期限；
 - 状态转换所需的策略摘要。
 
-Logical Object MUST 通过显式引用进入 Task 输入。相同 digest 不得对应不同 canonical content；输出更新 MUST 创建新对象或新版本，不得依赖跨 Provider 原地共享写入。
+Logical Object 通过显式引用进入 Task 输入；实际内容和输出版本分别记录。摘要可继续生成，但摘要相等/不等及复算不参与本轮接受判定。输出更新按对象实现产生记录。
 
 字段名称、编码和必选性仍为 `OPEN/P0`，但不得依赖本地默认值解释实质语义。
 

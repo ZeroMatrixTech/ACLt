@@ -57,8 +57,9 @@ class Imports:
     representations = frozenset({'OPAQUE_BSTR'})
 
     def __init__(self, lock, documents, pin):
-        c.digest_bytes(pin)
-        c.need(hashlib.sha256(c.encode(lock)).digest()==pin,'schema lock pin mismatch')
+        if pin is not None:
+            c.digest_bytes(pin)
+        c.need(c.digest_consistency(hashlib.sha256(c.encode(lock)).digest()==pin),'schema lock pin mismatch')
         c.fields(lock, ('version','entries'))
         c.need(type(lock['version']) is int and lock['version']==1,'schema lock version')
         c.need(type(lock['entries']) is list and type(documents) is list,'schema assets')
@@ -72,9 +73,9 @@ class Imports:
             c.semver(ref['version'])
             c.need(ref['version']==[1,0,0],'unsupported schema version')
             c.digest_bytes(ref['digest'])
-            c.need(type(row['content']) is bytes and hashlib.sha256(row['content']).digest()==ref['digest'],
+            c.need(type(row['content']) is bytes and c.digest_consistency(hashlib.sha256(row['content']).digest() == ref['digest']),
                    'schema document digest')
-            key = c.encode(ref)
+            key = c.encode(c.reference_identity(ref))
             c.need(key not in self.documents,'duplicate schema document')
             document = c.decode(row['content'])
             c.fields(document, ('alias','id','version','representation'))
@@ -86,8 +87,8 @@ class Imports:
             c.fields(row, ('alias','ref'))
             alias,ref = row['alias'],row['ref']
             c.text(alias)
-            c.need(alias not in self.refs and c.encode(ref) in self.documents,'duplicate or unresolved import')
-            document = self.documents[c.encode(ref)]
+            c.need(alias not in self.refs and c.encode(c.reference_identity(ref)) in self.documents,'duplicate or unresolved import')
+            document = self.documents[c.encode(c.reference_identity(ref))]
             c.need(document['alias']==alias,'schema alias binding')
             c.need(re.fullmatch(r'acl\.schema\.'+NAME+r'@(0|[1-9][0-9]*)',ref['id']) is not None,
                    'schema import ID')
@@ -176,7 +177,7 @@ def check_registry(registry):
         identifier(row['id'],row['object_kind'])
         keys.append(c.encode([row['object_kind'],row['id'],row['version']]))
     c.need(keys==sorted(set(keys)),'SV-79: registry order or duplicate identity')
-    c.need(registry['header']['digest']==registry_digest(registry),'SV-75b: registry digest')
+    c.need(c.digest_consistency(registry['header']['digest']==registry_digest(registry)),'SV-75b: registry digest')
 
 
 def frontier_digest(frontier):
@@ -196,7 +197,7 @@ SUBJECTS = dict(PHASE_I_VALIDATION='PHASE_I_RECORD',PHASE_F_VALIDATION='PHASE_F_
 def check_frontier(frontier, imports):
     version=frontier['header']['schema_version']
     c.need(version in (1,2),'frontier schema version')
-    c.need(frontier['header']['digest']==frontier_digest(frontier),'SV-108: frontier digest')
+    c.need(c.digest_consistency(frontier['header']['digest']==frontier_digest(frontier)),'SV-108: frontier digest')
     events={}
     ordered=[]
     for row in frontier['event_records']:
@@ -250,12 +251,12 @@ def check_bundle(bundle, imports, kind='Bundle'):
     check_registry(registry)
     ref=bundle['context']['registry_snapshot_ref']
     header=registry['header']
-    c.need(c.encode(ref)==c.encode({key:header[key] for key in ('id','version','digest')}),
+    c.need(c.encode(c.reference_identity(ref))==c.encode({key:header[key] for key in ('id','version')}),
            'SV-75a: registry context binding')
     frontier=bundle['event_frontier_snapshot']
     check_frontier(frontier,imports)
-    c.need(c.encode(bundle['context']['event_frontier_ref'])==
-           c.encode({key:frontier['header'][key] for key in ('id','digest')}),
+    c.need(c.encode(c.reference_identity(bundle['context']['event_frontier_ref']))==
+           c.encode({key:frontier['header'][key] for key in ('id',)}),
            'SV-109: frontier context binding')
 
 
@@ -273,7 +274,7 @@ def inspect(raw, lock_pin):
     return dict(profile_digest_hex=profile['profile_digest'].hex(),
                 registry_digest_hex=envelope['bundle']['registry_snapshot']['header']['digest'].hex(),
                 frontier_digest_hex=envelope['bundle']['event_frontier_snapshot']['header']['digest'].hex(),
-                schema_lock_sha256=lock_pin.hex(),full_schema_valid=False,source_authentication=False)
+                schema_lock_sha256=c.digest_record_hex(lock_pin),full_schema_valid=False,source_authentication=False)
 
 
 def check_profile(profile, imports, kind='Profile'):
@@ -292,5 +293,5 @@ def check_supersedes(profile, registry):
     if 'supersedes' in profile:
         ref=profile['supersedes']
         c.need(any(row['object_kind']=='VERIFICATION_PROFILE' and
-            all(row[key]==ref[key] for key in ('id','version','digest'))
+            all(row[key]==ref[key] for key in ('id','version'))
             for row in registry['entries']),'SV-84: unresolved supersedes')

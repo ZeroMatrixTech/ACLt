@@ -44,6 +44,9 @@ def check_parameters(profile,imports):
     if method=='REEXEC_BOUNDED':
         ms=[row['m'] for row in params['mixture_weights']]
         c.need(ms==sorted(set(ms)),'mixture m order or duplicate')
+        g, q = profile['safety_parameters']['G'], profile['liveness_parameters']['Q']
+        c.need(all(q <= row['m'] <= g for row in params['mixture_weights'] if row['weight'][0] > 0),
+               'SV-11: supported m outside Q..G')
     return method
 
 
@@ -115,7 +118,7 @@ def inspect(raw,pin):
     imports=references.Imports(value['schema_lock'],value['schema_documents'],pin)
     result=common.check_rules(value['profile'],value['registry_snapshot'],imports)
     c.digest_bytes(value['assumption_set_digest'])
-    c.need(value['assumption_set_digest'].hex()==result['assumption_set_digest_hex'],'SV-73: assumption set digest')
+    c.need(c.digest_consistency(value['assumption_set_digest'].hex()==result['assumption_set_digest_hex']),'SV-73: assumption set digest')
     result.update(check_matrix(value['profile'],imports,value['reachable_terminals']))
     return result
 

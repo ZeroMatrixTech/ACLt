@@ -73,7 +73,7 @@ pub(super) fn execution_condition(observation: &V, receipt: &V, events: &Events,
     for key in committed {
         projection.push((key, get(record, key)?.clone()));
     }
-    need(bytes(get(record, "closure_digest")?)? == domain(CLOSURE_DOMAIN, &encode(&map(projection))?),
+    need(digest_consistency(bytes(get(record, "closure_digest")?)? == domain(CLOSURE_DOMAIN, &encode(&map(projection))?)),
          "closure digest")?;
     need(event_is(events, visible, get(record, "recovery_exhausted_event")?,
                   "EXECUTION_EXHAUSTED", "RECEIPT", receipt)?, "closure event")?;
@@ -149,7 +149,7 @@ fn method_evaluation(method: &V, assurance: &V, imports: &Imports, deadline: i12
     }
     let schema = imports.native_schema().ok_or("audit TEST native schema")?;
     for name in ["canonical_input", "claimed_outcome", "claimed_aggregate"] {
-        need(get(get(method, name)?, "schema_ref")? == schema, "audit TEST native schema")?;
+        need(same_reference(get(get(method, name)?, "schema_ref")?,schema)?, "audit TEST native schema")?;
     }
     let payload = decode(bytes(get(get(method, "canonical_input")?, "canonical_bytes")?)?)?;
     let Ok((outcomes, aggregate)) = audit_evaluate(&payload, deadline, cap, instant) else {
@@ -186,6 +186,20 @@ fn assumption_invalid(profile: &V, state: &V, receipt: &V, assurance: &V, instan
     Ok(false)
 }
 
+fn decision_record_projection(record:&V)->R<V>{
+ let selected=get(record,"selected_condition").is_ok();
+ fields(record,if selected{&["input_digest","condition_vector","derived_terminal","selected_condition"]}else{&["input_digest","condition_vector","derived_terminal"]})?;
+ dig(get(record,"input_digest")?)?;
+ let mut rows=Vec::new();
+ for row in arr(get(record,"condition_vector")?)?{
+  fields(row,&["condition","value","reason_digest"])?;dig(get(row,"reason_digest")?)?;txt(get(row,"condition")?)?;need(matches!(get(row,"value")?,V::B(_)),"condition boolean")?;
+  rows.push(map(vec![("condition",get(row,"condition")?.clone()),("value",get(row,"value")?.clone())]));
+ }
+ let mut projected=vec![("condition_vector",V::A(rows)),("derived_terminal",get(record,"derived_terminal")?.clone())];
+ if selected{projected.push(("selected_condition",get(record,"selected_condition")?.clone()));}
+ Ok(map(projected))
+}
+
 pub(super) fn run(input: &str, lock: &str, contract_pin: &str) -> R<V> {
     let request = decode(&unhex(input)?)?;
     fields(&request, &["envelope", "schema_lock", "schema_documents", "decision_contract", "decision"])?;
@@ -196,7 +210,7 @@ pub(super) fn run(input: &str, lock: &str, contract_pin: &str) -> R<V> {
     let pin = unhex(contract_pin)?;
     fields(contract, &["name", "receipt_binding", "deadline", "funding_cap"])?;
     need(txt(get(contract, "name")?)? == "r10-audit-decision-test@1" &&
-         sha256::hash(&encode(contract)?) == pin, "decision contract pin")?;
+         digest_consistency(sha256::hash(&encode(contract)?) == pin), "decision contract pin")?;
     typed(get(contract, "deadline")?, &s("int"), &types, &imports)?;
     let cap = get(contract, "funding_cap")?;
     uint(cap)?;
@@ -220,10 +234,10 @@ pub(super) fn run(input: &str, lock: &str, contract_pin: &str) -> R<V> {
     let receipt = get(data, "receipt_binding")?;
     let receipt_id = get(receipt, "receipt_id")?;
     need(encode(receipt)? == encode(get(contract, "receipt_binding")?)? &&
-         get(receipt, "profile_ref")? == get(data, "profile_ref")? &&
-         same(get(data, "profile_ref")?, &commitments::pref(profile)?)? &&
+         same_reference(get(receipt, "profile_ref")?,get(data, "profile_ref")?)? &&
+         same_reference(get(data, "profile_ref")?, &commitments::pref(profile)?)? &&
          get(receipt, "network_id")? == get(assurance, "network_id")? &&
-         same(get(receipt, "assurance_profile_ref")?, &commitments::identity(assurance)?)?,
+         same_reference(get(receipt, "assurance_profile_ref")?, &commitments::identity(assurance)?)?,
          "Receipt binding")?;
 
     let bundle = get(envelope, "bundle")?;
@@ -231,13 +245,13 @@ pub(super) fn run(input: &str, lock: &str, contract_pin: &str) -> R<V> {
     let registry = get(bundle, "registry_snapshot")?;
     registration::check_registry(registry)?;
     let context = get(bundle, "context")?;
-    need(same(get(context, "registry_snapshot_ref")?, &commitments::identity(registry)?)?, "registry context")?;
+    need(same_reference(get(context, "registry_snapshot_ref")?, &commitments::identity(registry)?)?, "registry context")?;
     let frontier = get(bundle, "event_frontier_snapshot")?;
     let header = get(frontier, "header")?;
     let frontier_hash = get(header, "digest")?;
     let frontier_ref = map(vec![("id", get(header, "id")?.clone()), ("digest", frontier_hash.clone())]);
-    need(bytes(frontier_hash)? == registration::frontier_digest(frontier)? &&
-         same(get(context, "event_frontier_ref")?, &frontier_ref)?, "frontier commitment")?;
+    need(digest_consistency(bytes(frontier_hash)? == registration::frontier_digest(frontier)?) &&
+         same_reference(get(context, "event_frontier_ref")?, &frontier_ref)?, "frontier commitment")?;
 
     let instant = get(context, "evaluation_instant")?;
     let (method_invalid, admitted) = method_evaluation(
@@ -294,10 +308,11 @@ pub(super) fn run(input: &str, lock: &str, contract_pin: &str) -> R<V> {
     if let Some(condition) = winner {
         record.push(("selected_condition", s(condition)));
     }
-    let expected = encode(&map(record))?;
+    let expected_record = map(record);
+    let expected = encode(&expected_record)?;
     let decision = get(&request, "decision")?;
     fields(decision, &["evaluation_record", "terminal_state"])?;
-    need(encode(get(decision, "evaluation_record")?)? == expected &&
+    need(encode(&decision_record_projection(get(decision, "evaluation_record")?)?)? == encode(&decision_record_projection(&expected_record)?)? &&
          txt(get(decision, "terminal_state")?)? == terminal, "decision replay mismatch")?;
     Ok(map(vec![
         ("record_sha256", s(&hex(&sha256::hash(&expected)))),

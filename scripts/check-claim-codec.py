@@ -23,6 +23,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.verification_profile import codec as c
 
+DISABLED_SHA_CASES = frozenset({'template-wrong-digest', 'chain-claim-digest',
+                                'chain-import-digest', 'chain-payload', 'chain-object-digest', 'chain-ref-digest'})
+
 def run():
     """Compare independent Rust results with fixed vectors and Python outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -49,8 +52,12 @@ def run():
     for v in vectors:
         raw = bytes.fromhex(v['cbor_hex'])
         want = None
-        if v['valid']:
+        if v['id'] in DISABLED_SHA_CASES:
+            want = c.inspect(v['kind'], raw)
+            assert want['sha_consistency_policy'] == 'DISABLED'
+        elif v['valid']:
             want = {k: v[k] for k in ('cbor_hex', 'schema_view', 'digest_hex') if k in v}
+            want['sha_consistency_policy'] = c.SHA_CONSISTENCY_STATUS
             assert c.inspect(v['kind'], raw) == want, v['id']
             assert c.from_view_json(v['kind'], json.dumps(v['schema_view'])) == raw, v['id']
             add('golden_views', v['id'], 'view-' + v['kind'], json.dumps(v['schema_view'], ensure_ascii=True), want)
@@ -144,7 +151,7 @@ def run():
                 assert isinstance(actual, dict) and 'error' in actual, (label, actual)
             else:
                 assert actual == want, (label, actual, want)
-    report = {'status': 'PASS', 'slice': 'claim-codec-candidate-1', 'seed': 20261023, 'unicode_version': unicodedata.unidata_version, 'cross_language_cases': len(requests), 'groups': counts, 'openssl_digest_checks': openssl_checks, 'production_admission': False, 'rust_version': subprocess.check_output(['rustc', '--version'], text=True).strip(), 'python_version': sys.version.split()[0]}
+    report = {'status': 'PASS', 'slice': 'claim-codec-candidate-1', 'seed': 20261023, 'unicode_version': unicodedata.unidata_version, 'cross_language_cases': len(requests), 'groups': counts, 'openssl_digest_generation_cases': openssl_checks, 'sha_consistency_policy': c.SHA_CONSISTENCY_STATUS, 'disabled_sha_cases': sorted(DISABLED_SHA_CASES), 'production_admission': False, 'rust_version': subprocess.check_output(['rustc', '--version'], text=True).strip(), 'python_version': sys.version.split()[0]}
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(report, indent=2) + '\n')

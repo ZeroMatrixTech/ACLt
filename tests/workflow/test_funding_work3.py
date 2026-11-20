@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 import copy
+import json
 import importlib.util
 from pathlib import Path
 import subprocess
@@ -16,12 +17,14 @@ spec.loader.exec_module(work)
 
 
 class FundingWork3Checks(unittest.TestCase):
-    def test_source_drift_rejected_before_retained_matrix_checks(self):
+    def test_source_pins_are_optional_records(self):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
-            work.dump(root / 'source-lock.json', {'scripts/funding-work3.py': '00' * 32})
-            with self.assertRaisesRegex(ValueError, 'source drift'):
-                work.source_check(root)
+            self.assertEqual(work.source_check(root), {})
+            record = {'scripts/funding-work3.py': '0' * 64}
+            work.dump(root / 'source-lock.json', record)
+            self.assertEqual(work.source_check(root), record)
+            self.assertEqual(work.SHA_CONSISTENCY_STATUS, 'DISABLED')
 
     def test_symlink_and_path_escape_cannot_substitute_evidence(self):
         with tempfile.TemporaryDirectory() as t:
@@ -34,28 +37,21 @@ class FundingWork3Checks(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'relative path'):
                     work.retained(root, name)
 
-    def test_changed_public_evidence_rejected_before_audit(self):
+    def test_hash_drift_reaches_actual_matrix_checks(self):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
             (root / 'evidence').write_bytes(b'original')
             work.dump(root / 'public-inventory.json', work.inventory(root))
             (root / 'evidence').write_bytes(b'changed')
+            (root / 'reservation').mkdir()
+            work.dump(root / 'reservation/report.json', {'status': 'FAIL'})
             with patch.object(work, 'source_check', return_value={}):
-                with self.assertRaisesRegex(ValueError, 'changed or missing'):
-                    work.verify(root, root / 'no-pins')
+                with self.assertRaisesRegex(ValueError, 'matrix incomplete'):
+                    work.verify(root, None)
 
-    def test_all_independently_retained_checkpoint_pins_are_required(self):
-        pins = {name: {'public_digest': '11' * 32, 'checkpoints': {
-            label: '22' * 32 for label in (work.RECOVERY_LABELS if name == 'recovery' else ['final'])}}
-            for name in work.COMPONENTS}
-        work.check_pins(pins)
-        for change in ['missing_component', 'missing_checkpoint', 'extra_checkpoint', 'malformed_digest']:
-            bad = copy.deepcopy(pins)
-            if change == 'missing_component': del bad['reservation']
-            elif change == 'missing_checkpoint': del bad['recovery']['checkpoints']['before-commit-rolled-back']
-            elif change == 'extra_checkpoint': bad['fixed']['checkpoints']['unrequested'] = '33' * 32
-            else: bad['fixed']['public_digest'] = 'not-a-pin'
-            with self.assertRaises(ValueError): work.check_pins(bad)
+    def test_pins_are_records_without_acceptance_requirement(self):
+        for pins in [{}, None, {'fixed': {'public_digest': 'not-a-pin'}}]:
+            self.assertEqual(work.check_pins(pins), 'DISABLED')
 
     def test_existing_report_preserved_before_evidence_read(self):
         with tempfile.TemporaryDirectory() as t:

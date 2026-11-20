@@ -110,6 +110,6 @@ make check-bq-boundaries
 make test-bq-boundaries BQ_REPORT=/existing-parent/new-report.json
 ```
 
-报告新建，已存在时拒绝覆盖；包含算法 ID、参数、八个见证、对照与六个源码 pin。默认 make check 纳入 11 项反例/对照回归，不联网。局部数学模型无需伪装双机运行；实际 B/Q 来源/网络/故障验证仍按 DUALHOST-SSH-1。
+报告新建，已存在时拒绝覆盖；包含算法ID、参数、八个见证、对照与源码记录；pin字段仅记录，SHA一致性判定停用。默认 make check 纳入 11 项反例/对照回归，不联网。局部数学模型无需伪装双机运行；实际 B/Q 来源/网络/故障验证仍按 DUALHOST-SSH-1。
 
 第一片交付的是问题边界，不是 B/Q 校准。第二片应冻结任务族/Profile/资源/期限、独立真值和 task-level calibration 单位，研究漏簇、共同尾部和域漂移对覆盖率/预算的敏感性；把可估参数、接受假设与不可识别部分分开，不从本片 toy 数值选生产参数。G1/G2、OQ-06/07/08/09/11 与 bounded 准入状态保持原状，不阻塞不依赖 B/Q 的 RIR/运行时工作。

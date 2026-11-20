@@ -103,7 +103,7 @@ impl Imports {
     }
 
     fn new_inner(lock: &V, documents: &V, pin: &[u8], references: bool, native: bool) -> R<Self> {
-        need(pin.len() == 32 && sha256::hash(&encode(lock)?) == pin, "schema lock pin")?;
+        need(pin.len() == 32 && digest_consistency(sha256::hash(&encode(lock)?) == pin), "schema lock pin")?;
         fields(lock, &["version", "entries"])?;
         need(integer(get(lock, "version")?)? == 1, "schema lock version")?;
         let mut docs = BTreeMap::new();
@@ -115,7 +115,7 @@ impl Imports {
             need(same(get(reference, "version")?, &V::A(vec![V::N(1), V::N(0), V::N(0)]))?, "unsupported schema version")?;
             dig(get(reference, "digest")?)?;
             let raw = bytes(get(row, "content")?)?;
-            need(bytes(get(reference, "digest")?)? == sha256::hash(raw), "schema content digest")?;
+            need(digest_consistency(bytes(get(reference, "digest")?)? == sha256::hash(raw)), "schema content digest")?;
             let document = decode(raw)?;
             fields(&document, &["alias", "id", "version", "representation"])?;
             need(get(&document, "id")? == get(reference, "id")?
@@ -123,7 +123,7 @@ impl Imports {
                 && (txt(get(&document, "representation")?)? == "OPAQUE_BSTR"
                     || (references && txt(get(&document, "representation")?)? == "VERSIONED_REF")
                     || (native && txt(get(&document, "representation")?)? == "NATIVE_CBOR")), "schema document contract")?;
-            need(docs.insert(encode(reference)?, document).is_none(), "duplicate schema document")?;
+            need(docs.insert(encode(&reference_identity(reference)?)?, document).is_none(), "duplicate schema document")?;
         }
         let mut aliases = BTreeMap::new();
         let mut previous: Option<Vec<u8>> = None;
@@ -131,7 +131,7 @@ impl Imports {
             fields(row, &["alias", "ref"])?;
             let alias = txt(get(row, "alias")?)?;
             let reference = get(row, "ref")?;
-            let doc = docs.get(&encode(reference)?).ok_or("unresolved schema document")?;
+            let doc = docs.get(&encode(&reference_identity(reference)?)?).ok_or("unresolved schema document")?;
             need(txt(get(doc, "alias")?)? == alias, "schema alias binding")?;
             let id = txt(get(reference, "id")?)?;
             let tail = id.strip_prefix("acl.schema.").ok_or("schema ID")?;
@@ -174,7 +174,7 @@ impl Imports {
         need(aliases.len() == docs.len(), "unused schema document")?;
         if references {
             let reference = aliases.get("ExternalVersionedObjectRef").ok_or("external reference schema required")?;
-            let document = docs.get(&encode(reference)?).ok_or("external reference schema required")?;
+            let document = docs.get(&encode(&reference_identity(reference)?)?).ok_or("external reference schema required")?;
             need(txt(get(document, "representation")?)? == "VERSIONED_REF", "structured reference schema required")?;
         }
         Ok(Self { aliases, documents: docs, references })
@@ -184,7 +184,7 @@ impl Imports {
         need(self.aliases.contains_key(alias), "unresolved import")?;
         if self.references {
             let reference = self.aliases.get(alias).ok_or("unresolved import")?;
-            let document = self.documents.get(&encode(reference)?).ok_or("unresolved schema document")?;
+            let document = self.documents.get(&encode(&reference_identity(reference)?)?).ok_or("unresolved schema document")?;
             Self::payload(value, txt(get(document, "representation")?)?)
         } else {
             bytes(value)?;
@@ -210,12 +210,12 @@ impl Imports {
         fields(value, &["schema_ref", "canonical_bytes", "object_digest"])?;
         let reference = get(value, "schema_ref")?;
         self.check("ExternalVersionedObjectRef", reference)?;
-        let document = self.documents.get(&encode(reference)?).ok_or("external payload schema not in lock")?;
+        let document = self.documents.get(&encode(&reference_identity(reference)?)?).ok_or("external payload schema not in lock")?;
         let raw = bytes(get(value, "canonical_bytes")?)?;
         let payload = decode(raw)?;
         Self::payload(&payload, txt(get(document, "representation")?)?)?;
         dig(get(value, "object_digest")?)?;
-        need(bytes(get(value, "object_digest")?)? == sha256::hash(raw), "external payload digest mismatch")
+        need(digest_consistency(bytes(get(value, "object_digest")?)? == sha256::hash(raw)), "external payload digest mismatch")
     }
 }
 
@@ -323,7 +323,7 @@ pub(super) fn check_registry(registry: &V) -> R<()> {
         }
         previous = Some(key);
     }
-    need(bytes(get(get(registry, "header")?, "digest")?)? == registry_digest(registry)?, "registry digest")
+    need(digest_consistency(bytes(get(get(registry, "header")?, "digest")?)? == registry_digest(registry)?), "registry digest")
 }
 
 pub(super) fn frontier_digest(frontier: &V) -> R<Vec<u8>> {
@@ -343,7 +343,7 @@ pub(super) fn check_frontier(frontier: &V, imports: &Imports) -> R<()> {
     let header = get(frontier, "header")?;
     let version = integer(get(header, "schema_version")?)?;
     need([1, 2].contains(&version), "frontier version")?;
-    need(bytes(get(header, "digest")?)? == frontier_digest(frontier)?, "frontier digest")?;
+    need(digest_consistency(bytes(get(header, "digest")?)? == frontier_digest(frontier)?), "frontier digest")?;
     let mut parents = BTreeMap::new();
     let mut previous: Option<Vec<u8>> = None;
     for row in arr(get(frontier, "event_records")?)? {
@@ -421,17 +421,17 @@ pub(super) fn run(input: &str, pin: &str) -> R<V> {
     let context = get(bundle, "context")?;
     let rh = get(registry, "header")?;
     let registry_ref = map(["id", "version", "digest"].iter().map(|key| Ok((*key, get(rh, key)?.clone()))).collect::<R<_>>()?);
-    need(same(get(context, "registry_snapshot_ref")?, &registry_ref)?, "registry context binding")?;
+    need(same_reference(get(context, "registry_snapshot_ref")?, &registry_ref)?, "registry context binding")?;
     let frontier = get(bundle, "event_frontier_snapshot")?;
     check_frontier(frontier, &imports)?;
     let fh = get(frontier, "header")?;
     let frontier_ref = map(vec![("id", get(fh, "id")?.clone()), ("digest", get(fh, "digest")?.clone())]);
-    need(same(get(context, "event_frontier_ref")?, &frontier_ref)?, "frontier context binding")?;
+    need(same_reference(get(context, "event_frontier_ref")?, &frontier_ref)?, "frontier context binding")?;
     if let Ok(reference) = get(profile, "supersedes") {
         let mut found = false;
         for row in arr(get(registry, "entries")?)? {
             if txt(get(row, "object_kind")?)? == "VERIFICATION_PROFILE"
-                && ["id", "version", "digest"].iter().all(|key| get(row, key).ok() == get(reference, key).ok()) {
+                && ["id", "version"].iter().all(|key| get(row, key).ok() == get(reference, key).ok()) {
                 found = true;
             }
         }
@@ -494,14 +494,14 @@ fn check_excluded(selection: &V, registry: &V, snapshot: &V, types: &V, imports:
     check_registry(snapshot)?;
     let header = get(registry, "header")?;
     need(integer(get(header, "schema_version")?)? == 1, "exclusion registry schema version")?;
-    need(bytes(get(header, "digest")?)? == exclusion_registry_digest(registry)?, "SV-89: exclusion registry digest")?;
+    need(digest_consistency(bytes(get(header, "digest")?)? == exclusion_registry_digest(registry)?), "SV-89: exclusion registry digest")?;
     let reference = map(["id", "version", "digest"].iter()
         .map(|key| Ok((*key, get(header, key)?.clone()))).collect::<R<_>>()?);
     need(same(get(selection, "registry_ref")?, &reference)?, "SV-08: exclusion registry identity mismatch")?;
     let mut found = false;
     for row in arr(get(snapshot, "entries")?)? {
         if txt(get(row, "object_kind")?)? == "EXCLUDED_CLAIMS_REGISTRY"
-            && ["id", "version", "digest"].iter().all(|key| get(row, key).ok() == get(header, key).ok()) {
+            && ["id", "version"].iter().all(|key| get(row, key).ok() == get(header, key).ok()) {
             found = true;
         }
     }
@@ -511,7 +511,7 @@ fn check_excluded(selection: &V, registry: &V, snapshot: &V, types: &V, imports:
     let available = arr(get(registry, "entries")?)?.iter()
         .map(|row| txt(get(row, "exclusion_id")?)).collect::<R<BTreeSet<_>>>()?;
     need(selected.is_subset(&available), "SV-08: exclusion ID missing from registry")?;
-    need(bytes(get(selection, "digest")?)? == excluded_digest(selection)?, "SV-72: excluded selection digest")?;
+    need(digest_consistency(bytes(get(selection, "digest")?)? == excluded_digest(selection)?), "SV-72: excluded selection digest")?;
     Ok(map(vec![
         ("excluded_digest_hex", s(&hex(bytes(get(selection, "digest")?)?))),
         ("exclusion_registry_digest_hex", s(&hex(bytes(get(header, "digest")?)?))),
@@ -545,17 +545,17 @@ pub(super) fn run_references(input: &str, pin: &str) -> R<V> {
     let context = get(bundle, "context")?;
     let rh = get(registry, "header")?;
     let registry_ref = map(["id", "version", "digest"].iter().map(|key| Ok((*key, get(rh, key)?.clone()))).collect::<R<_>>()?);
-    need(same(get(context, "registry_snapshot_ref")?, &registry_ref)?, "registry context binding")?;
+    need(same_reference(get(context, "registry_snapshot_ref")?, &registry_ref)?, "registry context binding")?;
     let frontier = get(bundle, "event_frontier_snapshot")?;
     check_frontier(frontier, &imports)?;
     let fh = get(frontier, "header")?;
     let frontier_ref = map(vec![("id", get(fh, "id")?.clone()), ("digest", get(fh, "digest")?.clone())]);
-    need(same(get(context, "event_frontier_ref")?, &frontier_ref)?, "frontier context binding")?;
+    need(same_reference(get(context, "event_frontier_ref")?, &frontier_ref)?, "frontier context binding")?;
     if let Ok(reference) = get(profile, "supersedes") {
         let mut found = false;
         for row in arr(get(registry, "entries")?)? {
             if txt(get(row, "object_kind")?)? == "VERIFICATION_PROFILE"
-                && ["id", "version", "digest"].iter().all(|key| get(row, key).ok() == get(reference, key).ok()) {
+                && ["id", "version"].iter().all(|key| get(row, key).ok() == get(reference, key).ok()) {
                 found = true;
             }
         }
@@ -661,7 +661,7 @@ pub(super) fn common_rules(profile: &V, registry: &V, types: &V, imports: &Impor
         let mut found = false;
         for row in arr(get(registry, "entries")?)? {
             if txt(get(row, "object_kind")?)? == "VERIFICATION_PROFILE"
-                && ["id", "version", "digest"].iter().all(|key| get(row, key).ok() == get(reference, key).ok()) { found = true; }
+                && ["id", "version"].iter().all(|key| get(row, key).ok() == get(reference, key).ok()) { found = true; }
         }
         need(found, "SV-84: unresolved supersedes")?;
     }
@@ -698,7 +698,7 @@ pub(super) fn run_rules(input: &str, pin: &str, audit: bool) -> R<V> {
     } else {
         let output = common_rules(get(&value, "profile")?, get(&value, "registry_snapshot")?, &types, &imports)?;
         dig(get(&value, "assumption_set_digest")?)?;
-        need(hex(bytes(get(&value, "assumption_set_digest")?)?) == txt(get(&output, "assumption_set_digest_hex")?)?,
+        need(digest_consistency(hex(bytes(get(&value, "assumption_set_digest")?)?) == txt(get(&output, "assumption_set_digest_hex")?)?),
              "SV-73: assumption set digest mismatch")?;
         Ok(output)
     }

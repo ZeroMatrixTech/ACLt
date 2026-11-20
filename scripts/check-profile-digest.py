@@ -18,6 +18,8 @@ sys.path.insert(0, str(ROOT))
 from tools.verification_profile import codec as c, profile as p
 
 VECTOR = ROOT/'tests/verification_profile/codec/profile-digest-vectors.json'
+# Explicit historical SHA-only rejection cases; frozen vector bytes stay unchanged.
+DISABLED_SHA_CASES = frozenset(['stale-schema_version', 'stale-supersedes', 'stale-task_type', 'stale-contract_tuple_constraints', 'stale-admission_predicate', 'stale-verified_claim_spec', 'stale-excluded_claims', 'stale-verification_method', 'stale-method_parameters', 'stale-result_equivalence', 'stale-safety_parameters', 'stale-liveness_parameters', 'stale-assumption_references', 'stale-failure_mapping', 'stale-decision_mapping', 'stale-degradation', 'profile-digest-wrong-digest', 'profile-decision-wrong-digest', 'audit-profile-wrong-digest'])
 
 
 def fixture():
@@ -172,7 +174,11 @@ def main():
             if row['valid'] or 'error' not in rust:
                 raise ValueError('negative disagreement: '+row['id'])
         else:
-            if not row['valid'] or python != rust or python != row['expected']:
+            if row['id'] in DISABLED_SHA_CASES:
+                if python != rust or python['sha_consistency_policy'] != 'DISABLED':
+                    raise ValueError('DISABLED policy disagreement: '+row['id'])
+                continue
+            if not row['valid'] or python != rust or python != dict(row['expected'], sha_consistency_policy='DISABLED'):
                 raise ValueError('positive disagreement: '+row['id'])
     source_names = ['tools/verification_profile/profile.py','tools/verification_profile/codec.py',
                     'tools/verification_profile/validator.py','tools/verification_profile/rust/audit_types.json','tools/verification_profile/rust/method_types.json','tools/verification_profile/rust/creation_types.json','tools/verification_profile/rust/selection_types.json','tools/verification_profile/rust/binding_types.json','tools/verification_profile/rust/runtime_types.json','scripts/check-profile-digest.py',
@@ -181,7 +187,9 @@ def main():
                     'schemas/verification-profile/coverage.json','schemas/verification-profile/inventory.json',
                     'docs/03-protocol/verification-profile-schema.md']
     source_names += [p.relative_to(ROOT).as_posix() for p in (ROOT/'tools/verification_profile/rust').glob('*.rs')]
-    report = dict(status='PASS',cases=len(rows),positive=sum(row['valid'] for row in rows),
+    report = dict(status='PASS', sha_consistency_policy=c.SHA_CONSISTENCY_STATUS,
+                  disabled_sha_cases=sorted(DISABLED_SHA_CASES),
+                  cases=len(rows),positive=sum(row['valid'] for row in rows),
                   hostname=socket.gethostname(),kernel=platform.release(),python=sys.version.split()[0],
                   rustc=subprocess.check_output([os.environ.get('RUSTC','rustc'),'--version'],text=True).strip(),
                   results_sha256=hashlib.sha256(c.encode(outputs)).hexdigest(),

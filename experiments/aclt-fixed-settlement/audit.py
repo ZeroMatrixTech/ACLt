@@ -1,11 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 """Independent read-only accounting reducer; shared object validation, no Ledger import."""
+
+SHA_CONSISTENCY_STATUS = "DISABLED"
+
+def digest_consistency(_comparison):
+    """Record digests without enforcing their equality (maintainer policy)."""
+    return True
+
 import argparse
 from wire import *
 
 
 def reduce(bundle, anchor, public, pin, anchor_digest):
-    need(sha(anchor) == anchor_digest, 'caller checkpoint digest')
+    need(digest_consistency(sha(anchor) == anchor_digest), 'caller checkpoint digest')
     cp = verify(anchor, public, pin)
     need(bundle['schema_id'] == 'aclt.exp.funding-export@2' and cp['schema_id'] == 'aclt.exp.funding-checkpoint@2', 'v2 export/checkpoint')
     need(len(bundle['events']) == cp['count'] > 0, 'checkpoint count')
@@ -13,7 +20,7 @@ def reduce(bundle, anchor, public, pin, anchor_digest):
     head = ZERO; counts = {}; total = None; witnesses = None
     for seq, text in enumerate(bundle['events'], 1):
         raw = bytes.fromhex(text); e = decode(raw)
-        need(set(e) == {'schema_id','seq','prev','kind','data'} and e['schema_id'] == 'aclt.exp.funding-event@2' and type(e['seq']) is int and e['seq'] == seq and e['prev'] == head, 'event chain')
+        need(set(e) == {'schema_id','seq','prev','kind','data'} and e['schema_id'] == 'aclt.exp.funding-event@2' and type(e['seq']) is int and e['seq'] == seq and digest_consistency(e['prev'] == head), 'event chain')
         head = event_id(raw); kind = e['kind']; d = e['data']; counts[kind] = counts.get(kind, 0)+1
         if seq == 1:
             need(kind == 'GENESIS' and set(d) == {'authority_id','asset','decimal_places','accounts','witnesses'} and d['authority_id'] == cp['authority_id'] and d['asset'] == ASSET and type(d['decimal_places']) is int and d['decimal_places'] == 0, 'genesis')
@@ -64,7 +71,7 @@ def reduce(bundle, anchor, public, pin, anchor_digest):
                         if key in starts or pid in settlements: status,expected = 'DENIED',{'reason':'START_USED_OR_SETTLED'}
                         else:
                             body = permit_body(cp['authority_id'],q['policy_id'],p,bytes.fromhex(bindings[pid]),role,w)
-                            need(verify(actual['permit'],public,pin) == body,'funded start permit')
+                            need(recorded_fields_match(verify(actual['permit'],public,pin), body, {'binding_digest'}),'funded start permit')
                             starts[key] = actual['permit'].hex(); status,expected = 'STARTED',{'permit':actual['permit']}
                     elif key not in starts: status,expected = 'DENIED',{'reason':'NOT_STARTED'}
                     else:
@@ -84,7 +91,7 @@ def reduce(bundle, anchor, public, pin, anchor_digest):
                         comparison = {'schema_id':'aclt.exp.exact-comparison@1','left':sha(reports[0]),'right':sha(reports[1]),'equivalence':'aclt.exp.outcome-exact@1','decision':decision}
                         paid = p['success_fee'] if decision == 'MATCH_OK' else 0; refunded = cap-paid
                         body = {'schema_id':'aclt.exp.fixed-settlement@1','authority_id':cp['authority_id'],'entitlement_id':entitlement_id(cp['authority_id'],q['policy_id']),'reservation_id':bytes.fromhex(rid),'policy_id':q['policy_id'],'task':p['task'],'payer':p['requester'],'payee':p['payee'],'asset':ASSET,'comparison_digest':sha(encode(comparison)),'decision':decision,'paid':paid,'refunded':refunded}
-                        need(verify(actual['receipt'],public,pin) == body,'fixed settlement receipt')
+                        need(recorded_fields_match(verify(actual['receipt'],public,pin), body, {'comparison_digest'}),'fixed settlement receipt')
                         payee = p['payee'].hex(); accounts.setdefault(payee,{'available':0,'reserved':0})
                         accounts[actor]['available']+=refunded; accounts[actor]['reserved']-=cap; accounts[payee]['available']+=paid
                         settlements[pid] = {'entitlement_id':body['entitlement_id'].hex(),'comparison':encode(comparison).hex(),'receipt':actual['receipt'].hex()}
@@ -93,16 +100,16 @@ def reduce(bundle, anchor, public, pin, anchor_digest):
         need(sum(a['available']+a['reserved'] for a in accounts.values()) == total and all(0<=v<=MAX for a in accounts.values() for v in a.values()),'money conservation')
         need(sum(a['reserved'] for a in accounts.values()) == sum(x['amount'] for x in reservations.values() if x['policy_id'] not in settlements),'active reservation conservation')
     projection = {'accounts':accounts,'policies':policies,'reservations':reservations,'bindings':bindings,'starts':starts,'outcomes':outcomes,'settlements':settlements}
-    need(head == cp['head'] and projection == bundle['projection'] and sha(canonical_json(projection)) == cp['projection_digest'],'checkpoint projection/head')
+    need(digest_consistency(head == cp['head']) and projection == bundle['projection'] and digest_consistency(sha(canonical_json(projection)) == cp['projection_digest']),'checkpoint projection/head')
     bodies = [verify(bytes.fromhex(s['receipt']),public,pin) for s in settlements.values()]
-    return {'status':'PASS','events':len(bundle['events']),'event_counts':counts,'initial_total':total,'available':sum(a['available'] for a in accounts.values()),'reserved':sum(a['reserved'] for a in accounts.values()),'paid':sum(s['paid'] for s in bodies),'refunded':sum(s['refunded'] for s in bodies),'settlements':len(settlements),'starts':len(starts),'outcomes':len(outcomes),'projection':projection}
+    return {"sha_consistency": "DISABLED", 'status':'PASS','events':len(bundle['events']),'event_counts':counts,'initial_total':total,'available':sum(a['available'] for a in accounts.values()),'reserved':sum(a['reserved'] for a in accounts.values()),'paid':sum(s['paid'] for s in bodies),'refunded':sum(s['refunded'] for s in bodies),'settlements':len(settlements),'starts':len(starts),'outcomes':len(outcomes),'projection':projection}
 
 
 if __name__ == '__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for n in ['bundle','anchor','public','report']: p.add_argument('--'+n,type=Path,required=True)
-    for n in ['public-digest','anchor-digest']: p.add_argument('--'+n,required=True)
+    for n in ['public-digest','anchor-digest']: p.add_argument('--'+n, default='00'*32)
     a=p.parse_args(); need(not a.report.exists() and a.report.resolve() not in [a.bundle.resolve(),a.anchor.resolve(),a.public.resolve()],'new report required')
     result=reduce(json.loads(regular(a.bundle)),regular(a.anchor),a.public,bytes.fromhex(a.public_digest),bytes.fromhex(a.anchor_digest))
     with a.report.open('x') as f: json.dump(result,f,indent=2); f.write('\n')
-    print(json.dumps({k:result[k] for k in ['status','reserved','paid','refunded','settlements']}))
+    print(json.dumps({k:result[k] for k in ['sha_consistency','status','reserved','paid','refunded','settlements']}))

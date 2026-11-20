@@ -737,8 +737,8 @@ class DcoWorkflowTrustTests(unittest.TestCase):
         self.assertNotIn("path: trusted", step)
 
         commands = self.run_blocks()
-        self.assertEqual(len(commands), 2)
-        for command in commands:
+        self.assertEqual(len(commands), 3)
+        for command in commands[1:]:
             self.assertRegex(command, r"^python3 -B trusted/scripts/check-dco\.py(?:\s|$)")
         self.assertNotIn("pr/", "\n".join(commands))
         self.assertNotIn("working-directory: pr", self.workflow)
@@ -761,12 +761,32 @@ class DcoWorkflowTrustTests(unittest.TestCase):
                       self.workflow)
         self.assertIn("cancel-in-progress: true", self.workflow)
 
-    def test_header_explains_the_trust_boundary(self):
-        header = self.workflow.split("on:", 1)[0]
-        self.assertIn("github.sha", header)
-        self.assertIn("not use github.event.pull_request.base.sha", header)
-        self.assertIn("dco-maintainers.txt", header)
-        self.assertIn("GITHUB_ENV", header)
+    def test_organization_policy_precedes_checkout(self):
+        policy = self.step('Apply organization contribution policy')
+        self.assertLess(self.workflow.index('Apply organization contribution policy'),
+                        self.workflow.index('Checkout the trusted checker'))
+        self.assertIn("if: github.event_name == 'pull_request_target'", policy)
+        self.assertIn("('OWNER', 'MEMBER')", policy)
+        self.assertIn("HEAD_OWNER", policy)
+        self.assertIn("BASE_OWNER", policy)
+        self.assertNotIn('${{', self.run_blocks()[0])
+
+
+    def test_organization_policy_accepts_members_and_rejects_external_sources(self):
+        step = self.step('Apply organization contribution policy')
+        body = step.split("run: |", 1)[1].splitlines()
+        script = "\n".join(line[10:] for line in body if line.strip())
+        for association, head_owner, expected in [
+            ('MEMBER', 'zeromatrixtech', 0), ('OWNER', 'ZeroMatrixTech', 0),
+            ('COLLABORATOR', 'ZeroMatrixTech', 1), ('MEMBER', 'external', 1),
+            ('FIRST_TIMER', 'ZeroMatrixTech', 1),
+        ]:
+            with self.subTest(association=association, head_owner=head_owner):
+                env = dict(os.environ, AUTHOR_ASSOCIATION=association,
+                           HEAD_OWNER=head_owner, BASE_OWNER='ZeroMatrixTech')
+                result = subprocess.run(['bash', '-c', script], env=env,
+                                        capture_output=True, text=True)
+                self.assertEqual(result.returncode, expected, result.stderr)
 
 
 class DocumentationConsistencyTests(unittest.TestCase):

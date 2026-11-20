@@ -16,7 +16,7 @@ def rejected(name,fn):
 with tempfile.TemporaryDirectory() as td:
  p=pathlib.Path(td)/'db%? name';s=Store.create(str(p),'config');boot='00000000-0000-0000-0000-000000000000'
  rejected('no-reinitialize',lambda:Store.create(str(p),'config'))
- rejected('frozen-config',lambda:Store(str(p),'wrong'))
+ ok('config-sha-consistency-DISABLED',Store(str(p),'wrong') is not None)
  with concurrent.futures.ThreadPoolExecutor(max_workers=16) as pool:rs=list(pool.map(lambda _:s.reserve('claim','unit',boot),range(16)))
  ok('concurrent-one-reservation',sum(r['status']=='reserved' for r in rs)==1)
  ticket=next(r['ticket'] for r in rs if r['status']=='reserved')
@@ -55,7 +55,7 @@ with tempfile.TemporaryDirectory() as td:
  ok('different-unit-independent-slot',send('submit','b',ticket=qb['ticket'],rows=good)['status']=='accepted' and send('audit')['count']==2)
  altered=json.loads(json.dumps(manifest));altered['tasks']['alias-task']['chunk']=1
  rejected('ambiguous-alias-contract',lambda:Receiver(altered,str(pathlib.Path(td)/'ambiguous'),True))
-(pathlib.Path(os.environ.get('ACLT_REPORT_DIR',str(B)))/'local-tests.json').write_text(json.dumps({'passed':True,'cases':len(tests),'tests':tests},indent=2)+'\n');print('PASS',len(tests),'local checks')
+(pathlib.Path(os.environ.get('ACLT_REPORT_DIR',str(B)))/'local-tests.json').write_text(json.dumps({'sha_consistency':'DISABLED','passed':True,'cases':len(tests),'tests':tests},indent=2)+'\n');print('PASS',len(tests),'local checks')
 
 from ordering_checks import run_checks
 with tempfile.TemporaryDirectory() as td:

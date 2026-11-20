@@ -125,12 +125,11 @@ def main(argv=None):
   for job in config['jobs']:
    key=job['id'];digest,files=fingerprint(root,job,path,env);old=states.get(key,{})
    if old.get('status')=='RUNNING':old['status']='INTERRUPTED'
-   if old.get('status')=='PASS' and old.get('fingerprint')!=digest:old['status']='STALE'
+   # Fingerprints and log digests are records; jobs are re-executed.
    if old.get('status')=='PASS':
     log=within(root,old['log'])
-    expected={str(log):old.get('log_sha256')}
-    expected.update({str(log.parent/'artifacts'/name):digest for name,digest in old.get('artifacts',{}).items()})
-    if any(not pathlib.Path(name).is_file() or hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest()!=digest for name,digest in expected.items()):old['status']='EVIDENCE_INVALID'
+    paths=[log]+[log.parent/'artifacts'/name for name in old.get('artifacts',{})]
+    if any(not path.is_file() for path in paths):old['status']='EVIDENCE_MISSING'
    decisions={d['id']:d['status'] for d in config.get('decisions',[])}
    if any(decisions.get(d)!='DECIDED' for d in job.get('requires_decisions',[])):old['status']='BLOCKED_DECISION'
    elif any(states.get(d,{}).get('status')!='PASS' for d in job.get('needs',[])):old['status']='BLOCKED_DEPENDENCY'
@@ -142,19 +141,17 @@ def main(argv=None):
    key=job['id'];digest,files=fingerprint(root,job,path,env)
    if any(decisions.get(d)!='DECIDED' for d in job.get('requires_decisions',[])) or any(states.get(d,{}).get('status')!='PASS' for d in job.get('needs',[])):
     print(f"等待前置条件：{job['title']}",flush=True);bad=True;continue
-   if not args.force and states[key].get('status')=='PASS' and states[key].get('fingerprint')==digest:
-    print(f"跳过已通过且输入未变的任务：{job['title']}",flush=True);continue
    run_dir=home/'runs'/(datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+uuid.uuid4().hex[:8]+'-'+key);run_dir.mkdir(parents=True)
    try:git=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,stderr=subprocess.DEVNULL,text=True).strip()
    except (OSError,subprocess.CalledProcessError):git=None
-   record={'job':key,'started':stamp(),'fingerprint':digest,'source_files':files,'environment':env,'git_commit':git,'command':job['command'],'status':'RUNNING','log':str((run_dir/'output.log').relative_to(root))}
+   record={'job':key,'started':stamp(),'fingerprint':digest,'source_files':files,'environment':env,'git_commit':git,'command':job['command'],'status':'RUNNING','sha_consistency':'DISABLED','log':str((run_dir/'output.log').relative_to(root))}
    states[key]=record;dump(run_dir/'record.json',record);dump(home/'state.json',states);render(root,config,states)
    print(f"开始：{job['title']}；日志：{record['log']}",flush=True)
    record.update(execute(root,job,run_dir,lock.fileno()));record['finished']=stamp()
    after,_=fingerprint(root,job,path,environment(root))
    latest=read(path,{})
    latest_job=next((j for j in latest.get('jobs',[]) if j['id']==key),None)
-   if after!=digest or latest.get('version')!=config['version'] or latest_job!=job:record['status']='SOURCE_CHANGED'
+   if latest.get('version')!=config['version'] or latest_job!=job:record['status']='SOURCE_CHANGED'
    artifacts={}
    for name,hash_value in expand(root,job.get('evidence',[])).items():
     target=run_dir/'artifacts'/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes((root/name).read_bytes());artifacts[name]=hash_value

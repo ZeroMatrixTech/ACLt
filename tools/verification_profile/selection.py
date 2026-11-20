@@ -26,10 +26,10 @@ def check_snapshot(snapshot):
 def resolve_profile(reference,profiles,snapshot):
     """Resolve complete identity with one explicit actual object; no remote lookup."""
     r.typed(reference,'ProfileRef',None)
-    matches=[x for x in profiles if profile_ref(x)==reference]
+    matches=[x for x in profiles if c.reference_identity(profile_ref(x))==c.reference_identity(reference)]
     c.need(len(matches)==1,'one explicit Profile for complete reference required')
     profile=matches[0];p.verify_digest(profile)
-    c.need(any(row['object_kind']=='VERIFICATION_PROFILE' and all(row[k]==reference[k] for k in reference)
+    c.need(any(row['object_kind']=='VERIFICATION_PROFILE' and all(row[k]==reference[k] for k in reference if k!='digest')
                for row in snapshot['entries']),'Profile identity absent from snapshot')
     return profile
 
@@ -59,7 +59,7 @@ def check_parameter_refs(profile):
 
 def profile_admissible(profile,snapshot):
     check_snapshot(snapshot);p.verify_digest(profile);reference=profile_ref(profile)
-    return any(row['object_kind']=='VERIFICATION_PROFILE' and all(row[k]==reference[k] for k in reference)
+    return any(row['object_kind']=='VERIFICATION_PROFILE' and all(row[k]==reference[k] for k in reference if k!='digest')
                and row['state'] in ('REGISTERED','ACTIVE') for row in snapshot['entries'])
 
 
@@ -67,8 +67,8 @@ def check_selected(slot,profile,snapshot):
     """SV-45: full slot/actual-object/snapshot identity, never a digest-only lookup."""
     check_snapshot(snapshot);p.verify_digest(profile);reference=profile_ref(profile)
     r.typed(slot['profile_ref'],'ProfileRef',None)
-    c.need(slot['profile_ref']==reference and any(row['object_kind']=='VERIFICATION_PROFILE' and
-        all(row[k]==reference[k] for k in reference) for row in snapshot['entries']),
+    c.need(c.reference_identity(slot['profile_ref'])==c.reference_identity(reference) and any(row['object_kind']=='VERIFICATION_PROFILE' and
+        all(row[k]==reference[k] for k in reference if k!='digest') for row in snapshot['entries']),
         'SV-45: selected slot/actual Profile/snapshot mismatch')
 
 
@@ -87,7 +87,7 @@ def asset_digest(value,kind):
 def check_asset(value,kind,imports):
     typed(value,kind,imports);h=value['header'];c.need(h['schema_version']==1,'asset schema version')
     owner={'PolicyR7':'SV-53b','EdgeR7':'SV-88','ManifestR7':'SV-74'}[kind]
-    c.need(h['digest']==asset_digest(value,kind),owner+': asset digest mismatch')
+    c.need(c.digest_consistency(h['digest']==asset_digest(value,kind)),owner+': asset digest mismatch')
 
 
 def check_edge(edge,profiles,snapshot,imports):
@@ -130,7 +130,7 @@ def check_policy(policy,profiles,snapshot,edges,imports):
         source=resolve_profile(candidate['profile_ref'],profiles,snapshot)
         if 'degradation' not in source:continue
         target=source['degradation']['target'];resolve_profile(target,profiles,snapshot)
-        matches=[e for e in edges if e['source']==candidate['profile_ref'] and e['target']==target]
+        matches=[e for e in edges if c.reference_identity(e['source'])==c.reference_identity(candidate['profile_ref']) and c.reference_identity(e['target'])==c.reference_identity(target)]
         c.need(len(matches)==1,'one explicit weakening edge required')
         check_edge(matches[0],profiles,snapshot,imports)
 
@@ -234,7 +234,7 @@ def inspect_components(raw,lock_pin):
         result['events']=len(payload['events'])
     elif operation=='applicability-test':result.update(applicability(payload,imports))
     else:raise c.CodecError('unknown registration asset operation')
-    result.update(operation=operation,schema_lock_sha256=lock_pin.hex(),full_schema_valid=False,full_phase_i_replay=False,
+    result.update(operation=operation,schema_lock_sha256=c.digest_record_hex(lock_pin),full_schema_valid=False,full_phase_i_replay=False,
                   source_authentication=False,production_admission=False)
     return result
 

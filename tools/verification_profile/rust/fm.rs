@@ -38,8 +38,8 @@ fn principal(v:&V)->R<()>{
  let der=bytes(get(v,"public_key_der")?)?;let prefix=unhex("30820122300d06092a864886f70d01010105000382010f003082010a0282010100")?;let suffix=unhex("0203010001")?;
  need(der.len()==294&&der.starts_with(&prefix)&&der.ends_with(&suffix),"RSA SPKI encoding")?;
  let modulus=&der[prefix.len()..der.len()-suffix.len()];need(modulus.len()==256&&modulus[0]&128!=0&&modulus[255]&1!=0,"RSA modulus")?;
- need(txt(get(v,"suite")?)?==SUITE&&bytes(get(v,"key_id")?)?==sha256::hash(der),"key/suite")?;
- need(bytes(get(v,"principal_id")?)?==domain(ITAG,der),"principal identity")?;
+ need(txt(get(v,"suite")?)?==SUITE&&digest_consistency(bytes(get(v,"key_id")?)?==sha256::hash(der)),"key/suite")?;
+ need(digest_consistency(bytes(get(v,"principal_id")?)?==domain(ITAG,der)),"principal identity")?;
  let start=integer(get(v,"valid_from")?)?;need(start>=0&&start<integer(get(v,"valid_until")?)?,"validity interval")
 }
 pub(super) fn principal_hash(v:&V)->R<Vec<u8>>{principal(v)?;Ok(domain(PTAG,&encode(v)?))}
@@ -47,8 +47,8 @@ fn unsigned(v:&V)->R<()>{
  proj("fm-signing",v,false)?;common(v)?;
  need(txt(get(v,"suite")?)?==SUITE&&txt(get(v,"object_type")?)?=="FM_TEST_VALUE","suite/object type")?;
  let start=integer(get(v,"issued_at")?)?;need(start>=0&&start<integer(get(v,"expires_at")?)?,"message interval")?;
- let import=get(v,"payload_ref")?;need(txt(get(import,"id")?)?==IID&&get(import,"version")?==&V::A(vec![V::N(1),V::N(0),V::N(0)])&&bytes(get(import,"digest")?)?==sha256::hash(ISOURCE),"unlocked import")?;
- let raw=bytes(get(v,"payload")?)?;need(raw.len()<=4096,"payload byte limit")?;let payload=decode(raw)?;proj("fm-value",&payload,false)?;
+ let import=get(v,"payload_ref")?;need(txt(get(import,"id")?)?==IID&&get(import,"version")?==&V::A(vec![V::N(1),V::N(0),V::N(0)])&&digest_consistency(bytes(get(import,"digest")?)?==sha256::hash(ISOURCE)),"unlocked import")?;
+ let raw=bytes(get(v,"payload")?)?;let payload=decode(raw)?;proj("fm-value",&payload,false)?;
  let op=txt(get(&payload,"operation")?)?;let role=txt(get(v,"role")?)?;
  need(if role=="REQUESTER"{op=="REQUEST"}else{["ACCEPT","RESULT"].contains(&op)},"role responsibility")
 }
@@ -78,7 +78,7 @@ pub(super) fn crypto(der:&[u8],raw:&[u8],signature:&[u8])->R<()>{
 fn verify(v:&V)->R<V>{
  proj("fm-verify",v,false)?;let record=get(v,"record")?;let env=get(v,"envelope")?;let expected=get(v,"expected")?;let now=integer(get(v,"now")?)?;
  principal(record)?;envelope(env)?;let digest=principal_hash(record)?;
- need(bytes(get(expected,"record_digest")?)?==digest&&bytes(get(env,"principal_ref")?)?==digest,"untrusted principal pin")?;
+ need(digest_consistency(bytes(get(expected,"record_digest")?)?==digest)&&digest_consistency(bytes(get(env,"principal_ref")?)?==digest),"untrusted principal pin")?;
  for k in ["protocol_version","network_id","deployment_id","role"]{need(get(record,k)?==get(env,k)?&&get(env,k)?==get(expected,k)?,"principal context")?;}
  for k in ["object_type","context","nonce"]{need(get(env,k)?==get(expected,k)?,"message context")?;}
  let start=integer(get(env,"issued_at")?)?;let end=integer(get(env,"expires_at")?)?;

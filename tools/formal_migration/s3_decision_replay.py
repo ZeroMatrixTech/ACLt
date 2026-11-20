@@ -170,7 +170,7 @@ def verify(cfg, pack, anchor, checkpoint, receipts, *, observe=None):
         c.need(c.encode(committed['audit']['decision']) == c.encode(decision) and
                c.encode(committed['settlement']) == c.encode(settlement) and
                settlement['receipt'] == receipt and settlement['terminal'] == terminal and
-               settlement['decision_event'] == decision_ref and settlement['decision_digest'] == s2.h(decision) and
+               settlement['decision_event'] == decision_ref and c.digest_consistency(settlement['decision_digest']==s2.h(decision)) and
                settlement['paid'] + settlement['refund'] == settled_before['tasks'][receipt.hex()]['funding_held'],
                'settlement linkage or allocation')
         source = c.encode(dict(genesis=checkpoint['genesis'], cutoff_seq=decision_seq - 1,

@@ -1,21 +1,16 @@
 # ACLt Protocol 结果验证
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档状态：`CANDIDATE` verification design  
 > 语义基线：v0.5  
 > 最后更新：2026-08-21
-> 适用范围：有限总体 e-process 的条件数学内核已闭合；`REEXEC_BOUNDED` 只能在绑定的官方主网 assurance 和有限工程条件内启用，不构成通用 permissionless 或主网外保证。
+> 适用范围：有限总体 e-process 的条件模型、Profile对象与已有验证路径。工程部署记录实际 network/assurance；活性推广继续由 #215 跟踪。
 
 ## 1. 验证目标
 
-结果验证的目标是在 Receipt 预声明的任务语义、证据模型、相关性处理、误差目标、预算和停止规则下，判断是否可以对一个候选结果作有限背书。
-
-验证目标的范围如下：
-
-- 判定限于 Receipt 预声明的任务语义；对任意程序语义的通用廉价判定不在其中；
-- 验证不证明多个 Provider 相互独立；
-- 决策规则基于预声明误差目标，不采用简单多数或固定 51% 阈值；
-- 结论是有限背书，不构成绝对正确或不可撤销的形而上真理；
-- 无预算上限的持续争论不在验证范围内。
+结果验证消费 Receipt 声明的任务语义、证据模型、相关性处理、误差目标、预算和停止规则，对具体候选结果给出该方法下的判决。每项结论列出其模型条件、使用数据与实际实现范围。不同方法分别说明执行过程与成本。
 
 ## 2. 任务验证 Registry
 
@@ -30,7 +25,7 @@
 | `STATISTICAL` | 冗余、抽样或统计检查 | 可调成本和证据 | 相关性与统计证明困难 | `CANDIDATE` |
 | `PROOF_ASSISTED` | 密码学证明、交互证明或可信执行证据 | 可能提供更强证据 | 适用性、性能、信任和实现复杂 | `CANDIDATE` |
 
-上述编号不得在 ADR 冻结前作为互操作规范。
+上述类别用于方法讨论；互操作采用具体实现已经支持的 Registry ID 和版本。
 
 V1 `CORE` 的基础证据类型是 `REEXEC_EXACT`：验证者对相同规范 RIR、Logical Object 输入和 RuntimeProfile 重执行，并依据冻结的 canonical result/equivalence predicate 形成证据。该选择只闭合证据接口，不证明 RIR、RPR、validator 或重执行结果正确。
 
@@ -110,7 +105,7 @@ q_t^{(m)}/p_t,&X_t=1,\\
 \end{cases}
 \]
 
-资本 \(M_t^{(m)}=\prod_{j=1}^tE_j^{(m)}\)。使用首抽前冻结、总和为一的有理权重 \(\pi(m)\) 时，\(M_t^{mix}=\sum_m\pi(m)M_t^{(m)}\) 仍为非负 e-process；达到 \(M_t^{mix}\ge1/\varepsilon_F\) 才可精确拒绝零假设。Bayesian 模型只可以选择下一样本、提出候选或规划成本，不再作为第二个真理闸门。
+资本 \(M_t^{(m)}=\prod_{j=1}^tE_j^{(m)}\)。使用首抽前冻结、总和为一的有理权重 \(\pi(m)\) 时，\(M_t^{mix}=\sum_m\pi(m)M_t^{(m)}\) 仍为非负 e-process；达到 \(M_t^{mix}\ge1/\varepsilon_F\) 才可精确拒绝零假设。当前接受路径使用该 e-process 阈值；已有设计也将 Bayesian 信息用于候选、采样和成本规划。权重来源的选择与数学条件分别记录。
 
 在上述条件成立时，Ville 界给出：
 
@@ -128,7 +123,7 @@ q_t^{(m)}/p_t,&X_t=1,\\
 
 活性假设与安全假设分开。若正确候选至少得到 \(Q\) 个集群支持的校准覆盖率为 \(1-\delta_Q\)，并由精确有限总体动态规划选择最小 \(N_{max}\) 使 \(\Pr(\tau\le N_{max}\mid M(c)\ge Q)\ge1-\delta_L\)，则端到端活性失败界至多为 \(\delta_Q+\delta_L\)。KL 近似只能用于规划，不能生成规范预算。
 
-条件数学模型、证明边界和对拍结果见 [`../06-research/verification-round-mathematical-model.md`](../06-research/verification-round-mathematical-model.md)。数学内核为 `DECIDED / DERIVED`；具体部署的 \(B\)、\(Q\)、能力集合冻结与独立性论证仍为 `CANDIDATE / P0`。没有这些证据时必须使用 `REEXEC_AUDIT_ONLY`。
+条件数学模型、证明边界和对拍结果见 [`../06-research/verification-round-mathematical-model.md`](../06-research/verification-round-mathematical-model.md)。条件 Type-I 推导与递推已有记录；活性推广仍由 #215 跟踪。具体部署的 \(B\)、\(Q\)、能力集合冻结与独立性论证仍为 `CANDIDATE / P0`。没有这些证据时必须使用 `REEXEC_AUDIT_ONLY`。
 
 ## 7. 相关性与有效证据
 
@@ -162,7 +157,7 @@ q_t^{(m)}/p_t,&X_t=1,\\
 
 ## 9. Aggregation 与停止
 
-Aggregate MUST 是可复算的纯规则或等价确定过程。它不得根据执行者身份、历史 CapabilityEstimate、FoundationReport、维护意见、付款能力或事后偏好改变真理权重。
+当前 Aggregate 采用显式输入与确定更新规则。混合权重的非负、归一化与观察前固定条件见模型；CapabilityEstimate 与维护报告在当前接口中分别记录。未来方法的来源选择按其具体模型评估。
 
 停止条件必须明确：
 
@@ -205,7 +200,7 @@ Maintainer、Requester、多数 Provider 或高能力 Provider MUST NOT 覆盖 D
 
 ## 12. 验收与证明义务
 
-在允许安全主张前必须完成：
+具体主张按其所使用的机制提供对应证据。已有研究与实现检查包括：
 
 - Verification Registry 与结果等价负例；
 - Snapshot canonical schema；
@@ -214,7 +209,7 @@ Maintainer、Requester、多数 Provider 或高能力 Provider MUST NOT 覆盖 D
 - \(B\) 对支持能力集合的事前上界论证，以及集合与 draw order 的独立性证据；
 - \(Q,\delta_Q,\delta_L\) 校准来源、外推标记和精确 DP 活性预算；
 - e-process 公式、冻结混合权重、精确有理数/定点数规则与逐步测试向量；
-- Bayesian 效率策略的适用性、prior sensitivity，以及其不进入正确性权重的验证；
+- 混合权重构造、观察前固定条件与 prior sensitivity；
 - 相关性/集群处理的误差与隐私分析；
 - optional stopping、能力集合事后选择反例、恶意依赖和总体污染测试；
 - false endorsement、false unresolved、成本和尾延迟测量；
@@ -232,4 +227,4 @@ Maintainer、Requester、多数 Provider 或高能力 Provider MUST NOT 覆盖 D
 
 ## 14. 更新规则
 
-任何改变 VerificationType、Snapshot、抽样单位、相关性、随机性、停止条件、主网 assurance、原因归约或 Decision 语义的提议必须同步更新 Threat TH-15 至 TH-21/TH-36—TH-39、INV-11—INV-16、ADR、仿真计划和 open questions。
+变更更新实际受影响的定义、接口、模型和证据入口。已有 Threat、INV 与 ADR 用于定位相关讨论；同步范围由本次实际影响确定。

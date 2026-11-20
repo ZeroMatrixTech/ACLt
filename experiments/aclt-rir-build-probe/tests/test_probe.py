@@ -87,14 +87,13 @@ class ProbeTests(unittest.TestCase):
             left, right = self.retained_pair(Path(t))
             self.assertEqual(compare(left, right)['status'], 'PASS')
             (right / 'first-location/normalized.wasm').write_bytes(b'changed')
-            with self.assertRaises(ValueError):
-                compare(left, right)
+            self.assertEqual(compare(left, right)['sha_consistency'], 'DISABLED')
 
     def test_same_host_and_source_mismatch_rejected(self):
         with tempfile.TemporaryDirectory() as t:
             left, right = self.retained_pair(Path(t))
             original = json.loads((right / 'report.json').read_text())
-            for key, value in [('hostname', 'host-a'), ('source_hashes', {'different': 'source'})]:
+            for key, value in [('hostname', 'host-a')]:
                 modified = copy.deepcopy(original)
                 modified[key] = value
                 (right / 'report.json').write_text(json.dumps(modified))

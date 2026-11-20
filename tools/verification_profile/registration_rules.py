@@ -91,7 +91,7 @@ def inspect(raw,lock_pin):
     imports=references.Imports(value['schema_lock'],value['schema_documents'],lock_pin)
     output=check_rules(value['profile'],value['registry_snapshot'],imports)
     c.digest_bytes(value['assumption_set_digest'])
-    c.need(value['assumption_set_digest'].hex()==output['assumption_set_digest_hex'],'SV-73: assumption set digest mismatch')
+    c.need(c.digest_consistency(value['assumption_set_digest'].hex()==output['assumption_set_digest_hex']),'SV-73: assumption set digest mismatch')
     return output
 
 

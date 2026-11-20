@@ -5,7 +5,7 @@ use super::registration::{typed,Imports};
 use std::collections::{BTreeMap,BTreeSet};
 const STAGES:[&str;4]=["PRE_FREEZE","FROZEN_PRE_DRAW","RUNNING","TERMINAL"];
 fn same(a:&V,b:&V)->R<bool>{Ok(encode(a)?==encode(b)?)}
-fn same_optional(a:Option<&V>,b:Option<&V>)->R<bool>{match(a,b){(Some(x),Some(y))=>same(x,y),(None,None)=>Ok(true),_=>Ok(false)}}
+fn same_optional(a:Option<&V>,b:Option<&V>)->R<bool>{match(a,b){(Some(x),Some(y))=>same_reference(x,y),(None,None)=>Ok(true),_=>Ok(false)}}
 fn types()->R<V>{let mut all=match commitments::types()?{V::M(v)=>v,_=>return Err("types".into())};let extra=parse_json(include_str!("runtime_types.json"))?;if let V::M(v)=extra{for (k,v) in v{need(!all.iter().any(|(a,_)|a==&k),"duplicate runtime type")?;all.push((k,v));}}Ok(V::M(all))}
 pub(super) fn ancestors(events:&BTreeMap<Vec<u8>,V>,root:&[u8])->R<BTreeSet<Vec<u8>>>{let mut seen=BTreeSet::new();let mut pending=vec![root.to_vec()];while let Some(k)=pending.pop(){if seen.insert(k.clone()){let event=events.get(&k).ok_or("missing event")?;for p in arr(get(event,"parent_refs")?)?{pending.push(encode(p)?);}}}Ok(seen)}
 pub(super) fn event_is(events:&BTreeMap<Vec<u8>,V>,visible:&BTreeSet<Vec<u8>>,reference:&V,kind:&str,tag:&str,id:&V)->R<bool>{let code=encode(reference)?;let Some(row)=events.get(&code)else{return Ok(false);};Ok(visible.contains(&code)&&txt(get(row,"event_kind")?)?==kind&&same(get(row,"subject_ref")?,&map(vec![("tag",s(tag)),("id",id.clone())]))?)}
@@ -28,12 +28,12 @@ fn shape<'a>(e:&'a V,t:&V,i:&Imports)->R<Option<V>>{
  }else{Ok(None)}
 }
 fn frozen(p:&V)->R<V>{let safety=get(p,"safety_parameters")?;Ok(map(vec![("G",get(safety,"G")?.clone()),("B",get(safety,"B")?.clone()),("Q",get(get(p,"liveness_parameters")?,"Q")?.clone()),("delta_min",get(safety,"delta_min")?.clone()),("mixture_weights",get(get(p,"method_parameters")?,"mixture_weights")?.clone())]))}
-fn bundle(b:&V,t:&V,i:&Imports)->R<()>{typed(b,&s("ReferencesBundle"),t,i)?;let reg=get(b,"registry_snapshot")?;registration::check_registry(reg)?;let context=get(b,"context")?;need(same(get(context,"registry_snapshot_ref")?,&commitments::identity(reg)?)?,"registry context")?;let f=get(b,"event_frontier_snapshot")?;registration::check_frontier(f,i)?;let h=get(f,"header")?;need(same(get(context,"event_frontier_ref")?,&map(vec![("id",get(h,"id")?.clone()),("digest",get(h,"digest")?.clone())]))?,"frontier context")}
+fn bundle(b:&V,t:&V,i:&Imports)->R<()>{typed(b,&s("ReferencesBundle"),t,i)?;let reg=get(b,"registry_snapshot")?;registration::check_registry(reg)?;let context=get(b,"context")?;need(same_reference(get(context,"registry_snapshot_ref")?,&commitments::identity(reg)?)?,"registry context")?;let f=get(b,"event_frontier_snapshot")?;registration::check_frontier(f,i)?;let h=get(f,"header")?;need(same_reference(get(context,"event_frontier_ref")?,&map(vec![("id",get(h,"id")?.clone()),("digest",get(h,"digest")?.clone())]))?,"frontier context")}
 fn unit_set(v:&V)->R<BTreeSet<Vec<u8>>>{arr(v)?.iter().map(encode).collect()}
 fn no_snapshot(method:&str,receipt:&V,reference:&V,payload:&V,events:&BTreeMap<Vec<u8>,V>,visible:&BTreeSet<Vec<u8>>)->R<()>{
  need(["DIRECT_VERIFIED","PROOF_VERIFIED","REEXEC_AUDIT_ONLY"].contains(&method),"SV-94")?;let tr=get(payload,"transition")?;let before=get(tr,"prior_round_state")?;let after=get(tr,"proposed_round_state")?;let a=txt(get(before,"round_stage")?)?;let z=txt(get(after,"round_stage")?)?;
  need([("PRE_FREEZE","RUNNING"),("RUNNING","RUNNING"),("RUNNING","TERMINAL"),("PRE_FREEZE","TERMINAL")].contains(&(a,z)),"SV-94")?;
- for state in [before,after]{need(same(get(state,"bound_profile_ref")?,reference)?,"SV-94")?;}
+ for state in [before,after]{need(same_reference(get(state,"bound_profile_ref")?,reference)?,"SV-94")?;}
  need(get(payload,"transition_event_ref").is_ok()==(a!=z),"SV-94")?;
  let mut starts=vec![];let mut terminals=vec![];
  for key in visible{let row=events.get(key).ok_or("event missing")?;if same(get(row,"subject_ref")?,&map(vec![("tag",s("RECEIPT")),("id",receipt.clone())]))?{match txt(get(row,"event_kind")?)?{"VERIFICATION_STARTED"=>starts.push(key.clone()),"VERIFICATION_TERMINAL_COMMITTED"=>terminals.push(key.clone()),_=>()}}}
@@ -43,9 +43,9 @@ fn no_snapshot(method:&str,receipt:&V,reference:&V,payload:&V,events:&BTreeMap<V
 fn guard(e:&V,snapshot:Option<&V>,contract:&V,t:&V,i:&Imports)->R<()>{
  let p=get(e,"profile")?;let method=txt(get(p,"verification_method")?)?;let bounded=method=="REEXEC_BOUNDED";let payload=get(e,"payload")?;let tag=txt(get(payload,"tag")?)?;let tr=get(payload,"transition")?;let prior=get(tr,"prior_round_state")?;let after=get(tr,"proposed_round_state")?;let a=txt(get(prior,"round_stage")?)?;let z=txt(get(after,"round_stage")?)?;
  let binding=get(e,"receipt_binding")?;let reference=commitments::pref(p)?;let assurance=get(e,"assurance_profile")?;
- for actual in [get(binding,"profile_ref")?,get(e,"bound_profile_ref")?,get(prior,"bound_profile_ref")?,get(after,"bound_profile_ref")?]{need(same(&reference,actual)?,"SV-92")?;}
- need(same(&commitments::identity(assurance)?,get(binding,"assurance_profile_ref")?)?&&same(get(assurance,"network_id")?,get(binding,"network_id")?)?,"SV-92")?;
- if let Some(snap)=snapshot{need(same(get(snap,"receipt_id")?,get(binding,"receipt_id")?)?,"SV-92")?;}
+ for actual in [get(binding,"profile_ref")?,get(e,"bound_profile_ref")?,get(prior,"bound_profile_ref")?,get(after,"bound_profile_ref")?]{need(same_reference(&reference,actual)?,"SV-92")?;}
+ need(same_reference(&commitments::identity(assurance)?,get(binding,"assurance_profile_ref")?)?&&same(get(assurance,"network_id")?,get(binding,"network_id")?)?,"SV-92")?;
+ if let Some(snap)=snapshot{need(digest_consistency(same(get(snap,"receipt_id")?,get(binding,"receipt_id")?)?),"SV-92")?;}
  need(STAGES.iter().position(|x|*x==a)<=STAGES.iter().position(|x|*x==z),"SV-105")?;
  let frontier=get(get(e,"bundle")?,"event_frontier_snapshot")?;let mut events=BTreeMap::new();for row in arr(get(frontier,"event_records")?)?{events.insert(encode(get(row,"event_ref")?)?,row.clone());}let visible=ancestors(&events,&encode(get(frontier,"frontier_event_ref")?)?)?;
  if bounded{
@@ -66,14 +66,14 @@ fn guard(e:&V,snapshot:Option<&V>,contract:&V,t:&V,i:&Imports)->R<()>{
  if let Some(snap)=snapshot{
   let units=arr(get(snap,"sampling_units")?)?;let ids=units.iter().map(|u|encode(get(u,"id")?)).collect::<R<BTreeSet<_>>>()?;need(ids.len()==units.len(),"SV-82")?;
   for unit in units{for a in &assumptions{need(selection::scope(get(a,"scope")?,get(unit,"scope")?,t,i)?,"SV-69")?;}}
-  for state in [prior,after]{need(get(state,"cluster_mapping_ref").is_ok_and(|x|same(get(snap,"cluster_mapping_ref").unwrap(),x).unwrap_or(false)),"SV-99")?;}
+  for state in [prior,after]{need(get(state,"cluster_mapping_ref").is_ok_and(|x|same_reference(get(snap,"cluster_mapping_ref").unwrap(),x).unwrap_or(false)),"SV-99")?;}
   let params=get(p,"method_parameters")?;let g=integer(get(get(p,"safety_parameters")?,"G")?)?;
   need(same(get(snap,"population_definition_ref")?,get(params,"population_definition")?)?&&same(get(snap,"snapshot_schema_ref")?,get(params,"snapshot_schema_ref")?)?&&ids.len() as i128==g,"SV-81")?;
   for (source,target) in [("population_definition","population_definition_ref"),("snapshot_schema_ref","snapshot_schema_ref"),("randomness_commitment","randomness_rule_ref")]{need(same(get(params,source)?,get(contract,target)?)?,"SV-81")?;}
   let random=get(snap,"randomness_commitment")?;need(same(get(random,"scheme_id")?,get(contract,"scheme_id")?)?&&arr(get(contract,"allowed_randomness_parameters")?)?.iter().any(|x|same(x,get(random,"parameters").unwrap()).unwrap_or(false)),"SV-81")?;
  }
  if tag=="SNAPSHOT_FREEZE"{
-  let snap=snapshot.ok_or("snapshot required")?;let record=get(tr,"snapshot_freeze_record")?;let mapping=get(record,"cluster_mapping_ref")?;need(same(mapping,get(snap,"cluster_mapping_ref")?)?,"SV-99")?;
+  let snap=snapshot.ok_or("snapshot required")?;let record=get(tr,"snapshot_freeze_record")?;let mapping=get(record,"cluster_mapping_ref")?;need(same_reference(mapping,get(snap,"cluster_mapping_ref")?)?,"SV-99")?;
   let candidate=unit_set(get(record,"candidate_units_pre_scope_filter")?)?;let excluded=unit_set(get(record,"excluded_by_scope")?)?;let kept=unit_set(get(record,"frozen_units")?)?;let actual=arr(get(snap,"sampling_units")?)?.iter().map(|x|encode(get(x,"id")?)).collect::<R<BTreeSet<_>>>()?;
   need(excluded.is_subset(&candidate)&&kept==candidate.difference(&excluded).cloned().collect()&&kept==actual&&kept.len() as i128==integer(get(get(p,"safety_parameters")?,"G")?)?,"SV-94")?;
   let first=get(record,"cluster_mapping_fixed_event")?;let last=get(record,"freeze_event")?;
@@ -81,7 +81,7 @@ fn guard(e:&V,snapshot:Option<&V>,contract:&V,t:&V,i:&Imports)->R<()>{
  }Ok(())
 }
 pub(super) fn run(input:&str,lock:&str,contract_pin:&str)->R<V>{
- let v=decode(&unhex(input)?)?;fields(&v,&["envelope","schema_lock","schema_documents","runtime_contract"])?;let i=Imports::new_bindings(get(&v,"schema_lock")?,get(&v,"schema_documents")?,&unhex(lock)?)?;let t=types()?;let contract=get(&v,"runtime_contract")?;typed(contract,&s("RuntimeContractR9"),&t,&i)?;need(sha256::hash(&encode(contract)?)==unhex(contract_pin)?,"runtime contract pin")?;need(!txt(get(contract,"scheme_id")?)?.is_empty()&&!arr(get(contract,"allowed_randomness_parameters")?)?.is_empty(),"empty runtime contract")?;
+ let v=decode(&unhex(input)?)?;fields(&v,&["envelope","schema_lock","schema_documents","runtime_contract"])?;let i=Imports::new_bindings(get(&v,"schema_lock")?,get(&v,"schema_documents")?,&unhex(lock)?)?;let t=types()?;let contract=get(&v,"runtime_contract")?;typed(contract,&s("RuntimeContractR9"),&t,&i)?;need(digest_consistency(sha256::hash(&encode(contract)?)==unhex(contract_pin)?),"runtime contract pin")?;need(!txt(get(contract,"scheme_id")?)?.is_empty()&&!arr(get(contract,"allowed_randomness_parameters")?)?.is_empty(),"empty runtime contract")?;
  let e=get(&v,"envelope")?;let snapshot=shape(e,&t,&i)?;let p=get(e,"profile")?;profile::run("profile-digest",&hex(&encode(p)?))?;let method=txt(get(p,"verification_method")?)?;need(["DIRECT_VERIFIED","PROOF_VERIFIED","REEXEC_BOUNDED","REEXEC_AUDIT_ONLY"].contains(&method),"method")?;registration::rule_assumptions(get(p,"assumption_references")?,&t,&i)?;method_rules::asset_input(p,&i)?;selection::parameter_refs(p)?;bundle(get(e,"bundle")?,&t,&i)?;commitments::digest_object(get(e,"assurance_profile")?,"MainnetAssuranceProfile",&t,&i)?;
  let before=txt(get(get(get(e,"payload")?,"transition")?,"prior_round_state").and_then(|x|get(x,"round_stage"))?)?;
  let failure=guard(e,snapshot.as_ref(),contract,&t,&i).err();let accepted=failure.is_none();let consequence=if accepted{"VALIDATED"}else{match before{"PRE_FREEZE"=>"REJECT_OPERATION","FROZEN_PRE_DRAW"=>"INVALIDATE_SNAPSHOT_NO_REFREEZE","RUNNING"=>"VERIFICATION_INVALIDATING","TERMINAL"=>"QUALIFICATION_ONLY",_=>return Err("stage".into())}};

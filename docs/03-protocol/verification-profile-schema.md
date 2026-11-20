@@ -1,5 +1,8 @@
 # P0-1A：VerificationProfile 规范语义
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档状态：`P0-1A CLOSED / P0-1B STARTED`
 > 修订链：draft-1 → … → draft-10 → draft-11 → **draft-12**
 > 本修订：draft-12（按独立审计 AUD-20260821-10 修订，见 §29）
@@ -18,7 +21,7 @@
 
 `docs/README.md` 的权威表当前把「结果验证与统计边界」指向 [`result-validation.md`](result-validation.md)，把「VerificationProfile 与有限总体 e-process 决定」指向 [`../05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md`](../05-decisions/ADR-0004-verification-profiles-and-finite-population-e-process.md)。二者都把 Profile 的具体 Schema 标为未冻结。
 
-ADR-0005 已接受工程闭合与官方主网 assurance 边界。本文件经 AUD-20260821-10 通过后，成为「VerificationProfile canonical Schema、VerifiedClaim/ExcludedClaims 语义与 Profile 生命周期」的 P0-1A 权威输入；P0-1B 工件必须逐条实现本文件，不能反向修改语义。
+ADR-0005 已接受工程闭合与官方主网 assurance 边界。本文件经 AUD-20260821-10 通过后，记录了 VerificationProfile 对象、Claim 和生命周期的既有设计。当前实现按本轮政策调整；全域类型信息与待定义接口继续由现有问题跟踪。
 
 本文件采用 [`../00-overview/terminology.md`](../00-overview/terminology.md) §1 的规范性关键词。文中的 `MUST` 是 P0-1A 已冻结的规范要求；实现完成度由 P0-1B 覆盖清单另行报告。
 
@@ -26,7 +29,7 @@ ADR-0005 已接受工程闭合与官方主网 assurance 边界。本文件经 AU
 
 | 阶段 | 交付物 | 状态 |
 |---|---|---|
-| **P0-1A** | 本文件：字段语义、Claim 分层、主网工程 assurance、版本化/运行期双 header、五相位 × 三层校验、可重放 Phase D、工程日志后端、`CanonicalTerminal`、Scope/Population 绑定与向量类别 | **CLOSED / AUD-20260821-10 PASS** |
+| **P0-1A** | 既有对象和验证结构记录 | 历史验收记录保留；当前支持域与本轮停用项分别记录 |
 | **P0-1B** | `verification_profile.schema.json` 与 Schema View 投影；`ExcludedClaimsRegistry`、`ClaimTemplate`、`MainnetAssuranceProfile` 工件；五相位 × 三层 validator；`tests/verification_profile/`；数学对拍与两实现逐位一致 | **STARTED / NOT CLOSED** |
 | **ADR-0005** | 接受工程闭合与主网 assurance，并以采纳矩阵接受 D-01—D-10、D-02(a) 与 §17 迁移债务 | **ACCEPTED** |
 
@@ -41,9 +44,9 @@ ADR-0005 已接受工程闭合与官方主网 assurance 边界。本文件经 AU
 
 把 Type B 项写进 P0-1B 的关闭条件是**证据类型错配**。draft-2 犯了这个错误，draft-3 已分离。
 
-## 1. 为什么 P0-1 必须先于其他验证工作
+## 1. Profile 对象如何支持验证工作
 
-ADR-0004 §2.1 已经决定「VerificationProfile 是所有验证路径的严格前置对象」，但没有冻结这个对象长什么样。后果是当前四条验证路径全部缺少合法落点：
+Profile 用于把验证方法、声明、输入和结果组织在同一接口中。各方法可以继续独立实现，并在接线时提供它实际消费的字段：
 
 | 后续工作 | 缺 Profile Schema 时的失败方式 |
 |---|---|
@@ -64,7 +67,7 @@ ADR-0004 §2.1 已经决定「VerificationProfile 是所有验证路径的严格
 (\mathit{ProfileID},\ \mathit{ProfileVersion},\ \mathit{ProfileDigest})
 \]
 
-该三元组 MUST 属于 INV-01 意义上的 `CanonicalSemantics`。带 digest 是因为 `(ID, Version)` 在跨实现分发时不足以固定语义内容（同一理由见 §6.5、§11.3）。
+当前Schema在CanonicalSemantics中记录该三元组；digest保留记录，其相等性不参与本轮判定。实际对象内容由显式输入和对应检查提供。
 
 ### D-02：Profile 适用性只在创建期判定；执行期的一切异常属于失败映射
 
@@ -178,9 +181,9 @@ Requester 若直接指定单个 Profile，实现 MUST 构造一个只含该候�
 - 只散列 `ordered_candidates` ⇒ 展开规则不被绑定，两个展开规则不同的实现会算出**相同** `policy_digest` 却选出不同 slot，直接违反 INV-16；
 - 只散列 `expanded_slots` ⇒ 作者的原始意图丢失，审计者无法判断某个 `DEGRADED` slot 是声明来的还是被插进去的。
 
-同时绑定使展开成为**可校验的派生值**：SV-53a（L1b）复算 `expanded_slots == Expand(ordered_candidates)`，SV-53b（L2）重算 digest 并确认其覆盖两者。
+SV-53a（L1b）核对 `expanded_slots == Expand(ordered_candidates)`；`policy_digest` 保留生成记录，SV-53b 的 SHA 一致性判定停用。
 
-**推荐顺序（非规范性）**：`DIRECT_VERIFIED` → `PROOF_VERIFIED` → `REEXEC_BOUNDED` → `REEXEC_AUDIT_ONLY`。理由不是「Direct 更准」，而是 Direct 的 claim 不依赖 \(B\)、Provider 独立性或 CorrectnessBridge，未证明前提集合严格更小（§5.2）。协议 MUST NOT 内置默认顺序。
+**推荐顺序（非规范性）**：`DIRECT_VERIFIED` → `PROOF_VERIFIED` → `REEXEC_BOUNDED` → `REEXEC_AUDIT_ONLY`。理由不是「Direct 更准」，而是 Direct 的 claim 不依赖 \(B\)、Provider 独立性或 CorrectnessBridge，其具体前提不同，Direct 依赖声明的谓词与实现（§5.2）。协议 MUST NOT 内置默认顺序。
 
 ### D-07：降级的四项约束
 
@@ -216,43 +219,11 @@ Decision 携带的是 **`ClaimBinding`**：全部槽位的具体值加渲染摘�
 
 `BindingFunction` MUST 确定性、无 effects、跨实现一致（INV-16）。凡是 claim 文本引用而 Profile 期已确定的对象（`predicate_ref`、`validator_ref`、`proof_system_ref`、`equivalence_id`、`algorithm_id`），MUST 同时出现在**冻结的 method parameters** 中，静态槽位只是对它们的引用而非第二份真相。
 
-### D-10：主网采用有限工程保证，不要求身份自然人唯一性或绝对实现正确性证明
+### D-10：当前主网 assurance 设计
 
-V1 明确放弃以下不可经济实现的默认目标：
+既有设计使用版本化 MainnetAssuranceProfile 记录 network_id、组件版本、Profile能力、相关性方法、参数、损失额度和有效期。创建、运行和撤销路径分别消费这些字段；这是所选部署接口的工程设计，可由维护者按实际实现调整。
 
-- 证明每个 Provider ID 背后都是不同自然人或不同法人；
-- 证明所有未观察到的控制关系均不存在；
-- 证明经审计 RPR、validator 或日志后端绝无未知缺陷；
-- 为非官方主网、私有 fork 或修改后的部署条件承担审计责任。
-
-主网安全声明改为条件性工程声明：
-
-\[
-\mathit{MainnetEngineeringAssumptions}
-\land
-\mathit{FrozenProfile}
-\land
-\mathit{ValidEvidence}
-\Longrightarrow
-\mathit{VerifiedClaim}
-\text{ 在其 ExcludedClaims 内具有声明置信度}
-\]
-
-基金会/维护组织 MAY 发布和签署版本化 `MainnetAssuranceProfile`，声明官方 `network_id` 下允许使用的 Profile、RPR/validator/log backend 版本、相关性簇方法、统计参数边界、硬损失上限与有效期。其权限严格限于：
-
-1. 在 Receipt 创建及 Snapshot 冻结前发布工程边界；
-2. 对已发布组件执行 conformance、安全测试、故障注入和运行审计；
-3. 撤销或降低未来/进行中能力；
-4. 发布缺陷与残余风险报告。
-
-基金会/维护组织 MUST NOT：
-
-- 改写个案 Evidence、Aggregate、DecisionCondition 或 `terminal_state`；
-- 在结果揭示后改变 \(G/B/Q/\varepsilon_F\)、抽样总体、停止规则或 `ExcludedClaims`；
-- 按 Provider 身份、历史履约、付款或基金会意见增加证据权重；
-- 使主网外部署自动获得官方主网的 assurance 声明。
-
-因此 `FoundationReport` 仍不得进入 Bayesian prior、e-process 权重或个案停止条件；`MainnetAssuranceProfile` 是**部署准入与能力上限**，不是一张额外的“赞成票”。
+有限总体结论使用已声明的总体、支持能力与抽样条件，具体前提见模型。运行中使用被冻结参数和相应失效映射；维护组织发布配置、测试与缺陷记录。当前数据流中履约估计、维护报告和验证证据分别存放。某类来源是否参与未来 prior 构造按具体模型判断，观察前固定等数学条件继续保留。
 
 ## 3. Canonical Schema
 
@@ -384,7 +355,7 @@ P0-1B 不得从字段名猜测类型。以下标量与容器为本文件所有�
 | `FaultDomainID` | `acl.schema.fault-domain-id@1` |
 | `RegionID` | `acl.schema.region-id@1` |
 
-每个 import 必须在 P0-1B 的 schema lockfile / `ConformanceManifest.file_digests` 中解析为不可变 `(SchemaID, Version, Digest)`；官方主网再由 `MainnetAssuranceProfile` 绑定允许的外部组件注册/日志 contract。`RegistrySnapshot` 只覆盖 §3.5 的 UVP 语义注册对象，MUST NOT 为了容纳外部 schema 或工程组件而扩张 `RegistryObjectKind`。未知版本 fail closed。尚未由对应 OQ 冻结内部字段的 imported type 在本文件中按**不透明原子值**处理：可检查其 schema 与摘要，不得读取未声明子字段。
+每个 import 记录 `(SchemaID, Version, Digest)` 与对应 schema；lockfile 和 `file_digests` 保留记录，SHA一致性门禁停用。官方主网再由 `MainnetAssuranceProfile` 绑定允许的外部组件注册/日志 contract。`RegistrySnapshot` 只覆盖 §3.5 的 UVP 语义注册对象，MUST NOT 为了容纳外部 schema 或工程组件而扩张 `RegistryObjectKind`。未知版本 fail closed。尚未由对应 OQ 冻结内部字段的 imported type 在本文件中按**不透明原子值**处理：检查其已声明 schema；摘要字段记录，SHA一致性判定停用，未声明子字段按不透明值处理。
 
 规范结构中的 map 必须声明 wire 表示。`FailureMapping.entries`、权重表和所有“枚举到值”的映射统一编码为按 key 编码字节排序、key 唯一的 `[{key, value}]` 数组；不得由实现自行选择 JSON object、CBOR map 或 pair array。
 
@@ -474,7 +445,7 @@ ProjectRuntimeHeader(h) = {
 - **UVP-2**：`schema_version` 与 `encoding_profile_id` **属于内容**并参与摘要——它们决定内容如何被解析。
 - **UVP-3**：血缘字段（`supersedes`）属于内容并参与摘要，否则可在不改 digest 的情况下改写血缘。
 - **UVP-4（draft-8 收窄，AUD-06 B-05）**：引用类型分两种，见 §3.3.6。**UVP 治理的版本化对象**一律用 `VersionedObjectRef` 三元组；**不版本化的运行期快照**用 `RuntimeObjectRef` 二元组。`Digest` 单独 MUST NOT 作为任何绑定键。
-- **UVP-5（draft-8 改名）**：每个 **UVP 治理身份对象** MUST 在 §3.3.2 占一行。新增此类对象 MUST 同时新增该行、§3.3.3 的 `ContentMap` 行、§17.4 的 tag 行、§17.6 的 advisory 行、唯一 owner SV 与 VPCV 覆盖，并提升 `schema_version`。**派生摘要值**只需新增 §17.4 行与 owner SV。
+- **UVP-5（draft-8 改名）**：UVP对象在§3.3.2记录类型与当前字段；更新实际受影响的定义和实现。ContentMap、tag与owner继续用于生成记录，原跨表全量同步及自动版本提升要求由维护者按实际影响调整。
 
 #### 3.3.2 UVP 治理身份对象注册表（冻结）
 
@@ -499,7 +470,7 @@ ProjectRuntimeHeader(h) = {
 
 #### 3.3.3 各对象的 `ContentMap`
 
-VerificationProfile v2 对在场字段投影到 `ContentMap_Profile`，其可选字段遵守 §17.2。audit 方法的 `verified_claim_spec` 键在对象与投影中均缺失。摘要包含版本字段及规范 map 字节，使用 §17.4 的 v2 域。既有 Profile 引用与摘要按其原版本复核，禁止补键、改写旧对象或用新域重算既有绑定。旧 bootstrap JSON 的 `BOTTOM` 仅供其既有 v1 校验路径读取。
+VerificationProfile v2 对在场字段投影到 `ContentMap_Profile`，其可选字段遵守 §17.2。audit 方法的 `verified_claim_spec` 键在对象与投影中均缺失。摘要包含版本字段及规范 map 字节，使用 §17.4 的 v2 域。既有 Profile 内容按相应支持版本解释；摘要可继续记录，摘要复算或跨版本相等不作为验收。旧 bootstrap JSON 的 `BOTTOM` 仅供其既有 v1 校验路径读取。
 
 | `ContentMap` | 组成（有序 map，键按 §17.2 排序） |
 |---|---|
@@ -517,19 +488,11 @@ VerificationProfile v2 对在场字段投影到 `ContentMap_Profile`，其可选
 | `ContentMap_ReceiptIntent` | §9.2.1 冻结的完整字段表；仅用于 `intent_digest`，`ReceiptIntent` 本身不是 UVP 对象 |
 | `ContentMap_AssumptionStateSnapshot` | `schema_version`、`encoding_profile_id`、`id`、`receipt_id`、`evaluation_instant`、`reducer_ref`、`assumption_states` |
 
-`expanded_slots` 是**注册期确定性 `[DERIVED]` 字段**：其值 MUST 满足 `expanded_slots == Expand(ordered_candidates)`（SV-53a 复算），同时 MUST 进入 `ContentMap_Policy` 并被 `policy_digest` 覆盖（SV-53b）。「派生」指它由算法产生，不指它可以不出现在对象里——draft-7 的 §3.3.3 引用了该字段而对象结构中不存在，draft-8 已在 D-06 补齐（AUD-06 B-01）。
+`expanded_slots` 是**注册期确定性 `[DERIVED]` 字段**：其值 MUST 满足 `expanded_slots == Expand(ordered_candidates)`（SV-53a 复算），同时列入 `ContentMap_Policy` 的生成输入；`policy_digest` 为记录，SV-53b已停用。「派生」指它由算法产生，不指它可以不出现在对象里——draft-7 的 §3.3.3 引用了该字段而对象结构中不存在，draft-8 已在 D-06 补齐（AUD-06 B-01）。
 
-#### 3.3.4 版本变化规则（对全部版本化 UVP 对象统一）
+#### 3.3.4 版本变化规则
 
-| 变化 | Version | Digest |
-|---|---|---|
-| 任一 `ContentMap` 内字段 | `MAJOR` +1 | **改变** |
-| 任一 `[ADVISORY]` 字段 | `MINOR` +1 | 不变 |
-| 排版、注释（均属 advisory 容器） | `PATCH` +1 | 不变 |
-
-**同一 `Digest` 可以对应多个 `(ID, Version)`**：两个内容逐字节相同的对象共享 digest，这是 content-addressing 的正常结果，也正是 §11.4 批量关联所需要的性质——`affected_profile_digests` 的语义是「受影响的**内容**」而非「受影响的**对象**」。
-
-**不追溯**：UVP 的引入 MUST NOT 改变任何既有 Receipt 的绑定解释。旧绑定持有的引用保持有效；若旧实现算出的 digest 与 UVP 不同，该差异 MUST 通过提升 `schema_version` 处理，MUST NOT 就地重算（D-03）。
+版本用于记录对象和编码支持信息。维护者根据实际兼容影响调整版本；此前 ContentMap/ADVISORY 分别强制 MAJOR/MINOR 的约定作为历史工程选择保留。摘要字段和生成公式继续记录，摘要变化、不变或跨版本相等不作为当前接受条件。既有 Receipt 的实际输入和运行记录保留，迁移按具体实现解释。
 
 #### 3.3.5 `schema_version` 与兼容性
 
@@ -581,18 +544,9 @@ ConformanceManifest {
 ```
 
 - **CM-1**：身份三元组为 `(header.id, header.version, header.digest)`；静态类型将三者解释为 `(ManifestID, SemVer, manifest_digest)`。扁平的 `manifest_id/manifest_version/manifest_digest` wire shape MUST 被拒。
-- **CM-2**：`manifest_digest = H_Manifest(cbor(ContentMap_Manifest))`，tag 与输入以 §17.4 为唯一权威。**SV-74** 的判定是：按 §17.4 重算 `ContentMap_Manifest` 的摘要并与 `manifest_digest` 逐位比较，不一致 MUST 拒绝。
-- **CM-3（版本规则，draft-8 统一，AUD-06 M-02）**：追加或修改 conformance vectors——
+- **CM-2**：`manifest_digest = H_Manifest(cbor(ContentMap_Manifest))`，tag 与输入以 §17.4 为唯一权威。该公式可用于生成记录；SV-74 的摘要复算与比较拒绝已停用。
+- **CM-3（版本记录）**：manifest 与被测对象分别记录版本。追加向量时更新实际变更的记录；版本调整由维护者根据兼容影响决定。原强制版本增量和摘要必须改变的验收条件停用。
 
-  \[
-  \begin{aligned}
-  &\text{MUST 改变 } \mathit{manifest\_version}\ (\mathtt{MAJOR}+1);\\
-  &\text{MUST 改变 } \mathit{manifest\_digest};\\
-  &\text{MUST NOT 改变被测 } \mathit{Profile}/\mathit{Template}/\mathit{Policy}\text{ 的 Version 或 Digest。}
-  \end{aligned}
-  \]
-
-  manifest 与被测对象是两条独立版本轴。draft-7 曾在 §3.3.5 末尾写「conformance vectors 的追加不影响任何注册对象的 `Version`」——该表述过宽（它把 manifest 自己也算了进去），draft-8 已删除并由本条替代。
 - **CM-4（拓扑）**：manifest 单向引用 Profile（通过 `covers_profile_digests`），Profile 不引用 manifest。非法 Profile 向量是 schema 级的，不指向任何 `profile_digest`（它们描述的对象按定义无合法 digest）。
 - **CM-5**：`file_digests` 的 path MUST 使用正斜杠 `/` 作为分隔符，且 MUST 是相对于 manifest 所在目录的相对路径。
 
@@ -630,7 +584,7 @@ RegistryObjectKind ::= VERIFICATION_PROFILE
 - **RS-3（对象种类封闭）**：`RegistryObjectKind` 是封闭枚举；新增种类 MUST 提升 `schema_version`。
 - **RS-4（不含自身，防循环——draft-8 改为结构推论，AUD-06 M-04）**：`RegistryObjectKind` 是封闭枚举且**不含** `REGISTRY_SNAPSHOT`，因此「`entries` 含 `RegistrySnapshot`」在 **L1a** 即因未知枚举值被拒，不存在可达到 L1b 的分支。draft-7 曾另设一条 L1b 的 RS-4 检查，那是一条**不可达代码**：同一反例不可能同时触发 L1a 枚举拒绝与 L1b RS-4。draft-8 删除该独立 L1b 检查，把「不含快照自身」记为封闭枚举的**结构推论**；对应反例在 VPCV-AD 中归属为 L1a 未知 `object_kind` 拒绝。
   设计理由不变：把快照纳入 `entries` 会使 `registry_snapshot_digest` 依赖另一份快照的 digest，形成必须打破的依赖环；快照是注册表在某一刻的**外部观测**，不是注册表成员。
-- **RS-5**：`ValidationContext.registry_snapshot_ref` 是完整三元组；五个相位都显式携带对象。身份一致由 SV-75a、摘要重算由 SV-75b 检查。
+- **RS-5**：`ValidationContext.registry_snapshot_ref` 是完整三元组；五个相位都显式携带对象。结构与非摘要引用字段由 SV-75a 核对；SV-75b 的摘要复算与相等判定停用。
 - **RS-6**：`ConformanceManifest` 不入 `entries`——它是测试资产而非语义注册对象，不参与任何相位判定。`RegistryObjectKind` 因此也不含 `CONFORMANCE_MANIFEST`。
 - **RS-7（draft-11 更新）**：`entries` 中每一行的 `(id, version, digest)` MUST 是该 `object_kind` 对应 UVP 对象的合法 `VersionedObjectRef`。所有枚举值都必须有可放入 `RegistryEntry` 的三元组（SV-90）。
 
@@ -779,7 +733,7 @@ SlotDecl {
 
 - **RC-1**：呈现给 Requester 的文本 MUST 由 `(normative_text, concrete_bindings)` 确定性渲染得到；实现 MUST NOT 显示非由此渲染的 claim 文本。
 - **RC-2**：`translations` 是 `[ADVISORY]`，MUST 附「非规范翻译」标记，MUST NOT 参与任何摘要。
-- **RC-3（命名警告，draft-5）**：字段名 `rendered_claim_digest` 沿用自 draft-3，**但它不是渲染文本的摘要**。规范输入是结构化二元组 `[claim_template_ref, concrete_bindings]`。保留旧名是为了不破坏既有引用；实现 MUST 在类型定义处标注这一点。任何按字面理解去散列渲染文本的实现 MUST 被拒绝（SV-46）。
+- **RC-3（命名警告，draft-5）**：字段名 `rendered_claim_digest` 沿用自 draft-3，**但它不是渲染文本的摘要**。规范输入是结构化二元组 `[claim_template_ref, concrete_bindings]`。保留旧名是为了不破坏既有引用；实现 MUST 在类型定义处标注这一点。记录生成时采用上述结构化输入；SV-46 的摘要判定本轮停用。
 
 本公式在 §11.1 CB-2、§17.4、SV-46 与 VPCV-R 中 MUST 逐字一致。draft-4 曾在 CB-2 与 §17.4 中误写为 `claim_template_id`，破坏传递绑定；draft-5 已统一。
 
@@ -797,7 +751,7 @@ SlotDecl {
 | `input_refs` | RUNTIME | RECEIPT | — |
 | `output_ref` | RUNTIME | EVIDENCE_CHAIN | — |
 
-关键性质：该 claim **不引用 RIR、不引用 RPR、不引用 Provider 集合**。它是关于「输出相对输入满足某性质」的陈述，其真值不依赖 CorrectnessBridge、\(B\)、Provider 独立性或抽样。这是 `DIRECT_VERIFIED` 在推荐顺序中排第一的唯一理由——未证明前提集合严格更小，而非精度更高。代价是信任根转移到 `predicate_ref` 与 `validator_ref`（`EXC-SPEC-PREDICATE-FIT`、`EXC-IMPL-VALIDATOR`）。
+关键性质：该 claim **不引用 RIR、不引用 RPR、不引用 Provider 集合**。它是关于「输出相对输入满足某性质」的陈述，其真值不依赖 CorrectnessBridge、\(B\)、Provider 独立性或抽样。这是 `DIRECT_VERIFIED` 在推荐顺序中排第一的唯一理由——其具体前提不同，Direct 依赖声明的谓词与实现，而非精度更高。代价是信任根转移到 `predicate_ref` 与 `validator_ref`（`EXC-SPEC-PREDICATE-FIT`、`EXC-IMPL-VALIDATOR`）。
 
 #### `CT-PROOF-STATEMENT`
 
@@ -909,7 +863,7 @@ AssumptionEvaluationResult ::=
 冻结规则：
 
 - **ASS-1（内联 vs 引用）**：`ClaimBinding` **引用**快照（`assumption_state_snapshot_ref`）并**内联** `assumption_state_digest`。理由：状态行数量随假设数增长，Decision 必须保持紧凑；但可重算性要求 Phase D 能拿到行，因此快照 MUST 作为 Phase D 的显式输入之一（§13.0）。
-- **ASS-2（覆盖范围）**：`assumption_states` MUST 恰好覆盖本 Profile 中 `role ∈ {SAFETY_CRITICAL, LIVENESS}` 的全部假设，**排除 `INFORMATIONAL`**。排除理由：AR-4 已规定 `INFORMATIONAL` 不得影响任何终态；若把它们纳入摘要，一次纯信息性的证据版本变更就会改变 `assumption_state_digest`，从而改变 Decision 的可比较性。
+- **ASS-2（覆盖范围）**：`assumption_states` MUST 恰好覆盖本 Profile 中 `role ∈ {SAFETY_CRITICAL, LIVENESS}` 的全部假设，**排除 `INFORMATIONAL`**。排除理由：AR-4 已规定 `INFORMATIONAL` 不得影响任何终态；当前集合选择由该方法的状态求值规则决定；摘要字段只记录，不以摘要相等性判定Decision。
 - **ASS-3（排序与去重）**：行按 `assumption_id` 的**编码字节**字典序升序；`assumption_id` 在一个 Profile 内 MUST 唯一（SV-76）。每行 `cause_set` 按 `cause_code` 编码序升序且同一 code 只出现一次；并发原因不得删减。
 - **ASS-4（事实与判决）**：每行 `effective_verdict` 必须等于 `Reduce(reducer_ref, cause_set)`；空 `cause_set` 仅在证据完整且所有检查通过时归约为 `VALID`。非空集合不得归约为 `VALID`。
 - **ASS-5**：`assumption_state_digest`（`ClaimBinding` 内联）与 `snapshot_digest`（快照自身）是**两个不同摘要**，输入不同（前者只含 `AssumptionStateRows`，后者是完整 `ContentMap_AssumptionStateSnapshot`，见 §3.3.3），各有 owner SV（§17.4）。
@@ -918,7 +872,7 @@ AssumptionEvaluationResult ::=
 
 **P0-5 接口预留**：`DecisionQualificationUpdate` 的批量关联 MAY 以 `assumption_state_snapshot_ref` 或行内 `(assumption_id, evidence_version)` 为键。draft-6 只保证这些键存在且可重算，不预判 P0-5 的关联算法。
 
-只有后者能让 P0-5 判定一次事后撤销是否影响某个已终态 Decision：撤销的是**某个证据版本**，而 `assumption_set_digest` 对证据版本一无所知。两者 MUST 同时出现在 `ClaimBinding` 中（SV-54a 查结构覆盖、SV-54b 查摘要重算）。
+只有后者能让 P0-5 判定一次事后撤销是否影响某个已终态 Decision：撤销的是**某个证据版本**，而 `assumption_set_digest` 对证据版本一无所知。当前 Schema 同时记录两者；SV-54a 查结构覆盖，SV-54b 摘要判定停用。
 
 ### 5.3 三条硬约束
 
@@ -951,7 +905,7 @@ ExclusionEntry {
 }
 ```
 
-> **draft-8 升格（AUD-06 B-02）**：`ExcludedClaimsRegistry` 成为 UVP 对象，`ExcludedClaims.registry_version : uint` 相应改为 `registry_ref : VersionedObjectRef`。理由与 `WeakeningEdge` 同源：注册表内容决定 `TRUSTED` 明确不证明什么，它必须被 `registry_snapshot_digest` 覆盖，否则两个持有不同注册表内容的实现会对同一 Profile 得出不同的排除语义却算出相同快照摘要。
+> **draft-8 升格（AUD-06 B-02）**：`ExcludedClaimsRegistry` 成为 UVP 对象，`ExcludedClaims.registry_version : uint` 相应改为 `registry_ref : VersionedObjectRef`。理由与 `WeakeningEdge` 同源：注册表内容决定 `TRUSTED` 明确不证明什么，旧设计通过摘要记录其内容；当前实际注册表内容作为显式输入，SHA覆盖与一致性判定停用。
 >
 > 注意两者的区别：`ExcludedClaims`（Profile 内的选择集）仍是**派生摘要值**，不在 §3.3.2；`ExcludedClaimsRegistry`（被选择的全集）是 UVP 对象，在 §3.3.2。
 
@@ -1450,7 +1404,7 @@ DeploymentEvidence ::= MAINNET(MainnetAssuranceProfile)
                      | NONMAINNET_TEST(NonMainnetDeploymentDeclaration)
 ```
 
-`NONMAINNET_TEST` 引用外部版本化声明。声明的封闭字段为 `schema_version`（uint 1）、`id`、`version`（SemVer）、`network_id`、`genesis`、`trust_root`（后两者为 Digest）、`valid_from`、`valid_until`（Instant）、`method`、`sources`、`asset`、`funding_cap`（uint）与 `state_effect`。声明摘要是 §17.4 的域分离哈希，tag 为 `ACLt/P0-1/NonMainnetDeployment/1`，输入为上述全字段规范 CBOR。该摘要属于外部部署声明，独立于 UVP 摘要归属表。引用的 id、version 和摘要必须全部匹配。合法方法固定为 `REEXEC_AUDIT_ONLY`，生效规则固定为 `TEST_COMMIT_CHECKPOINT`。sources 为封闭 map，键为 `clock`、`log_backend`、`result_validator`、`rpr_entry`、`execution_capability`、`assumption_reducer`、`execution_closure`，每个值为 `ExternalVersionedObjectRef`。各合约能力须在部署评审时验证，声明一个引用不授予该能力。
+`NONMAINNET_TEST` 引用外部版本化声明。声明的封闭字段为 `schema_version`（uint 1）、`id`、`version`（SemVer）、`network_id`、`genesis`、`trust_root`（后两者为 Digest）、`valid_from`、`valid_until`（Instant）、`method`、`sources`、`asset`、`funding_cap`（uint）与 `state_effect`。声明摘要是 §17.4 的域分离哈希，tag 为 `ACLt/P0-1/NonMainnetDeployment/1`，输入为上述全字段规范 CBOR。该摘要属于外部部署声明，独立于 UVP 摘要归属表。引用的id/version按实际支持核对；摘要字段只记录，匹配拒绝停用。合法方法固定为 `REEXEC_AUDIT_ONLY`，生效规则固定为 `TEST_COMMIT_CHECKPOINT`。sources 为封闭 map，键为 `clock`、`log_backend`、`result_validator`、`rpr_entry`、`execution_capability`、`assumption_reducer`、`execution_closure`，每个值为 `ExternalVersionedObjectRef`。各合约能力须在部署评审时验证，声明一个引用不授予该能力。
 
 | 边界 | 新版接线 |
 |---|---|
@@ -1590,7 +1544,7 @@ ObservableEvent ::= POSITIVE | NEGATIVE
 代价全在活性侧：
 
 - **FM-1**：`INVALID_SAMPLE` 率 MUST 进入 \(Q\) 的校准语料；
-- **FM-2**：超过 `max_invalid_samples` MUST 转 `VERIFICATION_INVALIDATING`。这不是安全需要，而是防止攻击者把总体耗尽成必然 `UNRESOLVED` 的拒绝服务；
+- **FM-2**：超过声明的 `max_invalid_samples` 转 `VERIFICATION_INVALIDATING`。该机制提前停止后续验证消耗，并记录本轮失效；阈值按实际任务配置调整。
 - **FM-3**：任何把 `INVALID_SAMPLE` 映射为「重抽」「从总体移除」或「不消耗单位」的实现 MUST 被拒绝——重抽违反 INV-11，事后移除违反 INV-12。
 
 ### 10.4 推荐默认映射（非规范性，`ReexecFailureMapping`）
@@ -1714,9 +1668,9 @@ DecisionEvaluationRecord {
 ```
 
 - **CB-1**：`concrete_bindings` 的键集合 MUST 恰好等于 `binding_schema` 的键集合；`STATIC` 槽位的值 MUST 与 Profile 的 `static_bindings` 逐位相同（SV-35）。
-- **CB-2**：`rendered_claim_digest` MUST 等于按 §5.1.1 与 §17.4 对 **`(claim_template_ref, concrete_bindings)`** 计算的摘要。`claim_template_ref` 含 `template_digest`，因而模板文本被传递绑定；用 `claim_template_id` 替代 `claim_template_ref` MUST 被拒绝（draft-5 修复审计 B-01）。
+- **CB-2**：`rendered_claim_digest` 记录按 §5.1.1 与 §17.4 对 `(claim_template_ref, concrete_bindings)` 生成的摘要，摘要相等判定停用。`claim_template_ref` 含 `template_digest`，因而模板文本被传递绑定；用 `claim_template_id` 替代 `claim_template_ref` MUST 被拒绝（draft-5 修复审计 B-01）。
 - **CB-3**：见 D-08-d。
-- **CB-4（主网工程边界）**：`network_id`、`assurance_profile_ref` 与 `assurance_boundary_digest` 必须与 Receipt `CanonicalSemantics` 冻结值逐位一致。`TRUSTED` 决策缺少任一字段必须被拒；主网外调用不得复用官方主网的 claim 文本而省略该边界。
+- **CB-4（主网工程边界）**：核对 `network_id` 及 assurance 引用的非摘要字段；`assurance_boundary_digest` 和引用中的摘要字段作记录，一致性拒绝停用。`TRUSTED` 决策缺少任一字段必须被拒；主网外调用不得复用官方主网的 claim 文本而省略该边界。
 
 **DE-1（完整显式输入）**：Phase D 必须内联 `DecisionEvaluationInput`；`MethodEvaluation.canonical_input` 必须包含 evaluator 重放所需的 Evidence 与 aggregate 数据。只给 `evidence_chain_ref` 或允许 validator 从网络补取对象均拒绝。
 
@@ -1925,7 +1879,7 @@ ResolveBoundary(BoundaryObservation, EventFrontierSnapshot, ReceiptID) -> Decisi
 
 `EXECUTION_FAILED` 为真当且仅当：`ExecutionObservation = CLOSURE(record)`，该记录的 `receipt_id` 与 Receipt 一致，`recovery_exhausted_event` 在显式事件 DAG 中解析为 `EXECUTION_EXHAUSTED/RECEIPT(receipt_id)`，且 `valid_submission_count = 0`。此时验证从未开始，`before_verification` 阶段的撤销映射适用。
 
-`SOURCE_UNAVAILABLE`、未知 `execution_contract_ref`、事件缺失或 closure 摘要错误不得被解释为“已经耗尽”，而产生 `VERIFICATION_INVALIDATING -> UNRESOLVED`。OQ-04/OQ-05 决定哪个执行状态机有权产生 closure；P0-1A 只冻结记录形状和投影。官方主网在该来源 contract 未进入 `MainnetAssuranceProfile` 前必须禁用 `EXECUTION_FAILED -> FAILED` 能力。
+`SOURCE_UNAVAILABLE`、未知 `execution_contract_ref` 或事件缺失不表示“已经耗尽”，而产生 `VERIFICATION_INVALIDATING -> UNRESOLVED`。OQ-04/OQ-05 决定哪个执行状态机有权产生 closure；P0-1A 只冻结记录形状和投影。官方主网在该来源 contract 未进入 `MainnetAssuranceProfile` 前必须禁用 `EXECUTION_FAILED -> FAILED` 能力。
 
 每个适用方法的 `decision_mapping.rules` MUST 包含 `EXECUTION_FAILED`；其终态由 `CanonicalTerminal(EXECUTION_FAILED) = FAILED` 唯一派生（SV-51）。
 
@@ -1954,7 +1908,7 @@ TRUSTED、claim 和 EligibilitySnapshot。实现必须验证同一部署、日�
 **闭合、期限及预算。** 执行闭合必须引用前缀内唯一的、同 Receipt 的已认证耗尽
 事件，来源 contract 必须允许该角色为该 Receipt 作此声明。尝试数和有效候选数按
 相同前缀重放。只有验证尚未开始且有效候选数为零的已授权闭合才满足
-`EXECUTION_FAILED`。缺失、越界、错对象、未知来源或摘要错误按 §11.3.5 失效。
+`EXECUTION_FAILED`。缺失、越界、错对象或未知来源按 §11.3.5 处理；摘要错误拒绝本轮停用。
 期限从 Receipt 冻结值与同一次权威求值观测导出，`evaluated_at >= deadline`
 时必须存在观测引用，之前必须省略。该引用绑定前缀及时间，不增加日志序号或
 制造一条已提交事件。它不能替代结果的权威接纳时间，结果仍须严格早于期限。
@@ -2006,9 +1960,7 @@ SHA-256。cutoff 是求值前已验证的日志头（序号、事件摘要、状
 
 必须从同一已认证输入重放方法与各 predicate。按 Profile 冻结顺序重算
 `condition_vector`（每项恰含 `condition, value, reason_digest`），从首个真值
-派生唯一终态。首轮只编码已经闭合的求值。任一引用、输入、布尔值、原因摘要
-或终态不一致须拒绝整个候选记录，不能接受调用方选择的终态。
-`reason_digest` 承诺哪份输入支持哪个条件的真假；来源证明须随求值证据复核。
+派生唯一终态。首轮记录已接通的求值。非摘要引用、实际输入、条件布尔值与终态继续核对；原因摘要字段仅记录，摘要一致性拒绝停用。来源证明按实际签名与来源机制复核。
 
 **R10/R11 兼容。** 旧 TEST 域与历史归档按原版校验。R11 转投影时先验证独立固定
 的配置、anchor、checkpoint、签名日志与既有结算，再从判决前前缀生成候选记录。
@@ -2057,6 +2009,8 @@ ResultEquivalence {
 V1 约束（`V1Admissible` 而非 `SchemaValid`，见 §13.1）：`relation_kind` MUST 为 `CANONICAL_BITWISE`，`totality` MUST 为 `TOTAL`。
 
 ## 13. 五相位校验
+
+当前执行按开发政策逐项同步。本节各 SV 涉及的摘要复算与相等判定已由维护者决定停用；同一 SV 的结构、实际内容和状态关系检查分别保留。下表保留编号以关联既有实现，实施结果见本次差异与运行记录。
 
 > **draft-3 新增（审计 B-02）**：draft-2 把全部 SV 同时施加于注册期与 Intent 解析期，但 SV-14/23/26 依赖 `ReceiptIntent`，SV-28 在 `DRAFT → REGISTERED` 之前又要求状态已是 `REGISTERED/ACTIVE`——自相矛盾。
 
@@ -2121,10 +2075,10 @@ EventSubjectRef ::=
 \]
 
 - **CTX-6（显式快照）**：五个相位的输入 MUST 是 `ValidationBundle`，即 `RegistrySnapshot` 与 `EventFrontierSnapshot` 的对象和规范字节均显式在场。只给引用而不给对象 MUST 被拒。
-- **CTX-10（L2 职责边界）**：L2 **MUST NOT** 从引用取得远程对象。L2 只对 bundle 已提供的两个快照原始字节重算摘要。
+- **CTX-10（L2 职责边界）**：L2 **MUST NOT** 从引用取得远程对象。L2 使用 bundle 已提供的字节执行规范编码检查；两个快照的摘要复算与相等判定停用。
 - **SV-75 拆分（draft-8）**：
   - **SV-75a（L1b）**：`registry_snapshot_ref` 可解析；`bundle.registry_snapshot` 的三元组与该引用逐位一致。
-  - **SV-75b（L2）**：对显式提供的 `RegistrySnapshot` 原始字节重算 `registry_snapshot_digest` 并逐位比较（owner）。
+  - **SV-75b（L2）**：摘要字段记录，原复算与逐位比较判定停用。
 
 因果快照规则：
 
@@ -2134,7 +2088,7 @@ EventSubjectRef ::=
 - **EF-4**：事件类型与 `subject_ref` 由使用该事件的规则显式检查；未知 `event_kind` fail closed。
 - **EF-4a（draft-11 subject 矩阵）**：`PHASE_I_VALIDATION -> PHASE_I_RECORD`；`PHASE_F_VALIDATION -> PHASE_F_CALL`；`CLUSTER_MAPPING_FIXED -> CLUSTER_MAPPING`；`SNAPSHOT_FROZEN -> ELIGIBILITY_SNAPSHOT`；`FUNDING_EXHAUSTED/DEADLINE_REACHED/EXECUTION_EXHAUSTED/VERIFICATION_STARTED/VERIFICATION_TERMINAL_COMMITTED -> RECEIPT`；`OTHER -> OPAQUE_IMPORTED`。kind 与 tag 不匹配、必填 subject 缺失或出现多余 subject 均拒绝。
 - **EF-4b（无 Snapshot 扩展）**：新 kind 仅在 EventFrontierSnapshot `schema_version = 2` 可用。快照的 schema_version 入摘要，旧 schema 继续按原事件枚举复核。接纳新事件类型前须冻结其来源 contract 并完成相应信封接线。
-- **EF-5（draft-11）**：快照内容与 `event_frontier_digest` 的一致性由 L2 重算。官方主网不再把日志忠实性当作需要从 Schema 推导的理论命题，而把它落实为 MAP-6 后端、状态机强制写入和 conformance/故障恢复测试；实现是否绕过该后端属于固定 Type B 项 SV-100。
+- **EF-5（draft-11）**：`event_frontier_digest` 作为记录，原 L2 一致性判定停用。官方主网不再把日志忠实性当作需要从 Schema 推导的理论命题，而把它落实为 MAP-6 后端、状态机强制写入和 conformance/故障恢复测试；实现是否绕过该后端属于固定 Type B 项 SV-100。
 - **EF-6（工程日志闭合）**：`log_binding.backend_ref` 必须等于当前 `MainnetAssuranceProfile.log_backend_ref`。validator 必须调用该 backend contract 的确定性 verifier，检查 checkpoint finality、每条 EventRecord 的 inclusion proof 与前后 checkpoint consistency；缺失或验证失败产生 `VERIFICATION_INVALIDATING`。
 - **EF-7（状态权威）**：官方主网的协议状态转换只有在其 EventRecord 已进入 MAP-6 后端的 finalized checkpoint 后才生效。区块链、Merkle transparency log 或等价模块均可实现该 contract；具体共识/最终性假设由 `MainnetAssuranceProfile` 版本化绑定。主网外后端不自动获得该声明。
 
@@ -2186,8 +2140,7 @@ API 层的 `context_id` 与 `record_id` 都映射到各自 `RuntimeObjectHeader.
  & \land\ \mathit{ContentMap\_ReceiptIntent}(\mathit{PhaseITranscript.input.intent})
  = \mathit{ContentMap\_ReceiptIntent}(\mathit{PhaseF.intent})\\
  & \land\ \mathit{PhaseITranscript.input.slot}=\mathit{PhaseF.selected\_slot}\\[3pt]
-\text{(CC-4)}\quad & \mathit{record.intent\_digest} = H_{\mathrm{ReceiptIntent}}(\mathrm{cbor}(\mathit{ContentMap\_ReceiptIntent}(\mathit{PhaseF.intent})))\\
-                   & \land\ \mathit{record.slot\_index} = \mathit{PhaseF.selected\_slot.index}\\
+\text{(CC-4)}\quad & \mathit{record.slot\_index} = \mathit{PhaseF.selected\_slot.index}\\
                    & \land\ \mathit{record.outcome} = \mathtt{SELECTED}\\[3pt]
 \text{(CC-5)}\quad & \mathit{EventKind}(\mathit{record.produced\_by\_event})=\mathtt{PHASE\_I\_VALIDATION}
  \land \mathit{EventSubject}=\mathtt{PHASE\_I\_RECORD}(\mathit{record.header.id})
@@ -2198,7 +2151,7 @@ API 层的 `context_id` 与 `record_id` 都映射到各自 `RuntimeObjectHeader.
 \]
 
 - **CTX-4**：Phase I 与 Phase F 都显式携带完整 `CreationValidationContext`，并分别通过 `PhaseIValidationTranscript` 与 `PhaseFEnvelope` 满足 CC-1、CC-2I/CC-2F。不存在只给引用的合法路径。`CreationValidationContext` 只冻结创建时刻与注册表视图；**不冻结 `event_frontier_ref`**，因为 Phase F 必须看到 Phase I 之后新增的因果事件。两个相位各自的 event frontier 属各自 `ValidationBundle`，不得伪装成同一快照。
-- **CTX-11**：`PhaseIValidationRecord` 是内联完整记录。Phase I 的规范调用签名为 `ValidateI(PhaseIEnvelope) -> PhaseIValidationRecord`，测试与持久化证据以 `PhaseIValidationTranscript` 承载。Phase F 必须同时执行 CC-3—CC-6：摘要一致只证明内容未改，`ReplayPhaseI` 与显式事件 DAG 才证明该记录对应本次确定性选择。
+- **CTX-11**：`PhaseIValidationRecord` 是内联完整记录。Phase I 的规范调用签名为 `ValidateI(PhaseIEnvelope) -> PhaseIValidationRecord`，测试与持久化证据以 `PhaseIValidationTranscript` 承载。Phase F 必须同时执行 CC-3—CC-6：摘要一致性检查已停用；当前路径核对 `ReplayPhaseI` 的实际输入输出与显式事件 DAG。
 - **CTX-12**：`CreationValidationContext` 一经产生即不可修订（`CreationContextRef`，REF-2）。同一次 `CreateReceipt` 内的全部 Phase I 调用与唯一一次 Phase F 调用共享它。
 - **CTX-13**：`ContentMap_ReceiptIntent` 恰为 §9.2.1 的封闭键集合；不存在“先接受未知字段再去掉注释”的路径。`intent_digest` 的 tag 与 owner 见 §17.4/SV-104。
 - **CTX-14**：`ReplayPhaseI` 是 D-06 单一选择算法对一个 slot 的确定性投影；输入仅为信封显式字段，不读取外部时钟、网络或隐藏注册表。
@@ -2347,7 +2300,7 @@ ActualBoundScope {
 
 draft-6 留下的「是否需要第三个 Dispatch 绑定时点」在 draft-10 作如下裁定：**V1 不新增第三份 scope 对象，也不允许 Dispatch 改写 Lease 已绑定的执行元组。** 通过 `LEASE_ACTIVATION` 的 active Lease 必须按 `MainnetAssuranceProfile.execution_capability_contract_ref` 派生不可变 `ExecutionCapability`；Dispatch 与 RPR 只消费并分别验证同一 capability。若任何执行相关字段变化，旧 Lease 与 capability 失效，必须先以新 Lease 再次触发 Phase B。
 
-`ExecutionCapability` 的内部签名/MAC/证明格式由该不可变外部 contract 定义，但其最小规范 payload MUST 绑定：`ReceiptID`、`LeaseID`、严格递增 `epoch`、`execution_tuple_digest`、`scope_digest`、`expiry`、`issuer_key_ref`、`bound_profile_ref` 与 `assurance_profile_ref`。contract 的确定性 verifier 必须返回 `VALID | INVALID`；未知 contract、字段缺失、过期、epoch 落后或任一摘要不一致一律 `INVALID`。P0-1 不把该 imported contract 伪装成 UVP 对象；Profile 只冻结 contract 引用并检查其与 MAP 的逐位绑定。
+`ExecutionCapability` 的内部签名/MAC/证明格式由该不可变外部 contract 定义，但其最小规范 payload MUST 绑定：`ReceiptID`、`LeaseID`、严格递增 `epoch`、`execution_tuple_digest`、`scope_digest`、`expiry`、`issuer_key_ref`、`bound_profile_ref` 与 `assurance_profile_ref`。contract 的确定性 verifier 必须返回 `VALID | INVALID`；未知 contract、字段缺失、过期或 epoch 落后按实际 verifier 处理；摘要不一致导致的拒绝停用。P0-1 不把该 imported contract 伪装成 UVP 对象；Profile 只冻结 contract 引用并检查其与 MAP 的逐位绑定。
 
 - **DB-1（引用）**：每个 Assignment/Dispatch MUST 携带恰好一个由活动 Lease 派生的 `ExecutionCapability`，且 Receipt、Provider 与 sampling unit 必须与该 Lease 及已冻结 Snapshot 的对应记录一致。
 - **DB-2（不可改写）**：Dispatch 使用的 `(rpr_version, environment_class, fault_domains, geography)` MUST 与该 Lease 产生的 `ActualBoundScope` 逐位一致；Dispatch 对这些字段没有覆盖或默认值。
@@ -2510,7 +2463,7 @@ draft-8 把轮次状态压成布尔 `verification_started`，并推论「`false`
 \mathit{Precedes}(e_1,e_2)\ :=\ e_1 \text{ 在 } \mathit{bundle.event\_frontier\_snapshot.event\_records} \text{ 的父引用闭包中先于 } e_2
 \]
 
-分布式系统中的 `Instant` 不能证明因果顺序。draft-10 删除两个嵌套 telemetry 时间字段，改由显式 `EventFrontierSnapshot` 提供闭合 DAG；L1b 按 EF-3 计算可达性，L2 重算该快照摘要。任何实现不得从外部事件仓库补齐缺失边。
+分布式系统中的 `Instant` 不能证明因果顺序。draft-10 删除两个嵌套 telemetry 时间字段，改由显式 `EventFrontierSnapshot` 提供闭合 DAG；L1b 按 EF-3 计算可达性；快照摘要仅记录，一致性判定停用。任何实现不得从外部事件仓库补齐缺失边。
 
 PB-6 还必须检查：`cluster_mapping_fixed_event.event_kind = CLUSTER_MAPPING_FIXED` 且 `subject_ref = CLUSTER_MAPPING(cluster_mapping_ref.id)`；`freeze_event.event_kind = SNAPSHOT_FROZEN` 且 subject tag/ID 与该 EligibilitySnapshot 一致。只满足可达性而事件类型或主体不符仍须拒绝。
 
@@ -2557,7 +2510,7 @@ draft-8 的 SV-94 一面登记为 Type A、一面规定「不提供转换信封�
 | 编号 | 相位 | 层 | 检查 | 证据类型 |
 |---|---|---|---|---|
 | SV-01 | R | L1a | `schema_version` 与 `encoding_profile_id` 已知；无未知字段 | A |
-| SV-02 | R | L2 | `profile_digest` 按 §17.4 与 UVP-1V 重算一致 | A |
+| SV-02 | R | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-03 | R | L1a | `verification_method` ∈ 四元枚举 | A |
 | SV-04 | R | L1a | `method_parameters` 变体与 `verification_method` 匹配 | A |
 | SV-05 | R | L1a | `claim_template_ref.template_id` 与方法一一对应（CLM-3） | A |
@@ -2602,25 +2555,25 @@ draft-8 的 SV-94 一面登记为 Type A、一面规定「不提供转换信封�
 | SV-42 | R | L2 | 容器 canonicality：map key 顺序、集合/规范 pair-array 排序去重、`Rational` 既约；不检查 primitive 禁令、整数域或摘要 | A |
 | SV-43 | **I** | L1b | `DEGRADED` slot 的 `failure_reasons[degraded_from] ⊆ enabling_triggers`（D-06） | A |
 | SV-44 | R | L1b | `static_bindings` 的每个值与 method parameters 对应字段逐位相同（CS-2） | A |
-| SV-45 | **F** | L1b | 选中 slot 的 `profile_digest` 与注册表中该 Profile 的实际 digest 一致 | A |
-| SV-46 | **D** | L2 | `rendered_claim_digest` 按 §5.1.1 与 §17.4 正确（CB-2） | A |
+| SV-45 | **F** | L1b | **本轮停用**：slot/profile 摘要相等判定退出验收；摘要字段保留记录。 | A |
+| SV-46 | **D** | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-47 | R | L1b | `calibration_ref` 指向本 Profile 中 `assumption_class = CALIBRATION` 且 `role = LIVENESS` 的条目（LP-5） | A |
-| SV-48 | R | L1b | `claim_template_ref` 的 `template_digest` 与注册表中模板实际 digest 一致；模板状态 ∈ {`REGISTERED`, `ACTIVE`} | A |
+| SV-48 | R | L1b | 模板状态 ∈ {`REGISTERED`, `ACTIVE`}；`template_digest` 仅记录，摘要比较停用。 | A |
 | SV-49 | R | L1b | Profile 侧以 `VersionRange` 约束的量，其同名 claim 槽位为 `RUNTIME`（CS-4） | A |
 | SV-50 | R | L1a | 无嵌套 `[ADVISORY]`：该标记只出现在顶层字段（§17.6） | A |
 | SV-51 | R | L1a | 适用方法的 `decision_mapping.rules` 含 `EXECUTION_FAILED`；对象内不存在可覆盖 `CanonicalTerminal` 的 terminal 字段（§11.3.5） | A |
 | SV-52 | R | L2 | 整数唯一 owner：无 CBOR bignum（tag 2/3）、最短整数；`int` ∈ [−2⁶³, 2⁶³−1]，`uint` ∈ [0, 2⁶⁴−1]（§17.5A） | A |
 | SV-53a | R | L1b | `expanded_slots == Expand(ordered_candidates)`（结构派生复算） | A |
-| SV-53b | R | L2 | `policy_digest` 按 §17.4 同时绑定 `ordered_candidates` 与 `expanded_slots` | A |
+| SV-53b | R | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-54a | **D** | L1b | 当 `assumption_evaluation = COMPLETE(snapshot)` 时，状态行恰好覆盖 `SAFETY_CRITICAL/LIVENESS`、排除 `INFORMATIONAL`；行与 `cause_set` 排序去重；`effective_verdict = Reduce(reducer_ref, cause_set)`；`INVALIDATING` 分支不要求快照 | A |
-| SV-54b | **D** | L2 | `assumption_state_digest` 按 §17.4 重算一致（owner） | A |
+| SV-54b | **D** | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-55 | **I** | L1b | 每个 `SAFETY_CRITICAL`/`LIVENESS` 假设满足 `Intent ⊑ scope`（AR-4） | A |
 | SV-56 | R | — | 实现 MUST NOT 把 `INVALID_SAMPLE` 实现为重抽、从总体移除或不消耗单位（FM-3）。这是实现行为而非 Profile 字段，Profile 无法表达，故为 Type B | **B** |
 | SV-57 | **D** | L1b | `terminal_state = TRUSTED` ⇒ `assumption_evaluation = COMPLETE(snapshot)` 且全部 `SAFETY_CRITICAL` 假设的 `effective_verdict = VALID`（AS-1/ASS-7） | A |
 | SV-58 | **I** | L1b | `NormalizeDeclaredScope(Intent)` 六维齐备，且 `fault_domains`、`geography` 非空（SC-1） | A |
 | SV-59 | R | L1a | `ScopeSpec` 六维齐备，无可选维度（SC-1） | A |
 | SV-60 | R | L2 | **仅对版本化对象**：若 `ContentMap(a) == ContentMap(b)` 且二者只在 ID/Version 上不同，则 `Digest(a) == Digest(b)`（UVP-1V）。运行期对象因 `id` 入 ContentMap 不适用 | A |
-| SV-61 | R | L1b | 相对前一版本：改内容字段 ⇒ `MAJOR` +1 且 digest 改变；仅改 `[ADVISORY]` ⇒ `MINOR` +1 且 digest 不变；仅改排版 ⇒ `PATCH` +1 且 digest 不变（§3.3、§3.5） | A |
+| SV-61 | R | L1b | 记录对象与内容变化；版本调整由维护者按兼容影响决定，摘要值不作为接受条件。 | A |
 | SV-62 | R | L1b | 引用类型正确：版本化 UVP 对象用 `VersionedObjectRef`；不版本化运行期产物用对应 `RuntimeObjectRef<IDType>` 具体别名；外部工程组件用 `ExternalVersionedObjectRef`，不得伪装成 `RegistryObjectKind`；任何引用不得只给 `Digest`（REF-1—REF-6） | A |
 | SV-63 | R | L1a | `DecisionMapping.rules` 是 `[DecisionCondition]`，**不含** `terminal` 字段；无 `CanonicalTerminal` 覆盖字段（§11.3.2） | A |
 | SV-64 | R | L1b | `reachable_terminals` 恰等于 `CanonicalTerminal[rules] ∪ {UNRESOLVED}`；不重复检查 rules 集合（归 SV-20） | A |
@@ -2629,13 +2582,13 @@ draft-8 的 SV-94 一面登记为 Type A、一面规定「不提供转换信封�
 | SV-67 | — | — | validator MUST NOT 自行读取时钟、随机性或网络；判定时刻只来自 `ValidationContext`（CTX-2） | **B** |
 | SV-68 | **B** | L1b | Lease 激活与 Snapshot 冻结时，对每个 `SAFETY_CRITICAL`/`LIVENESS` 假设检查 `ScopeContains(scope, ActualBoundScope)`（SB-1） | A |
 | SV-69 | **B** | L1b | `EligibilitySnapshot.population_definition` 的每个抽样单位落在 scope 内（SB-2） | A |
-| SV-70 | R | L2 | `template_digest` 按 §17.4 与 UVP-1V 重算一致（owner） | A |
-| SV-71 | **D** | L2 | `AssumptionStateSnapshot.snapshot_digest` 按 §17.4 重算一致（owner） | A |
-| SV-72 | R | L2 | `excluded_claims.digest` 按 §17.4 重算一致（owner） | A |
-| SV-73 | R | L2 | `assumption_set_digest` 按 §17.4 重算一致（owner） | A |
-| SV-74 | R | L2 | `manifest_digest` 按 §17.4 重算 `ContentMap_Manifest` 并逐位比较（owner；CM-2） | A |
+| SV-70 | R | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
+| SV-71 | **D** | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
+| SV-72 | R | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
+| SV-73 | R | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
+| SV-74 | R | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-75a | **R/I/F/B/D** | L1b | `registry_snapshot_ref` 可解析；`bundle.registry_snapshot` 的三元组与该引用逐位一致（CTX-6） | A |
-| SV-75b | **R/I/F/B/D** | L2 | 对**显式提供的** `RegistrySnapshot` 原始字节重算 `registry_snapshot_digest`（owner；CTX-10：L2 不得取远程对象） | A |
+| SV-75b | **R/I/F/B/D** | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-76 | R | L1b | `assumption_id` 在一个 Profile 内唯一（ASS-3） | A |
 | SV-77 | **B** | L1a | `ActualBoundScope` 六维齐备，且 `fault_domains`、`geography` 非空（SC-1） | A |
 | SV-78 | **D** | L1b | 当产生 `TRUSTED` 时，`COMPLETE(snapshot)` 的 identity 与 `claim_binding.assumption_state_snapshot_ref` 一致且 snapshot.receipt_id 匹配；其他终态按方法规则允许无 ClaimBinding | A |
@@ -2649,8 +2602,8 @@ draft-8 的 SV-94 一面登记为 Type A、一面规定「不提供转换信封�
 | SV-86b | **R/I/F/B/D** | L1a | 运行期对象严格使用 `NESTED_HEADER`；无 `version`；`header.id` 经 UVP-1R 投影进入 ContentMap | A |
 | SV-86c | **R/I/F/B/D** | L1a | 对象未在 header 外重复声明 `id`/`version`/`digest`；扁平 Profile 不得额外出现 `header` | A |
 | SV-87 | R | L1a | `ProfileSelectionPolicy.expanded_slots` 字段存在于对象结构且列入 `ContentMap_Policy`（§3.3.3） | A |
-| SV-88 | R | L2 | `edge_digest` 按 §17.4 重算 `ContentMap_WeakeningEdge`（owner） | A |
-| SV-89 | R | L2 | `ExcludedClaimsRegistry.registry_digest` 按 §17.4 重算（owner） | A |
+| SV-88 | R | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
+| SV-89 | R | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-90 | R | L1b | `RegistryEntry` 的每个 `object_kind`（含 `MAINNET_ASSURANCE_PROFILE`）都有可解析的 `VersionedObjectRef`（RS-7） | A |
 | SV-91 | **R/I/F/B/D** | L1a | `bundle.context`、`registry_snapshot`、`event_frontier_snapshot` 均在场；两个快照字段缺一即拒绝 | A |
 | SV-92 | **B** | L1b | Receipt/Profile/MainnetAssurance 完整绑定链；RB-3 仅在 payload 携带快照时求值，network/assurance 引用逐位一致 | A |
@@ -2658,24 +2611,24 @@ draft-8 的 SV-94 一面登记为 Type A、一面规定「不提供转换信封�
 | SV-94 | **B** | L1b | 状态转换约束 PB-6—PB-9、RG-1/RG-2 与 NS-1—NS-3，使用显式状态、方法、绑定和因果快照判定（owner，§13.1B.2A） | A |
 | SV-95 | **I/F/B/D** | L1b | 四类运行期对象无伪 `Version`，且引用使用对应具体别名（REF-2） | A |
 | SV-96 | **I/F** | L1b | I 期 transcript 满足 CC-2I；F 期满足 CC-2F 与 CC-3。CC-1 只由 SV-101 检查 | A |
-| SV-97 | **I/F** | L2 | `context_digest` 按 §17.4 重算 `ContentMap_CreationValidationContext`（owner） | A |
+| SV-97 | **I/F** | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-98 | **I/F** | L1a | I 期输出以 `PhaseIValidationTranscript` 物化；F 期携带完整 `phase_i_transcript`、`creation_context`、`profile` 与 `phase_f_event_ref` | A |
 | SV-99 | **B** | L1b | PB-5b 完整映射链：Snapshot、prior、proposed，以及冻结时的 freeze record 逐位相等 | A |
 | SV-100 | — | — | 官方主网实现不得绕过 MAP-6 日志后端写入或用未 finalized 事件改变协议状态；由接口审计、故障恢复和链/透明日志对账承担 | **B** |
 | SV-101 | **I/F** | L1b | CC-1 的 evaluation instant 与 registry snapshot 两字段等式；这是 CC-1 的唯一 owner。CreationContext 不绑定会随相位推进的 event frontier | A |
 | SV-102 | **I/F** | L1b | CC-4 与 CC-6：record 绑定当前 Intent/slot，且 `ReplayPhaseI` 的 outcome/failure_reasons 逐位一致 | A |
-| SV-103 | **I/F** | L2 | `phase_i_record_digest` 按 §17.4 重算（owner） | A |
-| SV-104 | **I/F** | L2 | `intent_digest` 按 §17.4 对 `ContentMap_ReceiptIntent` 重算（owner；CTX-13） | A |
+| SV-103 | **I/F** | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
+| SV-104 | **I/F** | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-105 | **B** | L1b | `round_stage` 单调，且方法、payload 与阶段转换满足 RG-1/RG-2 | A |
 | SV-106 | **B** | L1b | 集群映射首次固定与不变性：CM-FIX-1—CM-FIX-3；`round_stage ⪰ FROZEN_PRE_DRAW` 后 `cluster_mapping_ref` 不变 | A |
 | SV-107 | **B** | L1b | PB-6 的两个事件在显式 `EventFrontierSnapshot` 中解析为正确 kind/subject，且按 EF-3 满足 `Precedes` | A |
-| SV-108 | **R/I/F/B/D** | L2 | `event_frontier_digest` 按 §17.4 重算 `ContentMap_EventFrontierSnapshot`（owner） | A |
+| SV-108 | **R/I/F/B/D** | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-109 | **R/I/F/B/D** | L1b | EventFrontierSnapshot 身份与 context 引用一致；事件排序、唯一、闭合、无环，frontier 存在（EF-1—EF-4） | A |
 | SV-110 | **F** | L1b | CC-5：Phase I/F 事件 kind 与 subject 正确，且 `Precedes(produced_by_event, phase_f_event_ref)` | A |
 | SV-111 | — | — | Assignment/Dispatch 只能消费活动 Lease 已绑定的执行元组；实现不得绕过 Lease 或在 Dispatch 侧覆盖 scope 字段（DB-1—DB-3） | **B** |
 | SV-112 | **D** | L1b | 从 `BoundaryObservation` 的显式 funding/deadline refs 与事件 DAG 调用 `ResolveBoundary`；事件缺失、kind/subject 错误先产生 invalidating | A |
-| SV-113 | R | L2 | `MainnetAssuranceProfile.assurance_digest` 按 §17.4 重算；`human_summary` 不入摘要 | A |
-| SV-114 | **D** | L2 | `DecisionEvaluationRecord.input_digest` 对完整 `DecisionEvaluationInput` 按 §17.4 重算一致 | A |
+| SV-113 | R | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
+| SV-114 | **D** | L2 | **本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。 | A |
 | SV-115 | **D** | L1b | 重放 method evaluator；重算 condition vector、`FirstTrue`、`CanonicalTerminal`，并要求与 Decision.terminal_state 逐位一致（DE-1—DE-3） | A |
 | SV-116 | **D** | L1a | `AssumptionEvaluationResult` 恰为 `COMPLETE(snapshot)` 或 `INVALIDATING(failure)`；两分支字段互斥且完备 | A |
 | SV-117 | **I/F/B/D** | L1b | `MainnetAssuranceProfile` 的 network、窗口、Profile capability、组件/ExecutionCapability contract/reducer 允许集合与损失上限绑定；未 `ENABLED` 的方法不得产生 `ACCEPT`；新版非主网分支按 §9.2.2 验证部署绑定 | A |
@@ -2708,10 +2661,10 @@ INV-01—INV-16 在 Profile 对象上的投影。**不是**新的不变量：新
 | VPR-16 | 执行期异常一律产生归因，不得表达为「Profile 事后不适用」 | D-02、INV-07 |
 | VPR-17 | 成本估计不得进入任何合法性判断路径 | DV-4 |
 | VPR-18 | Profile 冻结 Claim 规格，Decision 携带具体绑定；二者不得混用 | D-09、INV-01 |
-| VPR-19 | 全部摘要与数值编码遵循单一 `encoding_profile_id`，跨实现逐位一致 | INV-16 |
+| VPR-19 | 数值与对象编码按支持的 `encoding_profile_id` 对照；摘要字段记录，其一致性判定停用 | INV-16 |
 | VPR-20 | 适用域比较由 `NormalizeDeclaredScope`/`ScopeContains` 唯一确定，五条语义全部 fail-closed | INV-12、INV-16 |
 | VPR-21 | 每个方法的 `DecisionCondition` 适用集合由冻结矩阵确定；`REEXEC_AUDIT_ONLY` 结构上无 `ACCEPT` | INV-04、ADR-0004 §5 |
-| VPR-22 | 每条 Type A 校验唯一归属 L1a/L1b/L2，不得跨层重复实现；每个规范摘要恰有一个 owner SV | INV-16 |
+| VPR-22 | Type A校验记录实际归属与实现；摘要owner保留历史对应信息，SHA判定停用 | INV-16 |
 | VPR-23 | 内容摘要排除身份与 advisory；UVP 版本化对象、运行期产物、外部工程组件分别使用 `VersionedObjectRef`、`RuntimeObjectRef`、`ExternalVersionedObjectRef`，任何引用都不得只给 `Digest`（UVP-4、§3.3.6） | INV-01、INV-02 |
 | VPR-24 | 终态由冻结的 `CanonicalTerminal` 派生，Profile 不得声明 `terminal` 字段 | INV-04 |
 | VPR-25 | 假设有效性状态由 `AssumptionStateSnapshot` 承载，可由 Phase D 输入完全重算 | INV-13、INV-04 |
@@ -2743,6 +2696,8 @@ INV-01—INV-16 在 Profile 对象上的投影。**不是**新的不变量：新
 
 ## 15. Conformance vectors
 
+下列向量表保留原来的测试类别。纯 SHA 一致性向量退出本轮验收；混合向量分别记录仍执行的结构、内容和状态检查。历史最低计数不作为本次运行结果，摘要生成输出也不记为一致性验证通过。
+
 ### 15.1 资产布局
 
 ```text
@@ -2766,7 +2721,7 @@ tests/verification_profile/
 | VPCV-A2 `V1Admissible` 正例 | ≥3 | `DIRECT_VERIFIED`、`REEXEC_BOUNDED`、`REEXEC_AUDIT_ONLY` |
 | VPCV-B Schema 反例 | ≥119 | 全部 119 项 Type A 每条至少一个触发向量；6 项 Type B 转入实现级套件；SV-15 作废；SV-40 `DEFERRED/P0-5` |
 | VPCV-C 选择确定性 | ≥3 | 同一 policy + Intent 在多实现下选出同一 slot index |
-| VPCV-D 降级 | ≥6 | 合法 `REEXEC_BOUNDED → AUDIT_ONLY`；无预授权；抽后触发；`ATTESTED` 被拒；digest 不匹配；`failure_reasons ⊄ enabling_triggers` |
+| VPCV-D 降级 | ≥6 | 合法 `REEXEC_BOUNDED → AUDIT_ONLY`；无预授权；抽后触发；`ATTESTED` 被拒；摘要不匹配接受为记录（SHA判定停用）；`failure_reasons ⊄ enabling_triggers` |
 | VPCV-E FailureMapping | 全覆盖 | 四变体各自适用事件全覆盖；FM-0 的三种越界；FM-3 的三种非法实现 |
 | VPCV-F DecisionMapping | 全覆盖 + 优先级 | §11.3 每行一条；**P1—P8 两两同时成立的冲突向量** |
 | VPCV-G Claim 分层 | ≥8 | `RUNTIME` 槽位出现在 `static_bindings` 被拒；`concrete_bindings` 键集合不符被拒；`STATIC` 值与 method params 不符被拒；缺 `claim_binding` 的 `TRUSTED` 被拒 |
@@ -2774,20 +2729,20 @@ tests/verification_profile/
 | VPCV-I 过度解读负例 | 8 | §18.5 每条 |
 | VPCV-J 与统计内核 join | 6 | Profile 参数 → `finite-population-boundary-lr-v1` 的 CV-01—CV-06 逐位一致 |
 | VPCV-K manifest 独立性 | ≥2 | 追加向量后 `profile_digest` 与 `profile_version` 均不变 |
-| VPCV-L canonical encoding | ≥12 | §17 每条规则一个正例一个反例；两实现 digest 逐位一致 |
+| VPCV-L canonical encoding | ≥12 | §17 每条规则一个正例一个反例；实际规范编码对照；摘要一致性停用 |
 | VPCV-M qualification 格 | ≥3 | 单调非降；乱序更新取上确界；降级尝试被拒 |
 | VPCV-N 假设撤销 | ≥4 | `SAFETY_CRITICAL` 的 `PROCEED` 被拒；三阶段各一 |
 | VPCV-O 方法事件矩阵 | 4 | 每个方法一条：`entries` 键集合与 §10.2 矩阵相等；缺项与多项各一反例 |
 | VPCV-P Decision 可纳入性 | ≥5 | EA-1 的三个合取项各一；`ACCEPT` 与 deadline 不可能同时为真的证明向量；验证通过时刻等于 deadline 拒绝；预算恰好达到 cap 允许；两个边界仅按因果序归因 |
 | VPCV-Q `EXECUTION_FAILED` | ≥2 | 无可纳入候选 ⇒ `FAILED`；有候选但不可背书 ⇒ `UNRESOLVED` |
-| VPCV-R Claim 与假设状态绑定 | ≥9 | `template_digest` 不符被拒；`rendered_claim_digest` 由 `[claim_template_ref, concrete_bindings]` 派生；`translations` 不参与摘要；空/单因/多因 `CauseSet`；原因乱序/重复被拒；归约器引用不符、并发原因被删或 `effective_verdict` 不符被拒 |
+| VPCV-R Claim 与假设状态绑定 | ≥9 | `template_digest` 不符仅记录；`rendered_claim_digest` 由 `[claim_template_ref, concrete_bindings]` 派生；`translations` 不参与摘要；空/单因/多因 `CauseSet`；原因乱序/重复被拒；归约器引用不符、并发原因被删或 `effective_verdict` 不符被拒 |
 | VPCV-S DecisionCondition 适用矩阵 | 4 | 每方法一条：`rules` 条件集合与本方法适用集合**精确相等**且顺序为全局序列的子序列；Audit 含 `ACCEPT` 被拒；缺项、多项或乱序被拒 |
 | VPCV-T `ScopeContains` | ≥8 | 标量不等、点越界、上界省略、集合非子集、`ScopeSpec` 空集恒假、Intent 空集被拒、六维缺项被拒 |
 | VPCV-U 三层归属 | ≥3 | 每条 Type A SV 恰好归属一层；同一规则跨层重复实现被判失败 |
-| VPCV-V 编码迁移双读单写 | ≥2 | 旧编码 Profile + 绑定 Receipt 在双读单写实现上复现纯旧实现的 digest 与终态 |
-| VPCV-W 版本—摘要模型 | ≥6 | 仅改 advisory（MINOR，digest 不变）、仅改排版（PATCH，digest 不变）、改内容字段（MAJOR，digest 改变）各两条，两实现给出规范唯一的 version/digest |
+| VPCV-V 编码迁移双读单写 | ≥2 | 旧编码 Profile + 绑定 Receipt 在双读单写实现上复现纯旧实现的实际终态；digest只记录 |
+| VPCV-W 版本—摘要模型 | ≥6 | 仅改 advisory（MINOR，digest 不变）、仅改排版（PATCH，digest 不变）、改内容字段（MAJOR，digest 改变）各两条，版本按实际支持记录，摘要一致性停用 |
 | VPCV-X `CanonicalTerminal` 与投影 | ≥10 | 每条 condition → terminal 一条；`ACCEPT→UNRESOLVED` 与 `BUDGET_EXHAUSTED→TRUSTED` 因结构上不可表达而必须在解析期即失败；`reachable_terminals` 多/少各一；每个 \(\Pi\) 行一条 |
-| VPCV-Y `AssumptionStateSnapshot` | ≥8 | 覆盖范围多/少各一；`INFORMATIONAL` 被误纳入；乱序、重复 `assumption_id`；多因同时成立取 AS-2 优先序；不可读取 ⇒ `VERIFICATION_INVALIDATING`；两实现重建同一行集与摘要 |
+| VPCV-Y `AssumptionStateSnapshot` | ≥8 | 覆盖范围多/少各一；`INFORMATIONAL` 被误纳入；乱序、重复 `assumption_id`；多因同时成立取 AS-2 优先序；不可读取 ⇒ `VERIFICATION_INVALIDATING`；两实现核对实际行集；摘要只记录 |
 | VPCV-Z `ValidationContext` | ≥4 | 缺 context 被拒；Phase I/F 使用不同 instant 被拒；边界向量显式携带 instant；Phase R 读取 instant 被判失败 |
 | VPCV-AA Phase B scope 绑定 | ≥6 | Lease 激活时 `ActualBoundScope` 越界 ⇒ 拒绝激活；验证开始后越界 ⇒ `VERIFICATION_INVALIDATING`；Snapshot 含 scope 外单位被拒；declared 通过而 actual 失败；Phase B 失败不得触发降级 |
 | VPCV-AB Phase B `PopulationBinding` | ≥8 | `population_definition` 不同（PB-1）；`snapshot_schema_ref` 不匹配（PB-2）；`randomness_commitment` 不匹配（PB-3）；实际总体 **小于** \(G\)；实际总体 **大于** \(G\)；重复 sampling unit（PB-5）；scope 过滤后 \(G\) 改变（PB-7）；失败后试图重参数化或降级（PB-8） |
@@ -2798,16 +2753,16 @@ tests/verification_profile/
 | VPCV-AG 引用类型 | ≥10 | UVP 版本化对象用二元引用被拒；四种运行期对象分别使用具体别名；外部工程组件使用 `ExternalVersionedObjectRef`；把外部组件伪装成 `RegistryObjectKind`、只给 digest、伪 Version、错 IDType 均被拒 |
 | VPCV-AH `ValidationBundle` | ≥7 | 两个快照均在场且身份匹配；任一对象缺失、任一引用不符、L2 试图远程取对象均失败 |
 | VPCV-AI 创建上下文共享 | ≥14 | I transcript 与 F 各覆盖 CC-1/CC-2；CC-3/4/6 逐项反例；I/F 使用同一创建时刻和 RegistrySnapshot、但使用递进 EventFrontierSnapshot 的正例；错误强制二者 frontier 相等的实现反例；Phase F 缺 profile/transcript/context/event 任一字段被拒 |
-| VPCV-AM `PhaseIValidationRecord` | ≥8 | record 与 intent 摘要正反例；伪造 record 即使摘要自洽仍因 ReplayPhaseI 或事件 kind/subject/因果序失败 |
+| VPCV-AM `PhaseIValidationRecord` | ≥8 | record 与 intent 摘要字段记录；伪造 record 即使摘要自洽仍因 ReplayPhaseI 或事件 kind/subject/因果序失败 |
 | VPCV-AN `RoundStage` | ≥12 | RG-1 与 RG-2 七种 payload 矩阵；回退、跳级、错误 payload/stage、PB-9 四行后果 |
 | VPCV-AO 集群映射固定 | ≥8 | CLUSTER_MAPPING_FIX 唯一合法首次固定；固定后变更、冻结前为空、事件 kind/subject 错误、四方引用链不一致、Precedes 不成立均拒绝 |
 | VPCV-AJ Phase B Receipt 绑定 | ≥7 | RB-1—RB-4 各一反例；Lease 无 Snapshot 时 RB-3 不求值但仍检查 RB-1/2/4；外层与 transition Profile 不同被拒 |
 | VPCV-AK Phase B 状态转换 | ≥8 | PB-6 映射晚于冻结（因果序）；冻结后映射变更；PB-7 集合等式不成立；PB-8 参数漂移（含 `mixture_weights` 逐项）；PB-8 运行时降级；PB-9 **四分**各一（`PRE_FREEZE` / `FROZEN_PRE_DRAW` / `RUNNING` / `TERMINAL`）；`FROZEN_PRE_DRAW` 失败后试图重新冻结被拒 |
-| VPCV-AL `WeakeningEdge` / `ExcludedClaimsRegistry` UVP 化 | ≥5 | 两对象各一条 `ContentMap` 正例与 digest 重算；`RegistryEntry` 引用它们的三元组可解析；`ExcludedClaims.registry_ref` 指向不存在版本被拒 |
-| VPCV-AP `ReceiptIntent` canonical map | ≥8 | §9.2.1 全字段正例；两种 profile 选择同时有/同时无；可选键用 null；未知字段；input_refs 被排序/去重；单字段变异；跨实现 intent_digest 逐位一致 |
-| VPCV-AQ `EventFrontierSnapshot` | ≥10 | 摘要正反例；frontier 缺失；重复/乱序事件；悬空 parent；环；未知 kind；同毫秒但因果有序通过；缺边不得远程补齐；Phase I/F 事件顺序反例 |
+| VPCV-AL `WeakeningEdge` / `ExcludedClaimsRegistry` UVP 化 | ≥5 | 两对象各一条 `ContentMap` 正例；digest只记录；`RegistryEntry` 引用它们的三元组可解析；`ExcludedClaims.registry_ref` 指向不存在版本被拒 |
+| VPCV-AP `ReceiptIntent` canonical map | ≥8 | §9.2.1 全字段正例；两种 profile 选择同时有/同时无；可选键用 null；未知字段；input_refs 被排序/去重；单字段变异；跨实现实际Intent编码对照；intent_digest只记录 |
+| VPCV-AQ `EventFrontierSnapshot` | ≥10 | 摘要字段记录；frontier 缺失；重复/乱序事件；悬空 parent；环；未知 kind；同毫秒但因果有序通过；缺边不得远程补齐；Phase I/F 事件顺序反例 |
 | VPCV-AR P6/P7 边界解析 | ≥5 | 仅预算；仅期限；预算因果先于期限；期限因果先于预算；二者存在但不可比时规范地取 `BUDGET_EXHAUSTED`；墙钟与数组顺序变异不得改变结果 |
-| VPCV-AS 主网工程边界 | ≥16 | MainnetAssuranceProfile 摘要、network 绑定、版本/窗口、Profile disposition、RPR/validator/log/ExecutionCapability contract/reducer 允许集合、不可原地改写、后继版本减权、既有 Receipt 假设撤销、主网外禁用；Foundation 字段进入权重被拒 |
+| VPCV-AS 主网工程边界 | ≥16 | MainnetAssuranceProfile 摘要、network 绑定、版本/窗口、Profile disposition、RPR/validator/log/ExecutionCapability contract/reducer 允许集合、不可原地改写、后继版本减权、既有 Receipt 假设撤销、主网外禁用；混合权重按模型前提核对 |
 | VPCV-AT Phase D 判决闭包 | ≥12 | 四种方法各一重放正例；自报 outcome 与重放不符、condition vector 缺项/乱序、FirstTrue 错误、CanonicalTerminal 错误、TRUSTED 无 ENABLED capability 均拒绝 |
 | VPCV-AU 假设求值和类型 | ≥6 | COMPLETE 正例；INVALIDATING 四类 failure；失败分支被错误要求完整 snapshot 的实现反例 |
 | VPCV-AV 执行闭合投影 | ≥7 | 零有效提交且耗尽事件合法产生 FAILED；仍有有效提交、事件缺失、kind/subject 错、来源不可用、未知 contract 均不得产生 FAILED |
@@ -2821,19 +2776,21 @@ tests/verification_profile/
 
 ## 16. 关闭标准
 
+本节为原 P0-1 排期与验收登记。当前交付按维护者确定的实现范围记录结果；SHA 一致性条件停用，工程冻结与同步范围可按实际变更调整。全域 Schema View 往返等待 #213，活性推广等待 #215，其他已支持部分继续推进。
+
 ### 16.1 P0-1 关闭条件
 
 | # | 条件 | 阶段 | 证据类型 |
 |---|---|---|---|
 | 1 | `verification_profile.schema.json`、`ACLt Schema View v1` 投影与五相位 validator 通过 §15 的全部 Type A 向量 | P0-1B | A |
-| 2 | `ExcludedClaimsRegistry` 作为 UVP 对象独立成文并注册（首版 `1.0.0`），其 `registry_digest` 可重算 | P0-1B | A |
+| 2 | `ExcludedClaimsRegistry` 作为 UVP 对象独立成文并注册（首版 `1.0.0`）；摘要字段仅记录 | P0-1B | A |
 | 3 | 五相位 × 三层 validator 实现 §13.2 中全部 **119 项** Type A | P0-1B | A |
 | 4 | §10.3 的 `INVALID_SAMPLE` 定理有可执行对拍 | P0-1B | A |
-| 5 | 两实现的全部 18 个规范摘要（§17.4）与 Decision 序列化逐位一致 | P0-1B | A |
-| 5b | §17.4 每个规范摘要（18 个）都有正例、单字段变异反例与跨实现向量 | P0-1B | A |
-| 6 | §17 的 canonical encoding profile 冻结，且 OQ-02 债务已登记 | P0-1B | A |
+| 5 | Decision 序列化按实际支持域比较；18 个 SHA 摘要一致性要求本轮停用 | P0-1B | A |
+| 5b | §17.4 的 18 个 SHA 一致性向量本轮停用；旧资产保留供追踪 | P0-1B | A |
+| 6 | §17 记录当前 canonical encoding profile；调整由维护者按实际兼容影响决定 | P0-1B | A |
 | 7 | ADR-0005 接受 D-01—D-10，裁定 D-02 与官方主网工程 assurance 信任边界 | ADR | — |
-| 8 | §16.3 跨文档同步完成 | ADR | — |
+| 8 | 更新本次实际受影响的定义与入口，参考 §16.3 的历史同步登记 | ADR | — |
 
 | 9 | PB-1—PB-9、RB-1—RB-5、RG-1/2、CM-FIX-1—3 通过 Phase B 全部向量 | P0-1B | A |
 | 10 | §3.3.2 十二个 UVP 对象各有唯一 wire shape、ContentMap 与摘要向量 | P0-1B | A |
@@ -2864,7 +2821,7 @@ tests/verification_profile/
 | `verification.attested-weakening` | `DEFERRED` | 跨模板降级不可自动判定 |
 | `verification.equivalence-decider` | `DEFERRED` | 与 `verification.tolerance-statistical-results` 一致 |
 
-### 16.3 必须同步的文档
+### 16.3 历史同步登记（按实际变更取用）
 
 | 文件 | 变更 |
 |---|---|
@@ -2906,9 +2863,9 @@ encoding_profile_id = "acl.enc.p0-1@1"
 1. OQ-02 冻结 canonical object encoding 后，MUST 发布 `acl.enc.oq02@1`；
 2. 此后 `acl.enc.p0-1@1` 进入 `SUPERSEDED_FOR_NEW_PROFILES`：**不再接受新 Profile 注册**，既有绑定永久有效（D-03，不追溯）；
 3. 全部 `REGISTERED`/`ACTIVE` Profile 以新编码重新注册为新 `profile_version`（`MAJOR` +1），旧版本转 `DEPRECATED`；
-4. MUST NOT 就地重算已绑定 Profile 的 digest。
+4. 保留原记录以供追踪；摘要生成值不参与本轮一致性验收。
 
-对账测试要求：同一 Profile 在两个编码下的 digest **必然不同**，这是预期结果而非缺陷。
+原迁移说明曾以两个编码下摘要不同作为预期。本轮摘要字段仅作记录；编码变更按其实际字节和对象含义对照，摘要相等性退出验收。
 
 > **draft-5 修正（审计 MAJOR-3）**：draft-4 写作「只实现新编码的实现仍能解析旧编码」，字面上不可能。正确表述是：
 
@@ -2920,7 +2877,7 @@ encoding_profile_id = "acl.enc.p0-1@1"
 \end{aligned}
 \]
 
-即：迁移窗口内的实现是**双读单写**，不是单读。向量要求：给定一个以旧编码注册的 Profile 与一个绑定它的 Receipt，双读单写实现 MUST 复现与纯旧实现逐位相同的 `profile_digest`、`claim_binding` 与终态。
+即：迁移窗口内的实现是**双读单写**，不是单读。向量要求：给定一个以旧编码注册的 Profile 与一个绑定它的 Receipt，双读单写实现按实际支持域比较 claim具体值与终态；旧 `profile_digest` 仅记录，摘要一致性判定停用。
 
 ### 17.2 序列化
 
@@ -2949,40 +2906,41 @@ encoding_profile_id = "acl.enc.p0-1@1"
 
 ### 17.4 摘要与域分离
 
+**本轮政策状态（2026-11-19）：本节全部 SHA 一致性规则停用。** 下列公式、tag、ContentMap 与 owner ID 保留为摘要生成和历史对应信息；摘要字段作记录。正文中复算摘要、比较摘要或因摘要不符拒绝的旧要求由当前政策取代。各入口是否完成实施，按本次差异和运行记录确认。
+
 \[
 H_{\mathrm{tag}}(x)=\mathrm{SHA256}\big(\ \mathrm{u8}(|\mathrm{tag}|)\ \|\ \mathrm{tag}\ \|\ x\ \big)
 \]
 
 其中 `tag` 是 ASCII 字节串，长度 \(\le 255\)。冻结的 tag 集合：
 
-**摘要归属表（draft-6 引入；draft-8 扩充）**：每个规范摘要在其对象 schema 版本内有唯一输入与唯一 tag，并有唯一 owner SV。既有 Profile schema v1 使用 `ACLt/P0-1/Profile/1`，下表 Profile 行适用于 v2。除 owner 外的任何 SV MUST NOT 重算或声称覆盖该摘要。
+**摘要归属表（历史生成信息；本轮一致性判定停用）**：原设计为摘要生成登记输入、tag 和 owner SV。既有 Profile schema v1 使用 `ACLt/P0-1/Profile/1`，下表 Profile 行适用于 v2。本轮 owner 的 SHA 复算及相等判定按政策停用，表中对应关系继续作为记录。
 
 本表覆盖**两类**摘要（§3.3.0）：UVP 治理身份对象的 `digest` 字段，以及不属于任何对象的**派生摘要值**（`rendered_claim_digest`、`assumption_set_digest`、`assumption_state_digest`、`excluded_claims.digest`）。§3.3.2 只登记前者。
 
-| 摘要 | tag | 输入 \(x\) | owner SV | 层 |
-|---|---|---|---|---|
-| `profile_digest` | `ACLt/P0-1/Profile/2` | `cbor(ContentMap_Profile)`（§3.3.3） | **SV-02** | L2 |
-| `policy_digest` | `ACLt/P0-1/SelectionPolicy/1` | `cbor(ContentMap_Policy)`（§3.3.3；**含 `on_none_applicable`**） | **SV-53b** | L2 |
-| `template_digest` | `ACLt/P0-1/ClaimTemplate/1` | `cbor(ContentMap_Template)`（§3.3.3） | **SV-70** | L2 |
-| `rendered_claim_digest` | `ACLt/P0-1/RenderedClaim/1` | `cbor([claim_template_ref, concrete_bindings])` | **SV-46** | L2 |
-| `assumption_state_digest` | `ACLt/P0-1/AssumptionState/1` | `cbor([reducer_ref, AssumptionStateRows])`（§5.2.2） | **SV-54b** | L2 |
-| `snapshot_digest`（`AssumptionStateSnapshot`） | `ACLt/P0-1/AssumptionStateSnapshot/1` | `cbor(ContentMap_AssumptionStateSnapshot)`（§3.3.3） | **SV-71** | L2 |
-| `excluded_claims.digest` | `ACLt/P0-1/ExcludedClaims/1` | `cbor([registry_ref, sorted(exclusion_ids)])`（派生摘要值） | **SV-72** | L2 |
-| `assumption_set_digest` | `ACLt/P0-1/AssumptionSet/1` | `cbor(sorted([[assumption_id, statement_digest], ...]))` | **SV-73** | L2 |
-| `manifest_digest` | `ACLt/P0-1/Manifest/1` | `cbor(ContentMap_Manifest)`（§3.3.3、§3.4） | **SV-74** | L2 |
-| `edge_digest` | `ACLt/P0-1/WeakeningEdge/1` | `cbor(ContentMap_WeakeningEdge)`（§3.3.3、§6.5） | **SV-88** | L2 |
-| `registry_digest`（`ExcludedClaimsRegistry`） | `ACLt/P0-1/ExcludedClaimsRegistry/1` | `cbor(ContentMap_ExcludedClaimsRegistry)`（§3.3.3、§6.3） | **SV-89** | L2 |
-| `assurance_digest`（`MainnetAssuranceProfile`） | `ACLt/P0-1/MainnetAssuranceProfile/1` | `cbor(ContentMap_MainnetAssuranceProfile)`（§3.3.3、§3.6） | **SV-113** | L2 |
-| `DecisionEvaluationRecord.input_digest` | `ACLt/P0-1/DecisionEvaluationInput/1` | `cbor(DecisionEvaluationInput)`（§11.1；完整显式输入） | **SV-114** | L2 |
-| `context_digest`（`CreationValidationContext`） | `ACLt/P0-1/CreationContext/1` | `cbor(ContentMap_CreationValidationContext)`（§3.3.3、§13.0.2） | **SV-97** | L2 |
-| `registry_snapshot_digest` | `ACLt/P0-1/RegistrySnapshot/1` | `cbor(ContentMap_RegistrySnapshot)`（§3.3.3、§3.5；`entries` 排序去重见 RS-1/RS-2） | **SV-75b** | L2 |
-| `phase_i_record_digest` | `ACLt/P0-1/PhaseIValidationRecord/1` | `cbor(ContentMap_PhaseIValidationRecord)`（§3.3.3、§13.0.2） | **SV-103** | L2 |
-| `intent_digest` | `ACLt/P0-1/ReceiptIntent/1` | `cbor(ContentMap_ReceiptIntent)`（§3.3.3、CTX-13） | **SV-104** | L2 |
-| `event_frontier_digest` | `ACLt/P0-1/EventFrontierSnapshot/1` | `cbor(ContentMap_EventFrontierSnapshot)`（§3.3.3、§13.0.1） | **SV-108** | L2 |
-
+| 摘要 | tag | 输入 \(x\) | owner SV | 层 | 本轮状态 |
+|---|---|---|---|---|---|
+| `profile_digest` | `ACLt/P0-1/Profile/2` | `cbor(ContentMap_Profile)`（§3.3.3） | **SV-02** | L2 | 政策停用；字段仅记录 |
+| `policy_digest` | `ACLt/P0-1/SelectionPolicy/1` | `cbor(ContentMap_Policy)`（§3.3.3；**含 `on_none_applicable`**） | **SV-53b** | L2 | 政策停用；字段仅记录 |
+| `template_digest` | `ACLt/P0-1/ClaimTemplate/1` | `cbor(ContentMap_Template)`（§3.3.3） | **SV-70** | L2 | 政策停用；字段仅记录 |
+| `rendered_claim_digest` | `ACLt/P0-1/RenderedClaim/1` | `cbor([claim_template_ref, concrete_bindings])` | **SV-46** | L2 | 政策停用；字段仅记录 |
+| `assumption_state_digest` | `ACLt/P0-1/AssumptionState/1` | `cbor([reducer_ref, AssumptionStateRows])`（§5.2.2） | **SV-54b** | L2 | 政策停用；字段仅记录 |
+| `snapshot_digest`（`AssumptionStateSnapshot`） | `ACLt/P0-1/AssumptionStateSnapshot/1` | `cbor(ContentMap_AssumptionStateSnapshot)`（§3.3.3） | **SV-71** | L2 | 政策停用；字段仅记录 |
+| `excluded_claims.digest` | `ACLt/P0-1/ExcludedClaims/1` | `cbor([registry_ref, sorted(exclusion_ids)])`（派生摘要值） | **SV-72** | L2 | 政策停用；字段仅记录 |
+| `assumption_set_digest` | `ACLt/P0-1/AssumptionSet/1` | `cbor(sorted([[assumption_id, statement_digest], ...]))` | **SV-73** | L2 | 政策停用；字段仅记录 |
+| `manifest_digest` | `ACLt/P0-1/Manifest/1` | `cbor(ContentMap_Manifest)`（§3.3.3、§3.4） | **SV-74** | L2 | 政策停用；字段仅记录 |
+| `edge_digest` | `ACLt/P0-1/WeakeningEdge/1` | `cbor(ContentMap_WeakeningEdge)`（§3.3.3、§6.5） | **SV-88** | L2 | 政策停用；字段仅记录 |
+| `registry_digest`（`ExcludedClaimsRegistry`） | `ACLt/P0-1/ExcludedClaimsRegistry/1` | `cbor(ContentMap_ExcludedClaimsRegistry)`（§3.3.3、§6.3） | **SV-89** | L2 | 政策停用；字段仅记录 |
+| `assurance_digest`（`MainnetAssuranceProfile`） | `ACLt/P0-1/MainnetAssuranceProfile/1` | `cbor(ContentMap_MainnetAssuranceProfile)`（§3.3.3、§3.6） | **SV-113** | L2 | 政策停用；字段仅记录 |
+| `DecisionEvaluationRecord.input_digest` | `ACLt/P0-1/DecisionEvaluationInput/1` | `cbor(DecisionEvaluationInput)`（§11.1；完整显式输入） | **SV-114** | L2 | 政策停用；字段仅记录 |
+| `context_digest`（`CreationValidationContext`） | `ACLt/P0-1/CreationContext/1` | `cbor(ContentMap_CreationValidationContext)`（§3.3.3、§13.0.2） | **SV-97** | L2 | 政策停用；字段仅记录 |
+| `registry_snapshot_digest` | `ACLt/P0-1/RegistrySnapshot/1` | `cbor(ContentMap_RegistrySnapshot)`（§3.3.3、§3.5；`entries` 排序去重见 RS-1/RS-2） | **SV-75b** | L2 | 政策停用；字段仅记录 |
+| `phase_i_record_digest` | `ACLt/P0-1/PhaseIValidationRecord/1` | `cbor(ContentMap_PhaseIValidationRecord)`（§3.3.3、§13.0.2） | **SV-103** | L2 | 政策停用；字段仅记录 |
+| `intent_digest` | `ACLt/P0-1/ReceiptIntent/1` | `cbor(ContentMap_ReceiptIntent)`（§3.3.3、CTX-13） | **SV-104** | L2 | 政策停用；字段仅记录 |
+| `event_frontier_digest` | `ACLt/P0-1/EventFrontierSnapshot/1` | `cbor(ContentMap_EventFrontierSnapshot)`（§3.3.3、§13.0.1） | **SV-108** | L2 | 政策停用；字段仅记录 |
 SV-42 按 §13.2 **仅负责容器 canonicality**（map 键序、集合/规范 pair-array 排序去重、既约 `Rational`）；primitive 禁令归 SV-25，整数范围、最短整数与 bignum 禁令归 SV-52，**不再声称覆盖全部摘要**；SV-41 收窄为「slot index 唯一、gate 按 slot 携带」，**不再检查 `policy_digest`**（该职责归 SV-53b）；SV-54 拆为 SV-54a（结构覆盖，L1b）与 SV-54b（摘要重算，L2）。
 
-对象版本的 tag 与编码 Profile 版本彼此独立：新增对象版本的 tag 不要求提升 `encoding_profile_id`，只有编码规则变化时才 MUST 提升（例如 Profile v2 使用 `ACLt/P0-1/Profile/2`，`encoding_profile_id` 仍为 `acl.enc.p0-1@1`）。已发布摘要不变。tag 复用 MUST NOT 发生。
+对象版本的 tag 与编码 Profile 版本彼此独立：新增对象版本的 tag 不要求提升 `encoding_profile_id`，编码规则变化时根据兼容影响调整（例如 Profile v2 使用 `ACLt/P0-1/Profile/2`，`encoding_profile_id` 仍为 `acl.enc.p0-1@1`）。旧值保留记录；tag与编码支持按实际版本解释，摘要相等不作为验收。
 
 ### 17.5A bignum 禁令与运行时资本的职责分界
 
@@ -3007,7 +2965,7 @@ SV-42 按 §13.2 **仅负责容器 canonicality**（map 键序、集合/规范 p
 |---|---|---|---|
 | **L1a** | JSON Schema | `ACLt Schema View v1`（由原始 CBOR 经下述可逆投影得到的 JSON 值） | 字段存在性、类型、枚举成员、union discriminant、必填与互斥基数 |
 | **L1b** | 确定性语义 validator（普通代码） | 同上，外加**注册表视图**（Profile / ClaimTemplate / ExcludedClaims / SelectionPolicy / WeakeningEdge）与 `ReceiptIntent` | 跨字段与跨对象语义：精确有理算术、引用解析、派生值复算（`Expand`）、集合与范围包含、全函数性、相对顺序 |
-| **L2** | CBOR canonical validator | **原始字节** | 确定性编码、map 键序、最短整数、禁浮点/null/indefinite/bignum、`Rational` 既约、集合有序去重、全部摘要的正确性 |
+| **L2** | CBOR canonical validator | **原始字节** | 确定性编码、map 键序、最短整数、禁浮点/null/indefinite/bignum、`Rational` 既约、集合有序去重；摘要字段仅记录，一致性规则按本轮决定停用 |
 
 L1b 是 draft-4 遗漏的一层。它 MUST 是**确定性纯函数**：同一输入（数据模型视图 + 注册表快照 + Intent）在任何 conforming 实现上产生相同结果（INV-16）。它 MUST NOT 读取时钟、随机性、网络或任何 Principal 状态；`validity_window` 的判定所需时刻 MUST 由调用方作为显式参数传入，而不是由 validator 自行取时。
 
@@ -3035,7 +2993,7 @@ L2 先验证原始 CBOR 可被安全、唯一地投影；L1a 再验证 Schema Vi
 - 每条 Type A 的 SV 在 §13.2 中**唯一**标注 `L1a` / `L1b` / `L2`；
 - MUST NOT 用 JSON Schema 表达 L1b 或 L2 性质——它们在结构视图上不可见；
 - MUST NOT 在多个层重复实现同一规范断言；每条断言恰好一个 owner SV（摘要归属表见 §17.4）；
-- 一条 SV 若同时含结构派生与摘要绑定，MUST **拆成两条**（draft-5 已拆分 SV-53 → SV-53a/SV-53b）。
+- 同一SV分别列出仍执行的结构派生与已停用的SHA部分；编号拆分只在实际维护需要时采用。
 
 ### 17.6 `[ADVISORY]` 的作用域
 
@@ -3269,6 +3227,8 @@ MR-4 的依据类型在 draft-3 中从「排除项」改为「method parameter �
 24. **主网统计置信度是条件性而非绝对真理**。只要冻结总体、工程 \(B\)、算法和证据路径在已发布边界内，系统接受声明置信度；边界之外、主网外或共因缺陷下不作保证，必须由 ClaimBinding 与 ExcludedClaims 向使用者显示。
 
 ## 20. 审计响应（AUD-20260821-02）
+
+> §20起保留按原日期的设计裁定与审计响应。这里的旧规则说明当时处理；当前执行要求以上文已更新的正文及开发政策为准。
 
 | 编号 | 结论 | 处置 | 变更位置 |
 |---|---|---|---|

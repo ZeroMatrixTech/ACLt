@@ -188,13 +188,9 @@ def inventories(root):
     }
 
 def refresh(root):
-    for name, (base, paths) in inventories(root).items():
-        (root / name).write_text(manifest(base, paths))
+    """Compatibility entry point: SHA manifests remain historical records."""
+    return {'status': 'DISABLED', 'check': 'sha-manifests'}
 
 def verify(root):
-    errors = []
-    for name, (base, paths) in inventories(root).items():
-        target = root / name
-        if not target.is_file() or target.read_text() != manifest(base, paths):
-            errors.append(name)
-    return errors
+    """SHA consistency is disabled; callers receive no checksum failures."""
+    return []

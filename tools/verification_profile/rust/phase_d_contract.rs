@@ -170,6 +170,52 @@ fn project(source: &V, deployment: Vec<u8>) -> R<V> {
     ]))
 }
 
+fn recorded_digest(value: &V) -> R<V> {
+    dig(value)?;
+    Ok(V::X(vec![0; 32]))
+}
+
+fn map_values(value: &V, mut change: impl FnMut(&str, &V) -> R<V>) -> R<V> {
+    let V::M(entries) = value else { return Err("candidate map".into()); };
+    Ok(V::M(entries.iter().map(|(key, child)| {
+        Ok((key.clone(), change(txt(key)?, child)?))
+    }).collect::<R<_>>()?))
+}
+
+fn context_projection(value: &V) -> R<V> {
+    map_values(value, |key, child| match key {
+        "deployment_digest" | "profile_digest" | "log_id" | "cutoff_head" |
+        "cutoff_state_digest" => recorded_digest(child),
+        _ => Ok(child.clone()),
+    })
+}
+
+fn input_projection(value: &V) -> R<V> {
+    map_values(value, |key, child| match key {
+        "context" => context_projection(child),
+        "deadline_observation_ref" => recorded_digest(child),
+        "execution_closure" => map_values(child, |key, value| match key {
+            "context" => context_projection(value),
+            "closure_digest" => recorded_digest(value),
+            _ => Ok(value.clone()),
+        }),
+        _ => Ok(child.clone()),
+    })
+}
+
+fn comparison_projection(value: &V) -> R<V> {
+    map_values(value, |key, child| match key {
+        "input_digest" => recorded_digest(child),
+        "evaluation_input" => input_projection(child),
+        "condition_vector" => Ok(V::A(arr(child)?.iter().map(|row| {
+            map_values(row, |key, value| {
+                if key == "reason_digest" { recorded_digest(value) } else { Ok(value.clone()) }
+            })
+        }).collect::<R<_>>()?)),
+        _ => Ok(child.clone()),
+    })
+}
+
 pub(super) fn run(input: &str, pins: &str) -> R<V> {
     let (deployment, source_pin) = pins.split_once(':').ok_or("two candidate pins required")?;
     let deployment = unhex(deployment)?;
@@ -178,8 +224,12 @@ pub(super) fn run(input: &str, pins: &str) -> R<V> {
     let request = decode(&unhex(input)?)?;
     fields(&request, &["source", "candidate"])?;
     let source = bytes(get(&request, "source")?)?;
-    need(domain(SOURCE, source) == source_pin, "legacy source pin mismatch")?;
-    let raw = encode(&project(&decode(source)?, deployment)?)?;
-    need(raw == bytes(get(&request, "candidate")?)?, "candidate bytes differ from authenticated replay")?;
-    Ok(map(vec![("candidate_cbor_hex", s(&hex(&raw)))]))
+    need(digest_consistency(domain(SOURCE, source) == source_pin), "legacy source pin mismatch")?;
+    let projected = project(&decode(source)?, deployment)?;
+    let candidate = bytes(get(&request, "candidate")?)?;
+    let expected = encode(&comparison_projection(&projected)?)?;
+    let matches = decode(candidate).and_then(|value| comparison_projection(&value))
+        .and_then(|value| encode(&value)).is_ok_and(|value| value == expected);
+    need(matches, "candidate bytes differ from authenticated replay")?;
+    Ok(map(vec![("candidate_cbor_hex", s(&hex(candidate)))]))
 }

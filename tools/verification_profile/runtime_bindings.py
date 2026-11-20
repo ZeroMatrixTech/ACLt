@@ -63,8 +63,8 @@ def event_is(events,visible,ref,kind,tag,identifier):
 def guard(e,snapshot,contract,i):
     profile=e['profile'];method=profile['verification_method'];payload=e['payload'];tag=payload['tag'];tr=payload['transition'];prior=tr['prior_round_state'];after=tr['proposed_round_state'];a=prior['round_stage'];z=after['round_stage'];bounded=method=='REEXEC_BOUNDED'
     binding=e['receipt_binding'];reference=selection.profile_ref(profile);assurance=e['assurance_profile']
-    c.need(all(same(reference,x) for x in (binding['profile_ref'],e['bound_profile_ref'],prior['bound_profile_ref'],after['bound_profile_ref'])) and same(b.identity(assurance),binding['assurance_profile_ref']) and same(assurance['network_id'],binding['network_id']),'SV-92')
-    if snapshot is not None:c.need(same(snapshot['receipt_id'],binding['receipt_id']),'SV-92')
+    c.need(all(same(c.reference_identity(reference),c.reference_identity(x)) for x in (binding['profile_ref'],e['bound_profile_ref'],prior['bound_profile_ref'],after['bound_profile_ref'])) and same(c.reference_identity(b.identity(assurance)),c.reference_identity(binding['assurance_profile_ref'])) and same(assurance['network_id'],binding['network_id']),'SV-92')
+    if snapshot is not None:c.need(c.digest_consistency(same(snapshot['receipt_id'],binding['receipt_id'])),'SV-92')
     c.need(STAGES.index(a)<=STAGES.index(z),'SV-105')
     if bounded:
         edges={'LEASE_ACTIVATION_PRE_FREEZE':a==z=='PRE_FREEZE','LEASE_ACTIVATION_POST_FREEZE':a==z and a in STAGES[1:],'CLUSTER_MAPPING_FIX':a==z=='PRE_FREEZE','SNAPSHOT_FREEZE':(a,z)==('PRE_FREEZE','FROZEN_PRE_DRAW'),'ROUND_TRANSITION_PRE_FREEZE':a==z=='PRE_FREEZE','ROUND_TRANSITION_POST_FREEZE':(a,z) in (('FROZEN_PRE_DRAW','RUNNING'),('RUNNING','RUNNING'),('RUNNING','TERMINAL'))}
@@ -76,7 +76,7 @@ def guard(e,snapshot,contract,i):
             elif 'population_size' in state:c.need(state['population_size']==expected['G'],'SV-94')
         old=prior.get('cluster_mapping_ref');new=after.get('cluster_mapping_ref')
         if tag=='CLUSTER_MAPPING_FIX':c.need(old is None and new is not None,'SV-106')
-        else:c.need(same(old,new) if old is not None and new is not None else old is new,'SV-106')
+        else:c.need(same(c.reference_identity(old),c.reference_identity(new)) if old is not None and new is not None else old is new,'SV-106')
         if tag=='SNAPSHOT_FREEZE':c.need(old is not None,'SV-106')
     else:
         c.need(tag in ('LEASE_ACTIVATION_PRE_FREEZE','ROUND_TRANSITION_NO_SNAPSHOT'),'SV-105')
@@ -96,7 +96,7 @@ def guard(e,snapshot,contract,i):
         units=snapshot['sampling_units'];ids=[c.encode(x['id']) for x in units]
         c.need(len(ids)==len(set(ids)) and bool(snapshot['cluster_mapping_ref']),'SV-82')
         c.need(all(selection.scope_contains(x['scope'],unit['scope'],i) for x in assumptions for unit in units),'SV-69')
-        c.need(all(same(snapshot['cluster_mapping_ref'],state.get('cluster_mapping_ref')) for state in (prior,after)),'SV-99')
+        c.need(all(same(c.reference_identity(snapshot['cluster_mapping_ref']),c.reference_identity(state['cluster_mapping_ref'])) for state in (prior,after)),'SV-99')
         params=profile['method_parameters'];G=profile['safety_parameters']['G']
         c.need(same(snapshot['population_definition_ref'],params['population_definition']) and same(snapshot['snapshot_schema_ref'],params['snapshot_schema_ref']) and len(ids)==G,'SV-81')
         c.need(same(params['population_definition'],contract['population_definition_ref']) and same(params['snapshot_schema_ref'],contract['snapshot_schema_ref']) and same(params['randomness_commitment'],contract['randomness_rule_ref']),'SV-81')
@@ -104,7 +104,7 @@ def guard(e,snapshot,contract,i):
         c.need(random['scheme_id']==contract['scheme_id'] and any(same(random['parameters'],x) for x in contract['allowed_randomness_parameters']),'SV-81')
     if tag=='SNAPSHOT_FREEZE':
         record=tr['snapshot_freeze_record'];mapping=record['cluster_mapping_ref']
-        c.need(same(mapping,snapshot['cluster_mapping_ref']),'SV-99')
+        c.need(same(c.reference_identity(mapping),c.reference_identity(snapshot['cluster_mapping_ref'])),'SV-99')
         candidate={c.encode(x) for x in record['candidate_units_pre_scope_filter']};excluded={c.encode(x) for x in record['excluded_by_scope']};kept={c.encode(x) for x in record['frozen_units']}
         c.need(excluded<=candidate and kept==candidate-excluded and kept=={c.encode(x['id']) for x in snapshot['sampling_units']} and len(kept)==profile['safety_parameters']['G'],'SV-94')
         first,last=record['cluster_mapping_fixed_event'],record['freeze_event']
@@ -115,7 +115,7 @@ def inspect(raw,lock_pin,contract_pin):
     try:
         v=c.decode(raw);c.fields(v,('envelope','schema_lock','schema_documents','runtime_contract'))
         i=b.Imports(v['schema_lock'],v['schema_documents'],lock_pin);contract=v['runtime_contract'];typed(contract,'RuntimeContractR9',i)
-        c.need(hashlib.sha256(c.encode(contract)).digest()==contract_pin,'runtime contract pin')
+        c.need(c.digest_consistency(hashlib.sha256(c.encode(contract)).digest()==contract_pin),'runtime contract pin')
         c.need(bool(contract['scheme_id']) and bool(contract['allowed_randomness_parameters']),'empty runtime contract')
         e=v['envelope'];snapshot=shape(e,i);profile=e['profile'];p.verify_digest(profile)
         b.common.check_method(profile);b.common.check_assumptions(profile['assumption_references'],i);b.method_rules.check_matrix(profile,i);selection.check_parameter_refs(profile)
@@ -123,5 +123,5 @@ def inspect(raw,lock_pin,contract_pin):
         before=e['payload']['transition']['prior_round_state']['round_stage'];failure=None
         try:guard(e,snapshot,contract,i)
         except c.CodecError as ex:failure=str(ex)
-        return dict(accepted=failure is None,failure_rule=failure or '',consequence=CONSEQUENCES[before] if failure else 'VALIDATED',prior_stage=before,payload_tag=e['payload']['tag'],schema_lock_sha256=lock_pin.hex(),runtime_contract_sha256=contract_pin.hex(),full_schema_valid=False,formal_phase_b_conformance=False,source_authentication=False,production_admission=False,protocol_decision_emitted=False,state_committed=False)
+        return dict(accepted=failure is None,failure_rule=failure or '',consequence=CONSEQUENCES[before] if failure else 'VALIDATED',prior_stage=before,payload_tag=e['payload']['tag'],schema_lock_sha256=c.digest_record_hex(lock_pin),runtime_contract_sha256=c.digest_record_hex(contract_pin),full_schema_valid=False,formal_phase_b_conformance=False,source_authentication=False,production_admission=False,protocol_decision_emitted=False,state_committed=False)
     except (KeyError,TypeError,ValueError,IndexError,RecursionError) as ex:raise c.CodecError('malformed runtime input') from ex

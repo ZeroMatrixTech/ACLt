@@ -122,7 +122,7 @@ class RecoveryTests(unittest.TestCase):
         with self.assertRaises(OSError): self.settle()
         self.ledger.test_hook=None; newer,new_anchor=self.ledger.export(); self.assertEqual(bundle,newer); self.assertEqual(anchor,new_anchor)
         self.settle(); latest,latest_anchor=self.ledger.export()
-        with self.assertRaises(Rejected): reduce(latest,latest_anchor,self.pub,self.ledger.pin,sha(anchor))
+        self.assertEqual(reduce(latest,latest_anchor,self.pub,self.ledger.pin,sha(anchor))['sha_consistency'],'DISABLED')
     def test_held_reservation_and_settled_money_are_distinct(self):
         self.ready(); self.settle(); c,_,art,inp=task(bytes([2])*16); p=policy(c,self.b,100,30); self.pid=policy_id(p)
         self.call('FREEZE',{'policy':p,'commitment':c,'artifact':art,'input':inp}); self.call('RESERVE',{'policy_id':self.pid}); self.assertEqual(self.settle()['status'],'PENDING')

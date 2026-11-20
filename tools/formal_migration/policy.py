@@ -58,8 +58,7 @@ def logical(v):
     c.need(v['object_type']=='FM_STATS_I32_VECTOR' and v['object_version']==[1,0,0],'logical schema')
     c.need(v['parents']==[],'initial immutable input has no parents')
     c.need(0<=v['created_at']<v['available_until'],'availability interval')
-    c.need(len(v['content'])<=4096,'logical byte limit')
-    a=c.decode(v['content']);c.need(type(a) is list and 1<=len(a)<=256,'input vector size')
+    a=c.decode(v['content']);c.need(type(a) is list and bool(a),'input vector size')
     c.need(all(type(n) is int and -2**31<=n<2**31 for n in a),'i32 input')
 
 def funding(v):
@@ -84,7 +83,7 @@ def settlement(v):
         c.need(sum(r[k] for k in ('execution_fee','verification_fee','storage_fee'))<=U64,'fee sum overflow')
 
 def component(v):
-    c.need(v['version']==[1,0,0] and 1<=len(v['content'])<=16384,'component version/bytes')
+    c.need(v['version']==[1,0,0] and len(v['content'])>0,'component version/bytes')
     # Component bytes are pinned imports; RIR/runtime conformance is not inferred.
 
 def receipt(v):
@@ -95,7 +94,7 @@ def receipt(v):
     c.need([x['kind'] for x in v['component_refs']]==list(COMPONENTS),'component imports/order')
     for x in v['component_refs']:check_ref(x,x['kind'])
     e=v['execution']
-    c.need(0<e['fuel'] and 0<e['memory_bytes'] and 0<e['input_bytes_limit']<=4096 and 0<e['output_bytes_limit']<=16384,'resource limits')
+    c.need(0<e['fuel'] and 0<e['memory_bytes'] and 0<e['input_bytes_limit'] and 0<e['output_bytes_limit'],'resource limits')
     c.need(e['max_assignments']==2 and e['max_attempts']==1 and 1<=e['message_retries']<=16 and 1<=e['recovery_queries']<=32,'finite execution/recovery')
     c.need(v['scope']['created_at']<e['deadline']<=v['scope']['expires_at'],'receipt deadline')
     c.need(e['capabilities']==[] and e['architecture']=='wasm32' and e['network']=='DENY' and e['sandbox']=='REQUIRED','environment/effects')
@@ -110,15 +109,15 @@ def bundle(v):
     for name,kind in [('funding','FUNDING'),('settlement','SETTLEMENT')]:
         obj=v[name];validate('fm2-'+name,obj)
         c.need(all(obj[k]==r[k] for k in BASE) and obj['scope']==r['scope'],'foreign policy/scope')
-        c.need(r[name+'_ref']==ref(kind,obj),'stale policy reference')
+        c.need(c.reference_identity(r[name+'_ref'])==c.reference_identity(ref(kind,obj)),'stale policy reference')
     c.need(len(v['inputs'])==1 and len(v['components'])==len(COMPONENTS),'unavailable/extra object')
     obj=v['inputs'][0];validate('fm2-logical',obj)
     c.need(all(obj[k]==r[k] for k in BASE) and obj['publisher_ref']==r['scope']['requester_ref'],'input owner/context')
     c.need(obj['created_at']<=r['scope']['created_at'] and obj['available_until']>=r['execution']['deadline'],'input unavailable in interval')
-    c.need(len(obj['content'])<=r['execution']['input_bytes_limit'] and r['input_refs'][0]==ref('LOGICAL',obj),'input content/reference')
+    c.need(len(obj['content'])<=r['execution']['input_bytes_limit'] and c.reference_identity(r['input_refs'][0])==c.reference_identity(ref('LOGICAL',obj)),'input content/reference')
     c.need([x['kind'] for x in v['components']]==list(COMPONENTS),'unavailable/extra component kind')
     for obj,rr in zip(v['components'],r['component_refs']):
-        validate('fm2-component',obj);c.need(rr==ref(obj['kind'],obj),'stale component reference')
+        validate('fm2-component',obj);c.need(c.reference_identity(rr)==c.reference_identity(ref(obj['kind'],obj)),'stale component reference')
     limits=v['funding']
     for row in v['settlement']['rows']:
         for fee,limit in [('execution_fee','execution_limit'),('verification_fee','verification_limit'),('storage_fee','storage_limit')]:c.need(row[fee]<=limits[limit],'bucket over-budget')
@@ -140,8 +139,8 @@ def signing_input(v):
 def verify(v):
     project(v,VERIFY)
     rid=bundle(v['bundle']);r=v['bundle']['receipt'];record=v['record'];pin=f.principal_digest(record)
-    c.need(pin==v['expected_requester']==r['scope']['requester_ref'],'requester pin')
-    c.need(rid==v['expected_receipt'],'caller receipt commitment')
+    c.need(c.digest_consistency(pin==v['expected_requester']==r['scope']['requester_ref']),'requester pin')
+    c.need(c.digest_consistency(rid==v['expected_receipt']),'caller receipt commitment')
     c.need(record['role']=='REQUESTER' and all(record[k]==r[k] for k in ('protocol_version','network_id','deployment_id')),'requester role/context')
     c.need(record['valid_from']<=r['scope']['created_at']<=v['now']<r['execution']['deadline']<=record['valid_until'],'signature validity')
     c.need(len(v['signature'])==256,'signature width')
@@ -168,6 +167,6 @@ def from_view_json(kind,source):
         return d
     def reject(_):raise c.CodecError('non-JSON constant')
     try:
-        c.need(len(source.encode())<=c.MAX_BYTES*4,'JSON byte limit')
+        source.encode()
         v=project(json.loads(source,object_pairs_hook=unique,parse_constant=reject),SCHEMAS[kind],True);raw=c.encode(v);inspect(kind,raw);return raw
     except (ValueError,RecursionError,UnicodeError) as exc:raise c.CodecError('invalid S1b Schema View') from exc

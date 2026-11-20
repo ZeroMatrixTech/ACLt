@@ -266,7 +266,7 @@ RIRExecutionOutcome = {
 }
 ```
 
-非 `OK` 时丢弃部分输出。默认结果等价为 `acl.rir.eq.exact@0`：`outcome_digest` 逐位相等。trap 是否满足 Receipt 的成功语义、如何结算，不由 RIR 决定。
+非 `OK` 时丢弃部分输出。默认结果等价标识为 `acl.rir.eq.exact@0`；实际结果内容按实现比较，`outcome_digest`仅记录，摘要相等判定停用。trap 是否满足 Receipt 的成功语义、如何结算，不由 RIR 决定。
 
 ### 6.3 C 类：RPR/Host 故障
 
@@ -320,7 +320,7 @@ RPR 不得把 C 类改写为 B 类：宿主内存不足不得报告为 `memory.g
 - RIRVersion 使用 SemVer，独立于 ProtocolVersion 演进。一个 RIRVersion 同时固定：子集、规范编码、静态上限、成本表、结果枚举、宿主 ABI 与默认等价谓词。其中任何一项变化都产生新的 RIRVersion、新的 `rir_digest` 和新的 ReceiptID（ADR-0002 §6 第 7 项）。
 - `0.x` 为实验系列，各次版本之间不承诺兼容。
 - Receipt 的 Computation 部分绑定 `rir_digest` 与输入 Logical Object 引用；Environment 部分绑定 `RIRExecutionLimits`，并按 REF-6 以 `ExternalVersionedObjectRef` 绑定 RPR。
-- **工件身份与执行实例身份分开。** 在 RIRVersion 与工件字节不变时，只改变 `RIRExecutionLimits` 不改变 `rir_digest`，但改变 Receipt 的绑定内容并必须产生新的 ReceiptID；不得把执行上限搬入工件以满足错误的摘要测试。只有规则/成本表变化导致 RIRVersion 改变，或工件内容本身改变时，才要求新 `rir_digest`。
+- **工件身份与执行实例身份分开。** 在 RIRVersion 与工件字节不变时，只改变 `RIRExecutionLimits` 不改变 `rir_digest`，但改变 Receipt 的绑定内容并必须产生新的 ReceiptID；不得把执行上限搬入工件以满足错误的摘要测试。`rir_digest`可继续随输入生成记录，摘要是否改变不作为接受条件。
 
 ## 10. 不关闭的事项
 
@@ -371,7 +371,7 @@ RPR 不得把 C 类改写为 B 类：宿主内存不足不得报告为 `memory.g
 3. 可选的第三方 Wasm 引擎只对拍不计量的语义（outcome 与 output，不含 `gas_used`）；引入前需要依赖许可。
 4. 用 RIR 重写现有 `stats-int-v1` 负载，并与 C++ worker 的结果对拍。
 5. 故障注入：宿主内存不足不得表现为 B 类结果；能检测到 validator 分歧。
-6. 分开验证身份变化：RIRVersion/成本表变化必须通过新 RIRVersion 产生新 `rir_digest` 和新 ReceiptID；工件和版本不变、只变 Receipt 执行上限时，`rir_digest` 必须相同，ReceiptID 必须不同。该条在正式 Receipt 编码实现后做实际 ID 测试，不能用临时对象哈希冒充 ReceiptID。
+6. 分开验证身份变化：RIRVersion/成本表、工件和执行上限分别记录实际变更；`rir_digest`与ReceiptID的SHA值相等或不同不作为本轮验收。该条在正式 Receipt 编码实现后做实际 ID 测试，不能用临时对象哈希冒充 ReceiptID。
 
 ### 13.1 本次审阅必须保留的边界向量
 

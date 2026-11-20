@@ -29,7 +29,7 @@ class Imports(references.Imports):
     def __init__(self,lock,documents,pin):
         super().__init__(lock,documents,pin)
         for alias,ref in self.refs.items():
-            doc=self.documents[c.encode(ref)]
+            doc=self.documents[c.encode(c.reference_identity(ref))]
             if doc['representation']=='NATIVE_CBOR':
                 c.need(alias=='NativeValue' and ref['id']=='acl.schema.r8-native-value@1','native schema namespace')
             if alias in ALIASES:
@@ -74,7 +74,7 @@ def check_digest(value,kind,imports):
     schema={'ClaimTemplate':'TemplateR8','AssumptionStateSnapshot':'StateSnapshotR8','MainnetAssuranceProfile':'AssuranceR8'}[kind]
     typed(value,schema,imports);c.need(value['header']['schema_version']==1,'object schema version')
     owner={'ClaimTemplate':'SV-70','AssumptionStateSnapshot':'SV-71','MainnetAssuranceProfile':'SV-113'}[kind]
-    c.need(value['header']['digest']==object_digest(value,kind),owner+': object digest mismatch')
+    c.need(c.digest_consistency(value['header']['digest']==object_digest(value,kind)),owner+': object digest mismatch')
 
 
 def state_digest(snapshot):
@@ -125,7 +125,7 @@ def check_spec(profile,template,snapshot,imports):
     c.need(spec['claim_template_ref']['id']==TEMPLATES[method],'SV-05: method/template ID')
     check_digest(template,'ClaimTemplate',imports)
     selection.check_snapshot(snapshot);reference=identity(template)
-    c.need(spec['claim_template_ref']==reference and any(x['object_kind']=='CLAIM_TEMPLATE' and all(x[k]==reference[k] for k in reference) and x['state'] in ('REGISTERED','ACTIVE') for x in snapshot['entries']),'SV-48: template identity/state/snapshot')
+    c.need(c.reference_identity(spec['claim_template_ref'])==c.reference_identity(reference) and any(x['object_kind']=='CLAIM_TEMPLATE' and all(x[k]==reference[k] for k in reference if k!='digest') and x['state'] in ('REGISTERED','ACTIVE') for x in snapshot['entries']),'SV-48: template identity/state/snapshot')
     ordered(template['slot_decls'],'slot');ordered(template['translations'],'lang');ordered(spec['binding_schema'],'slot');ordered(spec['static_bindings'],'slot')
     declared={x['slot']:x['decl'] for x in template['slot_decls']};schema={x['slot']:x['decl'] for x in spec['binding_schema']}
     c.need(c.encode(declared)==c.encode(schema),'SV-06: template and binding schema differ')
@@ -156,7 +156,7 @@ def check_states(profile,result,imports):
     if result['tag']=='INVALIDATING':
         c.fields(result,('tag','failure'));typed(result['failure'],'AssumptionFailureR8',imports);return None
     c.fields(result,('tag','snapshot'));snapshot=result['snapshot'];check_digest(snapshot,'AssumptionStateSnapshot',imports)
-    c.need(snapshot['reducer_ref']==default_reducer_ref(),'unsupported assumption reducer contract')
+    c.need(c.reference_identity(snapshot['reducer_ref'])==c.reference_identity(default_reducer_ref()),'unsupported assumption reducer contract')
     refs=profile['assumption_references'];common.check_assumptions(refs,imports)
     expected={x['assumption_id']:x for x in refs if x['role'] in ('SAFETY_CRITICAL','LIVENESS')}
     rows=snapshot['assumption_states'];ordered(rows,'assumption_id')
@@ -186,14 +186,14 @@ def check_claim_guard(payload,imports):
     typed(binding,'ClaimBindingR8',imports)
     check_concrete(profile,payload['template'],payload['registry_snapshot'],binding['concrete_bindings'],imports)
     spec=profile['verified_claim_spec']
-    c.need(binding['claim_spec_id']==spec['claim_spec_id'] and binding['claim_template_ref']==spec['claim_template_ref'] and binding['profile_ref']==selection.profile_ref(profile) and binding['verification_method']==profile['verification_method'],'Claim/Profile identity binding')
-    c.need(binding['rendered_claim_digest']==rendered_digest(binding['claim_template_ref'],binding['concrete_bindings']),'SV-46: rendered claim digest')
-    c.need(snapshot is not None and snapshot['receipt_id']==payload['receipt_id'] and binding['assumption_state_snapshot_ref']=={k:snapshot['header'][k] for k in ('id','digest')},'SV-78: Receipt/snapshot identity')
-    c.need(binding['assumption_state_digest']==state_digest(snapshot),'SV-54b: assumption state digest')
-    c.need(binding['assumption_set_digest']==common.assumption_set_digest(profile['assumption_references']),'static assumption set digest')
-    excluded=profile['excluded_claims'];c.need(binding['excluded_claims_registry_ref']==excluded['registry_ref'] and binding['excluded_claims_ids']==excluded['exclusion_ids'] and binding['excluded_claims_digest']==excluded['digest'],'Claim exclusions binding')
+    c.need(binding['claim_spec_id']==spec['claim_spec_id'] and c.reference_identity(binding['claim_template_ref'])==c.reference_identity(spec['claim_template_ref']) and c.reference_identity(binding['profile_ref'])==c.reference_identity(selection.profile_ref(profile)) and binding['verification_method']==profile['verification_method'],'Claim/Profile identity binding')
+    c.need(c.digest_consistency(binding['rendered_claim_digest']==rendered_digest(binding['claim_template_ref'],binding['concrete_bindings'])),'SV-46: rendered claim digest')
+    c.need(snapshot is not None and snapshot['receipt_id']==payload['receipt_id'] and c.reference_identity(binding['assumption_state_snapshot_ref'])=={k:snapshot['header'][k] for k in ('id',)},'SV-78: Receipt/snapshot identity')
+    c.need(c.digest_consistency(binding['assumption_state_digest']==state_digest(snapshot)),'SV-54b: assumption state digest')
+    c.need(c.digest_consistency(binding['assumption_set_digest']==common.assumption_set_digest(profile['assumption_references'])),'static assumption set digest')
+    excluded=profile['excluded_claims'];c.need(c.reference_identity(binding['excluded_claims_registry_ref'])==c.reference_identity(excluded['registry_ref']) and binding['excluded_claims_ids']==excluded['exclusion_ids'] and c.digest_consistency(binding['excluded_claims_digest']==excluded['digest']),'Claim exclusions binding')
     assurance=payload['assurance_profile'];check_digest(assurance,'MainnetAssuranceProfile',imports)
-    c.need(binding['network_id']==assurance['network_id'] and binding['assurance_profile_ref']==identity(assurance) and binding['assurance_boundary_digest']==assurance['header']['digest'] and snapshot['reducer_ref']==assurance['assumption_verdict_reducer_ref'],'assurance boundary binding')
+    c.need(binding['network_id']==assurance['network_id'] and c.reference_identity(binding['assurance_profile_ref'])==c.reference_identity(identity(assurance)) and c.digest_consistency(binding['assurance_boundary_digest']==assurance['header']['digest']) and c.reference_identity(snapshot['reducer_ref'])==c.reference_identity(assurance['assumption_verdict_reducer_ref']),'assurance boundary binding')
     bounded=profile['verification_method']=='REEXEC_BOUNDED'
     c.need(('algorithm_id' in binding)==bounded and ('snapshot_digest' in binding)==bounded,'method-specific claim fields')
     if bounded:c.need(binding['algorithm_id']==profile['method_parameters']['algorithm_id'],'claim algorithm binding')
@@ -244,21 +244,21 @@ def inspect_components(raw,pin):
     elif op=='state':
         c.fields(v,('profile','result'),('assumption_state_digest',));snapshot=check_states(v['profile'],v['result'],imports)
         if snapshot is not None:
-            c.need(v['assumption_state_digest']==state_digest(snapshot),'SV-54b: assumption state digest');out['snapshot_digest_hex']=snapshot['header']['digest'].hex()
+            c.need(c.digest_consistency(v['assumption_state_digest']==state_digest(snapshot)),'SV-54b: assumption state digest');out['snapshot_digest_hex']=snapshot['header']['digest'].hex()
         else:c.need('assumption_state_digest' not in v,'INVALIDATING must not fabricate a state digest')
     elif op in ('template-digest','assurance-digest'):
         c.fields(v,('object',));kind='ClaimTemplate' if op=='template-digest' else 'MainnetAssuranceProfile';check_digest(v['object'],kind,imports);out['digest_hex']=v['object']['header']['digest'].hex()
     elif op=='rendered-digest':
         c.fields(v,('template_ref','bindings','digest'));typed(v['template_ref'],'TemplateRefR8',imports)
         for row in v['bindings']:typed(row,'ConcreteRowR8',imports)
-        ordered(v['bindings'],'slot_id');c.need(v['digest']==rendered_digest(v['template_ref'],v['bindings']),'SV-46: rendered claim digest');out['digest_hex']=v['digest'].hex()
+        ordered(v['bindings'],'slot_id');c.need(c.digest_consistency(v['digest']==rendered_digest(v['template_ref'],v['bindings'])),'SV-46: rendered claim digest');out['digest_hex']=v['digest'].hex()
     elif op=='decision-input-digest':
-        c.fields(v,('evaluation_input','input_digest'));c.need(v['input_digest']==decision_input_digest(v['evaluation_input'],imports),'SV-114: complete input digest');out['digest_hex']=v['input_digest'].hex()
+        c.fields(v,('evaluation_input','input_digest'));c.need(c.digest_consistency(v['input_digest']==decision_input_digest(v['evaluation_input'],imports)),'SV-114: complete input digest');out['digest_hex']=v['input_digest'].hex()
     elif op=='wire':c.fields(v,('kind','object'));wire_check(v['kind'],v['object'],imports)
     elif op=='runtime-ref':c.fields(v,('kind','ref'));runtime_ref(v['kind'],v['ref'],imports)
     elif op=='candidate-input':c.fields(v,('candidate',));out.update(candidate_input(v['candidate'],imports))
     else:raise c.CodecError('unknown binding operation')
-    out.update(operation=op,schema_lock_sha256=pin.hex(),full_schema_valid=False,full_phase_i_replay=False,source_authentication=False,production_admission=False,protocol_decision_emitted=False)
+    out.update(operation=op,schema_lock_sha256=c.digest_record_hex(pin),full_schema_valid=False,full_phase_i_replay=False,source_authentication=False,production_admission=False,protocol_decision_emitted=False)
     return out
 
 

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Independent, fail-closed stats-core entry; not complete ADR-0006 conformance.
 use super::*;
+const SHA_CONSISTENCY_STATUS: &str = "DISABLED";
+fn digest_consistency(_comparison: bool) -> bool { true }
 use std::collections::{BTreeMap, BTreeSet};
 use wire::V;
 type Check<T> = Result<T,&'static str>;
@@ -127,12 +129,12 @@ fn rejected(code:&str)->(String,i32){(format!("{{\"status\":\"REJECTED\",\"code\
 fn fault(code:&str)->(String,i32){(format!("{{\"status\":\"HOST_FAULT\",\"code\":\"{code}\"}}"),3)}
 fn run()->Result<(String,i32),String>{
  let a:Vec<String>=env::args().collect();if a.get(1).is_some_and(|x|x=="--support"){return Ok(("{\"scope\":\"RIR_STATS_INDEPENDENT_CORE_1\",\"production_admission\":false,\"artifact_bytes_max\":1048576,\"input_arity\":1,\"input_bytes_max\":2000000,\"memory_pages\":2,\"gas_min\":8192,\"gas_max\":50000000,\"output_bytes_max\":4800000,\"call_depth_min\":1,\"call_depth_max\":64,\"full_ADR_0006_conformance\":false}".into(),0));}
- if a.len()!=10&&a.len()!=11{return Ok(rejected(UNS));}if a[1]!="--artifact"{return Ok(rejected(UNS));}
+ if a.len()!=9&&a.len()!=10&&a.len()!=11{return Ok(rejected(UNS));}if a[1]!="--artifact"{return Ok(rejected(UNS));}
  let read=|path:&str,max:u64|->Result<Vec<u8>,std::io::Error>{use std::io::Read;let file=fs::File::open(path)?;let mut b=Vec::new();file.take(max+1).read_to_end(&mut b)?;Ok(b)};
  let raw=match read(&a[2],1<<20){Ok(b)=>b,Err(_)=>return Ok(fault("HOST_IO_FAILURE"))};let(m,digest)=match artifact(&raw){Ok(m)=>m,Err(c)=>return Ok(rejected(c))};
  let num=|i:usize|a[i].parse::<u64>().map_err(|_|"invalid limit".to_string());let(gas,out,depth,steps,pages)=match(num(4),num(5),num(6),num(7),num(8)){(Ok(g),Ok(o),Ok(d),Ok(s),Ok(p))=>(g,o,d,s,p),_=>return Ok(rejected(LIM))};
  if !(8192..=50000000).contains(&gas)||out>4800000||!(1..=64).contains(&depth)||pages!=2{return Ok(rejected(LIM));}
- if a[9]!=digest{return Ok(fault("RPR_REVALIDATION_MISMATCH"));}
+ if !digest_consistency(a.get(9).is_none_or(|expected| expected==&digest)){return Ok(fault("RPR_REVALIDATION_MISMATCH"));}
  let input=match read(&a[3],2000000){Ok(b)if b.len()<=2000000=>b,Ok(_)=>return Ok(rejected(LIM)),Err(_)=>return Ok(fault("HOST_IO_OR_RESOURCE_FAILURE"))};
  let hook=a.get(10).map(String::as_str).unwrap_or("");if hook=="test-memory-fault"{return Ok(fault("HOST_RESOURCE_EXHAUSTED"));}if !hook.is_empty(){return Ok(rejected(UNS));}
  let mut memory=Vec::new();if memory.try_reserve_exact(131072).is_err(){return Ok(fault("HOST_RESOURCE_EXHAUSTED"));}memory.resize(131072,0);
@@ -143,4 +145,4 @@ fn run()->Result<(String,i32),String>{
  if let Some(n)=abort{json.push_str(&format!(",\"abort_code\":{n}"));}json.push('}');let encoded=encode_outcome(name,machine.gas,&machine.output,abort)?;
  Ok((format!("{{\"status\":\"TASK_OUTCOME\",\"rir_digest\":\"{digest}\",\"canonical_outcome_hex\":\"{}\",\"outcome_digest\":\"{}\",\"result\":{json}}}",wire::hex(&encoded),wire::hex(&wire::domain("ACLt/RIR-0/ExecutionOutcome/1",&encoded))),0))
 }
-pub(super) fn main(){match std::panic::catch_unwind(run){Ok(Ok((v,c)))=>{println!("{v}");process::exit(c)},Ok(Err(_))|Err(_)=>{println!("{{\"status\":\"HOST_FAULT\",\"code\":\"RPR_INTERNAL_ERROR\"}}");process::exit(3)}}}
+pub(super) fn main(){match std::panic::catch_unwind(run){Ok(Ok((v,c)))=>{println!("{}",v.replacen("{",&format!("{{\"sha_consistency\":\"{SHA_CONSISTENCY_STATUS}\","),1));process::exit(c)},Ok(Err(_))|Err(_)=>{println!("{{\"sha_consistency\":\"DISABLED\",\"status\":\"HOST_FAULT\",\"code\":\"RPR_INTERNAL_ERROR\"}}");process::exit(3)}}}

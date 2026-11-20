@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Compare independent Phase D replay and candidate encoding against R12 vectors."""
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -44,16 +45,21 @@ def crosscheck(binary, fixtures, frozen):
     for (snapshot, pin, row, result), vector in zip(fixtures, frozen['vectors'], strict=True):
         raw = c.encode(result)
         source, source_pin = old_source(row)
-        c.need((snapshot, row['receipt'], source_pin.hex(), hashlib.sha256(raw).hexdigest()) ==
-               (vector['snapshot'], vector['receipt'], vector['legacy_source_digest'], vector['candidate_sha256']),
+        c.need((snapshot, row['receipt']) == (vector['snapshot'], vector['receipt']) and
+               c.digest_consistency((source_pin.hex(), hashlib.sha256(raw).hexdigest()) ==
+                                    (vector['legacy_source_digest'], vector['candidate_sha256'])),
                'R12 frozen encoding drift')
         add(row['receipt'], pin, source_pin, source, raw, {'candidate_cbor_hex': raw.hex()})
 
     mutations = list(R12['mutation_cases']([row[1:] for row in fixtures]))
     c.need([item[0] for item in mutations] == frozen['negatives'], 'R12 frozen mutations drift')
     for name, pin, row, candidate in mutations:
-        reject(name, ('', pin, row, R12['contract'].project(pin, row)),
-               'candidate bytes differ from authenticated replay', candidate=candidate)
+        if name in R12['SHA_RECORD_CASES']:
+            source, source_pin = old_source(row)
+            add(name, pin, source_pin, source, candidate, {'candidate_cbor_hex': candidate.hex()})
+        else:
+            reject(name, ('', pin, row, R12['contract'].project(pin, row)),
+                   'candidate bytes differ from authenticated replay', candidate=candidate)
 
     first = fixtures[0]
     at_deadline = next(item for item in fixtures if 'deadline_observation_ref' in item[-1]['evaluation_input'])
@@ -61,10 +67,31 @@ def crosscheck(binary, fixtures, frozen):
     with_cost = next(item for item in fixtures
                      if any(row['cost'] > 0 for row in item[-1]['evaluation_input']['method_input']['evidence']))
     mismatch = 'candidate bytes differ from authenticated replay'
-    reject('wrong-deployment-pin', first, mismatch, deployment=b'x' * 32)
-    reject('wrong-source-pin', first, 'legacy source pin mismatch', source_pin=b'x' * 32)
+    source, source_pin = old_source(first[2])
+    candidate = c.encode(first[-1])
+    add('deployment-pin-record', b'x' * 32, source_pin, source, candidate,
+        {'candidate_cbor_hex': candidate.hex()})
+    add('source-pin-record', first[1], b'x' * 32, source, candidate,
+        {'candidate_cbor_hex': candidate.hex()})
     reject('truncated-candidate', first, mismatch, candidate=c.encode(first[-1])[:-1])
     reject('candidate-trailing-byte', first, mismatch, candidate=c.encode(first[-1]) + b'\x00')
+    # Record-only SHA fields still retain their schema and value types.
+    for name in ('short-input-digest', 'missing-reason-digest', 'condition-integer'):
+        changed = copy.deepcopy(first[-1])
+        if name == 'short-input-digest':
+            changed['input_digest'] = b'short'
+        elif name == 'missing-reason-digest':
+            changed['condition_vector'][0].pop('reason_digest')
+        else:
+            changed['condition_vector'][0]['value'] = 1
+        raw = c.encode(changed)
+        try:
+            R12['contract'].verify(raw, first[1], first[2])
+        except c.CodecError as exc:
+            c.need(str(exc) == mismatch, name)
+        else:
+            raise ValueError(name + ' accepted by Python')
+        reject(name, first, mismatch, candidate=raw)
 
     def edited_source(fixture, path, change):
         raw, _ = old_source(fixture[2])
@@ -100,7 +127,7 @@ def crosscheck(binary, fixtures, frozen):
     c.need(len(answers) == len(expected), 'Rust answer count')
     for name, actual, wanted in zip(names, answers, expected, strict=True):
         c.need(actual == wanted, f'{name}: {actual.get("error", "unexpected candidate bytes")}')
-    negatives = dict(zip(names[len(fixtures):], (row['error'] for row in answers[len(fixtures):])))
+    negatives = {name: row['error'] for name, row in zip(names, answers) if 'error' in row}
     result_bytes = json.dumps(list(zip(names, answers)), sort_keys=True, separators=(',', ':')).encode()
     return negatives, hashlib.sha256(result_bytes).hexdigest()
 
@@ -119,14 +146,15 @@ def main():
     args = parser.parse_args()
     legacy_digest, fixtures = R12['replayed_fixtures']()
     frozen = json.loads(R12['VECTORS'].read_text())
-    c.need(legacy_digest == frozen['legacy_results_sha256'], 'R12 legacy result pin')
+    c.need(c.digest_consistency(legacy_digest == frozen['legacy_results_sha256']), 'R12 legacy result pin')
     compiler = os.environ.get('RUSTC', 'rustc')
     with tempfile.TemporaryDirectory(prefix='aclt-phase-d-r13-') as tmp:
         binary = Path(tmp)/'codec'
         subprocess.run([compiler, '--edition=2021', '-D', 'warnings', str(RUST/'main.rs'),
                         '-o', str(binary)], check=True, timeout=120)
         negatives, digest = crosscheck(binary, fixtures, frozen)
-    summary = dict(status='PASS', receipts=len(fixtures), negative_checks=negatives,
+    summary = dict(status='PASS', sha_consistency='DISABLED',
+                   disabled_sha_cases=sorted(R12['SHA_RECORD_CASES'] | {'wrong-deployment-pin','wrong-source-pin'}), receipts=len(fixtures), negative_checks=negatives,
                    legacy_results_sha256=legacy_digest, results_sha256=digest)
     if args.report:
         host = dict(hostname=socket.gethostname(), python=platform.python_version(),

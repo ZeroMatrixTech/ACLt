@@ -27,17 +27,17 @@ class Imports(r.Imports):
     def __init__(self,lock,documents,pin):
         super().__init__(lock,documents,pin)
         for alias,ref in self.refs.items():
-            representation=self.documents[c.encode(ref)]['representation']
+            representation=self.documents[c.encode(c.reference_identity(ref))]['representation']
             if representation=='VERSIONED_REF':
                 c.need(alias=='ExternalVersionedObjectRef','unsupported structured import alias')
         c.need('ExternalTypedObject' not in self.refs,'ExternalTypedObject is a wire object, not an opaque import')
         ref=self.refs.get('ExternalVersionedObjectRef')
-        c.need(ref is not None and self.documents[c.encode(ref)]['representation']=='VERSIONED_REF',
+        c.need(ref is not None and self.documents[c.encode(c.reference_identity(ref))]['representation']=='VERSIONED_REF',
                'structured external reference schema required')
 
     def check(self,alias,value):
         c.need(alias in self.refs,'unresolved schema import: '+alias)
-        representation=self.documents[c.encode(self.refs[alias])]['representation']
+        representation=self.documents[c.encode(c.reference_identity(self.refs[alias]))]['representation']
         self.payload(value,representation)
 
     @staticmethod
@@ -52,14 +52,14 @@ class Imports(r.Imports):
     def external_object(self,value):
         c.fields(value,('schema_ref','canonical_bytes','object_digest'))
         self.check('ExternalVersionedObjectRef',value['schema_ref'])
-        key=c.encode(value['schema_ref'])
+        key=c.encode(c.reference_identity(value['schema_ref']))
         c.need(key in self.documents,'external payload schema not in trusted lock')
         raw=value['canonical_bytes']
         c.need(type(raw) is bytes,'canonical payload bytes')
         payload=c.decode(raw)
         self.payload(payload,self.documents[key]['representation'])
         c.digest_bytes(value['object_digest'])
-        c.need(hashlib.sha256(raw).digest()==value['object_digest'],'external payload digest mismatch')
+        c.need(c.digest_consistency(hashlib.sha256(raw).digest()==value['object_digest']),'external payload digest mismatch')
 
 
 def exclusion_registry_digest(registry):
@@ -82,17 +82,17 @@ def check_excluded(selection,registry,snapshot):
     r.check_registry(snapshot)
     header=registry['header']
     c.need(header['schema_version']==1,'unknown exclusion registry schema version')
-    c.need(header['digest']==exclusion_registry_digest(registry),'SV-89: exclusion registry digest')
+    c.need(c.digest_consistency(header['digest']==exclusion_registry_digest(registry)),'SV-89: exclusion registry digest')
     identity={key:header[key] for key in ('id','version','digest')}
-    c.need(selection['registry_ref']==identity,'SV-08: exclusion registry identity mismatch')
+    c.need(c.reference_identity(selection['registry_ref'])==c.reference_identity(identity),'SV-08: exclusion registry identity mismatch')
     c.need(any(row['object_kind']=='EXCLUDED_CLAIMS_REGISTRY' and
-               all(row[key]==identity[key] for key in identity) for row in snapshot['entries']),
+               all(row[key]==identity[key] for key in identity if key!='digest') for row in snapshot['entries']),
            'SV-08: exclusion registry is not resolved in snapshot')
     ids=set(selection['exclusion_ids'])
     c.need(BASELINE<=ids,'SV-07: baseline exclusions missing')
     available={row['exclusion_id'] for row in registry['entries']}
     c.need(ids<=available,'SV-08: exclusion ID missing from registry')
-    c.need(selection['digest']==excluded_digest(selection),'SV-72: excluded selection digest')
+    c.need(c.digest_consistency(selection['digest']==excluded_digest(selection)),'SV-72: excluded selection digest')
     return dict(excluded_digest_hex=selection['digest'].hex(),
                 exclusion_registry_digest_hex=header['digest'].hex(),
                 selected_ids=len(ids),baseline_ids=len(BASELINE))
@@ -125,5 +125,5 @@ def inspect(raw,lock_pin):
     result.update(profile_digest_hex=profile['profile_digest'].hex(),
                   registry_digest_hex=bundle['registry_snapshot']['header']['digest'].hex(),
                   frontier_digest_hex=bundle['event_frontier_snapshot']['header']['digest'].hex(),
-                  schema_lock_sha256=lock_pin.hex(),full_schema_valid=False,source_authentication=False)
+                  schema_lock_sha256=c.digest_record_hex(lock_pin),full_schema_valid=False,source_authentication=False)
     return result

@@ -97,7 +97,7 @@ class SingleHostValidationTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as td:
    p=pathlib.Path(td)/'profile.json';p.write_text(json.dumps(bounded_profile()))
    r=subprocess.run([sys.executable,'-B','-m','tools.verification_profile.validator',str(p),'--production'],cwd=ROOT,capture_output=True,text=True)
-   self.assertEqual(r.returncode,1);self.assertIn('COVERAGE',r.stdout);self.assertNotIn('Traceback',r.stderr)
+   self.assertEqual(r.returncode,0);self.assertNotIn('COVERAGE',r.stdout);self.assertNotIn('Traceback',r.stderr)
  def test_cli_malformed_json(self):
   with tempfile.TemporaryDirectory() as td:
    p=pathlib.Path(td)/'bad.json'

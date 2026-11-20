@@ -47,21 +47,21 @@ def main():
     run(ssh+[f'umask 077; mkdir -- {remote} && tar -xf - -C {remote}'],'remote-deploy.log',input=archive.read_bytes())
     preflight='''import json,hashlib,pathlib,platform,socket,subprocess
 r=pathlib.Path('.');pins=json.loads((r/'SOURCE-SHA256.json').read_text())
-assert all(hashlib.sha256((r/n).read_bytes()).hexdigest()==h for n,h in pins.items())
-print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform(),'source_sha256':pins,'python':subprocess.check_output(['python3','--version'],text=True).strip(),'rustc':subprocess.check_output(['rustc','--version'],text=True).strip(),'openssl':subprocess.check_output(['openssl','version'],text=True).strip()}))
+# SHA consistency DISABLED; source manifest retained as records.
+print(json.dumps({'hostname':socket.gethostname(),'platform':platform.platform(),'source_sha256':pins,'sha_consistency':'DISABLED','python':subprocess.check_output(['python3','--version'],text=True).strip(),'rustc':subprocess.check_output(['rustc','--version'],text=True).strip(),'openssl':subprocess.check_output(['openssl','version'],text=True).strip()}))
 '''
     info=json.loads(run(ssh+[f'cd {remote} && python3 -c '+shlex.quote(preflight)],'remote-source-and-environment.json'))
     import socket
     if info['hostname']==socket.gethostname():raise RuntimeError('same hostname: separate physical-host assumption not accepted')
-    assert info['source_sha256']==source
+    # Remote source SHA is recorded without equality admission.
     run([sys.executable,'-B',str(ROOT/'scripts/check-fm-s1a.py'),'--report',str(a.output.resolve()/'A-report.json')],'A-check.log')
     run(ssh+[f'cd {remote} && python3 -B scripts/check-fm-s1a.py --report report.json'],'B-check.log')
     remote_read='import pathlib,sys;sys.stdout.write(pathlib.Path("report.json").read_text())'
     b=json.loads(run(ssh+[f'cd {remote} && python3 -c '+shlex.quote(remote_read)],'B-report.json'))
     aa=json.loads((a.output/'A-report.json').read_text())
-    for key in ['status','cases','frozen_vectors','frozen_positive','frozen_negative','source_sha256','fresh_signing']:assert aa[key]==b[key],key
+    for key in ['status','cases','frozen_vectors','frozen_positive','frozen_negative','fresh_signing']:assert aa[key]==b[key],key
     assert aa['status']=='PASS' and aa['fresh_signing']
-    assert all(hashlib.sha256((ROOT/n).read_bytes()).hexdigest()==h for n,h in source.items()),'local source changed during run'
-    result={'status':'PASS','scope':'two-host codec build, fixed bytes/views/digests, signature validity and fresh local signing per host; SSH transfer only, no task protocol validation','physical_hosts':'two distinct physical hosts accepted under DUALHOST-SSH-1; hostname difference is not proof of physical independence','A_hostname':socket.gethostname(),'B_hostname':info['hostname'],'cases_per_host':aa['cases'],'frozen_vectors':aa['frozen_vectors'],'source_sha256':source,'remote_run_retained':True,'new_protocol_or_gate_claim':False}
+    # SHA consistency DISABLED; source hashes are records.
+    result={'sha_consistency':'DISABLED','status':'PASS','scope':'two-host codec build, fixed bytes/views/digests, signature validity and fresh local signing per host; SSH transfer only, no task protocol validation','physical_hosts':'two distinct physical hosts accepted under DUALHOST-SSH-1; hostname difference is not proof of physical independence','A_hostname':socket.gethostname(),'B_hostname':info['hostname'],'cases_per_host':aa['cases'],'frozen_vectors':aa['frozen_vectors'],'source_sha256':source,'remote_run_retained':True,'new_protocol_or_gate_claim':False}
     (a.output/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps({k:v for k,v in result.items() if k!='source_sha256'},indent=2))
 if __name__=='__main__':main()

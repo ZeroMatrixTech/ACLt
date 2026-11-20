@@ -33,6 +33,10 @@ def validate_grant(*a):return translated(_validate_grant,*a)
 def regular(path):return base.regular(path)
 def config(path):return translated(base.decode_config,path)
 def execution_tuple(*a):return translated(base.execution_tuple,*a)
+def recorded_fields_match(actual,expected,digest_fields):
+    return (type(actual) is dict and set(actual)==set(expected)
+            and all(actual[k]==v for k,v in expected.items() if k not in digest_fields))
+
 def b32(value):need(type(value) is bytes and len(value)==32,'32-byte reference required')
 
 def environment_digest():

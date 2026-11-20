@@ -1,5 +1,8 @@
 # ACLt Protocol 鲁棒性分析
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档状态：Living evidence ledger  
 > 语义基线：v0.5  
 > 当前结论：完整候选架构已形成；整体鲁棒性 **未证明**  
@@ -143,12 +146,12 @@ ACLt Protocol 不把鲁棒性视为一个单一布尔值。任何“系统鲁棒
 - 边界：TaskGraph 等价、计划合法性、候选排序、时钟与并发状态机仍未冻结；
 - SemanticStatus：边界 `DECIDED`；算法和证据 `OPEN`，Priority `P0`。
 
-### RB-12：Bayesian proposal 只属于效率层
+### RB-12：当前 Bayesian 策略与模型条件
 
 - 前提：prior、likelihood、Snapshot 和提案接口在观察前冻结；
 - 机制：Bayesian policy 只提出抽样顺序、候选或成本计划；`REEXEC_BOUNDED` 的接受仅由冻结有限总体 e-process 及其外部假设决定；
 - 结论：posterior、历史能力或 FoundationReport 不能单独产生 TRUSTED；
-- 边界：prior sensitivity 和效率收益仍需实验；Bayesian 结果不得进入证据权重、停止阈值或真理判决；
+- 研究：prior sensitivity 和效率收益仍需实验；观察前权重构造的来源属于具体模型选择，模型仍要求权重非负、归一化并在观察前固定；
 - SemanticStatus：职责边界 `DECIDED`；效率模型 `CANDIDATE/P1`。
 
 ### RB-13：主网 assurance 将开放世界问题限域

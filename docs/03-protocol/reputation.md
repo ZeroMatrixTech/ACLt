@@ -1,6 +1,9 @@
 # ACLt Protocol 履约证据、能力估计与风险暴露
 
-> 文件名兼容说明：`reputation.md` 为仓库规划中的历史文件名；ACLt Protocol **不存在 Reputation/Rank 权威实体**  
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
+> 文件名兼容说明：`reputation.md` 为仓库规划中的历史文件名；本文使用 PerformanceEvidence、CapabilityEstimate 与 ExposureDecision 表示当前相关对象
 > 文档状态：`DECIDED` semantic replacement；模型 `CANDIDATE/P1`  
 > 语义基线：v0.5  
 > 最后更新：2026-08-17
@@ -22,20 +25,13 @@ PerformanceEvidence_{i,t}
 - `j`：具体任务；
 - `t`：证据和决策时间。
 
-该链只回答“在什么条件下允许承担多大风险”，不回答“谁说的结果是真理”。
+该链描述任务条件、估计不确定度和实际风险额度；验证结果由相应方法与证据路径记录。
 
-## 2. 明确禁止
+## 2. 当前表示与数据流
 
-协议 MUST NOT：
+已有设计分别记录履约证据、任务族估计和单次风险额度。估计附输入、时间、模型与不确定度；暴露决策消费这些字段，验证路径消费自己的任务配置与证据。缓存用于读取已有估计，更新可追踪到原记录。
 
-- 创建 Rank、等级、声望资产或不可重算的 ReputationState；
-- 用历史履约直接增加 VerificationEvidence 的真理权重；
-- 把 CapabilityEstimate、FoundationReport、维护报告或付款记录写入本次 Bayesian prior、posterior 权重或停止条件；
-- 让高能力 Provider 获得最终审计、争议裁决或治理权；
-- 把不同任务族的表现默认互相迁移；
-- 因拒绝尚未接受的任务扣减证据；
-- 把平台、任务规范、网络或验证器故障自动归因给 Provider；
-- 让缓存 CapabilityEstimate 成为独立权威。
+这是当前的对象和职责分配。引入新估计、迁移机制或证据使用方式时，说明具体接口、数据来源与适用模型，并按实际影响验证。不同任务族的迁移、故障归因和后验构造分别属于待研究问题，旧的一揽子禁止清单保留在 Git 历史。
 
 ## 3. PerformanceEvidence
 
@@ -82,7 +78,7 @@ CapabilityEstimate 是特定任务族和条件下的概率分布、区间或保�
 - 数据陈旧、概念漂移和硬件变化；
 - 有效期和不可迁移边界。
 
-跨任务族迁移默认关闭。休眠、硬件/软件变化和分布漂移 SHOULD 增加不确定度。
+现有估计按任务族和条件记录；跨任务族迁移需要明确模型与数据。休眠、硬件/软件变化和分布漂移作为估计输入与不确定度来源记录。
 
 ## 6. 候选估计方案
 
@@ -94,7 +90,7 @@ CapabilityEstimate 是特定任务族和条件下的概率分布、区间或保�
 | 校准分类/生存模型 | 可纳入任务和环境特征 | 数据污染、可解释和漂移风险 | 仿真候选 |
 | 规则型能力边界 | 可审计、易测试 | 利用率可能较低 | G0/G1 基线 |
 
-v0.5 不冻结任何公式。模型必须以校准、最坏损失和反例表现选择，而不是以排名美观选择。
+当前有多种候选模型；后续比较使用校准、损失和反例表现。
 
 ## 7. ExposureDecision
 
@@ -136,11 +132,11 @@ v0.5 不冻结任何公式。模型必须以校准、最坏损失和反例表现
 - 仿真反复创建—探索—退出攻击；
 - 不把“通过身份验证”直接视为行为独立。
 
-## 10. 证据与验证权隔离
+## 10. 估计与验证的接口
 
-数据流必须满足 INV-14：CapabilityEstimate 只能进入 Admit/ExposureDecision。Verify/Aggregate 只读取本任务冻结的 VerificationPolicy、Snapshot、prior/likelihood（若启用）和 VerificationEvidence，不读取能力值、FoundationReport 或维护报告作为真理票权。
+当前设计中 CapabilityEstimate 进入 Admit/ExposureDecision；验证实现消费本任务的 VerificationPolicy、Snapshot、显式混合权重和 VerificationEvidence。把这两条实际数据流分别写清，便于核对实现。
 
-实现层应通过独立 Schema、API 和权限测试防止这两条数据流重新耦合。
+观察前固定、非负且归一化的混合权重是现有 e-process 模型的条件；输入来源与职责划分属于工程选择。未来若使用履约信息构造某个 prior 或采样策略，需说明它的可观察时间、构造方式和所依赖模型，不能把当前数据流选择写成对所有未来方法的数学排斥。
 
 ## 11. 可解释性与申诉
 
@@ -179,12 +175,6 @@ v0.5 不冻结任何公式。模型必须以校准、最坏损失和反例表现
 
 ## 14. 迁移说明
 
-历史文档中的 Rank、Reputation、信用分和等级必须按语境迁移：
-
-- 履约记录 → PerformanceEvidence；
-- 对未来履约的估计 → CapabilityEstimate；
-- 可承担任务大小/并发 → ExposureDecision；
-- 验证影响力 → 删除，不迁移；
-- 治理或审计权 → 删除，不迁移。
+历史 Rank/Reputation 表述按具体含义映射：履约记录对应 PerformanceEvidence，对未来履约的估计对应 CapabilityEstimate，任务大小与并发额度对应 ExposureDecision。旧文本中验证影响力或治理权的设想作为历史设计，后续若采用具体机制，另行说明其对象、职责与验证依据。
 
 文件名保留只为仓库导航稳定，不表示恢复旧语义。

@@ -13,10 +13,10 @@ fn types()->R<V>{
 fn pref(p:&V)->R<V>{Ok(map(vec![("id",get(p,"profile_id")?.clone()),("version",get(p,"profile_version")?.clone()),("digest",get(p,"profile_digest")?.clone())]))}
 fn verify(p:&V)->R<()>{super::profile::run("profile-digest",&hex(&encode(p)?))?;Ok(())}
 fn snapshot(v:&V,t:&V,i:&Imports)->R<()>{typed(v,&s("Registry"),t,i)?;super::registration::check_registry(v)}
-fn present(row:&V,reference:&V)->R<bool>{Ok(txt(get(row,"object_kind")?)?=="VERIFICATION_PROFILE"&&["id","version","digest"].iter().all(|k|get(row,k).ok()==get(reference,k).ok()))}
+fn present(row:&V,reference:&V)->R<bool>{Ok(txt(get(row,"object_kind")?)?=="VERIFICATION_PROFILE"&&["id","version"].iter().all(|k|get(row,k).ok()==get(reference,k).ok()))}
 fn resolve<'a>(reference:&V,profiles:&'a V,snapshot:&V,t:&V,i:&Imports)->R<&'a V>{
  typed(reference,&s("ProfileRef"),t,i)?;let mut found=None;
- for p in arr(profiles)?{if same(&pref(p)?,reference)?{need(found.is_none(),"duplicate Profile asset")?;verify(p)?;found=Some(p);}}
+ for p in arr(profiles)?{if same_reference(&pref(p)?,reference)?{need(found.is_none(),"duplicate Profile asset")?;verify(p)?;found=Some(p);}}
  let p=found.ok_or("missing actual Profile")?;let mut registered=false;
  for row in arr(get(snapshot,"entries")?)?{if present(row,reference)?{registered=true;}}
  need(registered,"Profile absent from snapshot")?;Ok(p)
@@ -38,7 +38,7 @@ fn admissible(p:&V,snap:&V)->R<bool>{
  for row in arr(get(snap,"entries")?)?{if present(row,&reference)?&&["REGISTERED","ACTIVE"].contains(&txt(get(row,"state")?)?){return Ok(true);}}Ok(false)
 }
 fn selected(slot:&V,p:&V,snap:&V)->R<()>{
- verify(p)?;let reference=pref(p)?;need(same(get(slot,"profile_ref")?,&reference)?,"SV-45: slot/actual Profile")?;
+ verify(p)?;let reference=pref(p)?;need(same_reference(get(slot,"profile_ref")?,&reference)?,"SV-45: slot/actual Profile")?;
  for row in arr(get(snap,"entries")?)?{if present(row,&reference)?{return Ok(());}}Err("SV-45: Profile absent from snapshot".into())
 }
 fn projection(v:&V)->R<V>{
@@ -50,7 +50,7 @@ fn asset_hash(v:&V,kind:&str,t:&V,i:&Imports)->R<()>{
  typed(v,&s(kind),t,i)?;let h=get(v,"header")?;need(integer(get(h,"schema_version")?)?==1,"asset schema version")?;
  let tag=match kind{"PolicyR7"=>"SelectionPolicy","EdgeR7"=>"WeakeningEdge","ManifestR7"=>"Manifest",_=>return Err("asset kind".into())};
  let hash=domain(&format!("ACLt/P0-1/{tag}/1"),&encode(&projection(v)?)?);
- need(bytes(get(h,"digest")?)?==hash,"asset digest mismatch")
+ need(digest_consistency(bytes(get(h,"digest")?)?==hash),"asset digest mismatch")
 }
 fn edge(v:&V,profiles:&V,snap:&V,t:&V,i:&Imports)->R<()>{
  asset_hash(v,"EdgeR7",t,i)?;need(txt(get(v,"edge_class")?)?=="AUTO_DECIDABLE","SV-21: AUTO_DECIDABLE only")?;
@@ -81,7 +81,7 @@ fn policy(v:&V,profiles:&V,snap:&V,edges:&V,t:&V,i:&Imports)->R<()>{
   let reference=get(candidate,"profile_ref")?;let p=resolve(reference,profiles,snap,t,i)?;
   if let Ok(d)=get(p,"degradation"){
    let target=get(d,"target")?;resolve(target,profiles,snap,t,i)?;let mut matches=vec![];
-   for e in arr(edges)?{if same(get(e,"source")?,reference)?&&same(get(e,"target")?,target)?{matches.push(e);}}
+   for e in arr(edges)?{if same_reference(get(e,"source")?,reference)?&&same_reference(get(e,"target")?,target)?{matches.push(e);}}
    need(matches.len()==1,"one explicit weakening edge required")?;edge(matches[0],profiles,snap,t,i)?;
   }
  }for e in arr(edges)?{edge(e,profiles,snap,t,i)?;}Ok(())

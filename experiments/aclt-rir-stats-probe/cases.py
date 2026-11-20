@@ -64,7 +64,7 @@ def run(body,directory,executor,worker):
         mp=module_path
         if module!=body:mp=folder/'fixture.wasm';mp.write_bytes(module)
         py=python_run(module,data,lim);native=native_run(executor,mp,inp,lim,folder/'native.log')
-        if py!=native:raise AssertionError((name,'runtime mismatch',py,native))
+        if {k:v for k,v in py.items() if k!='outcome_digest'}!={k:v for k,v in native.items() if k!='outcome_digest'}:raise AssertionError((name,'runtime mismatch',py,native))
         if expected:
             for k,v in expected.items():
                 if py.get(k)!=v:raise AssertionError((name,k,py,v))

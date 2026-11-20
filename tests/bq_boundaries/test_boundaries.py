@@ -75,7 +75,7 @@ class BoundaryTests(unittest.TestCase):
         self.assertEqual(placements(10, 3, 8, b['target_correct_support'])[-1], 0)
 
     def test_invalid_parameters_rejected(self):
-        for args in [(10, 3, 3, 3), (13, 3, 8, 3), (10, 3, 8, 11), (10, 3, 8, True)]:
+        for args in [(10, 3, 3, 3), (10, 3, 8, 11), (10, 3, 8, True)]:
             with self.assertRaises(ValueError): placements(*args)
         for kwargs in [{'sampler':'unrecognized'}, {'vote_cap':-1}, {'budget':11}]:
             with self.assertRaises(ValueError): placements(10, 3, 8, 3, **kwargs)
@@ -90,5 +90,8 @@ class BoundaryTests(unittest.TestCase):
             self.assertNotEqual(subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode, 0)
             self.assertEqual(path.read_bytes(), raw)
 
+
+    def test_population_above_former_engineering_limit(self):
+        self.assertEqual(placements(13, 3, 8, 0), [Fraction()] * 13)
 
 if __name__ == '__main__': unittest.main()

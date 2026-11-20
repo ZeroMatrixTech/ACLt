@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Candidate Phase D encoding and read-only projection of verified R11 rows."""
 
+import copy
 from tools.verification_profile import codec as c, profile
 
 VERSION = 'ACLt/PhaseD/Candidate/1'
@@ -14,7 +15,7 @@ def project(config_pin, row):
     """Encode an R11 row returned by the authenticated bridge, never a peer claim."""
     legacy = bytes.fromhex(row['phase_d_source_cbor_hex'])
     legacy_digest = c.domain_hash('ACLt/TEST/R11/PhaseDSource/1', legacy)
-    c.need(legacy_digest.hex() == row['phase_d_source_digest'], 'legacy source digest')
+    c.need(c.digest_consistency(legacy_digest.hex() == row['phase_d_source_digest']), 'legacy source digest')
     source = c.decode(legacy)
     evidence = source['projection']
     context = dict(
@@ -64,7 +65,38 @@ def project(config_pin, row):
                 derived_terminal=profile.TERMINALS[winner])
 
 
+def comparison_projection(value):
+    """Retain actual inputs and decisions while treating generated SHA fields as records."""
+    result = copy.deepcopy(value)
+    def record(mapping, key):
+        c.digest_bytes(mapping[key])
+        mapping[key] = bytes(32)
+    def context(value):
+        for key in ('deployment_digest', 'profile_digest', 'log_id',
+                    'cutoff_head', 'cutoff_state_digest'):
+            record(value, key)
+    record(result, 'input_digest')
+    data = result['evaluation_input']
+    context(data['context'])
+    if 'deadline_observation_ref' in data:
+        record(data, 'deadline_observation_ref')
+    if 'execution_closure' in data:
+        closure = data['execution_closure']
+        context(closure['context'])
+        record(closure, 'closure_digest')
+    c.need(type(result['condition_vector']) is list, 'condition vector array')
+    for row in result['condition_vector']:
+        record(row, 'reason_digest')
+    return result
+
+
 def verify(projected_bytes, config_pin, verified_row):
-    """Check exact bytes against the projection of separately authenticated evidence."""
-    c.need(projected_bytes == c.encode(project(config_pin, verified_row)),
-           'candidate bytes differ from authenticated replay')
+    """Compare actual values, field sets and decisions against replayed evidence."""
+    message = 'candidate bytes differ from authenticated replay'
+    try:
+        candidate = comparison_projection(c.decode(projected_bytes))
+        expected = comparison_projection(project(config_pin, verified_row))
+        matches = c.encode(candidate) == c.encode(expected)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise c.CodecError(message) from exc
+    c.need(matches, message)

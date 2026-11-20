@@ -1,14 +1,19 @@
 # ACLt Protocol 文档中心
 
+> 当前执行见[开发政策](development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档状态：Living index and governance  
 > 当前语义基线：v0.5  
 > 最后更新：2026-11-11
 
-本目录是 ACLt Protocol 的权威文档中心。文档不是一次性说明材料，而是随反例、证明、仿真、实现、攻击测试和工程试点持续修订的规格系统。
+本目录连接当前实现说明、模型、实验和历史记录。当前协作与实施决定首先见[开发政策](development-policy.md)，具体对象和行为在对应文档描述。
 
 ## 1. 阅读路径
 
 ### 快速理解
+
+先读[当前开发政策](development-policy.md)与[项目已实现行为](../README.md#已实现的行为)。
 
 1. [`00-overview/project-overview.md`](00-overview/project-overview.md)
 2. [`00-overview/design-principles.md`](00-overview/design-principles.md)
@@ -98,7 +103,7 @@
 | 当前完成度 | `07-roadmap/current-status.md` |
 | 未决问题和候选方案 | `07-roadmap/open-questions.md` |
 | 审计程序与报告格式 | `08-governance/` |
-| 当前审计记录 | `08-governance/audits/audit-20260821-10-p0-1a-independent-entry.md`；前序记录保留在同目录 |
+| 当前审查安排 | 本轮由维护者审计；旧报告按原日期保存在 `08-governance/audits/` |
 
 同一结论不得在多个文件中形成互相独立的权威版本；其他文件应链接到权威位置。
 

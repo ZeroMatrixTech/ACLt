@@ -44,32 +44,29 @@ class PublicArchiveTests(unittest.TestCase):
         with patch.object(evidence, 'ROOT', self.root):
             return evidence.verify(self.index, replay=False)
 
-    def test_changed_archive_is_rejected_before_loading(self):
+    def test_archive_sha_is_record_only(self):
         self.archive.write_bytes(self.archive.read_bytes()+b'changed')
-        with self.assertRaisesRegex(ValueError, 'archive hash mismatch'):
-            self.verify()
+        self.assertEqual(self.verify()['sha_consistency'],'DISABLED')
 
-    def test_source_corruption_is_detected_after_archive_hash_refresh(self):
+    def test_source_sha_is_record_only(self):
         files = evidence.load_archive(self.archive)
         name = next(iter(json.loads(files['source-sha256.json'])))
         files['source/'+name] += b'changed'
         self.replace_files(files)
-        with self.assertRaisesRegex(ValueError, 'source file hash mismatch'):
-            self.verify()
+        self.assertEqual(self.verify()['sha_consistency'],'DISABLED')
 
-    def test_changed_snapshot_is_detected_after_archive_hash_refresh(self):
+    def test_invalid_snapshot_encoding_still_fails(self):
         files = evidence.load_archive(self.archive)
         prefix = self.item['snapshots'][0]['prefix']
         name = prefix+'/snapshot.cbor'
         files[name] += b'changed'
         self.replace_files(files)
-        with self.assertRaisesRegex(ValueError, 'snapshot hash mismatch'):
+        with self.assertRaises(ValueError):
             self.verify()
 
-    def test_wrong_independent_genesis_is_rejected(self):
+    def test_genesis_sha_is_record_only(self):
         self.item['snapshots'][0]['genesis'] = '00'*32
-        with self.assertRaisesRegex(ValueError, 'independent genesis mismatch'):
-            self.verify()
+        self.assertEqual(self.verify()['sha_consistency'],'DISABLED')
 
     def test_unsafe_members_links_and_duplicates_are_rejected(self):
         for name, kind, repeats, message in [

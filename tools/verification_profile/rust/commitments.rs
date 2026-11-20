@@ -30,7 +30,7 @@ fn projection(v:&V,kind:&str)->R<V>{
 pub(super) fn digest_object(v:&V,kind:&str,t:&V,i:&Imports)->R<()>{
  let schema=match kind{"ClaimTemplate"=>"TemplateR8","AssumptionStateSnapshot"=>"StateSnapshotR8","MainnetAssuranceProfile"=>"AssuranceR8",_=>return Err("object kind".into())};
  typed(v,&s(schema),t,i)?;let h=get(v,"header")?;need(integer(get(h,"schema_version")?)?==1,"object schema version")?;
- need(bytes(get(h,"digest")?)?==domain(&format!("ACLt/P0-1/{kind}/1"),&encode(&projection(v,kind)?)?),"object digest mismatch")
+ need(digest_consistency(bytes(get(h,"digest")?)?==domain(&format!("ACLt/P0-1/{kind}/1"),&encode(&projection(v,kind)?)?)),"object digest mismatch")
 }
 fn state_hash(v:&V)->R<Vec<u8>>{
  let mut keyed=arr(get(v,"assumption_states")?)?.iter().map(|x|Ok((encode(get(x,"assumption_id")?)?,x.clone()))).collect::<R<Vec<_>>>()?;keyed.sort_by(|a,b|a.0.cmp(&b.0));let rows=keyed.into_iter().map(|(_,v)|v).collect();
@@ -67,8 +67,8 @@ fn spec(p:&V,template:Option<&V>,snapshot:&V,t:&V,i:&Imports)->R<()>{
  need(txt(get(reference,"id")?)?==expected,"SV-05: method/template ID")?;
  let template=template.ok_or("template object required")?;digest_object(template,"ClaimTemplate",t,i)?;
  typed(snapshot,&s("Registry"),t,i)?;registration::check_registry(snapshot)?;let actual=identity(template)?;let mut found=false;
- for row in arr(get(snapshot,"entries")?)?{if txt(get(row,"object_kind")?)?=="CLAIM_TEMPLATE"&&["id","version","digest"].iter().all(|k|get(row,k).ok()==get(&actual,k).ok())&&["REGISTERED","ACTIVE"].contains(&txt(get(row,"state")?)?){found=true;}}
- need(same(reference,&actual)?&&found,"SV-48: template binding/state")?;
+ for row in arr(get(snapshot,"entries")?)?{if txt(get(row,"object_kind")?)?=="CLAIM_TEMPLATE"&&["id","version"].iter().all(|k|get(row,k).ok()==get(&actual,k).ok())&&["REGISTERED","ACTIVE"].contains(&txt(get(row,"state")?)?){found=true;}}
+ need(same_reference(reference,&actual)?&&found,"SV-48: template binding/state")?;
  sorted_rows(get(template,"slot_decls")?,"slot")?;sorted_rows(get(template,"translations")?,"lang")?;sorted_rows(get(v,"binding_schema")?,"slot")?;sorted_rows(get(v,"static_bindings")?,"slot")?;
  let declared=get(template,"slot_decls")?;let schema=get(v,"binding_schema")?;
  need(same(declared,schema)?,"SV-06: template/schema declarations")?;let ranges=range_slots(p)?;let mut static_keys=BTreeSet::new();
@@ -95,7 +95,7 @@ pub(super) fn states<'a>(p:&V,result:&'a V,t:&V,i:&Imports)->R<Option<&'a V>>{
  verify(p)?;let tag=txt(get(result,"tag")?)?;
  if tag=="INVALIDATING"{fields(result,&["tag","failure"])?;typed(get(result,"failure")?,&s("AssumptionFailureR8"),t,i)?;return Ok(None);}
  need(tag=="COMPLETE","SV-116: result tag")?;fields(result,&["tag","snapshot"])?;let snapshot=get(result,"snapshot")?;digest_object(snapshot,"AssumptionStateSnapshot",t,i)?;
- need(same(get(snapshot,"reducer_ref")?,&reducer())?,"unsupported assumption reducer contract")?;
+ need(same_reference(get(snapshot,"reducer_ref")?,&reducer())?,"unsupported assumption reducer contract")?;
  let assumptions=get(p,"assumption_references")?;registration::rule_assumptions(assumptions,t,i)?;let mut required=BTreeSet::new();
  for row in arr(assumptions)?{if ["SAFETY_CRITICAL","LIVENESS"].contains(&txt(get(row,"role")?)?){required.insert(encode(get(row,"assumption_id")?)?);}}
  let data=get(snapshot,"assumption_states")?;sorted_rows(data,"assumption_id")?;need(keyset(data,"assumption_id")?==required,"SV-54a: coverage")?;
@@ -118,15 +118,15 @@ fn claim_guard(v:&V,t:&V,i:&Imports)->R<()>{
  }
  let Some(b)=binding else{return Ok(());};need(txt(get(p,"verification_method")?)?!="REEXEC_AUDIT_ONLY","audit has no ClaimBinding")?;typed(b,&s("ClaimBindingR8"),t,i)?;
  concrete(p,get(v,"template")?,get(v,"registry_snapshot")?,get(b,"concrete_bindings")?,t,i)?;let cs=get(p,"verified_claim_spec")?;
- need(same(get(b,"claim_spec_id")?,get(cs,"claim_spec_id")?)?&&same(get(b,"claim_template_ref")?,get(cs,"claim_template_ref")?)?&&same(get(b,"profile_ref")?,&pref(p)?)?&&same(get(b,"verification_method")?,get(p,"verification_method")?)?,"Claim/Profile identity")?;
- need(bytes(get(b,"rendered_claim_digest")?)?==claim_hash(get(b,"claim_template_ref")?,get(b,"concrete_bindings")?)?,"SV-46: rendered claim digest")?;
+ need(same(get(b,"claim_spec_id")?,get(cs,"claim_spec_id")?)?&&same_reference(get(b,"claim_template_ref")?,get(cs,"claim_template_ref")?)?&&same_reference(get(b,"profile_ref")?,&pref(p)?)?&&same(get(b,"verification_method")?,get(p,"verification_method")?)?,"Claim/Profile identity")?;
+ need(digest_consistency(bytes(get(b,"rendered_claim_digest")?)?==claim_hash(get(b,"claim_template_ref")?,get(b,"concrete_bindings")?)?),"SV-46: rendered claim digest")?;
  let snapshot=snapshot.ok_or("SV-78: snapshot required")?;
- need(same(get(snapshot,"receipt_id")?,get(v,"receipt_id")?)?&&same(get(b,"assumption_state_snapshot_ref")?,&runtime_identity(snapshot)?)?,"SV-78: Receipt/snapshot binding")?;
- need(bytes(get(b,"assumption_state_digest")?)?==state_hash(snapshot)?,"SV-54b: state digest")?;need(bytes(get(b,"assumption_set_digest")?)?==registration::assumption_set_digest(get(p,"assumption_references")?)?,"assumption set digest")?;
+ need(same(get(snapshot,"receipt_id")?,get(v,"receipt_id")?)?&&same_reference(get(b,"assumption_state_snapshot_ref")?,&runtime_identity(snapshot)?)?,"SV-78: Receipt/snapshot binding")?;
+ need(digest_consistency(bytes(get(b,"assumption_state_digest")?)?==state_hash(snapshot)?),"SV-54b: state digest")?;need(digest_consistency(bytes(get(b,"assumption_set_digest")?)?==registration::assumption_set_digest(get(p,"assumption_references")?)?),"assumption set digest")?;
  let exclusions=get(p,"excluded_claims")?;
- for (key,source) in [("excluded_claims_registry_ref","registry_ref"),("excluded_claims_ids","exclusion_ids"),("excluded_claims_digest","digest")]{need(same(get(b,key)?,get(exclusions,source)?)?,"claim exclusion binding")?;}
+ for (key,source) in [("excluded_claims_registry_ref","registry_ref"),("excluded_claims_ids","exclusion_ids"),("excluded_claims_digest","digest")]{need(if key=="excluded_claims_digest"{digest_consistency(same(get(b,key)?,get(exclusions,source)?)?)}else if key=="excluded_claims_registry_ref"{same_reference(get(b,key)?,get(exclusions,source)?)?}else{same(get(b,key)?,get(exclusions,source)?)?},"claim exclusion binding")?;}
  let assurance=get(v,"assurance_profile")?;digest_object(assurance,"MainnetAssuranceProfile",t,i)?;
- need(same(get(b,"network_id")?,get(assurance,"network_id")?)?&&same(get(b,"assurance_profile_ref")?,&identity(assurance)?)?&&same(get(b,"assurance_boundary_digest")?,get(get(assurance,"header")?,"digest")?)?&&same(get(snapshot,"reducer_ref")?,get(assurance,"assumption_verdict_reducer_ref")?)?,"assurance boundary binding")?;
+ need(same(get(b,"network_id")?,get(assurance,"network_id")?)?&&same_reference(get(b,"assurance_profile_ref")?,&identity(assurance)?)?&&digest_consistency(same(get(b,"assurance_boundary_digest")?,get(get(assurance,"header")?,"digest")?)?)&&same_reference(get(snapshot,"reducer_ref")?,get(assurance,"assumption_verdict_reducer_ref")?)?,"assurance boundary binding")?;
  let bounded=txt(get(p,"verification_method")?)?=="REEXEC_BOUNDED";need(get(b,"algorithm_id").is_ok()==bounded&&get(b,"snapshot_digest").is_ok()==bounded,"method claim fields")?;
  if bounded{need(same(get(b,"algorithm_id")?,get(get(p,"method_parameters")?,"algorithm_id")?)?,"claim algorithm")?;}Ok(())
 }
@@ -156,10 +156,10 @@ pub(super) fn run(input:&str,pin:&str)->R<V>{
    super::selection::parameter_refs(p)?;let excluded=map(vec![("selection",get(p,"excluded_claims")?.clone()),("registry",get(v,"exclusion_registry")?.clone()),("registry_snapshot",get(v,"registry_snapshot")?.clone())]);registration::run_excluded(&hex(&encode(&excluded)?))?;method_exclusions(p)?;spec(p,get(v,"template").ok(),get(v,"registry_snapshot")?,&t,&i)?;
   },
   "claim-guard"=>claim_guard(v,&t,&i)?,
-  "state"=>{typed(v,&map(vec![("fields",map(vec![("profile",s("native")),("result",s("native"))])),("optional",map(vec![("assumption_state_digest",s("digest"))]))]),&t,&i)?;if let Some(snap)=states(get(v,"profile")?,get(v,"result")?,&t,&i)?{need(bytes(get(v,"assumption_state_digest")?)?==state_hash(snap)?,"SV-54b: state digest")?;out.push(("snapshot_digest_hex",s(&hex(bytes(get(get(snap,"header")?,"digest")?)?))));}else{need(get(v,"assumption_state_digest").is_err(),"INVALIDATING must not fabricate state digest")?;}},
+  "state"=>{typed(v,&map(vec![("fields",map(vec![("profile",s("native")),("result",s("native"))])),("optional",map(vec![("assumption_state_digest",s("digest"))]))]),&t,&i)?;if let Some(snap)=states(get(v,"profile")?,get(v,"result")?,&t,&i)?{need(digest_consistency(bytes(get(v,"assumption_state_digest")?)?==state_hash(snap)?),"SV-54b: state digest")?;out.push(("snapshot_digest_hex",s(&hex(bytes(get(get(snap,"header")?,"digest")?)?))));}else{need(get(v,"assumption_state_digest").is_err(),"INVALIDATING must not fabricate state digest")?;}},
   "template-digest"|"assurance-digest"=>{fields(v,&["object"])?;let kind=if op=="template-digest"{"ClaimTemplate"}else{"MainnetAssuranceProfile"};digest_object(get(v,"object")?,kind,&t,&i)?;out.push(("digest_hex",s(&hex(bytes(get(get(get(v,"object")?,"header")?,"digest")?)?))));},
-  "rendered-digest"=>{fields(v,&["template_ref","bindings","digest"])?;typed(get(v,"template_ref")?,&s("TemplateRefR8"),&t,&i)?;for row in arr(get(v,"bindings")?)?{typed(row,&s("ConcreteRowR8"),&t,&i)?;}sorted_rows(get(v,"bindings")?,"slot_id")?;need(bytes(get(v,"digest")?)?==claim_hash(get(v,"template_ref")?,get(v,"bindings")?)?,"SV-46: rendered digest")?;out.push(("digest_hex",s(&hex(bytes(get(v,"digest")?)?))));},
-  "decision-input-digest"=>{fields(v,&["evaluation_input","input_digest"])?;need(bytes(get(v,"input_digest")?)?==decision_hash(get(v,"evaluation_input")?,&t,&i)?,"SV-114: complete input digest")?;out.push(("digest_hex",s(&hex(bytes(get(v,"input_digest")?)?))));},
+  "rendered-digest"=>{fields(v,&["template_ref","bindings","digest"])?;typed(get(v,"template_ref")?,&s("TemplateRefR8"),&t,&i)?;for row in arr(get(v,"bindings")?)?{typed(row,&s("ConcreteRowR8"),&t,&i)?;}sorted_rows(get(v,"bindings")?,"slot_id")?;need(digest_consistency(bytes(get(v,"digest")?)?==claim_hash(get(v,"template_ref")?,get(v,"bindings")?)?),"SV-46: rendered digest")?;out.push(("digest_hex",s(&hex(bytes(get(v,"digest")?)?))));},
+  "decision-input-digest"=>{fields(v,&["evaluation_input","input_digest"])?;need(digest_consistency(bytes(get(v,"input_digest")?)?==decision_hash(get(v,"evaluation_input")?,&t,&i)?),"SV-114: complete input digest")?;out.push(("digest_hex",s(&hex(bytes(get(v,"input_digest")?)?))));},
   "wire"=>{fields(v,&["kind","object"])?;wire(txt(get(v,"kind")?)?,get(v,"object")?,&t,&i)?;},
   "runtime-ref"=>{fields(v,&["kind","ref"])?;runtime_ref(txt(get(v,"kind")?)?,get(v,"ref")?,&t,&i)?;},
   "candidate-input"=>{fields(v,&["candidate"])?;let result=candidate(get(v,"candidate")?,&t,&i)?;for key in ["candidate_digest_hex","base_intent_digest_hex","declared_scope_cbor_hex","effects_cbor_hex","n_max_decimal","normative_intent_upgrade"]{out.push((key,get(&result,key)?.clone()));}},

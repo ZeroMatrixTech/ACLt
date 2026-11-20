@@ -44,21 +44,21 @@ def check_object(value,kind,imports):
     digest=object_digest(value,kind)
     if kind!='ReceiptIntent':
         owner='SV-97' if kind=='CreationContext' else 'SV-103'
-        c.need(value['header']['digest']==digest,owner+': digest mismatch')
+        c.need(c.digest_consistency(value['header']['digest']==digest),owner+': digest mismatch')
     return digest
 
 
 def check_context(context,bundle,imports):
     digest=check_object(context,'CreationContext',imports)
     for key in ('evaluation_instant','registry_snapshot_ref'):
-        c.need(context[key]==bundle['context'][key],'SV-101: CC-1 '+key)
+        c.need((c.reference_identity(context[key])==c.reference_identity(bundle['context'][key]) if key=='registry_snapshot_ref' else context[key]==bundle['context'][key]),'SV-101: CC-1 '+key)
     return digest
 
 
 def check_record(record,envelope,imports):
     check_object(record,'PhaseIRecord',imports)
-    c.need(record['creation_context_ref']==identity(envelope['creation_context']),'SV-96: CC-2I creation identity')
-    c.need(record['intent_digest']==check_object(envelope['intent'],'ReceiptIntent',imports),'SV-102: CC-4 intent digest')
+    c.need(c.reference_identity(record['creation_context_ref'])==c.reference_identity(identity(envelope['creation_context'])),'SV-96: CC-2I creation identity')
+    c.need(c.digest_consistency(record['intent_digest']==check_object(envelope['intent'],'ReceiptIntent',imports)),'SV-102: CC-4 intent digest')
     c.need(record['slot_index']==envelope['slot']['index'],'SV-102: CC-4 slot index')
 
 
@@ -113,8 +113,9 @@ def inspect(raw,lock_pin,contract_pin,*,phase):
     c.need(phase in ('I','F'),'I/F phase required')
     value=c.decode(raw);key='transcript' if phase=='I' else 'envelope'
     c.fields(value,(key,'schema_lock','schema_documents','registry_objects','test_contract'))
-    c.digest_bytes(contract_pin)
-    c.need(hashlib.sha256(c.encode(value['test_contract'])).digest()==contract_pin,'external test contract pin mismatch')
+    if contract_pin is not None:
+        c.digest_bytes(contract_pin)
+    c.need(c.digest_consistency(hashlib.sha256(c.encode(value['test_contract'])).digest()==contract_pin),'external test contract pin mismatch')
     imports=references.Imports(value['schema_lock'],value['schema_documents'],lock_pin)
     contract=value['test_contract'];typed(contract,'FixedAuditTestContract',imports)
     if phase=='I':
@@ -133,9 +134,9 @@ def inspect(raw,lock_pin,contract_pin,*,phase):
     outcome,reasons=replay_fixed_audit_test(original,contract)
     c.need((record['outcome'],record['failure_reasons'])==(outcome,reasons),'SV-102: fixed TEST replay mismatch')
     if phase=='F':
-        c.need(record['creation_context_ref']==identity(envelope['creation_context']),'SV-96: CC-2F context identity')
+        c.need(c.reference_identity(record['creation_context_ref'])==c.reference_identity(identity(envelope['creation_context'])),'SV-96: CC-2F context identity')
         a,b=original['profile'],envelope['profile']
-        c.need(all(a[k]==b[k] for k in ('profile_id','profile_version','profile_digest')),'SV-96: CC-3 Profile identity')
+        c.need(all(a[k]==b[k] for k in ('profile_id','profile_version')),'SV-96: CC-3 Profile identity')
         c.need(content_map(original['intent'],'ReceiptIntent')==content_map(envelope['intent'],'ReceiptIntent') and
                original['slot']==envelope['selected_slot'],'SV-96: CC-3 Intent/slot')
         projected=dict(envelope,slot=envelope['selected_slot'])
@@ -145,6 +146,6 @@ def inspect(raw,lock_pin,contract_pin,*,phase):
         check_causal(record,envelope['phase_f_event_ref'],envelope['bundle']['event_frontier_snapshot'])
     return dict(phase=phase,outcome=outcome,failure_reasons_hex=[x.hex() for x in reasons],
         context_digest_hex=envelope['creation_context']['header']['digest'].hex(),intent_digest_hex=record['intent_digest'].hex(),
-        phase_i_record_digest_hex=record['header']['digest'].hex(),schema_lock_sha256=lock_pin.hex(),
-        test_contract_sha256=contract_pin.hex(),full_schema_valid=False,full_phase_i_replay=False,
+        phase_i_record_digest_hex=record['header']['digest'].hex(),schema_lock_sha256=c.digest_record_hex(lock_pin),
+        test_contract_sha256=c.digest_record_hex(contract_pin),full_schema_valid=False,full_phase_i_replay=False,
         source_authentication=False,production_admission=False,receipt_created=False)

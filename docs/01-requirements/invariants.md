@@ -1,5 +1,8 @@
 # ACLt Protocol 系统不变量
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档状态：G0 规范性安全需求  
 > 更新日期：2026-08-18  
 > 不变量集合版本：v0.1  
@@ -64,7 +67,7 @@ ReceiptID(r_1)=ReceiptID(r_2)
 \Rightarrow CanonicalSemantics(r_1)=CanonicalSemantics(r_2)
 \]
 
-规范化语义必须覆盖所有影响执行义务、验证、期限、预算、尝试、资金、结算或权利的实质字段；V1 还必须覆盖 ContractTuple、规范 RIR 工件摘要、Logical Object refs、RPR/ExecutionProfile、effects/capability 与资源边界。任何实质变更必须产生新的 ReceiptID。
+规范化语义必须覆盖所有影响执行义务、验证、期限、预算、尝试、资金、结算或权利的实质字段；V1结构还记录 ContractTuple、规范 RIR 工件摘要、Logical Object refs、RPR/ExecutionProfile、effects/capability 与资源边界。任何实质变更必须产生新的 ReceiptID。
 
 ### 禁止状态
 
@@ -466,7 +469,7 @@ Exposure(d,t) \le AuthorizedExposureCap(d,t)
 
 ### 规范陈述
 
-唯一允许的核心数据流是：
+当前设计采用以下数据流：
 
 \[
 PerformanceEvidence
@@ -487,7 +490,7 @@ CapabilityEstimate 只能影响特定任务的准入与有界风险暴露，不�
 - 存在无法由证据重算的 Rank/ReputationState 权威对象；
 - 历史执行成功允许绕过本任务验证；
 - 维护者、付费 Requester 或大额 Provider 获得手工覆盖权。
-- FoundationReport、委员会报告、维护报告或历史能力直接进入 Bayesian prior、VerificationEvidence 权重或停止条件。
+- 观察结果后用 FoundationReport、委员会报告、维护报告或历史能力覆盖已经固定的混合权重与停止条件。观察前的权重来源选择属于具体模型和工程设计，不从该职责分配推出一揽子 prior 来源禁令。
 
 ### 最低验收方法
 
@@ -523,7 +526,7 @@ Maintenance Boundary 可以发布未来 ProtocolVersion、Schema、测试、参�
 - 把维护者分析当作优先验证证据；
 - 发布密钥同时拥有无需协议检查的运行时写权限；
 - 基金会或委员会成为隐藏的最终裁判。
-- FoundationReport 或维护报告获得非零协议验证权重。
+- 观察结果后通过 FoundationReport 或维护报告改写已固定的权重或判决。
 
 ### 最低验收方法
 
@@ -647,7 +650,7 @@ flowchart TD
 3. 明确每条不变量的执行组件、原子事务边界和失败响应；
 4. 证明或测试崩溃恢复不会重置 epoch、attempt、draw、funding、terminal 或 settlement 状态；
 5. 建立 Threat ID ↔ Invariant ID ↔ Test ID 的双向追踪；
-6. 对 INV-11/12 单独记录“接口不变量已确定、统计定理未完成”；
+6. 对 INV-11/12 分别记录接口规则、已有条件 Type-I 推导和 #215 所跟踪的活性推广；
 7. 对 INV-14/15 建立结构性权限测试，防止 Rank 或维护裁决以其他名称重新出现；
 8. 对 INV-16 建立至少两个不同持久化实现或一个实现加故障适配器的语义对照；
 9. 对 INV-01/02/09/16 建立二维 registry、Logical Object、RIR validator、Rust Profile lowering、Compile 三阶段与 RPR/Host OS conformance 的正反测试；

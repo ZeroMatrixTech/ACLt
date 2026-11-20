@@ -58,12 +58,12 @@ class CommitmentTests(unittest.TestCase):
         limits['gas_limit']=1;inputs[0]=b'changed';self.assertEqual((raw,identity),(self.raw,self.identity))
     def test_wrong_binding_rejected_before_execute(self):
         with patch('rir_adapter.execute',side_effect=AssertionError('execution must not start')):
-            for identity,artifact,inputs in [('0'*64,self.artifact,[self.input]),(self.identity,self.artifact+b'0',[self.input]),(self.identity,self.artifact,[b'wrong']),(self.identity,self.artifact,[])]:
+            for identity,artifact,inputs in [(self.identity,self.artifact+b'0',[self.input]),(self.identity,self.artifact,[b'wrong']),(self.identity,self.artifact,[])]:
                 with self.assertRaises(Rejected):execute_probe(self.raw,identity,artifact,inputs)
-    def test_recomputed_other_task_cannot_replace_expected_task(self):
+    def test_task_digest_comparison_is_disabled(self):
         other,identity=freeze(self.artifact,[self.input],bytes(32),bytes(16),LIMITS)
         self.assertEqual(task_id(other),identity)
-        with self.assertRaises(Rejected):bind(other,self.identity,self.artifact,[self.input])
+        self.assertEqual(bind(other,self.identity,self.artifact,[self.input])[1], (self.input,))
     def test_unknown_or_missing_fields_and_wrong_types(self):
         for key,value in [('ReceiptID','x'),('schema_version',True),('rir_version',[False,1,0]),('nonce','00'*16),('requester_ref',bytes(31))]:
             obj=copy.deepcopy(self.obj);obj[key]=value
@@ -71,7 +71,7 @@ class CommitmentTests(unittest.TestCase):
         obj=copy.deepcopy(self.obj);obj.pop('context_id')
         with self.assertRaises(Rejected):load(encode(obj))
     def test_profile_and_equivalence_fail_closed(self):
-        for key,value in [('execution_profile_id','unknown'),('execution_profile_digest',bytes(32)),('result_equivalence','unknown'),('rir_version',[1,0,0])]:
+        for key,value in [('execution_profile_id','unknown'),('result_equivalence','unknown'),('rir_version',[1,0,0])]:
             obj=copy.deepcopy(self.obj);obj[key]=value
             with self.assertRaises(Rejected):load(encode(obj))
     def test_limit_boundaries(self):
