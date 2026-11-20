@@ -19,7 +19,7 @@ def decision_event(task, events):
         event = c.decode(raw)
         request = event['request']
         if request['op'] == 'S3_FINALIZE' and request['body']['receipt'] == task['rid']:
-            c.need(event['result_digest'] == s2.h(decision), 'S3c decision event digest')
+            c.need(c.digest_consistency(event['result_digest'] == s2.h(decision)), 'S3c decision event digest')
             matches.append(s2.h(event))
     c.need(len(matches) == 1, 'S3c requires exactly one terminal event')
     return matches[0]
@@ -48,9 +48,9 @@ def settle(cfg, state, task, events, requester):
     if 'creation_receipt' in task:
         from tools.formal_migration import deployment_creation
         bound = task['creation_receipt']
-        c.need(deployment_creation.receipt_id(bound) == task['rid'], 'S3c bound ReceiptID')
+        c.need(c.digest_consistency(deployment_creation.receipt_id(bound) == task['rid']), 'S3c bound ReceiptID')
         policy_receipt = bound['base_receipt_digest']
-    c.need(quote['receipt_digest_hex'] == policy_receipt.hex(), 'S3c frozen receipt')
+    c.need(c.digest_consistency(quote['receipt_digest_hex'] == policy_receipt.hex()), 'S3c frozen receipt')
     held = task['funding_held']
     fees = {kind: int(value) for kind, value in quote['amounts'].items()}
     c.need(fees['storage_fee'] == 0, 'S3c storage disabled')

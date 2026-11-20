@@ -1,33 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 name: DCO sign-off
-# Trust boundary: for pull requests this uses pull_request_target, so the
-# workflow and scripts/check-dco.py come from the target branch's current
-# commit (github.sha), never from the pull request. The pull request's
-# recorded base commit may predate this script, so the trusted checkout must
-# not use github.event.pull_request.base.sha. The pull request is checked out
-# into pr/ as data only; nothing from it is executed, no secrets are used, and
-# the token is read-only and not persisted.
-#
-# The pull request body is untrusted. It is the only such field this check
-# reads: the step below passes it in the PR_BODY environment variable and the
-# trusted script picks it up by name (--body-env), so it is never interpolated
-# into a run: command, never executed, and never written to GITHUB_ENV or
-# GITHUB_OUTPUT. The title and the head branch name are not used at all.
-#
-# The squash merge takes its commit message from the pull request body, so the
-# body must end with a Signed-off-by trailer from a sign-off identity in
-# .github/dco-maintainers.txt before the merge; the edited activity type reruns
-# the check when the signer adds it. The list holds the maintainer and the human
-# collaborator the maintainer authorised, and it comes from inside the trusted
-# checkout, so a pull request that edits that file is still judged by the target
-# branch's copy.  Only the signer is checked: commits on a branch of this
-# repository are covered by the body sign-off, while a fork pull request still
-# needs a matching sign-off on every commit.
-#
-# Until a fork pull request has shown on the public repository that this check
-# blocks merging when a sign-off is missing and passes on the fixed head, its
-# result for external pull requests is advisory; the maintainer verifies
-# locally before merging (CONTRIBUTING section 11).
+# PR policy and sign-off checks run from the trusted target branch.
+# PR content is passed as data; the token has read-only permissions.
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, edited]
@@ -43,6 +17,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Apply organization contribution policy
+        if: github.event_name == 'pull_request_target'
+        env:
+          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          HEAD_OWNER: ${{ github.event.pull_request.head.repo.owner.login }}
+          BASE_OWNER: ${{ github.repository_owner }}
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          association = os.environ['AUTHOR_ASSOCIATION']
+          same_owner = os.environ['HEAD_OWNER'].casefold() == os.environ['BASE_OWNER'].casefold()
+          if association not in ('OWNER', 'MEMBER') or not same_owner:
+              raise SystemExit('Organization-external pull requests are paused by the maintainer.')
+          print('PASS: organization contribution policy')
+          PYTHON
       - name: Checkout the trusted checker
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:

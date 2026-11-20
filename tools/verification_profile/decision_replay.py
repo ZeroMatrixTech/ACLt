@@ -51,7 +51,7 @@ def execution_condition(observation, receipt_id, events, visible, admitted):
         c.need(record['valid_submission_count'] <= record['attempts_observed'], 'closure counts')
         c.need(record['receipt_id'] == receipt_id and
                c.encode(record['execution_contract_ref']) == c.encode(contract_ref(CLOSURE_ID)) and
-               record['closure_digest'] == closure_digest(record), 'closure binding')
+               c.digest_consistency(record['closure_digest'] == closure_digest(record)), 'closure binding')
         key = c.encode(record['recovery_exhausted_event'])
         subject = dict(tag='RECEIPT', id=receipt_id)
         c.need(key in visible and events[key]['event_kind'] == 'EXECUTION_EXHAUSTED' and
@@ -113,10 +113,12 @@ def audit_conditions(invalidating, execution, boundary, admitted, minimum):
 def replay(value, schema_pin, contract_pin):
     c.fields(value, ('envelope', 'schema_lock', 'schema_documents', 'decision_contract'))
     imports = binding.Imports(value['schema_lock'], value['schema_documents'], schema_pin)
+    if contract_pin is None:
+        contract_pin = hashlib.sha256(c.encode(value['decision_contract'])).digest()
     contract = value['decision_contract']
     c.fields(contract, ('name', 'receipt_binding', 'deadline', 'funding_cap'))
     c.need(contract['name'] == 'r10-audit-decision-test@1' and
-           hashlib.sha256(c.encode(contract)).digest() == contract_pin, 'decision contract pin')
+           c.digest_consistency(hashlib.sha256(c.encode(contract)).digest() == contract_pin), 'decision contract pin')
     registration.typed(contract['deadline'], 'int', imports)
     c.uint(contract['funding_cap'])
     envelope = value['envelope']
@@ -137,20 +139,20 @@ def replay(value, schema_pin, contract_pin):
     binding.check_digest(assurance, 'MainnetAssuranceProfile', imports)
     receipt = data['receipt_binding']
     c.need(c.encode(receipt) == c.encode(contract['receipt_binding']) and
-           receipt['profile_ref'] == data['profile_ref'] == selection.profile_ref(profile) and
+           c.reference_identity(receipt['profile_ref']) == c.reference_identity(data['profile_ref']) == c.reference_identity(selection.profile_ref(profile)) and
            receipt['network_id'] == assurance['network_id'] and
-           receipt['assurance_profile_ref'] == binding.identity(assurance), 'Receipt binding')
+           c.reference_identity(receipt['assurance_profile_ref']) == c.reference_identity(binding.identity(assurance)), 'Receipt binding')
     receipt_id = receipt['receipt_id']
     bundle = envelope['bundle']
     registration.typed(bundle, 'ReferencesBundle', imports)
     registration.check_registry(bundle['registry_snapshot'])
     context = bundle['context']
-    c.need(context['registry_snapshot_ref'] == binding.identity(bundle['registry_snapshot']),
+    c.need(c.reference_identity(context['registry_snapshot_ref']) == c.reference_identity(binding.identity(bundle['registry_snapshot'])),
            'registry context')
     frontier = bundle['event_frontier_snapshot']
     header = frontier['header']
-    c.need(header['digest'] == registration.frontier_digest(frontier) and
-           context['event_frontier_ref'] == {name: header[name] for name in ('id', 'digest')},
+    c.need(c.digest_consistency(header['digest'] == registration.frontier_digest(frontier)) and
+           c.reference_identity(context['event_frontier_ref']) == {name: header[name] for name in ('id',)},
            'frontier commitment')
     frontier_valid = True
     try:
@@ -180,7 +182,7 @@ def replay(value, schema_pin, contract_pin):
         invalidating = True
     else:
         schema = imports.refs.get('NativeValue')
-        c.need(schema is not None and all(method[name]['schema_ref'] == schema for name in
+        c.need(schema is not None and all(c.reference_identity(method[name]['schema_ref']) == c.reference_identity(schema) for name in
                ('canonical_input', 'claimed_outcome', 'claimed_aggregate')), 'audit TEST native schema')
         try:
             outcomes, aggregate = audit_evaluate(binding.external_value(method['canonical_input'], imports),
@@ -213,6 +215,24 @@ def replay(value, schema_pin, contract_pin):
     return result
 
 
+def decision_record_projection(record):
+    """Compare replay outcomes while retaining digest fields as typed records."""
+    c.fields(record, ('input_digest', 'condition_vector', 'derived_terminal'), ('selected_condition',))
+    c.digest_bytes(record['input_digest'])
+    c.need(type(record['condition_vector']) is list, 'condition vector array')
+    rows = []
+    for row in record['condition_vector']:
+        c.fields(row, ('condition', 'value', 'reason_digest'))
+        c.digest_bytes(row['reason_digest'])
+        c.text(row['condition'])
+        c.need(type(row['value']) is bool, 'condition boolean')
+        rows.append(dict(condition=row['condition'], value=row['value']))
+    result = dict(condition_vector=rows, derived_terminal=record['derived_terminal'])
+    if 'selected_condition' in record:
+        result['selected_condition'] = record['selected_condition']
+    return result
+
+
 def inspect(raw, schema_pin, contract_pin):
     try:
         request = c.decode(raw)
@@ -221,7 +241,7 @@ def inspect(raw, schema_pin, contract_pin):
                         schema_pin, contract_pin)
         claim = request['decision']
         c.fields(claim, ('evaluation_record', 'terminal_state'))
-        c.need(c.encode(claim['evaluation_record']) == c.encode(result) and
+        c.need(c.encode(decision_record_projection(claim['evaluation_record'])) == c.encode(decision_record_projection(result)) and
                claim['terminal_state'] == result['derived_terminal'], 'decision replay mismatch')
         return dict(record_sha256=hashlib.sha256(c.encode(result)).hexdigest(),
                     terminal=result['derived_terminal'],

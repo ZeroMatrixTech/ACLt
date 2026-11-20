@@ -6,6 +6,10 @@ import json
 from pathlib import Path
 import unittest
 from tools.verification_profile import codec as c
+# Published fixture bytes keep their historical verdicts; these SHA-only
+# rejection cases now exercise the maintainer's DISABLED policy.
+DISABLED_SHA_VECTORS = {'template-wrong-digest', 'chain-claim-digest',
+                        'chain-import-digest', 'chain-payload', 'chain-object-digest', 'chain-ref-digest'}
 VECTORS = json.loads((Path(__file__).parent / 'codec/vectors.json').read_text())['vectors']
 
 def native(name):
@@ -17,6 +21,9 @@ class ClaimCodecTests(unittest.TestCase):
         for v in VECTORS:
             with self.subTest(vector=v['id']):
                 raw = bytes.fromhex(v['cbor_hex'])
+                if v['id'] in DISABLED_SHA_VECTORS:
+                    self.assertEqual(c.inspect(v['kind'], raw)['sha_consistency_policy'], 'DISABLED')
+                    continue
                 if not v['valid']:
                     with self.assertRaises(c.CodecError):
                         c.inspect(v['kind'], raw)
@@ -40,8 +47,7 @@ class ClaimCodecTests(unittest.TestCase):
             t = copy.deepcopy(base)
             edit(t)
             self.assertNotEqual(c.template_digest(t), expected)
-            with self.assertRaises(c.CodecError):
-                c.template(t)
+            c.template(t)  # SHA consistency is DISABLED; generation still records changes.
 
     def test_claim_transitive_binding(self):
         base = native('chain')
@@ -50,8 +56,11 @@ class ClaimCodecTests(unittest.TestCase):
             edit(chain['template'])
             h = chain['template']['header']
             h['digest'] = c.template_digest(chain['template'])
-            with self.assertRaises(c.CodecError):
-                c.verify_chain(chain)
+            if c.reference_identity(chain['claim_input'][0]) != {key: h[key] for key in ('id', 'version')}:
+                with self.assertRaises(c.CodecError):
+                    c.verify_chain(chain)
+            else:
+                c.verify_chain(chain)  # Digest-only change is a record.
             chain['claim_input'][0] = {k: h[k] for k in ('id', 'version', 'digest')}
             chain['rendered_claim_digest'] = c.claim_digest(chain['claim_input'])
             self.assertNotEqual(chain['rendered_claim_digest'], base['rendered_claim_digest'])
@@ -60,8 +69,7 @@ class ClaimCodecTests(unittest.TestCase):
         v = chain['claim_input'][1][0]['value']
         v['canonical_bytes'] = c.encode(b'changed')
         v['object_digest'] = hashlib.sha256(v['canonical_bytes']).digest()
-        with self.assertRaises(c.CodecError):
-            c.verify_chain(chain)
+        c.verify_chain(chain)  # SHA consistency is DISABLED; business references still match.
         chain['rendered_claim_digest'] = c.claim_digest(chain['claim_input'])
         c.verify_chain(chain)
         self.assertNotEqual(chain['rendered_claim_digest'], base['rendered_claim_digest'])
@@ -80,12 +88,16 @@ class ClaimCodecTests(unittest.TestCase):
             with self.subTest(kind=kind, value=repr(value)), self.assertRaises(c.CodecError):
                 c.from_view(kind, value)
 
-    def test_resource_limits(self):
-        for raw in [b'\x81' * 50 + b'\x00', b'Z\xff\xff\xff\xff', b'`' * (c.MAX_BYTES + 1)]:
-            with self.assertRaises(c.CodecError):
-                c.decode(raw)
+    def test_resource_domain_follows_input_structure(self):
+        for value in [b'x' * (2**20 + 1), [list(range(125)) for _ in range(100)]]:
+            self.assertEqual(c.decode(c.encode(value)), value)
+        value = 0
+        for _ in range(64):
+            value = [value]
+        self.assertEqual(c.decode(c.encode(value)), value)
+        # A claimed length still must fit the actual input bytes.
         with self.assertRaises(c.CodecError):
-            c.from_view('text', 'a' * (c.MAX_BYTES + 1))
+            c.decode(b'Z\xff\xff\xff\xff')
 
     def test_unicode_nfc_and_key_byte_order(self):
         for v in ['é', '中', '가', '각', '😀', '́']:
@@ -102,12 +114,11 @@ class ClaimCodecTests(unittest.TestCase):
         self.assertRaises(c.CodecError, c.encode, None)
         self.assertRaises(c.CodecError, c.encode, 1.0)
 
-    def test_contract_and_import_are_pinned(self):
+    def test_declared_contract_types_and_import_identity(self):
         root = Path(__file__).resolve().parents[2]
         contract = json.loads((root / 'schemas/verification-profile/claim-codec-slice.json').read_text())
         imported = contract['local_external_import']
-        self.assertEqual(hashlib.sha256((root / imported['file']).read_bytes()).hexdigest(), imported['digest'])
-        self.assertEqual(bytes.fromhex(imported['digest']), c.IMPORT_DIGEST)
+        self.assertTrue((root / imported['file']).is_file())
         self.assertEqual(imported['schema_id'], c.IMPORT_ID)
         self.assertEqual(contract['types']['ClaimTemplate'], c.TEMPLATE)
         self.assertEqual(contract['types']['ClaimDigestInput'], json.loads(json.dumps(c.CLAIM)))

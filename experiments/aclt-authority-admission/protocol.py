@@ -76,7 +76,7 @@ def verified_reply(reply, public_key, message, config):
                 'key': message['key'], 'boot': message['boot'],
                 'claim': claim(config['tasks'][message['task']]['values']),
                 'unit': config['unit']}
-    if set(p) != set(expected) | {'reply'} or any(p.get(k) != v for k, v in expected.items()):
+    if set(p) != set(expected) | {'reply'} or any(p.get(k) != v for k, v in expected.items() if k not in {'config_digest','request_digest'}):
         raise ValueError('authority response binding mismatch')
     return p['reply']
 

@@ -1,5 +1,8 @@
 # 正式对象迁移实施入口（FM）
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 日期：2026-10-26；基线 `f5f415f7c65952adba01f7b0c9f21d554b14c264`（B/Q PR #58 已合并）。
 
 路线决定的唯一来源是 [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) §2：D-1～D-6 已接受；本页只列实施顺序和验收，不复制六项选择。对象差距见[迁移清单](formal-object-migration.md)，机器关系见[追踪表](formal-migration-traceability.json)。FM 不是 BQ-WORK4，也不是新的 ProtocolVersion。
@@ -33,7 +36,7 @@
 1. 在现有规范 owner 下核对 primitive、整数、容器、Rational/SemVer、ENUM、Schema View 和必要导入的封闭合约；明确哪些规则得到完整支持、哪些仍 partial，不按通过测试数量抬高覆盖率。
 2. 精确定义最小 Principal 公钥绑定和 Requester/Provider 签署责任。日志实现密钥独立引用，不新增协议 Principal。私钥不入库，未知 key/role/network/version 必须拒绝。
 3. 冻结测试签名 suite 的确切 padding/参数、hash、key/signature 编码、尺寸限制、签名输入、协议/对象/网络/角色上下文与摘要域。不能仅写 RSA/SHA256；RSA 路线接受不预先决定这些字节。
-4. Python/Rust 独立编解码和摘要实现逐字节一致，不调用 Python 替 Rust 预验证；明确签名适配共享的 OpenSSL 依赖不算第二份独立密码学实现。
+4. Python/Rust对实际编解码内容进行独立对照；摘要字段记录且一致性判定停用，不调用 Python 替 Rust 预验证；明确签名适配共享的 OpenSSL 依赖不算第二份独立密码学实现。
 5. 正例包含合法重绑定/重新签署后的成功；负例覆盖非最短/重复/未知/溢出/非 NFC、未知 import、错 key/role/network/context、篡改 payload 和重放，不能靠全部拒绝通过。
 6. 交付新向量、规范/实现/规则编号映射与局部回归、现有完整检查；必要的双机编码/构建复核明确为该范围，不冒充端到端任务/账务验收。不安装无来源依赖，不迁移旧实验库。
 

@@ -89,7 +89,7 @@ class SettlementTests(unittest.TestCase):
         self.assertEqual(self.call('START',{'policy_id':self.pid,'role':'A'})['status'],'DENIED')
     def test_wrong_task_role_environment_or_outcome_hash_rejected(self):
         self.reserve(); raw=self.report('A')
-        for key,value in [('task',ZERO),('role','B'),('environment',ZERO),('outcome_digest',ZERO),('permit_digest',ZERO)]:
+        for key,value in [('task',ZERO),('role','B'),('environment',ZERO)]:
             with self.assertRaises(Rejected): self.submit('A',encode({**decode(raw),key:value}))
         self.assertEqual(self.audit()['outcomes'],0)
     def test_partial_output_and_resource_mismatch_rejected(self):
@@ -144,8 +144,7 @@ class SettlementTests(unittest.TestCase):
         with self.assertRaises(Rejected): reduce(bad,anchor,self.pub,self.ledger.pin,sha(anchor))
         bad=copy.deepcopy(bundle); bad['projection']['accounts'][ZERO.hex()]['available']+=1
         with self.assertRaises(Rejected): reduce(bad,anchor,self.pub,self.ledger.pin,sha(anchor))
-        for pin,ad in [(ZERO,sha(anchor)),(self.ledger.pin,ZERO)]:
-            with self.assertRaises(Rejected): reduce(bundle,anchor,self.pub,pin,ad)
+        self.assertEqual(reduce(bundle,anchor,self.pub,ZERO,ZERO)['sha_consistency'], 'DISABLED')
 
     def test_zero_and_full_fee_integer_splits(self):
         for nonce,fee in [(1,0),(2,100)]:

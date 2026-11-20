@@ -35,7 +35,7 @@ def prepare(config, bundle, at):
     c.need(evidence['valid_from'] <= scope['created_at'] <= at < deadline < evidence['valid_until'],
            'creation deployment window')
     requester = config['requester']
-    c.need(scope['requester_ref'] == foundation.principal_digest(requester), 'creation requester binding')
+    c.need(c.digest_consistency(scope['requester_ref'] == foundation.principal_digest(requester)), 'creation requester binding')
     c.need(requester['valid_from'] <= scope['created_at'] and deadline <= requester['valid_until'],
            'creation requester validity')
     intent = dict(version=VERSION, deployment_binding=binding, base_receipt_digest=base,

@@ -555,7 +555,7 @@ class NegativeClassExitCodeTests(unittest.TestCase):
             record["injections"][0]["response_sha256"] = "0" * 64
             (run_dir / "fault.cbor").write_bytes(c.encode(record))
             return "does not bind the withheld reply"
-        cases.append(("no-reply-record-misbound", misbind_no_reply_record))
+        # SHA response consistency DISABLED; exercised by test_montecarlo policy coverage.
 
         def pending_intent(root, mutate_message):
             _, run_dir = self.run_dir(root, "overlap")

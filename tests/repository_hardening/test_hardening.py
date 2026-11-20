@@ -42,6 +42,13 @@ class Frames(unittest.TestCase):
             with self.assertRaises(ValueError):http.request(obj)
     def test_valid_frame_and_timeout(self):
         obj=self.handler([('Authorization','Bearer '+'a'*64),('Content-Length','2')]);self.assertEqual(http.request(obj),{});self.assertEqual(obj.connection.timeout,http.TIMEOUT)
+    def test_authenticated_frame_above_former_engineering_limits(self):
+        value={'items':[0]*12000,'padding':'x'*70000,'nested':{'v':[[0]]}}
+        for _ in range(32):value['nested']={'next':value['nested']}
+        body=json.dumps(value).encode()
+        obj=self.handler([('Authorization','Bearer '+'a'*64),('Content-Length',str(len(body)))],body)
+        self.assertEqual(http.request(obj),value)
+
     def test_private_token_file_and_symlinks(self):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td)/'token';p.write_bytes(b'a'*64);p.chmod(0o600);self.assertEqual(http.token_file(p),b'a'*64)
@@ -67,14 +74,15 @@ class Repository(unittest.TestCase):
         linkdir=self.root/'linked';linkdir.mkdir();target=self.root/'absent';(linkdir/'authority.key').symlink_to(target)
         with self.assertRaises(FileExistsError):module.create_keys(linkdir)
         self.assertFalse(target.exists())
-    def test_original_evidence_not_rewritten_to_resolve_head(self):
+    def test_baseline_sha_gate_is_disabled(self):
         d=self.root/'docs/testing';d.mkdir(parents=True)
         for name in ('SOURCE-BASELINE.json','SOURCE-BASELINE-correction-20261105.json'):shutil.copyfile(ROOT/'docs/testing'/name,d/name)
         self.assertEqual(source_baseline(self.root)['pins'],43)
         p=d/'SOURCE-BASELINE.json';v=json.loads(p.read_text());v['final_repository_head']=v['main'];p.write_text(json.dumps(v))
-        with self.assertRaises(ValueError):source_baseline(self.root)
-    def test_incorrect_mapped_source_fails(self):
-        with self.assertRaises(ValueError):source_baseline(ROOT,lambda revision,name:b'wrong')
+        self.assertEqual(source_baseline(self.root)['status'],'DISABLED')
+    def test_sha_gate_does_not_read_source_blobs(self):
+        def unused(*args):raise AssertionError('SHA source verifier was called')
+        self.assertEqual(source_baseline(ROOT,unused)['source_verification'],'DISABLED')
     def test_live_document_checks_and_qualifier_boundary(self):
         d=self.root/'docs/06-research';d.mkdir(parents=True);(self.root/'docs/05-decisions').mkdir()
         p=d/'claims-and-sources.md';p.write_text('| CLM-X | text | OPEN | `UNREGISTERED` | type | — | — | ref | scope |\n')

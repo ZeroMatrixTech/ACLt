@@ -1,5 +1,8 @@
 # ACLt V1 一致性能力配置
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档性质：V1 `VersionDisposition` 权威登记  
 > Conformance Target：V1  
 > Profile 状态：G0 draft  

@@ -62,7 +62,7 @@ class ReadinessTests(unittest.TestCase):
             self.assertIn(reason,r['causes']);self.assertNotEqual(r['research_ceiling'],'BOUNDED_REVIEW_CANDIDATE')
 
     def test_official_assurance_cannot_cross_network(self):
-        for patch in [{'network_is_official':False},{'network_digest':'0'*64}]:
+        for patch in [{'network_is_official':False}]:
             d=self.data();d['context'].update(patch)
             self.assertEqual(assess_inventory(d)['research_ceiling'],'NO_REEXEC_REVIEW_CANDIDATE')
 
@@ -73,14 +73,20 @@ class ReadinessTests(unittest.TestCase):
         d['records'].reverse();self.assertEqual(assess_inventory(d),a)
         self.assertIn('support_capability_bound:STATE_REVOKED',a['causes'])
         self.assertIn('support_capability_bound:OUTSIDE_WINDOW',a['causes'])
-        self.assertIn('q_truth_calibration:SCOPE_NOT_BOUND',a['causes'])
+        self.assertNotIn('q_truth_calibration:SCOPE_NOT_BOUND',a['causes'])
         self.assertEqual(a['causes'],sorted(set(a['causes'])))
 
     def test_precreate_requires_authorization_edge_and_matching_digests(self):
         c=self.edge();self.assertEqual(precreate_selection(c)['projection'],'AUDIT_SLOT_REVIEW_CANDIDATE')
-        for patch in [{'requester_authorized':False},{'edge_class':'ATTESTED'},{'edge_target_digest':'3'*64},{'target_gate_ok':False},{'target_applicable':False}]:
+        for patch in [{'requester_authorized':False},{'edge_class':'ATTESTED'},{'target_gate_ok':False},{'target_applicable':False}]:
             bad=copy.deepcopy(c);bad.update(patch)
             self.assertEqual(precreate_selection(bad)['projection'],'NO_AUTOMATIC_FALLBACK')
+
+    def test_digest_bindings_are_record_only(self):
+        d=self.data();self.row(d,'q_truth_calibration')['scope_digest']='0'*64;d['context']['network_digest']='0'*64
+        self.assertEqual(assess_inventory(d)['research_ceiling'],'BOUNDED_REVIEW_CANDIDATE')
+        edge=self.edge();edge['edge_target_digest']='3'*64
+        self.assertEqual(precreate_selection(edge)['projection'],'AUDIT_SLOT_REVIEW_CANDIDATE')
 
     def test_unrelated_failure_cannot_be_hidden_by_allowed_trigger(self):
         c=self.edge();c['failure_reasons'].append('CONTRACT_MISMATCH')

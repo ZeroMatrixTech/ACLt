@@ -160,17 +160,15 @@
     "rendered_claim_digest": "ACLt/P0-1/RenderedClaim/1"
   },
   "limits": {
-    "max_cbor_bytes": 1048576,
-    "max_depth": 48,
-    "max_decoded_items": 10000
+    "max_cbor_bytes": null,
+    "max_depth": null,
+    "max_decoded_items": null
   },
-  "unsupported": [
-    "ENUM slot declarations",
-    "official external schema imports",
-    "complete Profile and Decision envelopes",
-    "registry authority and lifecycle",
-    "slot value semantics and STATIC bindings",
-    "claim text rendering",
-    "production admission"
+  "limits_policy": "Repository byte/depth/item ceilings disabled by maintainer, 2026-11-20",
+  "sha_consistency": "DISABLED",
+  "implemented_objects": [
+    "ClaimTemplate",
+    "ClaimDigestInput",
+    "VersionRange"
   ]
 }

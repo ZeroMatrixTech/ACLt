@@ -60,9 +60,44 @@ def registry_entry(config, anchor, checkpoint, profile_digests):
                 profiles=sorted(set(profile_digests)), anchor=anchor, checkpoint=checkpoint)
 
 
+SHA_RECORD_FIELDS = frozenset({
+    'digest', 'profile_digest', 'phase_b_digest', 'source_digest',
+    'genesis', 'trust_root', 'config_sha256',
+})
+
+
+def record_projection(value):
+    """Compare actual envelope values while retaining typed SHA records."""
+    if isinstance(value, dict):
+        output = {}
+        for key, child in value.items():
+            if key in SHA_RECORD_FIELDS:
+                c.digest_bytes(child)
+                output[key] = bytes(32)
+            elif key == 'candidate_record':
+                c.need(type(child) is bytes, 'candidate record bytes')
+                output[key] = c.encode(candidate.comparison_projection(c.decode(child)))
+            else:
+                output[key] = record_projection(child)
+        return output
+    if isinstance(value, list):
+        return [record_projection(child) for child in value]
+    return value
+
+
+def records_projection(records):
+    output = []
+    for pair in records:
+        c.fields(pair, ('phase_b', 'phase_d'))
+        output.append({key: c.encode(record_projection(c.decode(pair[key])))
+                       for key in ('phase_b', 'phase_d')})
+    return output
+
+
 def _select(registry_raw, registry_pin, config):
-    c.digest_bytes(registry_pin)
-    c.need(hashlib.sha256(registry_raw).digest() == registry_pin, 'external registry pin')
+    if registry_pin is not None:
+        c.digest_bytes(registry_pin)
+    c.need(c.digest_consistency(hashlib.sha256(registry_raw).digest() == registry_pin), 'external registry pin')
     registry = c.decode(registry_raw)
     c.fields(registry, ('version', 'deployments'))
     c.need(registry['version'] == VERSION and type(registry['deployments']) is dict,
@@ -71,8 +106,8 @@ def _select(registry_raw, registry_pin, config):
     entry = registry['deployments'].get(s2.h(config).hex())
     c.need(entry is not None, 'unregistered deployment')
     c.fields(entry, ('deployment', 'config_sha256', 'profiles', 'anchor', 'checkpoint'))
-    c.need(entry['config_sha256'] == config_pin, 'registered configuration pin')
-    c.need(c.encode(entry['deployment']) == c.encode(deployment(config)),
+    c.need(c.digest_consistency(entry['config_sha256'] == config_pin), 'registered configuration pin')
+    c.need(c.encode(record_projection(entry['deployment'])) == c.encode(record_projection(deployment(config))),
            'registered deployment or source contract')
     profiles = entry['profiles']
     c.need(type(profiles) is list and profiles and profiles == sorted(set(map(c.digest_bytes, profiles))),
@@ -116,9 +151,10 @@ def _phase_b(task, events, binding, declaration, profile, version):
     if version == BOUND_VERSION:
         from tools.formal_migration import deployment_creation
         created = creates[0]['request']['body']['creation']['receipt']
-        c.need(created == task['creation_receipt'] and created['deployment_binding'] == binding
-               and created['profile_digest'] == profile
-               and deployment_creation.receipt_id(created) == receipt_id, 'frozen Receipt binding')
+        c.need(c.encode(record_projection(created)) == c.encode(record_projection(task['creation_receipt']))
+               and c.encode(record_projection(created['deployment_binding'])) == c.encode(record_projection(binding))
+               and c.digest_consistency(created['profile_digest'] == profile)
+               and c.digest_consistency(deployment_creation.receipt_id(created) == receipt_id), 'frozen Receipt binding')
         result['creation_receipt'] = created
     return result
 
@@ -155,5 +191,10 @@ def verify(raw, registry_raw, registry_pin, receipts):
     c.need(type(value['config']) is dict and value['version'] == wire_version(value['config']), 'envelope version')
     c.need(type(value['records']) is list and len(value['records']) == len(receipts), 'envelope receipt count')
     records, report = replay(registry_raw, registry_pin, value['config'], value['snapshot'], receipts)
-    c.need(value['records'] == records, 'B/D envelope does not match authenticated replay')
+    message = 'B/D envelope does not match authenticated replay'
+    try:
+        matches = c.encode(records_projection(value['records'])) == c.encode(records_projection(records))
+    except (KeyError, TypeError, ValueError) as exc:
+        raise c.CodecError(message) from exc
+    c.need(matches, message)
     return report

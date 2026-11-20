@@ -1,39 +1,21 @@
 # ACLt Protocol v0.5 当前状态
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档性质：持续更新的项目快照（living document）  
 > 基线版本：v0.5  
-> 快照日期：2026-11-17
-> 当前阶段：G0 — 语义与问题空间冻结  
-> 权威范围：记录“现在已经知道什么、还没有证明什么、下一步需要什么证据”；不替代协议规范、ADR 或测试结果。
+> 当前政策更新：2026-11-19；既有运行记录保留原日期
+> 当前工作：对象与执行实现、有限总体研究、多机实验及仓库整肃并行推进
+> 记录范围：已有行为、适用条件、实际证据与下一步工作。
 
-## 当前实施入口（2026-11-17）
+## 当前实施入口（2026-11-19）
 
-截至 2026-11-17，仓库已转为公开；`main` 的分支保护与规则集已落地并读回核对（必需检查 `local-validation`、`dco`，1 个批准，无常驻绕过）；DCO fork 实测（[#181](https://github.com/ZeroMatrixTech/ACLt/pull/181)）确认未签名提交被阻止、补签后通过。`research-preview-1` 已于 2026-11-16 发布：标签指向 [1533290](https://github.com/ZeroMatrixTech/ACLt/commit/1533290ed82347a5a5006e4d35a5092d02362780)，[GitHub Release](https://github.com/ZeroMatrixTech/ACLt/releases/tag/research-preview-1) 记录发布 commit、源码包 SHA-256 与 CI 记录。main 上的[发布说明](../releases/PREVIEW-20261106.md)已加 `RELEASED` 头注，标签快照内的正文保持冻结。AUD-20261116-03 的时点结论为 FAIL；发布后收尾与一致性同步由 P1-l、P1-m 及后续条目处理。
+维护者已授权本轮仓库整肃：SHA 一致性检查按决定停用，摘要字段保留记录；由维护者审计；组织外 PR 暂停接收。各运行入口的实际改造和测试结果在本次交付中逐项记录，政策决定与已完成实施分开说明。
 
-最简验证机的乌托邦基线覆盖可信环境中的多机分工、派发、验证和归并。[通用分布式作业契约](distributed-job-contract.md)的首个整数向量切片已在本地三来宾上联合验收身份绑定、跨子树依赖、尝试账和交接发布，见[联合验收报告](../testing/MULTIVM-GENERAL-JOB-20261113.md)。[可信双机条件](minimal-verifier-baseline.md#可信双机验收)适用于物理双机证据。
+当前工作包括已复现的编码/解码域差异、模型与参数域接线、明确任务支持域及文档陈述整理。现有 B1 可继续明确支持域内的实现；全对象往返由 #213 跟踪，活性推广由 #215 跟踪。五类待定义摘要在当前政策中只保留记录字段，定义研究继续由维护者处理。
 
-| 工作 | 当前事实 | 下一动作 |
-|---|---|---|
-| 当前开发重心 | [ACLt 最简验证机](minimal-verifier-baseline.md)已立项，首轮规格为实验草案。本地闭环与[阶段 2 语义验收](../../experiments/aclt-minimal-verifier-baseline/SEMANTICS.md)已通过 | 乌托邦基线已于 2026-11-15 经维护者确认闭合（[闭合确认](minimal-verifier-baseline.md#闭合确认2026-11-15)）。R4 安全层蒙特卡洛已完成并合入（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)）；发布准备回验已完成（[#161](https://github.com/ZeroMatrixTech/ACLt/issues/161)）。P1-g（#163）、P1-i（#164）、P1-j（#165）与 P1-h1–h4（#166）已完成并合入。接下来执行本次续轮回验的文档同步，由维护者重新冻结发布说明，再执行发布检查 |
-| 本地双来宾验证 | [第 1 轮报告](../testing/MULTIVM-20261112.md)：同一作业在单宿主两个 QEMU 来宾上跑平坦两片、显式预算两片与树归并三片，两端角色切分、逐片交叉验证和归并输出均通过校验 | 只算来宾级证据；[DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md) 的物理双机条件与 G2/G3、P0-1B 仍未关闭 |
-| 本地可配置多来宾验证 | [n VM 验收](../testing/MULTIVM-N-20261112.md)：三来宾三片、四来宾六片均通过角色轮换、原始帧重放与成功输出等价验收 | 已验证[来宾工作进程退出与 TCP 断连](../testing/MULTIVM-N-FAULTS-20261113.md)时停止归并与留证，并验证[显式预算内的单次求解补算](../testing/MULTIVM-N-RETRY-20261113.md)；固定统计工件的[整题资源准入](../testing/MULTIVM-ROOT-LIMITS-20261113.md)已验收；并行调度、一般恢复、经济性与原 Gate 各自待验收；完整单机 trap 等价用于明确声明该要求的任务 |
-| 双宿主多来宾验证 | [R2 双机 nVM](../testing/DUALHOST-MULTIVM-R2-20261115.md)完成三来宾与四来宾跨物理 LAN 作业、远端断连安全停止和丢答复补算 | 可信双机与固定用例。R4 已用同一入口完成安全层蒙特卡洛（[#160](https://github.com/ZeroMatrixTech/ACLt/pull/160)） |
-| 可信宿主下的协调器交接 | [M9 来宾验收](../testing/MULTIVM-CONTRACT-CLOSURE-20261114.md)验证同一执行的轮次交接、双写停止与跨计划证据复用。本地回归覆盖孤立旧轮次写入拒绝。[C1 重启与重发](../testing/C1-RESTART-RESEND-20261118.md)在来宾级验证工作服务重启后拒绝重启前派发的请求：同一 (execution, slot, attempt, action) 至多一次执行，旧轮次帧不接纳也不执行，被拒绝的请求留原因 | 适用可信单宿主与无在途检查点。授权仍依赖拓扑信任（boot 中的轮次由协调者自报，工作服务不核验其背后的授权）；boot 与轮次水位只在服务进程内，不是持久化去重；新运行的冻结请求含随机 boot，不跨运行逐字节复现；物理双机重启场景未跑（维护者 2026-11-18 决定先交来宾级证据）。在途恢复、自动选主与抗回滚待验收 |
-| 单节点交付容量对照 | [物理双机固定容量排序](../testing/DUALHOST-CAPACITY-SORT-20261114.md)已通过：单个 6 MiB 镜像无法完整交付 8 MiB，双机各用同规格镜像完成并可重放 | 排序任务族接入通用契约的统一尝试账、接纳与交接入口已完成**来宾级**验收（[M2 报告](../testing/MULTIVM-SORT-CONTRACT-20261114.md)，同宿主三来宾；[闭合条件表](minimal-verifier-baseline.md#乌托邦基线闭合条件)把该能力记为来宾级证据）。物理双机下的同一能力（排序任务族经统一尝试账、接纳与交接入口的固定容量交付）没有验收记录：物理双机完成条件只由固定统计用例的 [M3](../testing/DUALHOST-BASELINE-20261114.md) 满足，[R4a](../testing/R4A-DUALHOST-CONTRACT-SMOKE-20261115.md) 是双机通用契约引擎冒烟、明确不计入验收；是否需要物理双机下的该能力验收，待维护者确认 |
-| B/Q 三片研究 | [PR #58](https://github.com/ZeroMatrixTech/ACLt/pull/58) 已合并到 main `f5f415f`；现实 B/Q 未建立 | 不阻塞独立的 RIR/运行时实现 |
-| 正式迁移路线 | [ADR-0007](../05-decisions/ADR-0007-formal-object-migration-foundation.md) 的 D-1～D-6 已由维护者接受，仅限首轮测试路线 | 测试签名及最小费用/Receipt 候选合约已固定；官方对象与运行准入仍待验收 |
-| 已有 FM-S3 与 P0-1B 路线 | 候选 FM-S3 audit-only 链路覆盖 UNRESOLVED、EXPIRED、FAILED、FUNDING_EXHAUSTED 四个过程终态：[8 场景收尾](../testing/FM-S3-CLOSEOUT-20261106.md)、[Task trap](../testing/FM-S3-TASK-TRAP-20261106.md)与[终态和历史矩阵](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md)；P0-1B 按 Profile R1–R11 切片推进 | 正式接口保持 OPEN。正式启动来源、Phase B/D、信封和准入证据列为后续工作；[终态报告](../testing/FM-S3-TERMINALS-20261106.md#留给规范修订的事项)中的 4 项与非主网部署联合类型评审待规范修订 |
-| 有界审计修复 | [本轮记录](../testing/AUDIT-FIXES-20261105.md)：证据映射、测试控制面、部署故障隔离与源码交付门禁 | PR #65 已合并；首次失败与修复后通过已留存 [CI 记录](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md#github-ci-运行记录)，正式准入仍关闭 |
-| FM-S3 规范对齐 | [第一项四片收尾](../testing/FM-S3-INTERFACE-CLOSEOUT-20261106.md)覆盖无 claim 编码、Phase B、接纳边界和非主网部署草案 | 正式信封和准入另行评审 |
-| FM-S3 终态与历史回归 | [组合双机结果](../testing/FM-S3-HISTORICAL-MATRIX-20261106.md)通过入口、执行闭合、资金边界与结算恢复，并逐项对照 Work 2/3 的 38 个历史场景 | 候选证据与正式 FM-A 验收分开记录 |
-| FM 证据归档 | [第四项收尾](../testing/FM-EVIDENCE-CLOSEOUT-20261107.md)归档五份公开包并重放 24 套快照，补齐原始审计、CI 记录和 12 项 FM-A 候选证据 | 正式 FM-A 仍逐项验收；本轮改动的 CI 随提交触发 |
-| P0-1B Profile 注册 | [R1 正式摘要与判决](../testing/PROFILE-DIGEST-R1-20261107.md)及 [R2 嵌套类型/导入与注册上下文](../testing/PROFILE-REGISTRATION-R2-20261107.md)：新增 RegistrySnapshot/事件快照摘要与六类注册条目检查，audit Phase R 显式接两个快照；[R3](../testing/PROFILE-REFERENCES-R3-20261108.md)补排除集/注册对象引用与两个摘要，并修正 TimeRange/ExternalTypedObject wire | [R4](../testing/PROFILE-RULES-R4-20261108.md)落实共同假设/撤销/scope/方法必需类与静态集合摘要；[R5](../testing/PROFILE-MATRICES-R5-20261108.md)补四方法参数/失败/条件矩阵；[R6](../testing/PROFILE-CREATION-R6-20261108.md)补固定 audit I/F 测试接线、三个摘要与 CC-1；[R7](../testing/PROFILE-SELECTION-R7-20261108.md)集中完成注册/选择/绑定 14 项，扩展 7 项仍 partial；[R8](../testing/PROFILE-COMMITMENTS-R8-20261108.md)集中完成 19 项 Claim/快照/承诺规则，18 个摘要公式/投影已有双语言实现；[R9](../testing/PROFILE-RUNTIME-R9-20261108.md)补七种 Phase B 的运行期绑定/冻结/阶段守卫，snapshot/population/randomness 仍限 TEST imports，SV-69/81 partial。[R10](../testing/PROFILE-DECISION-R10-20261109.md)加入 audit-only Phase D 测试重放，SV-115/121 partial。[R11](../testing/PROFILE-AUTHORITY-R11-20261109.md)接入 FM-S3 候选权威来源与结算对照，SV-119 partial；下一步评审候选输入胶囊的正式版本承诺、ENUM/sum wire，闭合 FailureReason、predicate/gate 和完整重放。其他方法 wire 缺口独立追踪，完整 Phase R 尚未验收 |
-| Phase I/F/B/D 候选接口 | [R14](../testing/PROFILE-PHASE-D-R14-20261111.md)验证历史 B/D 信封，[R15](../testing/PROFILE-PHASE-D-R15-20261111.md)实现创建时部署绑定并串联授权、判决与结算 | [R16](../testing/PROFILE-PHASE-D-R16-20261111.md)验证候选部署撤销；正式 FM-A08 仍依赖 Profile/来源审批、撤销传播和部署证据 |
-| 首次公开发布（research-preview-1） | [发布说明](../releases/PREVIEW-20261106.md)（文件名保留 `PREVIEW-20261106.md`）与[维护记录](../08-governance/audits/audit-20261106-01-repository-maintenance.md)：README 已加统一成熟度声明与 #101 边界；源码包可重现、包内本地检查可运行 | 仓库已转为公开，公开仓库设置已落地并读回核对；DCO fork 实测（[#181](https://github.com/ZeroMatrixTech/ACLt/pull/181)）确认未签名提交被阻止、补签后通过；标签 `research-preview-1` 指向 [1533290](https://github.com/ZeroMatrixTech/ACLt/commit/1533290ed82347a5a5006e4d35a5092d02362780)，[GitHub Release](https://github.com/ZeroMatrixTech/ACLt/releases/tag/research-preview-1) 于 2026-11-16 发布并记录发布 commit、源码包 SHA-256 与 CI 记录。发布名不是 ProtocolVersion、ConformanceTarget 或部署启用 |
-| 证明验证路线 | [ADR-0009](../05-decisions/ADR-0009-proof-verified-computation-statements.md) `PROPOSED` 草案：以推导证书验证计算陈述，分陈述绑定、推导检查与语义充分性三层；`verification.proof-assisted` 尚未登记进 V1 Profile；[Profile Schema](../03-protocol/verification-profile-schema.md) §16.2 的非权威建议表列为 `DEFERRED` | 评审接口；首个实例依赖 RIR-0 形式语义（PO-11），在此之前只走非主网测试路线 |
-| 验收边界 | P0-1B 为 81/35/3，ADR-0006 仍 PROPOSED，Gate/OQ/主网资格不变 | 不将路线接受当成 conformance 或部署启用 |
-
-当前依据：[ADR-0006 分层评审](../05-decisions/reviews/REVIEW-20261028-layered.md)、[三份机器摘要与校验](../testing/MIGRATION-EVIDENCE-20261028.md)、[FM-S3 audit 依赖](fm-s3-audit-dependencies.md)。以下带日期记录为历史，不覆盖本表优先级。
+现有实验记录了问答复核、分片执行、预算账、归并、协调交接和服务重启。对应源码和适用拓扑见[实验索引](../../experiments/README.md)。旧覆盖计数和摘要 owner 的实现记录说明历史状态；本轮摘要一致性条目按停用记录。
 
 ## 1. 二维状态
 
@@ -46,15 +28,13 @@
 
 V1 映射的唯一权威入口是 [`../03-protocol/v1-profile.md`](../03-protocol/v1-profile.md)。本文件只展示连接结果和阻断，不复制完整 Profile。
 
-## 2. 一句话状态
+## 2. 已有工作
 
-ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 Principal、无中心裁决者的函数化流程、二维状态模型、ACLt Abstract Machine 边界、Logical Object Memory、Compile 三阶段、Provider Dispatch 握手、RIR/Rust Profile/RPR 执行边界，以及证据到暴露的风险链条已经明确。有限总体验证的条件数学内核已闭合；对象 Schema、RIR/RPR 形式语义、完整状态机、主网 assurance、日志/恢复 contract、结算矩阵与参考实现仍未达到可实现冻结状态。
+v0.5 提供任务、参与者、对象引用、规划、派发、执行、验证和结算的语义与文档基线。候选 RIR 执行链已经完成三个切片的[局部实现与对拍](../testing/RIR-WORK1-CLOSEOUT-20261023.md)。随后实验实现了分片派发、依赖和预算、归并、协调交接、服务重启及测试结算，运行结果按各报告的实际输入与拓扑解释。
 
-因此，v0.5 当前是“可审查的研究与规范基线”，不是生产就绪协议，也不是已证明安全的系统。
+有限总体研究保存了条件 Type-I 推导、有理数递推、精确 DP 与枚举对照。全域 Schema View 往返与活性推广分别由 #213、#215 跟踪；不依赖这两个结论的支持域实现继续推进。下表记录各对象的语义和实现线索。
 
-工程进展：三切片候选 RIR 执行链的[第一项工作已限域收尾](../testing/RIR-WORK1-CLOSEOUT-20261023.md)；完整协议与 conformance 状态仍如下表。
-
-版本连续性：**v0.5 是协议语义基线；V1 是建立在其上的首个执行与 conformance 目标。** 采用 V1 名称不会使 v0.5 自动升级为 v1.0，也不表示 G0 已通过。
+v0.5 和 V1 继续用于标识语义基线与实现目标；维护者可以按实际工作调整版本和工程排期。各项结果使用自己的输入、接口和检查记录。
 
 ## 3. 当前事实表
 
@@ -119,12 +99,12 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 | Gate | 目标 | 退出证据 | 当前状态 |
 |---|---|---|---|
 | G0 | 规格化：术语、本体、二维状态、Abstract Machine、对象、RIR/RPR、Compile、Dispatch、状态机、不变量、统计与资金政策 | 每项 V1 CORE/P0 可由机器或测试表达；连续性审计无未登记冲突 | 进行中 |
-| G1 | 仿真与模型验证 | 能力、调度、验证、相关性、攻击、资金、行政成本和 RIR/RPR 模型的敏感性与反例 | 未开始 |
+| G1 | 仿真与模型验证 | 能力、调度、验证、相关性、攻击、资金、行政成本和 RIR/RPR 模型的敏感性与反例 | 已有局部研究或实验，后续按具体场景推进 |
 | G2 | 单机参考实现 | Registry、RIR toolchain/RPR、Compile、Lease、Result、Verify、Settle、Event 通过并发/重放/崩溃性质测试 | 已有局部单机实验；完整 Gate 未通过 |
-| G3 | 局域网多 Provider MVP | 断连、退出、恢复、沙箱和初始 SLO 故障注入 | 未开始 |
-| G4 | 持久化与灾难恢复 | 数据库/日志/对象存储适配器、备份恢复、RPO/RTO 与 conformance | 未开始 |
-| G5 | 对抗验证 | Sybil、串谋、证据刷取、预算耗尽、compiler/runtime 与维护滥权的损失界或检测率 | 未开始 |
-| G6 | 异构扩展与外部试点 | 新硬件、任务类型和可选账本保持不变量且证据不错误迁移 | 未开始 |
+| G3 | 局域网多 Provider MVP | 断连、退出、恢复、沙箱和初始 SLO 故障注入 | 已有局部研究或实验，后续按具体场景推进 |
+| G4 | 持久化与灾难恢复 | 数据库/日志/对象存储适配器、备份恢复、RPO/RTO 与 conformance | 已有局部研究或实验，后续按具体场景推进 |
+| G5 | 对抗验证 | Sybil、串谋、证据刷取、预算耗尽、compiler/runtime 与维护滥权的损失界或检测率 | 已有局部研究或实验，后续按具体场景推进 |
+| G6 | 异构扩展与外部试点 | 新硬件、任务类型和可选账本保持不变量且证据不错误迁移 | 已有局部研究或实验，后续按具体场景推进 |
 
 任何 Gate 都不得用“已有实现”反向定义协议语义。结构和算法闭合仍需要唯一 Schema、确定规则和可复算证据；来源忠实性和部署事实则允许由日志、权限审计、故障注入、试点与版本化 assurance 建立。工程证据不必被伪装成形式证明，但其适用网络、组件、有效期、撤销和损失边界必须公开。
 
@@ -142,7 +122,11 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 结论保持：**语义连续性通过，G0 退出未通过。** “边界已决定”不等于 Schema、状态机、算法、证明或 conformance 已完成；全部 `OPEN/CANDIDATE + CORE` 项继续作为阻断。
 
-## 7. 当前最高优先级
+<a id="7-当前最高优先级"></a>
+
+## 7. 实现与研究线索（此前排期记录）
+
+下列早期排期保留背景；本轮实际工作与取舍见页首和当前开发政策。
 
 ### P0 — 阻断 G1
 
@@ -184,27 +168,13 @@ ACLt Protocol v0.5 已完成最小语义基线和文档骨架：两类不可约 
 
 ## 8. 进度更新规则
 
-每次会改变 v0.5 认知状态的提交，都应更新本文件：
-
-- `CANDIDATE` 被证明、证伪或替换；
-- 新增、删除或重写不变量；
-- 某个 Gate 的退出证据发生变化；
-- 协议对象、状态机、验证假设、资金或结算规则发生变化；
-- 试验、仿真、审计或试点产生了影响结论的新证据；
-- 风险由“已知但未量化”变为“已量化”，或反向退化；
-- 版本、许可证、维护边界或发布策略发生变化。
-
-更新时必须同时：
-
-1. 修改“当前事实表”中相应行；
-2. 更新 `open-questions.md` 的问题状态和证据链接；
-3. 更新受影响的规范、分析或 ADR；
-4. 在下方日志增加一条记录。
+本页记录已经发生的实现、运行与决定，并链接具体产物。修改实际受影响的行或链接即可；模型、接口与实测记录仍各在对应位置维护。旧日志按原日期保留，新的发现与决定另记。
 
 ## 9. 状态变更日志
 
 | 日期 | 基线 | 变化 | 证据/文档 | 影响的 Gate |
 |---|---|---|---|---|
+| 2026-11-19 | v0.5 | 维护者授权整肃：停用仓库及协议内 SHA 一致性判定，摘要字段记录；维护者审计；组织外 PR 暂停。实际入口同步与运行结果分别记录 | [当前开发政策](../development-policy.md) | 按具体行为和证据推进 |
 | 2026-11-19 | v0.5 | SR-1（#216）：落实 REPO-AUDIT R1 第一轮裁定中的文本项——把 #171 改坏的 threat-model §11 引导句与 project-overview:101 恢复为正向限定表述；`TimeRange` 线上形式固定为 2 元数组，旧 map 向量保留为历史；冻结恒等 wire-key 通则与 `VersionRange` 例外；澄清对象 tag 与编码 Profile 版本独立；终态集合同步 ADR-0005 D-02(a)；补齐 R1-049/061/064/066 与复核补充的文档同步。不改代码、向量、摘要 | 各规范与概览文档、#211、#216 | 不变 |
 | 2026-11-18 | v0.5 | A1：归档 #101 闭合后仓库假设专项审计（AUD-20261117-01）——报告按原字节入库，两份审计索引同步，结论为 BLOCKER 0、MAJOR 0、MINOR 1、NOTE 10，未发现把固定协调者、固定统计工件、固定 gas 推导或来宾级证据无条件提升为正式协议通用保证的实质性表述；唯一 MINOR（A-11）按报告建议修正“单节点交付容量对照”行的范围说明，写明排序任务族接入通用契约已完成来宾级验收并链接 M2，物理双机下的同一能力没有验收记录、是否要求待维护者确认；#101 不因此关闭 | [专项审计](../08-governance/audits/audit-20261117-01-post-closure-assumptions.md)、[审计索引](../08-governance/audits/README.md)、#101、#207 | 不变 |
 | 2026-11-18 | v0.5 | C1：工作服务每次启动生成 boot 并把它冻结进请求，协调者在派发前用同一条连接完成 BOOT 控制交换；重启前派发的 SOLVE/VERIFY、无授权的裸帧和旧轮次帧一律拒绝并留原因，同一 (execution, slot, attempt, action) 至多执行一次；被拒绝的尝试按现有规则记无答复并按上限计入，新增实验层终止状态 `DISPATCH_UNAVAILABLE`（未写 RESERVE、不计账、不发布）；既有通用作业与排序证据包逐字节回放通过 | [C1 报告](../testing/C1-RESTART-RESEND-20261118.md)、#208 | 不变 |

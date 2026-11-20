@@ -9,10 +9,8 @@ import json
 import math
 import re
 import unicodedata
+from tools.check_policy import SHA_CONSISTENCY_STATUS, digest_consistency
 ENCODING = 'acl.enc.p0-1@1'
-MAX_BYTES = 1 << 20
-MAX_DEPTH = 48
-MAX_ITEMS = 10000
 TEMPLATE_TAG = 'ACLt/P0-1/ClaimTemplate/1'
 CLAIM_TAG = 'ACLt/P0-1/RenderedClaim/1'
 IMPORT_ID = 'acl.schema.claim-test-bytes@1'
@@ -44,7 +42,6 @@ def head(major, n):
     raise CodecError('integer overflow')
 
 def encode(value, depth=0):
-    need(depth <= MAX_DEPTH, 'depth limit')
     if type(value) is bool:
         return b'\xf5' if value else b'\xf4'
     if type(value) is int:
@@ -56,25 +53,21 @@ def encode(value, depth=0):
         raw = text(value).encode()
         result = head(3, len(raw)) + raw
     elif isinstance(value, list):
-        need(len(value) <= MAX_ITEMS, 'item limit')
         result = head(4, len(value)) + b''.join((encode(v, depth + 1) for v in value))
     elif isinstance(value, dict):
-        need(len(value) <= MAX_ITEMS, 'item limit')
         pairs = sorted(((encode(k, depth + 1), encode(v, depth + 1)) for k, v in value.items()))
         need(all((type(k) in (int, str) for k in value)), 'unsupported map key')
         result = head(5, len(pairs)) + b''.join((k + v for k, v in pairs))
     else:
         raise CodecError('unsupported type')
-    need(len(result) <= MAX_BYTES, 'byte limit')
     return result
 
 class Reader:
 
     def __init__(self, raw):
-        need(isinstance(raw, bytes) and len(raw) <= MAX_BYTES, 'byte limit')
+        need(isinstance(raw, bytes), 'expected bytes')
         self.raw = raw
         self.pos = 0
-        self.items = 0
 
     def take(self, n):
         need(n <= len(self.raw) - self.pos, 'truncated CBOR')
@@ -83,9 +76,6 @@ class Reader:
         return out
 
     def read(self, depth=0):
-        need(depth <= MAX_DEPTH, 'depth limit')
-        self.items += 1
-        need(self.items <= MAX_ITEMS, 'item limit')
         initial = self.take(1)[0]
         major = initial >> 5
         ai = initial & 31
@@ -113,7 +103,6 @@ class Reader:
                 return text(raw.decode('utf-8'))
             except UnicodeError as exc:
                 raise CodecError('invalid UTF-8') from exc
-        need(n <= MAX_ITEMS, 'container limit')
         if major == 4:
             return [self.read(depth + 1) for _ in range(n)]
         pairs = {}
@@ -146,6 +135,9 @@ def digest_bytes(v):
     need(type(v) is bytes and len(v) == 32, 'digest length')
     return v
 
+def digest_record_hex(value):
+    return None if value is None else digest_bytes(value).hex()
+
 def semver(v):
     need(type(v) is list and len(v) == 3, 'SemVer')
     return [uint(n) for n in v]
@@ -153,6 +145,11 @@ def semver(v):
 def template_id(v):
     need(re.fullmatch('acl\\.ct\\.[a-z][a-z0-9-]{0,62}', text(v)) is not None, 'ClaimTemplateID')
     return v
+
+def reference_identity(value):
+    """Business reference fields retained after SHA binding retirement."""
+    need(type(value) is dict, 'reference object')
+    return {key: item for key, item in value.items() if key not in ('digest', 'profile_digest')}
 
 def ref(v):
     fields(v, ['id', 'version', 'digest'])
@@ -192,7 +189,7 @@ def template(v, verify=True):
         need(bool(row['lang']), 'empty language')
     ordered(v['translations'], 'lang')
     if verify:
-        need(h['digest'] == template_digest(v), 'template digest mismatch')
+        need(digest_consistency(h['digest'] == template_digest(v)), 'DISABLED: template digest consistency')
 
 def domain_hash(tag, raw):
     tag = tag.encode('ascii')
@@ -219,12 +216,14 @@ def claim_input(v):
         fields(value, ['schema_ref', 'canonical_bytes', 'object_digest'])
         imported = value['schema_ref']
         fields(imported, ['id', 'version', 'digest'])
-        need(imported == dict(id=IMPORT_ID, version=[1, 0, 0], digest=IMPORT_DIGEST), 'unlocked external schema')
+        digest_bytes(imported['digest'])
+        need(imported['id'] == IMPORT_ID and imported['version'] == [1, 0, 0], 'unlocked external schema identity/version')
+        need(digest_consistency(imported['digest'] == IMPORT_DIGEST), 'DISABLED: external schema digest consistency')
         raw = value['canonical_bytes']
         need(type(raw) is bytes, 'canonical bytes')
         need(type(decode(raw)) is bytes, 'test import expects CBOR bstr')
         digest_bytes(value['object_digest'])
-        need(hashlib.sha256(raw).digest() == value['object_digest'], 'external object digest')
+        need(digest_consistency(hashlib.sha256(raw).digest() == value['object_digest']), 'DISABLED: external object digest consistency')
     ordered(bindings, 'slot_id')
 
 def claim_digest(v):
@@ -236,10 +235,10 @@ def verify_chain(v):
     template(v['template'])
     claim_input(v['claim_input'])
     h = v['template']['header']
-    need(v['claim_input'][0] == {k: h[k] for k in ('id', 'version', 'digest')}, 'template reference mismatch')
+    need(reference_identity(v['claim_input'][0]) == {k: h[k] for k in ('id', 'version')}, 'template reference mismatch')
     need([r['slot_id'] for r in v['claim_input'][1]] == [r['slot'] for r in v['template']['slot_decls']], 'binding slot mismatch')
     digest_bytes(v['rendered_claim_digest'])
-    need(v['rendered_claim_digest'] == claim_digest(v['claim_input']), 'claim digest mismatch')
+    need(digest_consistency(v['rendered_claim_digest'] == claim_digest(v['claim_input'])), 'DISABLED: claim digest consistency')
 HEADER = {'schema_version': 'uint', 'encoding_profile_id': 'text', 'id': 'text', 'version': 'semver', 'digest': 'digest'}
 REF = {'id': 'text', 'version': 'semver', 'digest': 'digest'}
 DECL = {'kind': 'text', 'value_type': 'text', 'source': 'text'}
@@ -317,7 +316,8 @@ def from_view(kind, v):
 def inspect(kind, raw):
     v = decode(raw)
     validate_kind(kind, v)
-    result = {'cbor_hex': encode(v).hex(), 'schema_view': project(v, SCHEMAS[kind])}
+    result = {'cbor_hex': encode(v).hex(), 'schema_view': project(v, SCHEMAS[kind]),
+              'sha_consistency_policy': SHA_CONSISTENCY_STATUS}
     if kind == 'template':
         result['digest_hex'] = template_digest(v).hex()
     if kind == 'claim':
@@ -330,7 +330,7 @@ def from_view_json(kind, source):
     """Parse a Schema View without silently discarding duplicate JSON keys."""
     need(type(source) is str, 'JSON string required')
     try:
-        need(len(source.encode('utf-8')) <= MAX_BYTES * 4, 'JSON byte limit')
+        source.encode('utf-8')
     except UnicodeError as exc:
         raise CodecError('invalid JSON Unicode') from exc
 

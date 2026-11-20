@@ -143,7 +143,7 @@ class TerminalTests(unittest.TestCase):
         self.assertEqual(current['receipts'][0]['terminal'], 'FAILED')
         with self.assertRaisesRegex(c.CodecError, 'expected checkpoint mismatch'):
             s3_decision_replay.verify(self.cfg, old, anchor, expected, [receipt])
-        with self.assertRaisesRegex(c.CodecError, 'anchor consistency'):
+        with self.assertRaisesRegex(c.CodecError, 'anchor sequence outside snapshot'):
             s3_decision_replay.verify(self.cfg, old, expected, anchor, [receipt])
 
     def test_existing_contract_bytes_are_unchanged_and_options_are_explicit(self):

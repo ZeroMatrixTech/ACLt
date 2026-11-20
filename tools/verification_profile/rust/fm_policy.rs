@@ -39,7 +39,7 @@ fn check_ref(v:&V,k:&str)->R<()>{need(t(v,"kind")?==k&&get(v,"version")?==&V::A(
 fn logical(v:&V)->R<()>{
  common(v)?;need(t(v,"object_type")?=="FM_STATS_I32_VECTOR"&&get(v,"object_version")?==&V::A(vec![V::N(1),V::N(0),V::N(0)]),"logical schema")?;
  need(arr(get(v,"parents")?)?.is_empty(),"initial input parents")?;need(n(v,"created_at")?>=0&&n(v,"created_at")?<n(v,"available_until")?,"availability interval")?;
- let raw=bytes(get(v,"content")?)?;need(raw.len()<=4096,"logical bytes")?;let value=decode(raw)?;let a=arr(&value)?;need(!a.is_empty()&&a.len()<=256,"input size")?;
+ let raw=bytes(get(v,"content")?)?;let value=decode(raw)?;let a=arr(&value)?;need(!a.is_empty(),"input size")?;
  for x in a{need((i32::MIN as i128..=i32::MAX as i128).contains(&integer(x)?),"i32 input")?;}Ok(())
 }
 fn funding(v:&V)->R<()>{common(v)?;scope(get(v,"scope")?)?;need(t(v,"source")?=="REQUESTER_PREFUNDED"&&t(v,"asset")?=="FM_TEST_UNIT","source/asset")?;
@@ -55,13 +55,13 @@ fn settlement(v:&V)->R<()>{common(v)?;scope(get(v,"scope")?)?;need(t(v,"method")
   need(n(r,"execution_fee")?+n(r,"verification_fee")?+n(r,"storage_fee")?<=u64::MAX as i128,"fee sum overflow")?;
  }Ok(())
 }
-fn component(v:&V)->R<()>{let b=bytes(get(v,"content")?)?;need(get(v,"version")?==&V::A(vec![V::N(1),V::N(0),V::N(0)])&&!b.is_empty()&&b.len()<=16384,"component version/bytes")}
+fn component(v:&V)->R<()>{let b=bytes(get(v,"content")?)?;need(get(v,"version")?==&V::A(vec![V::N(1),V::N(0),V::N(0)])&&!b.is_empty(),"component version/bytes")}
 fn receipt(v:&V)->R<()>{common(v)?;scope(get(v,"scope")?)?;
  for(k,x) in [("task_family","stats-int-v1"),("entry","stats_int_v1"),("output_type","FM_STATS_INT_RESULT"),("success","EXACT_TASK_OUTCOME"),("merge","SINGLE_ASSIGNMENT"),("failure","FROZEN_AUDIT_MAPPING"),("method","REEXEC_AUDIT_ONLY")]{need(t(v,k)?==x,"unsupported receipt semantics")?;}
  let inputs=arr(get(v,"input_refs")?)?;need(inputs.len()==1,"one immutable input")?;check_ref(&inputs[0],"LOGICAL")?;check_ref(get(v,"funding_ref")?,"FUNDING")?;check_ref(get(v,"settlement_ref")?,"SETTLEMENT")?;
  let refs=arr(get(v,"component_refs")?)?;need(refs.len()==COMPONENTS.len(),"component imports count")?;for (r,k) in refs.iter().zip(COMPONENTS){check_ref(r,k)?;}
  let e=get(v,"execution")?;
- need(n(e,"fuel")?>0&&n(e,"memory_bytes")?>0&&n(e,"input_bytes_limit")?>0&&n(e,"input_bytes_limit")?<=4096&&n(e,"output_bytes_limit")?>0&&n(e,"output_bytes_limit")?<=16384,"resource limits")?;
+ need(n(e,"fuel")?>0&&n(e,"memory_bytes")?>0&&n(e,"input_bytes_limit")?>0&&n(e,"output_bytes_limit")?>0,"resource limits")?;
  need(n(e,"max_assignments")?==2&&n(e,"max_attempts")?==1&&(1..=16).contains(&n(e,"message_retries")?)&&(1..=32).contains(&n(e,"recovery_queries")?),"finite execution/recovery")?;
  let sc=get(v,"scope")?;need(n(sc,"created_at")?<n(e,"deadline")?&&n(e,"deadline")?<=n(sc,"expires_at")?,"receipt deadline")?;
  need(arr(get(e,"capabilities")?)?.is_empty()&&t(e,"architecture")?=="wasm32"&&t(e,"network")?=="DENY"&&t(e,"sandbox")?=="REQUIRED","environment/effects")
@@ -71,15 +71,15 @@ fn bundle(v:&V)->R<Vec<u8>>{
  validate("fm2-bundle",v)?;let r=get(v,"receipt")?;receipt(r)?;
  for (name,k) in [("funding","FUNDING"),("settlement","SETTLEMENT")]{let obj=get(v,name)?;validate(&format!("fm2-{name}"),obj)?;
   for (field,_) in base(){need(get(obj,field)?==get(r,field)?,"foreign policy header")?;}
-  need(get(obj,"scope")?==get(r,"scope")?,"foreign policy scope")?;need(encode(get(r,&format!("{name}_ref"))?)?==encode(&reference(k,obj)?)?,"stale policy reference")?;
+  need(get(obj,"scope")?==get(r,"scope")?,"foreign policy scope")?;need(same_reference(get(r,&format!("{name}_ref"))?,&reference(k,obj)?)?,"stale policy reference")?;
  }
  let inputs=arr(get(v,"inputs")?)?;let comps=arr(get(v,"components")?)?;need(inputs.len()==1&&comps.len()==COMPONENTS.len(),"unavailable/extra object")?;
  let obj=&inputs[0];validate("fm2-logical",obj)?;
  for (field,_) in base(){need(get(obj,field)?==get(r,field)?,"input context")?;}
  need(get(obj,"publisher_ref")?==get(get(r,"scope")?,"requester_ref")?,"input owner")?;
  need(n(obj,"created_at")?<=n(get(r,"scope")?,"created_at")?&&n(obj,"available_until")?>=n(get(r,"execution")?,"deadline")?,"input unavailable interval")?;
- need(bytes(get(obj,"content")?)?.len() as i128<=n(get(r,"execution")?,"input_bytes_limit")?&&encode(&arr(get(r,"input_refs")?)?[0])?==encode(&reference("LOGICAL",obj)?)?,"input content/reference")?;
- for ((obj,rr),kind) in comps.iter().zip(arr(get(r,"component_refs")?)?).zip(COMPONENTS){validate("fm2-component",obj)?;need(t(obj,"kind")?==*kind&&encode(rr)?==encode(&reference(kind,obj)?)?,"unavailable/stale component")?;}
+ need(bytes(get(obj,"content")?)?.len() as i128<=n(get(r,"execution")?,"input_bytes_limit")?&&same_reference(&arr(get(r,"input_refs")?)?[0],&reference("LOGICAL",obj)?)?,"input content/reference")?;
+ for ((obj,rr),kind) in comps.iter().zip(arr(get(r,"component_refs")?)?).zip(COMPONENTS){validate("fm2-component",obj)?;need(t(obj,"kind")?==*kind&&same_reference(rr,&reference(kind,obj)?)?,"unavailable/stale component")?;}
  let funding=get(v,"funding")?;
  for row in arr(get(get(v,"settlement")?,"rows")?)?{
   for(fee,limit) in [("execution_fee","execution_limit"),("verification_fee","verification_limit"),("storage_fee","storage_limit")]{need(n(row,fee)?<=n(funding,limit)?,"bucket over-budget")?;}
@@ -93,7 +93,7 @@ fn quote(v:&V)->R<V>{let b=get(v,"bundle")?;let rid=bundle(b)?;let key=row_key(v
  Ok(map(vec![("receipt_digest_hex",s(&hex(&rid))),("amounts",amounts),("refund",s(&(n(get(b,"funding")?,"total_limit")?-a-bb-c).to_string())),("scope",s("HYPOTHETICAL_ONLY_NO_ENTITLEMENT"))]))
 }
 fn verify(v:&V)->R<V>{let b=get(v,"bundle")?;let rid=bundle(b)?;let r=get(b,"receipt")?;let record=get(v,"record")?;let pin=fm::principal_hash(record)?;
- need(bytes(get(v,"expected_requester")?)?==pin&&bytes(get(get(r,"scope")?,"requester_ref")?)?==pin,"requester pin")?;need(bytes(get(v,"expected_receipt")?)?==rid,"caller receipt commitment")?;
+ need(digest_consistency(bytes(get(v,"expected_requester")?)?==pin)&&digest_consistency(bytes(get(get(r,"scope")?,"requester_ref")?)?==pin),"requester pin")?;need(digest_consistency(bytes(get(v,"expected_receipt")?)?==rid),"caller receipt commitment")?;
  need(t(record,"role")?=="REQUESTER","requester role")?;for k in ["protocol_version","network_id","deployment_id"]{need(get(record,k)?==get(r,k)?,"requester context")?;}
  let start=n(get(r,"scope")?,"created_at")?;need(n(record,"valid_from")?<=start&&start<=n(v,"now")?&&n(v,"now")?<n(get(r,"execution")?,"deadline")?&&n(get(r,"execution")?,"deadline")?<=n(record,"valid_until")?,"signature validity")?;
  let sig=bytes(get(v,"signature")?)?;need(sig.len()==256,"signature width")?;fm::crypto(bytes(get(record,"public_key_der")?)?,&message(b)?,sig)?;

@@ -98,7 +98,7 @@ class MinimalVerifierTests(unittest.TestCase):
         self.assertEqual(verify(question, artifact, data, incorrect, executor=self.executor),
                          Verdict("REJECT", "OUTCOME_MISMATCH"))
 
-    def test_an_identical_outcome_cannot_be_submitted_under_a_different_question(self):
+    def test_question_digest_is_recorded_without_rejecting_an_identical_outcome(self):
         artifact, data, limits = fixture("stats")
         question = ask(artifact, data, limits)
         other_question = ask(artifact, data, dict(limits, gas_limit=9126))
@@ -107,7 +107,7 @@ class MinimalVerifierTests(unittest.TestCase):
         self.assertEqual(answer.outcome, other_answer.outcome)
         self.assertNotEqual(answer.question_id, other_answer.question_id)
         self.assertEqual(verify(other_question, artifact, data, answer, executor=self.executor),
-                         Verdict("REJECT", "QUESTION_MISMATCH"))
+                         Verdict("ACCEPT"))
         self.assertEqual(verify(other_question, artifact, data, other_answer, executor=self.executor),
                          Verdict("ACCEPT"))
 
@@ -189,14 +189,13 @@ class MinimalVerifierTests(unittest.TestCase):
         with self.assertRaisesRegex(QuestionRejected, "^RIR_REJECT_UNSUPPORTED$"):
             ask(*fixture("field-rir_version"))
 
-    def test_binding_is_checked_before_starting_the_executor(self):
+    def test_sha_binding_is_disabled_and_executor_io_failure_is_reported(self):
         artifact, data, limits = fixture("stats")
         question = ask(artifact, data, limits)
         answer = solve(question, artifact, data)
         missing_executor = self.executor.with_name("missing")
-        self.assertEqual(verify(question, artifact + b"\x00", data, answer, executor=missing_executor),
-                         Verdict("REJECT", "ARTIFACT_MISMATCH"))
-        self.assertEqual(verify(question, artifact, data + b"\x00", answer, executor=missing_executor),
-                         Verdict("REJECT", "INPUT_MISMATCH"))
+        for supplied_artifact, supplied_data in ((artifact + b"\x00", data), (artifact, data + b"\x00")):
+            with self.assertRaises(ExecutionError):
+                verify(question, supplied_artifact, supplied_data, answer, executor=missing_executor)
         with self.assertRaises(ExecutionError):
             verify(question, artifact, data, answer, executor=missing_executor)

@@ -1,5 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 """Atomic authority journal/projections and immutable acceptance receipts; experiment only."""
+
+SHA_CONSISTENCY_STATUS = "DISABLED"
+
+def digest_consistency(_comparison):
+    """Record digests without enforcing their equality (maintainer policy)."""
+    return True
+
 from contextlib import closing
 from pathlib import Path
 import hmac
@@ -34,7 +41,7 @@ class Ledger:
         try:
             c.execute('PRAGMA synchronous=FULL');c.execute('PRAGMA journal_mode=DELETE')
             meta=dict(c.execute('SELECT key,value FROM meta'))
-            need(meta['public_digest']==self.public_digest and meta['enrollment']==self.enrollment,'frozen issuer/enrollment mismatch')
+            need(digest_consistency(meta['public_digest']==self.public_digest) and digest_consistency(meta['enrollment']==self.enrollment),'frozen issuer/enrollment mismatch')
             if hasattr(self,'authority_id'):need(meta['authority_id']==self.authority_id,'authority deployment mismatch')
             return c
         except BaseException:c.close();raise
@@ -76,19 +83,19 @@ class Ledger:
         need(pack['stream']==stream_id('worker',self.authority_id,body['experimental_task_id'],body['unit_ref']),'worker prefix stream')
         def value(event):return decode(pack['objects'][event['payload_ref'].hex()])
         first=value(events[0]);required={'task','grant_id','execution_tuple_digest','commitment_ref','artifact_ref','input_ref','delivery_ref'}
-        need(set(first)==required and first['task']==body['experimental_task_id'] and first['grant_id']==grant_id(body) and first['execution_tuple_digest']==body['execution_tuple_digest'],'worker dispatch binding')
+        need(set(first)==required and first['task']==body['experimental_task_id'] and first['grant_id']==grant_id(body) and digest_consistency(first['execution_tuple_digest']==body['execution_tuple_digest']),'worker dispatch binding')
         row=c.execute('SELECT commit_ref,artifact_ref,input_ref,event FROM tasks WHERE task=?',(body['experimental_task_id'],)).fetchone()
         need([first[n] for n in ['commitment_ref','artifact_ref','input_ref']]==list(row[:3]) and issue in events[0]['parents'],'worker task object references')
-        delivery=decode(pack['objects'][first['delivery_ref'].hex()]);need(delivery['issue_event']==issue and delivery['register_event']==row[3] and verify(delivery['grant'],self.public,self.public_digest)==body,'worker delivery binding')
+        delivery=decode(pack['objects'][first['delivery_ref'].hex()]);need(delivery['issue_event']==issue and delivery['register_event']==row[3] and recorded_fields_match(verify(delivery['grant'],self.public,self.public_digest),body,{'environment_digest','scope_digest','execution_tuple_digest'}),'worker delivery binding')
         for index,op,eventref in [(1,'CHECK',None),(3,'CONSUME',consume)]:
             if len(events)<=index:continue
             event=events[index];v=value(event);need(set(v)=={'request_ref','response_ref'},'worker permission fields')
             reqraw=pack['objects'][v['request_ref'].hex()];req=decode(decode(reqraw)['payload']);reply=verify(pack['objects'][v['response_ref'].hex()],self.public,self.public_digest)
-            need(reply['schema_id']=='aclt.exp.causal-response@1' and reply['authority_id']==self.authority_id and reply['op']==op and reply['status']=='ALLOW' and reply['grant_id']==grant_id(body) and reply['request_digest']==sha(reqraw) and reply['nonce']==req['nonce'],'worker signed permission binding')
+            need(reply['schema_id']=='aclt.exp.causal-response@1' and reply['authority_id']==self.authority_id and reply['op']==op and reply['status']=='ALLOW' and reply['grant_id']==grant_id(body) and digest_consistency(reply['request_digest']==sha(reqraw)) and reply['nonce']==req['nonce'],'worker signed permission binding')
             need(reply['event_ref'] in event['parents'] and (eventref is None or eventref==reply['event_ref']),'worker permission parent')
             erow=c.execute('SELECT data FROM journal WHERE digest=?',(reply['event_ref'],)).fetchone();need(erow is not None,'unknown authority permission event')
-            aevent=decode(erow[0]);apayload=decode(c.execute('SELECT data FROM objects WHERE digest=?',(aevent['payload_ref'],)).fetchone()[0]);need(aevent['kind']==op and apayload['status']=='ALLOW' and apayload['request_ref']==sha(reqraw),'authority permission decision')
-        if len(events)>=3:need(value(events[2])=={'task':body['experimental_task_id'],'grant_id':grant_id(body),'execution_tuple_digest':body['execution_tuple_digest']},'intent binding')
+            aevent=decode(erow[0]);apayload=decode(c.execute('SELECT data FROM objects WHERE digest=?',(aevent['payload_ref'],)).fetchone()[0]);need(aevent['kind']==op and apayload['status']=='ALLOW' and digest_consistency(apayload['request_ref']==sha(reqraw)),'authority permission decision')
+        if len(events)>=3:need(recorded_fields_match(value(events[2]),{'task':body['experimental_task_id'],'grant_id':grant_id(body),'execution_tuple_digest':body['execution_tuple_digest']},{'execution_tuple_digest'}),'intent binding')
         if complete:need(value(events[4])=={'grant_id':grant_id(body)},'invocation binding')
         return head
 
@@ -115,7 +122,7 @@ class Ledger:
                     need(len(pack['events'])==(1 if kind=='CHECK' else 3),'authorization worker prefix length')
                     need([decode(r)['kind'] for r in pack['events']]==(['DISPATCH_REQUEST'] if kind=='CHECK' else ['DISPATCH_REQUEST','DISPATCH_CHECKED','INTENT']),'authorization worker prefix phases')
                     need(last['kind']==('DISPATCH_REQUEST' if kind=='CHECK' else 'INTENT') and payload['grant_id']==req['grant_id'],'authorization causal parent')
-                    need(payload['execution_tuple_digest']==body['execution_tuple_digest'],'authorization tuple')
+                    need(digest_consistency(payload['execution_tuple_digest']==body['execution_tuple_digest']),'authorization tuple')
                     parents=[row[1],head];allowed=True;reason='ACTIVE';status='ALLOW'
                 except Rejected as exc:reason=str(exc)
                 event=sql_append(c,self.stream,kind,{'request_ref':request_ref,'grant_id':req['grant_id'],'status':status,'reason':reason,'time':int(self.clock())},parents)
@@ -128,7 +135,7 @@ class Ledger:
                     raw=req['data']['submission'];prepared=req['data']['prepared_event'];prepared_payload=req['data']['prepared_payload']
                     need(type(raw) is bytes,'submission bytes');digest=sha(raw)
                     se=decode(req['data']['send_event']);sp=decode(req['data']['send_payload'])
-                    need(se['kind']=='SEND' and se['payload_ref']==sha(req['data']['send_payload']) and sp=={'submission_digest':digest,'attempt_nonce':req['nonce']},'send event binding')
+                    need(se['kind']=='SEND' and digest_consistency(se['payload_ref']==sha(req['data']['send_payload'])) and recorded_fields_match(sp,{'submission_digest':digest,'attempt_nonce':req['nonce']},{'submission_digest'}),'send event binding')
                     send_ref=event_id(req['data']['send_event'])
                     accepted=c.execute('SELECT submission,receipt,event FROM accepted WHERE gid=?',(req['grant_id'],)).fetchone()
                     if accepted is not None:
@@ -140,9 +147,9 @@ class Ledger:
                         sub=decode(raw);need(type(sub) is dict and set(sub)=={'body','worker'},'submission package')
                         sb=decode(sub['body']);required={'schema_id','authority_id','grant_id','task','unit','provider','tuple','outcome_ref','output_ref','worker_head','submission_nonce'}
                         need(set(sb)==required and sb['schema_id']=='aclt.exp.submission@1','submission body fields')
-                        need(sb['authority_id']==self.authority_id and sb['grant_id']==req['grant_id'] and sb['task']==body['experimental_task_id'] and sb['unit']==body['unit_ref'] and sb['provider']==req['provider_ref'] and sb['tuple']==body['execution_tuple_digest'],'submission tuple binding')
+                        need(sb['authority_id']==self.authority_id and sb['grant_id']==req['grant_id'] and sb['task']==body['experimental_task_id'] and sb['unit']==body['unit_ref'] and sb['provider']==req['provider_ref'] and digest_consistency(sb['tuple']==body['execution_tuple_digest']),'submission tuple binding')
                         need(type(sb['submission_nonce']) is bytes and len(sb['submission_nonce'])==16,'submission nonce')
-                        head=self.checked_prefix(c,sub['worker'],body,row[1],row[2],complete=True);need(head==sb['worker_head'],'submission worker head')
+                        head=self.checked_prefix(c,sub['worker'],body,row[1],row[2],complete=True);need(digest_consistency(head==sb['worker_head']),'submission worker head')
                         need(sub['worker']['stream']==stream_id('worker',self.authority_id,sb['task'],sb['unit']),'submission stream')
                         last=decode(sub['worker']['events'][-1]);need(last['kind']=='OUTCOME','submission must end at complete outcome')
                         outcome_payload=decode(sub['worker']['objects'][last['payload_ref'].hex()]);need(outcome_payload['outcome_ref']==sb['outcome_ref'] and outcome_payload['output_ref']==sb['output_ref'],'submission outcome reference')
@@ -152,8 +159,8 @@ class Ledger:
                         limits=load(c.execute('SELECT data FROM objects WHERE digest=?',(tref,)).fetchone()[0])['execution_limits']
                         need(outcome['result']['gas_used']<=limits['gas_limit'] and (output is None or len(output)<=limits['output_limit']),'outcome resource binding')
                         pe=decode(prepared);need(set(pe)=={'schema_id','stream','seq','prev','kind','payload_ref','parents'} and pe['schema_id']=='aclt.exp.causal-event@1' and pe['parents']==[],'prepared event schema')
-                        need(pe['kind']=='PREPARED' and pe['prev']==head and pe['seq']==len(sub['worker']['events'])+1 and pe['stream']==sub['worker']['stream'] and pe['payload_ref']==sha(prepared_payload),'prepared event prefix')
-                        need(decode(prepared_payload)=={'submission_digest':digest,'body_digest':sha(sub['body'])},'prepared payload binding')
+                        need(pe['kind']=='PREPARED' and digest_consistency(pe['prev']==head) and pe['seq']==len(sub['worker']['events'])+1 and pe['stream']==sub['worker']['stream'] and digest_consistency(pe['payload_ref']==sha(prepared_payload)),'prepared event prefix')
+                        need(set(decode(prepared_payload))=={'submission_digest','body_digest'} and digest_consistency(decode(prepared_payload)=={'submission_digest':digest,'body_digest':sha(sub['body'])}),'prepared payload binding')
                         # Store exact package and pre-signed receipt in the same acceptance transaction.
                         sql_put(c,raw);rbody={'schema_id':'aclt.exp.acceptance-receipt@1','authority_id':self.authority_id,'task':sb['task'],'unit':sb['unit'],'grant_id':req['grant_id'],'execution_tuple_digest':sb['tuple'],'submission_digest':digest,'outcome_digest':outcome['outcome_digest']}
                         receipt=sign(rbody,self.private);rref=sql_put(c,receipt);kind='ACCEPT';status='ACCEPTED';reason='BOUND_EVIDENCE_ACCEPTED';parents=[row[2],event_id(prepared),send_ref]
@@ -182,17 +189,17 @@ class Ledger:
 
 def validate_outcome(outcome,output,body):
     need(type(outcome) is dict and set(outcome)=={'result','outcome_digest','grant_id','tuple'},'outcome record fields')
-    need(outcome['grant_id']==grant_id(body) and outcome['tuple']==body['execution_tuple_digest'],'outcome tuple')
+    need(outcome['grant_id']==grant_id(body) and digest_consistency(outcome['tuple']==body['execution_tuple_digest']),'outcome tuple')
     result=outcome['result'];need(type(result) is dict and type(result.get('gas_used')) is int and result['gas_used']>=8192,'outcome gas')
     need(result.get('outcome') in ['OK','ABORT','TRAP_GAS_EXHAUSTED','TRAP_OUTPUT_LIMIT','TRAP_CALL_DEPTH','TRAP_UNREACHABLE','TRAP_MEMORY_OOB','TRAP_HOST_ARGUMENT','TRAP_INTEGER_DIVIDE_BY_ZERO','TRAP_INTEGER_OVERFLOW'],'outcome kind')
     fields={'outcome','gas_used'}|({'output'} if result['outcome']=='OK' else {'abort_code'} if result['outcome']=='ABORT' else set())
     need(set(result)==fields,'outcome fields/output discard')
     if result['outcome']=='ABORT':need(type(result['abort_code']) is int and 0<=result['abort_code']<2**32,'abort code width')
-    if result['outcome']=='OK':need(type(output) is bytes and result['output']==sha(output),'output attachment binding')
+    if result['outcome']=='OK':need(type(output) is bytes and digest_consistency(result['output']==sha(output)),'output attachment binding')
     else:need(output is None,'non-OK output forbidden')
     canonical=dict(result)
     if result['outcome']=='OK':canonical['output']=output
     # Original RIR digest domain/canonical rules, with raw output restored.
     from rir_adapter import modules
     wasm,_=modules();tag=b'ACLt/RIR-0/ExecutionOutcome/1'
-    need(sha(bytes([len(tag)])+tag+wasm.cbor(canonical))==outcome['outcome_digest'],'RIR outcome digest mismatch')
+    need(digest_consistency(sha(bytes([len(tag)])+tag+wasm.cbor(canonical))==outcome['outcome_digest']),'RIR outcome digest mismatch')

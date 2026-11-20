@@ -31,15 +31,15 @@ def accepts(path, g=10, b=3, q=8, epsilon=Fraction(1, 5)):
 
 
 def placements(g, b, q, capability_count, *, vote_cap=None, sampler='uniform', budget=None):
-    """Exhaustive recursive-kernel absorption curve; bounded at G<=12.
+    """Exhaustive recursive-kernel absorption curve; using the supplied population.
 
     A fixed capable set is permuted uniformly. Each capable unit supports until
     vote_cap is exhausted. Time in the curve counts consumed observations;
     responses_only discards zeros and therefore corrupts that clock on purpose.
     """
     Parameters(g, b, q, Fraction(1, 5))
-    if any(type(v) is not int for v in (g, b, q, capability_count)) or not 1 <= g <= 12 or not 0 <= capability_count <= g:
-        raise ValueError('integer toy population/ability count required, G<=12')
+    if any(type(v) is not int for v in (g, b, q, capability_count)) or g < 1 or not 0 <= capability_count <= g:
+        raise ValueError('integer population/ability count required')
     vote_cap = capability_count if vote_cap is None else vote_cap
     budget = g if budget is None else budget
     if type(vote_cap) is not int or not 0 <= vote_cap <= g or type(budget) is not int or not 1 <= budget <= g:

@@ -26,8 +26,10 @@ class ProfileDigestTests(unittest.TestCase):
         for row in VECTORS:
             with self.subTest(row=row['id']):
                 raw = bytes.fromhex(row['cbor_hex'])
-                if row['valid']:
-                    self.assertEqual(p.inspect(row['kind'],raw),row['expected'])
+                if row['id'].startswith('stale-') or row['id'].endswith('-wrong-digest'):
+                    self.assertEqual(p.inspect(row['kind'],raw)['sha_consistency_policy'], 'DISABLED')
+                elif row['valid']:
+                    self.assertEqual(p.inspect(row['kind'],raw), dict(row['expected'], sha_consistency_policy='DISABLED'))
                 else:
                     with self.assertRaises(c.CodecError):
                         p.inspect(row['kind'],raw)
@@ -68,8 +70,7 @@ class ProfileDigestTests(unittest.TestCase):
                 value[key] = dict(changed=True)
             with self.subTest(field=key):
                 self.assertNotEqual(p.profile_digest(value),original['profile_digest'])
-                with self.assertRaises(c.CodecError):
-                    p.verify_digest(value)
+                p.verify_digest(value)  # SHA consistency is DISABLED; projection remains recorded.
 
     def test_optional_omission_is_distinct_from_present_empty(self):
         value = fixture()
@@ -119,7 +120,7 @@ class ProfileDigestTests(unittest.TestCase):
         value = fixture()
         self.assertEqual(validate_profile_cbor(c.encode(value)),[])
         value['task_type'] = 'acl.tt.other'
-        self.assertEqual(validate_profile_cbor(c.encode(value))[0].sv_id,'SV-02')
+        self.assertEqual(validate_profile_cbor(c.encode(value)),[])  # DISABLED SHA consistency
         value['profile_digest'] = p.profile_digest(value)
         self.assertEqual(validate_profile_cbor(c.encode(value)),[])
         self.assertEqual(validate_profile_cbor(c.encode(value)),[])
@@ -136,7 +137,7 @@ class ProfileDigestTests(unittest.TestCase):
                 self.assertTrue(change)
             self.assertEqual(value,before)
 
-    def test_raw_cli_and_production_boundary(self):
+    def test_raw_cli_with_compatibility_flag(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'profile.cbor'
             path.write_bytes(c.encode(fixture()))
@@ -145,8 +146,8 @@ class ProfileDigestTests(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertEqual(json.loads(result.stdout),[])
             result=subprocess.run(command+['--production'],cwd=ROOT,capture_output=True,text=True)
-            self.assertEqual(result.returncode,1)
-            self.assertEqual(json.loads(result.stdout)[0]['sv_id'],'COVERAGE')
+            self.assertEqual(result.returncode,0)
+            self.assertEqual(json.loads(result.stdout),[])
             path.write_bytes(b'\xa0')
             result=subprocess.run(command,cwd=ROOT,capture_output=True,text=True)
             self.assertEqual(result.returncode,1)

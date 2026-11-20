@@ -34,7 +34,7 @@ def validate_no_snapshot_round(method, receipt_id, profile_ref, payload, frontie
         c.need(type(state) is dict and set(state) == {'round_stage', 'bound_profile_ref'},
                'no-snapshot state fields')
         c.need(type(state['round_stage']) is str, 'round stage type')
-        c.need(c.encode(state['bound_profile_ref']) == c.encode(profile_ref), 'bound Profile changed')
+        c.need(c.encode(c.reference_identity(state['bound_profile_ref'])) == c.encode(c.reference_identity(profile_ref)), 'bound Profile changed')
     prior, proposed = before['round_stage'], after['round_stage']
     c.need((prior, proposed) in EDGES, 'invalid no-snapshot stage transition')
     c.need(('transition_event_ref' in payload) == (prior != proposed), 'transition event presence')

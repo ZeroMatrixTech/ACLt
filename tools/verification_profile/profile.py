@@ -61,7 +61,7 @@ def profile_digest(profile):
 
 def verify_digest(profile):
     expected = profile_digest(profile)
-    c.need(profile['profile_digest'] == expected, 'SV-02: profile digest mismatch')
+    c.need(c.digest_consistency(profile['profile_digest'] == expected), 'DISABLED: SV-02 profile digest consistency')
 
 
 def decision_fields(profile):
@@ -119,4 +119,4 @@ def inspect(kind, raw):
     elif kind == 'audit-profile':
         audit_fields(profile)
     return dict(cbor_hex=raw.hex(), content_cbor_hex=c.encode(content).hex(),
-                digest_hex=profile_digest(profile).hex())
+                digest_hex=profile_digest(profile).hex(), sha_consistency_policy=c.SHA_CONSISTENCY_STATUS)

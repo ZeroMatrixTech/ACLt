@@ -55,8 +55,8 @@ def principal(v):
     c.need(len(der)==294 and der.startswith(SPKI_PREFIX) and der.endswith(SPKI_SUFFIX), 'RSA SPKI encoding')
     modulus = der[len(SPKI_PREFIX):-len(SPKI_SUFFIX)]
     c.need(len(modulus)==256 and modulus[0]&128 and modulus[-1]&1, 'RSA modulus')
-    c.need(v['suite']==SUITE and v['key_id']==hashlib.sha256(der).digest(), 'key/suite')
-    c.need(v['principal_id']==c.domain_hash(IDENTITY_TAG, der), 'principal identity')
+    c.need(v['suite']==SUITE and c.digest_consistency(v['key_id']==hashlib.sha256(der).digest()), 'key/suite')
+    c.need(c.digest_consistency(v['principal_id']==c.domain_hash(IDENTITY_TAG, der)), 'principal identity')
     c.need(0 <= v['valid_from'] < v['valid_until'], 'validity interval')
 
 def principal_digest(v):
@@ -68,8 +68,7 @@ def unsigned(v):
     common(v)
     c.need(v['suite']==SUITE and v['object_type']=='FM_TEST_VALUE', 'suite/object type')
     c.need(0 <= v['issued_at'] < v['expires_at'], 'message interval')
-    c.need(v['payload_ref']==dict(id=IMPORT_ID,version=[1,0,0],digest=IMPORT_DIGEST), 'unlocked import')
-    c.need(len(v['payload'])<=4096, 'payload byte limit')
+    c.need(v['payload_ref']['id']==IMPORT_ID and v['payload_ref']['version']==[1,0,0] and c.digest_consistency(v['payload_ref']['digest']==IMPORT_DIGEST), 'unlocked import')
     value = c.decode(v['payload'])
     project(value, VALUE)
     allowed = ('REQUEST',) if v['role']=='REQUESTER' else ('ACCEPT','RESULT')
@@ -96,7 +95,7 @@ def verify(v):
     principal(record)
     envelope(env)
     digest = principal_digest(record)
-    c.need(digest==expected['record_digest']==env['principal_ref'], 'untrusted principal pin')
+    c.need(c.digest_consistency(digest==expected['record_digest']==env['principal_ref']), 'untrusted principal pin')
     for k in ('protocol_version','network_id','deployment_id','role'):
         c.need(record[k]==env[k]==expected[k], 'principal context')
     for k in ('object_type','context','nonce'):
@@ -125,7 +124,7 @@ def inspect(kind, raw):
 def from_view_json(kind, source):
     c.need(kind in SCHEMAS and type(source) is str, 'unknown kind/JSON type')
     try:
-        c.need(len(source.encode())<=c.MAX_BYTES*4, 'JSON size')
+        source.encode()
     except UnicodeError as exc:
         raise c.CodecError('JSON Unicode') from exc
     def unique(pairs):

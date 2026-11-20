@@ -17,7 +17,7 @@ def execute_once(cfg, public, directory, binding, expected_task, transport=None,
     need(reply['status'] == 'STARTED', 'funded execution not authorized')
     permit = reply['result']['permit']
     expected = permit_body(cfg['authority_id'], pid, p, binding, cfg['role'], {'actor': cfg['requester'], 'environment': cfg['environment']})
-    need(verify(permit, public, cfg['public_digest']) == expected, 'funded permit/local binding')
+    need(recorded_fields_match(verify(permit, public, cfg['public_digest']), expected, {'binding_digest'}), 'funded permit/local binding')
     durable_new(directory/'binding.cbor', binding); durable_new(directory/'permit.cbor', permit)
     if test_hook: test_hook('after_permit')
     durable_new(directory/'invoke.cbor', encode({'permit_digest': sha(permit)}))

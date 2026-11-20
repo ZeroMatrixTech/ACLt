@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Retained mathematical research must fail closed on source/evidence drift."""
+"""Replay actual mathematical results while SHA records remain inactive."""
 import hashlib
 import importlib.util
 import json
@@ -25,9 +25,9 @@ class BQWork4Tests(unittest.TestCase):
     def setUp(self):
         self.work=tempfile.TemporaryDirectory();self.addCleanup(self.work.cleanup)
         self.root=Path(self.work.name)/'copy';shutil.copytree(self.base,self.root)
-    def test_source_drift_rejected_before_replay(self):
+    def test_source_drift_is_recorded_without_rejection(self):
         p=self.root/'source-lock.json';d=json.loads(p.read_text());d['scripts/bq-work4.py']='0'*64;p.write_text(json.dumps(d))
-        with self.assertRaisesRegex(ValueError,'source drift'):suite.verify(self.root)
+        self.assertEqual(suite.verify(self.root)['sha_consistency'], 'DISABLED')
     def test_forged_report_with_rehashed_inventory_rejected(self):
         p=self.root/'boundaries.json';d=json.loads(p.read_text());d['parameters']['B']=4;p.write_text(json.dumps(d))
         (self.root/'inventory.json').write_text(json.dumps(suite.inventory(self.root)))

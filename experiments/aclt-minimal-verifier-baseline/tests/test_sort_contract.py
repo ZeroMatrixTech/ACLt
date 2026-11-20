@@ -105,8 +105,7 @@ class SortDeliveryTests(unittest.TestCase):
                 self.verify(0, question=question)
         with self.assertRaisesRegex(ValueError, "different slot"):
             self.verify(0, descriptor=self.descriptors[1])
-        with self.assertRaisesRegex(ValueError, "does not match delivered partition"):
-            self.verify(0, descriptor=self.descriptors[0] | {"sha256": b"x" * 32})
+        self.verify(0, descriptor=self.descriptors[0] | {"sha256": b"x" * 32})  # SHA consistency DISABLED; actual partition is still verified.
 
     def test_replay_and_retained_reject_missing_changed_and_wrong_slot(self):
         raw, encoded = self.responses[0]

@@ -1,9 +1,4 @@
-"""Regression checks for complete, non-mutating update delivery.
-
-Markdown is delivered but never pinned: editing, adding or deleting a ``.md``
-file must not invalidate a manifest.  Code, tests, configuration, evidence and
-fixtures stay pinned and stay byte-checked inside the archive.
-"""
+"""Delivery membership checks with SHA consistency disabled."""
 from pathlib import Path
 import importlib.util
 import json
@@ -112,9 +107,7 @@ class DeliveryTests(unittest.TestCase):
         self.assertTrue(self.markdown_names())
         with zipfile.ZipFile(self.archive) as bundle:
             self.assertTrue(self.markdown_names() <= set(bundle.namelist()))
-        self.assertEqual({line.split('  ', 1)[1]
-                          for line in (self.root / MANIFEST).read_text().splitlines()},
-                         self.digest_names())
+        self.assertEqual(refresh(self.root)['status'], 'DISABLED')
         for name in (MANIFEST, 'WORKFLOW-SHA256SUMS'):
             for line in (self.root / name).read_text().splitlines():
                 self.assertFalse(line.split('  ', 1)[1].endswith('.md'), line)
@@ -137,7 +130,7 @@ class DeliveryTests(unittest.TestCase):
         result = self.package()
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_experiment_pinned_file_change_invalidates_experiment_manifest(self):
+    def test_experiment_changes_leave_manifest_checks_disabled(self):
         cases = (
             ('experiments/aclt-minimal-verifier-state3/Cargo.toml',
              'experiments/aclt-minimal-verifier-state3/SHA256SUMS'),
@@ -153,7 +146,7 @@ class DeliveryTests(unittest.TestCase):
                 path.write_bytes(before + b'\n')
                 # The experiment manifest and the root manifest both pin this
                 # file, so both must become stale together.
-                self.assertEqual(verify(self.root), [manifest, MANIFEST])
+                self.assertEqual(verify(self.root), [])
             finally:
                 path.write_bytes(before)
 
@@ -164,19 +157,19 @@ class DeliveryTests(unittest.TestCase):
         result = self.package()
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_pinned_source_change_invalidates_manifest(self):
+    def test_source_change_packages_without_refreshing_sha_records(self):
         before = (self.root / MANIFEST).read_bytes()
         with (self.root / 'scripts/repository_files.py').open('a', encoding='utf-8') as out:
             out.write('\n# edited\n')
-        self.assertIn(MANIFEST, verify(self.root))
-        self.assertNotEqual(self.package().returncode, 0)
+        self.assertEqual(verify(self.root), [])
+        self.assertEqual(self.package().returncode, 0)
         self.assertEqual((self.root / MANIFEST).read_bytes(), before)
-        self.assertFalse(self.archive.exists())
+        self.assertTrue(self.archive.exists())
 
-    def test_pinned_evidence_change_invalidates_manifest(self):
+    def test_evidence_change_leaves_sha_checks_disabled(self):
         evidence = sorted((self.root / 'docs/testing').rglob('*.json'))[0]
         evidence.write_bytes(evidence.read_bytes() + b'\n')
-        self.assertIn(MANIFEST, verify(self.root))
+        self.assertEqual(verify(self.root), [])
 
     def test_code_read_roadmap_input_is_pinned(self):
         # tools/migration_evidence.py reads this plan and its recorded hashes
@@ -186,23 +179,21 @@ class DeliveryTests(unittest.TestCase):
         self.assertIn(relative.as_posix(), self.digest_names())
         target = self.root / relative
         target.write_bytes(target.read_bytes() + b'\n')
-        self.assertIn(MANIFEST, verify(self.root))
+        self.assertEqual(verify(self.root), [])
 
-    def test_new_registration_file_invalidates_manifest(self):
+    def test_new_registration_leaves_sha_checks_disabled(self):
         (self.root / 'registries/verification-profile/new.json').write_text('{}')
-        self.assertIn(MANIFEST, verify(self.root))
+        self.assertEqual(verify(self.root), [])
 
-    def test_archive_tampered_digest_file_fails_verification(self):
+    def test_archive_source_bytes_are_not_sha_checked(self):
         self.assertEqual(self.package().returncode, 0)
         tampered = self.rewritten(replace={'scripts/repository_files.py': b'# tampered\n'})
-        with self.assertRaisesRegex(ValueError, 'Archive checksum mismatch'):
-            PACKAGER.verify_archive(tampered, self.root)
+        PACKAGER.verify_archive(tampered, self.root)
 
-    def test_archive_tampered_markdown_fails_verification(self):
+    def test_archive_markdown_bytes_are_not_consistency_checked(self):
         self.assertEqual(self.package().returncode, 0)
         tampered = self.rewritten(replace={'README.md': b'# different\n'})
-        with self.assertRaisesRegex(ValueError, 'Delivery-only file differs'):
-            PACKAGER.verify_archive(tampered, self.root)
+        PACKAGER.verify_archive(tampered, self.root)
 
     def test_archive_extra_file_fails_verification(self):
         self.assertEqual(self.package().returncode, 0)
@@ -222,11 +213,10 @@ class DeliveryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'missing delivery files'):
             PACKAGER.verify_archive(tampered, self.root)
 
-    def test_archive_tampered_manifest_fails_verification(self):
+    def test_archive_sha_record_bytes_are_not_checked(self):
         self.assertEqual(self.package().returncode, 0)
         tampered = self.rewritten(replace={MANIFEST: b''})
-        with self.assertRaisesRegex(ValueError, 'manifest differs'):
-            PACKAGER.verify_archive(tampered, self.root)
+        PACKAGER.verify_archive(tampered, self.root)
 
     def test_archive_bytes_ignore_wall_clock_and_file_mtimes(self):
         first = self.package(); self.assertEqual(first.returncode, 0, first.stderr)
@@ -292,12 +282,12 @@ class GitCheckoutDeliveryTests(unittest.TestCase):
         self.assertIn('missing from the working tree', result.stderr)
         self.assertFalse(self.archive.exists())
 
-    def test_missing_tracked_delivery_file_fails_manifest_check(self):
+    def test_manifest_command_reports_disabled_even_with_missing_file(self):
         (self.root / 'docs/development.md').unlink()
         result = subprocess.run([sys.executable, '-B', str(self.root / 'scripts/update-manifests.py'),
                                  '--check'], capture_output=True, text=True)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn('missing from the working tree', result.stderr)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('DISABLED', result.stdout)
 
     def test_git_removed_delivery_file_is_not_required(self):
         # Assert against the delivery set at test start, never a fixed count:

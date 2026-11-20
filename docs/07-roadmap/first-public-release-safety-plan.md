@@ -7,7 +7,7 @@
 
 ## 1. 目的、权威边界与适用范围
 
-本文是 R4 的唯一验收依据。R4 的通过条件、故障矩阵、种子、拓扑、统计口径和证据结构以本文为准；R4a 的实现说明、运行手册或测试摘要不得替代本文的条件。与协议语义冲突时，以协议规范、ADR 和当前 SemanticStatus 为准；本文只规定该阶段实验如何被验收。
+本文记录R4阶段的实验与验收设计。当前执行按维护者授权与实际实现记录；旧SHA条款在对应位置标明停用。R4 的通过条件、故障矩阵、种子、拓扑、统计口径和证据结构以本文为准；R4a 的实现说明、运行手册或测试摘要不得替代本文的条件。与协议语义冲突时，以协议规范、ADR 和当前 SemanticStatus 为准；本文只规定该阶段实验如何被验收。
 
 R4 只验收**安全层**：在固定的可信双机 LAN、固定种子和固定故障矩阵下，检查 S1–S7 是否被证据支持。R4 不验收量化层，不估计故障率、完成率、成本或调度优劣，也不把“固定样本中违反 0 次”解释为概率、置信度、覆盖率或安全界。
 
@@ -115,7 +115,7 @@ R4 只验收**安全层**：在固定的可信双机 LAN、固定种子和固定
 - 每个 run 的 host/guest journal、checkpoint、trace、原始帧和结果；
 - S1–S6 的全部判定。
 
-检查器不得调用引擎的预算检查、接纳守卫或“已通过”状态来决定通过；它必须自己累计预算、自己数接纳和发布、自己比较参照输出。检测保证限定为：以冻结的 <code>manifest.sha256</code> 或冻结摘要为参照的清单/摘要核对，以及下列已列出的语义反例。对冻结清单或摘要的篡改，以及输出被替换、重复 <code>ACCEPT</code>、缺失 <code>PUBLISH</code>、缺失 <code>result.cbor</code>、<code>PUBLISH</code> 后再写入、预算前缀超限、补算可完成性反例、写入 epoch 缺失、提交前缺少意图、暂停后仍提交或发布，必须返回非空 violation 和非零退出码。本规格不声称对任意篡改的普适检测；未列出的篡改类型不在该保证内。若未来需要该全称主张，必须按第 8 节定义篡改者能力、验证者独立可信锚和可检测性命题。
+检查器不得调用引擎的预算检查、接纳守卫或“已通过”状态来决定通过；它必须自己累计预算、自己数接纳和发布、自己比较参照输出。当前检查覆盖下列已列出的实际语义反例；manifest和摘要相等判定本轮停用。对输出被替换、重复 <code>ACCEPT</code>、缺失 <code>PUBLISH</code>、缺失 <code>result.cbor</code>、<code>PUBLISH</code> 后再写入、预算前缀超限、补算可完成性反例、写入 epoch 缺失、提交前缺少意图、暂停后仍提交或发布，必须返回非空 violation 和非零退出码。本规格不声称对任意篡改的普适检测；未列出的篡改类型不在该保证内。若未来需要该全称主张，必须按第 8 节定义篡改者能力、验证者独立可信锚和可检测性命题。
 
 **出处：** [通用分布式作业契约](distributed-job-contract.md) §1 的冻结证据与可重放范围、§7 的实验入口；R3 <code>check_campaign</code> 的设计；[PARALLEL-1](../08-governance/parallel-workflow.md) §3 的独立审计要求。
 
@@ -253,11 +253,11 @@ R4a 可以在 R3 之上增加 profile 层、T2 job、证据写入和检查器扩
 
 证据目录分两层校验，不能把“归档完整性”和“跨 pass 可复现比较”混为同一个文件集合：
 
-1. **归档完整性。** 每个 campaign 的 <code>manifest.sha256</code> 覆盖该 campaign 根目录下除 <code>manifest.sha256</code> 自身以外的所有普通文件，包括 <code>report.json</code>、<code>metadata.json</code>、<code>trace.cbor</code>、<code>profile.cbor</code> 和 <code>frames/</code>。每个 pass 的检查器必须先验证清单中的路径存在、摘要匹配、没有未列出的普通文件，然后用该 pass 的原始字节执行 S1–S7 全量检查；<code>trace.cbor</code> 即使不参与跨 pass 字节比较，也必须在各自 pass 中通过 S6。清单或任一文件的完整性失败即 R4 失败。
+1. **归档完整性。** 每个 campaign 的 <code>manifest.sha256</code> 覆盖该 campaign 根目录下除 <code>manifest.sha256</code> 自身以外的所有普通文件，包括 <code>report.json</code>、<code>metadata.json</code>、<code>trace.cbor</code>、<code>profile.cbor</code> 和 <code>frames/</code>。每个pass使用实际存在的原始字节执行已实现的S1–S7内容检查；SHA清单、摘要匹配和清单覆盖门禁停用；<code>trace.cbor</code> 即使不参与跨 pass 字节比较，也必须在各自 pass 中通过 S6。实际内容或状态检查失败按报告记录；SHA字段差异不构成本轮失败条件。
 2. **确定性比较投影。** <code>check --compare</code> 只比较可由冻结输入重建的确定性投影，不比较实时字段：
    - 完整字节比较：<code>schedule.cbor</code>、每个 run 的 <code>profile.cbor</code>、<code>job.cbor</code>、<code>fault.cbor</code>、<code>status.cbor</code>、<code>host.cbor</code>、<code>guest.cbor</code>、可选的 <code>checkpoint.cbor</code>/<code>result.cbor</code>、<code>frames/</code> 下全部原始帧，以及 <code>environment.json</code>（其字段集合见 5.4，不得含时间或临时端点）。这些文件必须是确定性字节：不得含墙钟、临时端点、PID 或本地路径。
-   - <code>topology.json</code> 的稳定投影：拓扑 id、角色到主机的映射、来宾角色/放置、叶到角色的绑定、B 侧镜像摘要；不比较仅用于连接诊断的临时端点、端口和本地路径。
-   - <code>metadata.json</code> 的稳定投影：<code>seed</code>、<code>index</code>、<code>source_revision</code>、<code>source_manifest_sha256</code>、<code>executor_sha256</code>、<code>topology</code>、<code>job_id</code>、<code>job_sha256</code>、<code>fault</code>、实际触发事件、最终状态、失败原因、两端主机/来宾角色映射、B 侧镜像摘要、<code>locks[]</code> 的 <code>host</code>/<code>phase</code>/<code>state</code>/<code>run_index</code> 和 <code>observations[]</code> 的 <code>event</code>/<code>role</code>/<code>frame_sha256</code>；逐字段比较。
+   - <code>topology.json</code> 的稳定投影：拓扑id、角色到主机的映射、来宾角色/放置与叶到角色的绑定；B侧镜像摘要仅记录；不比较仅用于连接诊断的临时端点、端口和本地路径。
+   - <code>metadata.json</code> 的稳定投影：<code>seed</code>、<code>index</code>、<code>source_revision</code>、<code>source_manifest_sha256</code>、<code>executor_sha256</code>、<code>topology</code>、<code>job_id</code>、<code>job_sha256</code>、<code>fault</code>、实际触发事件、最终状态、失败原因、两端主机/来宾角色映射、B 侧镜像摘要、<code>locks[]</code> 的 <code>host</code>/<code>phase</code>/<code>state</code>/<code>run_index</code> 和 <code>observations[]</code> 的 <code>event</code>/<code>role</code>/<code>frame_sha256</code>；逐字段比较实际内容与状态，所有SHA/digest字段仅记录，不进行相等验收。
    - 不参与比较：<code>metadata.json</code> 的 <code>started_at</code>/<code>ended_at</code>、<code>locks[].observed_at</code>、<code>observations[].observed_at</code>、<code>report.json</code>、<code>pass-report.json</code>、<code>trace.cbor</code> 和 <code>manifest.sha256</code>。
 3. **时间字段与时钟来源。** <code>metadata.json</code> 的 <code>started_at</code> 和 <code>ended_at</code> 必须是带时区的 RFC 3339 时间，且 <code>started_at &lt;= ended_at</code>；两者必须落在该 run 的 A、B 宿主锁获取与释放记录构成的公共窗口内。锁记录、<code>started_at</code>、<code>ended_at</code> 和 <code>observations[].observed_at</code> 一律使用 A 侧编排进程的同一 UTC 时钟；A 在获取/释放 B 锁时通过 SSH 查询状态并把确认时刻写入 <code>locks[]</code>，B 的本地时钟不参与排序或窗口判定。因此本条不进行 A/B 跨时钟比较，也不需要时钟误差界。若未来改用 B 本地时钟，必须由维护者先定义共同时间基准和误差界；本轮不采用该做法。时间只用于每 pass 的有效性检查，不用于跨 pass 相等比较，也不得成为“可复现”的判据。
 
@@ -268,7 +268,7 @@ R4a 可以在 R3 之上增加 profile 层、T2 job、证据写入和检查器扩
 R4 只有在以下条件全部满足时才通过；缺一项即失败，不得把“其余都通过”写成通过。
 
 1. **授权与拓扑。** 运行处于 [#128 决定 2](https://github.com/ZeroMatrixTech/ACLt/issues/128) 的首次公开阶段授权内，并遵守 [DUALHOST-SSH-1](../08-governance/dualhost-ssh-validation.md)：A、B 是两台独立物理主机（按第 4 节，物理分离不作为故障判据）；B 通过严格主机密钥校验的 SSH 管理；实际拓扑、来宾分布、两端端点（脱敏）和镜像摘要记录在 <code>topology.json</code>。两端在 QEMU 启动、运行、退出和证据回收期间持有 [PARALLEL-1 §6.4](../08-governance/parallel-workflow.md#64-共享实验资源) 的宿主锁；锁的获取/释放记录按 5.5 写入 <code>metadata.json.locks[]</code>，由 A 侧编排进程的同一 UTC 时钟记录，B 侧锁状态由 A 在操作前后通过 SSH 确认。发现单主机、共享目录或拓扑变化时停止并失败。
-2. **实际执行与证据。** 完成 2 个种子 × 每种子 16 个 run × 2 个 pass 的实跑，拓扑映射遵守 5.2 和 5.3.1；五类故障均至少实际触发一次；在途协调器崩溃只运行 4 节的 fail-closed 探针，不混入五类计数。所有 run 都有完整证据目录（含 <code>profile.cbor</code>）；没有用本地 R3 campaign、R2 统计运行器、模拟或跳过项替代。源码 SHA、源码清单摘要、执行器摘要、两端环境和 B 侧镜像摘要均已记录且与证据一致。实际运行提交必须可从 <code>main</code> 或 <code>evidence/*</code> 标签到达；证据包有 <code>evidence/*</code> 标签和 SHA-256。
+2. **实际执行与证据。** 完成 2 个种子 × 每种子 16 个 run × 2 个 pass 的实跑，拓扑映射遵守 5.2 和 5.3.1；五类故障均至少实际触发一次；在途协调器崩溃只运行 4 节的 fail-closed 探针，不混入五类计数。所有 run 都有完整证据目录（含 <code>profile.cbor</code>）；没有用本地 R3 campaign、R2 统计运行器、模拟或跳过项替代。源码、执行器、两端环境和B侧镜像按实际运行记录；SHA字段仅记录，其相等性不作为验收。实际运行提交必须可从 <code>main</code> 或 <code>evidence/*</code> 标签到达；证据包有 <code>evidence/*</code> 标签和 SHA-256。
 3. **S1–S7 离线检查。** 使用与证据提交绑定的检查器版本重放全部 64 个 run；每个 run 的 S1–S7 均无 violation，汇总 violation 为 0。检查器自身的负例测试必须逐项覆盖下列 12 类反例，每类至少一个独立用例，并断言非空 violation 与非零退出码；缺任一类或任一负例被静默接受即失败：
    - 冻结清单或摘要被篡改；
    - 输出被替换；
@@ -283,7 +283,7 @@ R4 只有在以下条件全部满足时才通过；缺一项即失败，不得�
    - 暂停后仍提交或发布；
    - 服务方绑定失败：计划、topology 和 journal 都按 5.2 正确，但服务方证据与 5.3 不符。至少分别覆盖：服务方帧位于协调者或其他角色目录、或缺失（SOLVE 首算、SOLVE 补算、VERIFY 各一例）；<code>no_reply</code> 缺少服务方答复帧；<code>worker_exit</code> 或 <code>tcp_disconnect</code> 出现服务方答复帧；没有注入记录的 <code>NO_REPLY</code>；<code>no_reply</code> 缺少服务方“发送前抑制”注入记录，或记录的尝试、角色、答复摘要与帧不符；VERIFY 已派发但没有已提交的 <code>ACCEPT</code>；overlap 的悬挂意图不是未提交的 <code>RESERVE</code>。
    检查器不得依赖被测引擎的预算、接纳或发布守卫。
-4. **两遍可复现。** 两个独立 pass 使用相同的源码 SHA、执行器、种子、拓扑、预算和 placement 规则；每个 pass 先各自通过 5.5 的归档完整性和 S1–S7 全量检查（含 <code>trace.cbor</code>），再对每个种子运行 <code>check --compare</code> 并返回 <code>reproducible=yes</code>：<code>schedule.cbor</code> 和 5.5 的确定性比较投影逐字节或逐字段一致，pass 汇总层确认两个种子均为 yes。<code>report.json</code>、<code>pass-report.json</code>、<code>trace.cbor</code> 和 <code>metadata.json</code> 的起止时间不参与该比较，但 trace 仍须各自通过 S6。任何投影差异、环境差异或执行器差异均为失败。不得通过重跑到“看起来一致”来替代首次差异的保留和解释。
+4. **两遍可复现。** 两个pass分别记录源码与执行器，采用待比较的种子、拓扑、预算和placement规则；源码SHA相等判定停用；每个 pass 先各自通过 5.5 的归档完整性和 S1–S7 全量检查（含 <code>trace.cbor</code>），再对每个种子运行 <code>check --compare</code> 并返回 <code>reproducible=yes</code>：<code>schedule.cbor</code> 和 5.5 的确定性比较投影逐字节或逐字段一致，pass 汇总层确认两个种子均为 yes。<code>report.json</code>、<code>pass-report.json</code>、<code>trace.cbor</code> 和 <code>metadata.json</code> 的起止时间不参与该比较，但 trace 仍须各自通过 S6。任何投影差异、环境差异或执行器差异均为失败。不得通过重跑到“看起来一致”来替代首次差异的保留和解释。
 5. **终态覆盖。** 在 R4 的两个 pass 合计中，<code>BUDGET_BLOCKED</code>、<code>PAUSED</code> 和安全停止（<code>SAFE_STOP</code> 或无答复安全终态）各至少出现一次；这些 run 均无 <code>PUBLISH</code>、无 <code>result.cbor</code>、无完整输出。若固定种子没有产生某一类终态，R4 失败，不得改种子、增加 run 或降低预算来补齐。
 6. **措辞与统计口径。** 验收报告只允许报告“每个 pass 32 个带种子运行、违反 0 次、可复现”；可以报告终态计数和故障触发计数，但不得报告概率、置信度、覆盖率、故障率、上界、完成率、成本或统计独立性。不得宣称物理故障域分离、M4 恢复、自动选主、Gate 退出或生产就绪。TG-6（[#123](https://github.com/ZeroMatrixTech/ACLt/issues/123)）保持 <code>OPEN</code>，R4 不依赖故障过程模型。
 

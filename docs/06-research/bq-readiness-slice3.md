@@ -38,7 +38,7 @@
 | assurance_components_revocation | D | 官方网络/版本/窗口、组件/reducer/capability contract、风险接受与撤销渠道；MAP-1/2/3/8 | 共同部署前提缺失，audit 也不能借用失效的全局 assurance |
 | exact_dp_budget | B | 0≤B<Q≤G、Δmin、冻结 mixture、精确 DP、Nrequired≤Nmax；SV-10/11、LP-2/3 | 不形成 bounded 候选；不可事后重参数化 |
 
-研究数值检查限定 G≤12、边界分量 π(Q)=1 和显式整数预算；不是完整 P0-1B Profile parser。scope 用摘要相等作人工夹具比较，不替代正式 ScopeContains。窗口采用规范半开语义，时间是调用方提供的逻辑 tick；没有读取或认证现实时间。
+当前研究数值路径使用边界分量 π(Q)=1 和显式整数预算，placement不再写死G≤12。scope、network与edge的摘要绑定判定已按维护者决定停用，字段保留记录；授权、阶段、窗口和实际数学输入继续检查。窗口采用半开语义，逻辑tick由调用方提供，原tick 10^9和输入1MiB工程上限已移除。
 
 ### 当前项目清单的解释
 
@@ -48,7 +48,7 @@
 
 ## 3. 创建期选择：不是所有不足都能自动降级
 
-D-06 的单一选择流程在 ReceiptID 计算前执行；降级 slot 必须有来源/目标版本与 digest、注册的 AUTO_DECIDABLE WeakeningEdge、Requester 授权、目标适用性/准入，且**源 slot 全部失败原因均在 enabling_triggers 内**。本片只投影 bounded→audit 这条边的约束，不实现完整 ordered slots、注册签名、Phase I/F transcript 或生成 ReceiptID。
+D-06 的单一选择流程在 ReceiptID 计算前执行；降级 slot 必须有来源/目标版本、记录用 digest及注册的 AUTO_DECIDABLE WeakeningEdge、Requester 授权、目标适用性/准入，且**源 slot 全部失败原因均在 enabling_triggers 内**。本片只投影 bounded→audit 这条边的约束，不实现完整 ordered slots、注册签名、Phase I/F transcript 或生成 ReceiptID。
 
 §9.3 的自动触发集合仍只含：
 
@@ -60,8 +60,8 @@ D-06 的单一选择流程在 ReceiptID 计算前执行；降级 slot 必须有�
 
 | 投影场景 | 结果 |
 |---|---|
-| 创建前，授权/显式边/摘要/完整原因覆盖/目标 gate 均满足（全为假定值） | AUDIT_SLOT_REVIEW_CANDIDATE；仍不执行创建 |
-| 无授权、ATTESTED 边、摘要错、目标不适用/禁用 | NO_AUTOMATIC_FALLBACK |
+| 创建前，授权/显式边/完整原因覆盖/目标 gate 均满足（全为假定值） | AUDIT_SLOT_REVIEW_CANDIDATE；仍不执行创建 |
+| 无授权、ATTESTED 边、目标不适用/禁用 | NO_AUTOMATIC_FALLBACK |
 | 允许的 B scope/window 触发同时伴随 CONTRACT_MISMATCH | 同上，不能只保留有利原因 |
 | Receipt 已存在，即使 PRE_FREEZE、尚未首次 draw | 同上；同一 Receipt 不换 Profile |
 | 首次 draw 后出现类似原因 | 失效处理，不能切到 audit-only 或改 B/Q/总体/预算 |
@@ -107,7 +107,7 @@ D-06 的单一选择流程在 ReceiptID 计算前执行；降级 slot 必须有�
 
 - 14 项清单、12 个 inventory 情形、8 个创建前选择情形、19 个生命周期投影；人工完整正例仅是 REVIEW 候选，当前项目清单无正式准入候选。
 - 18 项新增回归覆盖共同前提/每个 bounded 缺项、合成 Q、scope/window/网络、数值/DP、多原因顺序不变、终态保留、创建期授权与运行中拒绝、LIVENESS mapping、来源 unknown 与报告保护。
-- 四个实际 CLI 负向输入：伪造项目通过状态、重复 requirement、未知 ENABLED 状态、旧证据摘要漂移；均拒绝且不产生成功报告。JSON 重复键/浮点另有回归。
+- 四个实际 CLI 负向输入：伪造项目通过状态、重复 requirement、未知 ENABLED 状态、旧证据摘要漂移；均拒绝且不产生成功报告。JSON 重复键/浮点另有回归。旧证据摘要漂移拒绝已停用，其余真实输入检查继续执行。
 - 代码、前两片及旧数学模型原字节保留；没有网络、真实来源认证或双机故障实验。主机独立假设不因此升级为统计独立。
 
 ```sh
@@ -118,7 +118,7 @@ python3 -B scripts/check-bq-readiness.py \
   --report /existing-parent/new-report.json
 ```
 
-报告必须新建，含输入、11 个源码/夹具文件和五份项目实验材料的 pin；父目录须存在。已有报告拒绝覆盖。输出 PASS 表示检查流程重现，不表示 evidence 被认证或能力启用。[机器结果](../testing/bq-readiness-slice3-20261026.json)与[运行记录](../testing/BQ-READINESS-SLICE3-20261026.md)区分人工夹具、真实存在但限域的旧工件和未建立的部署事实。
+报告记录实际输入、源码/夹具和项目材料；pin字段仅记录，SHA一致性判定停用。报告写入路径沿用实际CLI规则。已有报告拒绝覆盖。输出 PASS 表示检查流程重现，不表示 evidence 被认证或能力启用。[机器结果](../testing/bq-readiness-slice3-20261026.json)与[运行记录](../testing/BQ-READINESS-SLICE3-20261026.md)区分人工夹具、真实存在但限域的旧工件和未建立的部署事实。
 
 ## 7. 交付与后续
 

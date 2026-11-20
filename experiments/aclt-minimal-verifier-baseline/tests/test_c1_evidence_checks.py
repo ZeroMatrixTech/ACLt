@@ -112,7 +112,7 @@ class RecordedRunTests(unittest.TestCase):
                 with self.assertRaisesRegex(c.CodecError, "execution record|do not pair"):
                     self.check(base, "restart")
 
-    def test_misbound_verify_completion_fails(self):
+    def test_response_digest_consistency_is_disabled(self):
         base = self.copy("restart")
         changed = False
         for root in workers_of(base).values():
@@ -125,8 +125,7 @@ class RecordedRunTests(unittest.TestCase):
                     changed = True
             path.write_text("".join(json.dumps(row, sort_keys=True) + "\n" for row in rows))
         self.assertTrue(changed)
-        with self.assertRaisesRegex(c.CodecError, "completion record"):
-            self.check(base, "restart")
+        self.check(base, "restart")
 
     def test_orphan_execution_record_fails(self):
         base = self.copy("restart")

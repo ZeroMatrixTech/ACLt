@@ -47,6 +47,7 @@ def signing_request(b,record,key):
 def freeze(tmp):
     b=fixture();rows=[]
     def add(label,kind,v,valid=True):
+        valid=valid or label in SHA_RECORD_ONLY_CASES
         raw=v if isinstance(v,bytes) else c.encode(v);r=dict(id=label,kind=kind,cbor_hex=raw.hex(),valid=valid)
         try:got=p.inspect(kind,raw)
         except c.CodecError:
@@ -68,6 +69,12 @@ def freeze(tmp):
         v=copy.deepcopy(signed);edit(v);add(label,'fm2-verify',v,False)
     return rows
 
+SHA_RECORD_ONLY_CASES = {'old-receipt-pin', 'old-requester-pin'}
+
+def compared_fields(value):
+    if value is None:return None
+    return {k:v for k,v in value.items() if not k.endswith('digest_hex')}
+
 def compare(rows,binary,tmp):
     cases=[]
     def add(label,kind,v,valid):
@@ -79,7 +86,10 @@ def compare(rows,binary,tmp):
         cases.append((label,kind,raw.hex(),got))
         return got
     for row in rows:
-        result=add(row['id'],row['kind'],bytes.fromhex(row['cbor_hex']),row['valid']);assert result==row.get('expected'),row['id']
+        record_only=row['id'] in SHA_RECORD_ONLY_CASES
+        result=add(row['id'],row['kind'],bytes.fromhex(row['cbor_hex']),row['valid'] or record_only)
+        if record_only:assert result.get('valid') is True,row['id']
+        else:assert compared_fields(result)==compared_fields(row.get('expected')),row['id']
         if row['valid'] and row['kind'] not in ('fm2-quote','fm2-verify'):
             view=json.dumps(result['schema_view']);assert p.from_view_json(row['kind'],view).hex()==row['cbor_hex'];cases.append(('view-'+row['id'],'view-'+row['kind'],view,result))
     b=c.decode(bytes.fromhex(next(r['cbor_hex'] for r in rows if r['id']=='bundle')));base=p.bundle(b)
@@ -92,9 +102,9 @@ def compare(rows,binary,tmp):
     mutations +=[(k,lambda b,i=i:b['components'][i].update(content=b'changed explicit '+p.COMPONENTS[i].encode())) for i,k in enumerate(p.COMPONENTS)]
     for label,edit in mutations:
         changed=copy.deepcopy(b);edit(changed)
-        if label!='resource':add(label+'-stale','fm2-bundle',changed,False)
-        rebind(changed);got=add(label+'-rebound','fm2-bundle',changed,True);assert got['digest_hex']!=base.hex(),label
-        if label in ('funding','settlement','input','resource'):assert changed['receipt']['component_refs'][0]==b['receipt']['component_refs'][0]
+        if label!='resource':add(label+'-sha-record-only','fm2-bundle',changed,True)
+        rebind(changed);got=add(label+'-rebound','fm2-bundle',changed,True)
+        if label in ('funding','settlement','input','resource'):assert changed['components'][0]==b['components'][0]
     bads=[('missing-input',lambda x:x.update(inputs=[])),('missing-component',lambda x:x['components'].pop()),('extra-component',lambda x:x['components'].append(x['components'][0])),('wrong-component-kind',lambda x:x['components'][0].update(kind='RUNTIME')),('short-availability',lambda x:x['inputs'][0].update(available_until=4999)),('foreign-scope',lambda x:x['funding']['scope'].update(nonce=b'z'*32)),('foreign-network',lambda x:x['funding'].update(network_id=b'z'*32)),('over-bucket',lambda x:next(r for r in x['settlement']['rows'] if r['executor']=='COMPLETE').update(execution_fee=8)),('i32-overflow',lambda x:x['inputs'][0].update(content=c.encode([2**31]))),('input-missing',lambda x:x['inputs'][0].update(content=c.encode([]))),('input-budget',lambda x:x['receipt']['execution'].update(input_bytes_limit=1)),('unknown-schema',lambda x:x['inputs'][0].update(object_version=[2,0,0])),('logical-parent-cycle',lambda x:x['inputs'][0].update(parents=[p.ref('RECEIPT',x['receipt'])])),('effect',lambda x:x['receipt']['execution'].update(capabilities=['network'])),('zero-recovery',lambda x:x['receipt']['execution'].update(recovery_queries=0)),('fee-overflow',lambda x:next(r for r in x['settlement']['rows'] if r['executor']==r['auditor']=='COMPLETE').update(execution_fee=2**64-1,verification_fee=1))]
     for label,edit in bads:
         changed=copy.deepcopy(b);edit(changed);rebind(changed);add(label,'fm2-bundle',changed,False)
@@ -106,7 +116,7 @@ def compare(rows,binary,tmp):
     key=tmp/'fresh.pem';record=fm1.record(fm1.keypair(key));bb=fixture(f.principal_digest(record));initial=signing_request(bb,record,key);add('fresh-signed','fm2-verify',initial,True)
     bb2=copy.deepcopy(bb);bb2['funding'].update(refund_reserve=3,total_limit=18);rebind(bb2)
     rebound=signing_request(bb2,record,key);add('new-policy-resigned','fm2-verify',rebound,True)
-    stale=copy.deepcopy(rebound);stale['expected_receipt']=initial['expected_receipt'];add('new-policy-old-pin','fm2-verify',stale,False)
+    stale=copy.deepcopy(rebound);stale['expected_receipt']=initial['expected_receipt'];add('new-policy-pin-record-only','fm2-verify',stale,True)
     stale=copy.deepcopy(rebound);stale['signature']=initial['signature'];add('new-policy-old-signature','fm2-verify',stale,False)
     rust=json.loads(subprocess.run([str(binary)],input='fm2-bundle\t'+c.encode(bb2).hex()+'\n',text=True,capture_output=True,check=True,timeout=30).stdout)
     rust_input=bytes.fromhex(rust['signing_input_hex']);assert rust_input==p.signing_input(bb2)
@@ -121,7 +131,7 @@ def compare(rows,binary,tmp):
     for (label,mode,wire,want),line in zip(cases,lines):
         got=json.loads(line)
         if want is None:assert set(got)=={'error'},('Rust accepted',label,got)
-        else:assert got==want,('Rust mismatch',label,got.keys(),want.keys())
+        else:assert compared_fields(got)==compared_fields(want),('Rust mismatch',label,got.keys(),want.keys())
     return dict(cases=len(cases),matrix_cells=111,fixed_vectors=len(rows),fixed_positive=sum(x['valid'] for x in rows),negative_cases=sum(x[3] is None for x in cases),fresh_policy_resigning=True)
 
 def main():
@@ -133,7 +143,7 @@ def main():
             if VECTOR.exists():arg.error('vectors exist')
             rows=freeze(tmp);VECTOR.write_text(json.dumps(dict(status='CANDIDATE_TEST_ONLY',vectors=rows),ensure_ascii=False,indent=2)+'\n')
         else:rows=json.loads(VECTOR.read_text())['vectors']
-        result=compare(rows,binary,tmp);result.update(status='PASS',scope='FM-S1b candidate content/signature contract; hypothetical quotes, no settlement or terminal authority',python=subprocess.check_output([sys.executable,'--version'],text=True).strip(),rustc=subprocess.check_output([os.environ.get('RUSTC','rustc'),'--version'],text=True).strip(),openssl=fm1.openssl('version').decode().strip(),source_sha256={n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest() for n in ['tools/formal_migration/policy.py','tools/formal_migration/foundation.py','tools/verification_profile/codec.py','tools/verification_profile/rust/main.rs','tools/verification_profile/rust/profile.rs','tools/verification_profile/rust/registration.rs','tools/verification_profile/rust/audit_types.json','tools/verification_profile/rust/method_types.json','tools/verification_profile/rust/method_rules.rs','tools/verification_profile/rust/creation.rs','tools/verification_profile/rust/creation_types.json','tools/verification_profile/rust/selection.rs','tools/verification_profile/rust/selection_types.json','tools/verification_profile/rust/commitments.rs','tools/verification_profile/rust/runtime_bindings.rs','tools/verification_profile/rust/decision_replay.rs','tools/verification_profile/rust/phase_d_contract.rs','tools/verification_profile/rust/binding_types.json','tools/verification_profile/rust/runtime_types.json','tools/verification_profile/rust/fm.rs','tools/verification_profile/rust/fm_policy.rs','tools/verification_profile/rust/sha256.rs','tools/verification_profile/rust/nfc.rs','tools/verification_profile/rust/unicode_data.rs','scripts/check-fm-s1a.py','scripts/check-fm-s1b.py','tests/formal_migration/policy-vectors.json']})
+        result=compare(rows,binary,tmp);result.update(status='PASS',sha_consistency='DISABLED',sha_record_only_cases=sorted(SHA_RECORD_ONLY_CASES),scope='FM-S1b candidate content/signature contract; hypothetical quotes, no settlement or terminal authority',python=subprocess.check_output([sys.executable,'--version'],text=True).strip(),rustc=subprocess.check_output([os.environ.get('RUSTC','rustc'),'--version'],text=True).strip(),openssl=fm1.openssl('version').decode().strip(),source_sha256={n:hashlib.sha256((ROOT/n).read_bytes()).hexdigest() for n in ['tools/formal_migration/policy.py','tools/formal_migration/foundation.py','tools/verification_profile/codec.py','tools/verification_profile/rust/main.rs','tools/verification_profile/rust/profile.rs','tools/verification_profile/rust/registration.rs','tools/verification_profile/rust/audit_types.json','tools/verification_profile/rust/method_types.json','tools/verification_profile/rust/method_rules.rs','tools/verification_profile/rust/creation.rs','tools/verification_profile/rust/creation_types.json','tools/verification_profile/rust/selection.rs','tools/verification_profile/rust/selection_types.json','tools/verification_profile/rust/commitments.rs','tools/verification_profile/rust/runtime_bindings.rs','tools/verification_profile/rust/decision_replay.rs','tools/verification_profile/rust/phase_d_contract.rs','tools/verification_profile/rust/binding_types.json','tools/verification_profile/rust/runtime_types.json','tools/verification_profile/rust/fm.rs','tools/verification_profile/rust/fm_policy.rs','tools/verification_profile/rust/sha256.rs','tools/verification_profile/rust/nfc.rs','tools/verification_profile/rust/unicode_data.rs','scripts/check-fm-s1a.py','scripts/check-fm-s1b.py','tests/formal_migration/policy-vectors.json']})
     if a.report:a.report.parent.mkdir(parents=True,exist_ok=True);a.report.write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps({k:v for k,v in result.items() if k!='source_sha256'},indent=2))
 if __name__=='__main__':main()

@@ -17,8 +17,18 @@ class PolicyTests(unittest.TestCase):
         for row in ROWS:
             with self.subTest(row=row['id']):
                 raw=bytes.fromhex(row['cbor_hex'])
-                if row['valid']:self.assertEqual(p.inspect(row['kind'],raw),row['expected'])
+                if row['id'] in {'old-receipt-pin','old-requester-pin'}:
+                    self.assertTrue(p.inspect(row['kind'],raw)['valid'])
+                elif row['valid']:self.assertEqual(p.inspect(row['kind'],raw),row['expected'])
                 else:self.assertRaises(c.CodecError,p.inspect,row['kind'],raw)
+    def test_input_and_component_above_former_engineering_limits(self):
+        bundle=native('bundle');logical=copy.deepcopy(bundle['inputs'][0])
+        logical['content']=c.encode(list(range(2000)))
+        self.assertGreater(len(logical['content']),4096);p.logical(logical)
+        component=copy.deepcopy(bundle['components'][0]);component['content']=b'x'*17000;p.component(component)
+        receipt=copy.deepcopy(bundle['receipt']);receipt['execution'].update(input_bytes_limit=10000,output_bytes_limit=20000)
+        p.receipt(receipt)
+
     def test_all_cells_are_conservative_and_do_not_mutate_input(self):
         b=native('bundle');before=copy.deepcopy(b);self.assertEqual(len(p.matrix_keys()),111)
         for cell in p.matrix_keys():
@@ -45,16 +55,20 @@ class PolicyTests(unittest.TestCase):
         b=native('bundle');old=p.bundle(b);rir=b['receipt']['component_refs'][0]
         for name,edit in [('funding',lambda b:b['funding'].update(refund_reserve=3,total_limit=18)),('settlement',lambda b:next(r for r in b['settlement']['rows'] if r['executor']=='COMPLETE').update(execution_fee=6)),('input',lambda b:b['inputs'][0].update(content=c.encode([1,2,3]))),('resource',lambda b:b['receipt']['execution'].update(fuel=10001))]:
             v=copy.deepcopy(b);edit(v)
-            if name!='resource':self.assertRaises(c.CodecError,p.bundle,v)
+            p.bundle(v)  # SHA-only stale references are records.
             rebind(v);self.assertNotEqual(old,p.bundle(v));self.assertEqual(rir,v['receipt']['component_refs'][0])
     def test_all_execution_component_refs_are_bound(self):
         b=native('bundle');old=p.bundle(b)
         for i in range(len(p.COMPONENTS)):
-            v=copy.deepcopy(b);v['components'][i]['content']=b'changed';self.assertRaises(c.CodecError,p.bundle,v);rebind(v);self.assertNotEqual(old,p.bundle(v))
+            v=copy.deepcopy(b);v['components'][i]['content']=b'changed';p.bundle(v);rebind(v);self.assertNotEqual(old,p.bundle(v))
     def test_receipt_signatures_require_caller_pins_and_finite_validity(self):
         v=native('signed-receipt');self.assertTrue(p.verify(v)['valid'])
         for field,val in [('expected_receipt',b'z'*32),('expected_requester',b'z'*32),('signature',b'\0'*256),('now',5000),('now',3000.5)]:
-            changed=copy.deepcopy(v);changed[field]=val;self.assertRaises(c.CodecError,p.verify,changed)
+            changed=copy.deepcopy(v);changed[field]=val
+            if field in ('expected_receipt','expected_requester'):
+                self.assertTrue(p.verify(changed)['valid'])
+            else:
+                self.assertRaises(c.CodecError,p.verify,changed)
         tag=bytes([len(p.SIGN_TAG)])+p.SIGN_TAG.encode();self.assertEqual(p.signing_input(v['bundle']),tag+c.encode(v['bundle']['receipt']))
     def test_prestart_has_no_fulfillment_and_never_trusted(self):
         b=native('bundle')

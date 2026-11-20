@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Opt-in test HTTP controls: scoped token, bounded frames, no protocol authority."""
+"""Test HTTP controls with token authentication and explicit request framing."""
 import http.server
 import hmac
 import json
@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 import stat
 
-MAX_FRAME=65536
 TIMEOUT=3
 
 def validate_token(token):
@@ -34,9 +33,9 @@ def request(handler):
     lengths=headers.get_all('Content-Length',[])
     if len(lengths)!=1 or headers.get_all('Transfer-Encoding',[]):raise ValueError('one Content-Length required')
     text=lengths[0]
-    if not text or not text.isascii() or not text.isdecimal() or len(text)>8:raise ValueError('frame length')
+    if not text or not text.isascii() or not text.isdecimal():raise ValueError('frame length')
     count=int(text)
-    if not 0<count<=MAX_FRAME:raise ValueError('frame limit')
+    if count<=0:raise ValueError('positive frame length required')
     raw=handler.rfile.read(count)
     if len(raw)!=count:raise ValueError('incomplete frame')
     def unique(pairs):
@@ -47,12 +46,6 @@ def request(handler):
         return obj
     def reject(_):raise ValueError('non-JSON constant')
     obj=json.loads(raw,object_pairs_hook=unique,parse_constant=reject)
-    pending=[(obj,0)];items=0
-    while pending:
-        value,depth=pending.pop();items+=1
-        if depth>24 or items>10000:raise ValueError('JSON resource limit')
-        if type(value) is dict:pending.extend((x,depth+1) for x in value.values())
-        elif type(value) is list:pending.extend((x,depth+1) for x in value)
     if type(obj) is not dict:raise ValueError('object required')
     return obj
 

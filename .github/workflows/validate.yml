@@ -115,11 +115,10 @@ jobs:
           echo "base=$base" >> "$GITHUB_OUTPUT"
           echo "channel=$channel; reason=$reason" >&2
           echo "::notice title=Validation channel::${channel} (${reason})"
-      # Keep this gate before evidence checks and tests.
-      - name: Check tested environment scope
+      - name: Record execution environment
         run: python3 -B scripts/check-environment.py --full
-      - name: Verify retained source pins against Git
-        run: python3 -B scripts/check-repository-evidence.py --repository .
+      - name: Check documents and retained metadata
+        run: python3 -B scripts/check-repository-evidence.py
       - name: Run documentation-only validation
         if: steps.classify.outputs.channel == 'fast'
         env:

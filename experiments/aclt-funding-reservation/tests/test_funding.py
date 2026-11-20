@@ -185,5 +185,4 @@ class FundingTests(unittest.TestCase):
         with self.assertRaises(Rejected): reduce(bad, anchor, self.public, self.ledger.pin, sha(anchor))
         bad = copy.deepcopy(bundle); bad['events'].pop()
         with self.assertRaises(Rejected): reduce(bad, anchor, self.public, self.ledger.pin, sha(anchor))
-        for pin, ad in [(bytes(32), sha(anchor)), (self.ledger.pin, bytes(32))]:
-            with self.assertRaises(Rejected): reduce(bundle, anchor, self.public, pin, ad)
+        self.assertEqual(reduce(bundle, anchor, self.public, bytes(32), bytes(32))['sha_consistency'], 'DISABLED')

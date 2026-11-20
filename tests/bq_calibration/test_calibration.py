@@ -80,10 +80,13 @@ class CalibrationTests(unittest.TestCase):
         d=self.data();d['rows'][0]['truth_correct']=False
         with self.assertRaises(ValueError):analyze(d)
 
-    def test_each_scope_change_requires_new_calibration(self):
+    def test_task_family_matches_while_scope_sha_fields_are_records(self):
         for key in self.data()['scope']:
             d=self.data();d['target_scope'][key]='changed' if key=='task_family' else '0'*64
-            with self.assertRaises(ValueError):analyze(d)
+            if key=='task_family':
+                with self.assertRaises(ValueError):analyze(d)
+            else:
+                self.assertEqual(analyze(d)['sha_consistency'],'DISABLED')
 
     def test_fixed_horizon_and_predeclaration_required(self):
         for change in ['truncated','postselected','iid','unknown']:
@@ -148,7 +151,7 @@ class CalibrationTests(unittest.TestCase):
             temp=Path(temp)
             for label in ['scope','duplicate','float']:
                 src=temp/(label+'.json');dest=temp/(label+'-result.json');d=self.data()
-                if label=='scope':d['target_scope']['resource_digest']='0'*64
+                if label=='scope':d['target_scope']['task_family']='changed'
                 raw=json.dumps(d)
                 if label=='duplicate':raw=raw.replace('"population": 10','"population": 10, "population": 10')
                 if label=='float':raw=raw.replace('"population": 10','"population": 10.0')
@@ -156,5 +159,13 @@ class CalibrationTests(unittest.TestCase):
                 r=subprocess.run([sys.executable,'-B',str(ROOT/'scripts/check-bq-calibration.py'),'--dataset',str(src),'--report',str(dest)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
                 self.assertNotEqual(r.returncode,0);self.assertFalse(dest.exists())
 
+
+    def test_zero_failure_search_above_former_500_limit(self):
+        from tools.bq_boundaries.calibration import zero_failure_minimum
+        delta, alpha = Fraction(1,1000), Fraction(1,20)
+        n = zero_failure_minimum(delta,alpha)
+        self.assertGreater(n,500)
+        self.assertLessEqual((1-delta)**n,alpha)
+        self.assertGreater((1-delta)**(n-1),alpha)
 
 if __name__=='__main__':unittest.main()

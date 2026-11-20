@@ -47,7 +47,7 @@ def exhaustion_event(events, record):
         event = c.decode(raw)
         req = event['request']
         if req['op'] == 'S3_CLOSE_EXECUTION' and req['body']['receipt'] == record['receipt_id']:
-            c.need(event['result_digest'] == s2.h(record), 'closure result digest')
+            c.need(c.digest_consistency(event['result_digest']==s2.h(record)), 'closure result digest')
             matches.append(s2.h(event))
     c.need(len(matches) == 1, 'closure requires one exhaustion event')
     return matches[0]

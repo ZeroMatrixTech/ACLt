@@ -1,5 +1,5 @@
 {
-  "review_date": "2026-11-17",
+  "review_date": "2026-11-20",
   "baseline_commit": "1533290ed82347a5a5006e4d35a5092d02362780",
   "normative_source": "docs/03-protocol/verification-profile-schema.md",
   "scope": "2026-11-17 以最新 main 的实施代码与测试复核 R1–R16 后的覆盖盘点，不是独立 conformance 认证；状态以 coverage.json 为唯一登记。",
@@ -24,15 +24,16 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`profile_digest` 按 §17.4 与 UVP-1V 重算一致",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/profile.py#verify_digest"
       ],
       "tests": [
         "tests/verification_profile/test_profile_digest.py#test_formal_tag_and_content_input_with_independent_hash"
       ],
-      "gap": "该条规则已在原始 CBOR Phase R 入口实现。完整 SchemaValid、registry/source 与其他 SV 独立验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-03",
@@ -727,30 +728,32 @@
       "phase": "F",
       "layer": "L1b",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "选中 slot 的 `profile_digest` 与注册表中该 Profile 的实际 digest 一致",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮停用**：slot/profile 摘要相等判定退出验收；摘要字段保留记录。",
       "implementation": [
         "tools/verification_profile/selection.py#check_selected"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_selected_slot_binds_full_identity_and_actual_digest"
+        "tests/verification_profile/test_selection.py#test_selected_slot_matches_id_version_with_digest_record"
       ],
-      "gap": "slot、实际 Profile 重算摘要和显式快照中的完整三元引用逐位一致，拒绝摘要单值或跨版本替换。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-46",
       "phase": "D",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`rendered_claim_digest` 按 §5.1.1 与 §17.4 正确（CB-2）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/commitments.py#rendered_digest"
       ],
       "tests": [
         "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection"
       ],
-      "gap": "正式 RenderedClaim/1 对完整 [template_ref, concrete_bindings] 重算；支持已锁定的通用原生载荷与外部版本引用，不再限定 claim-test-bytes；不验证任务性质。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-47",
@@ -773,14 +776,14 @@
       "layer": "L1b",
       "kind": "A",
       "status": "IMPLEMENTED",
-      "requirement": "`claim_template_ref` 的 `template_digest` 与注册表中模板实际 digest 一致；模板状态 ∈ {`REGISTERED`, `ACTIVE`}",
+      "requirement": "模板状态 ∈ {`REGISTERED`, `ACTIVE`}；`template_digest` 仅记录，摘要比较停用。",
       "implementation": [
         "tools/verification_profile/commitments.py#check_spec"
       ],
       "tests": [
         "tests/verification_profile/test_commitments.py#test_deprecated_or_revoked_template_cannot_register_spec"
       ],
-      "gap": "模板实际对象、三元引用和显式快照一致；只允许 REGISTERED/ACTIVE。未证明快照/注册来源真实。"
+      "gap": "检查模板ID、版本与REGISTERED/ACTIVE状态；摘要字段仅记录。"
     },
     {
       "id": "SV-49",
@@ -860,15 +863,16 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`policy_digest` 按 §17.4 同时绑定 `ordered_candidates` 与 `expanded_slots`",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/selection.py#check_asset"
       ],
       "tests": [
         "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection"
       ],
-      "gap": "SelectionPolicy 的正式 tag/ContentMap 同时覆盖 ordered_candidates、expanded_slots 与 on_none_applicable；身份/版本不入摘要。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-54a",
@@ -890,15 +894,16 @@
       "phase": "D",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`assumption_state_digest` 按 §17.4 重算一致（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/commitments.py#state_digest"
       ],
       "tests": [
         "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection"
       ],
-      "gap": "AssumptionState/1 精确覆盖 [reducer_ref, sorted(rows)]；不把 Receipt/id 混入该派生摘要。源码与字节向量独立对拍。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-55",
@@ -1001,11 +1006,12 @@
       "phase": "R",
       "layer": "L1b",
       "kind": "A",
-      "status": "NOT_IMPLEMENTED",
-      "requirement": "相对前一版本：改内容字段 ⇒ `MAJOR` +1 且 digest 改变；仅改 `[ADVISORY]` ⇒ `MINOR` +1 且 digest 不变；仅改排版 ⇒ `PATCH` +1 且 digest 不变（§3.3、§3.5）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "记录对象与内容变化；版本调整由维护者按兼容影响决定，摘要值不作为接受条件。",
       "implementation": [],
       "tests": [],
-      "gap": "缺少该规则的语义/绑定判定及专用正负向量。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-62",
@@ -1083,7 +1089,7 @@
         "tools/verification_profile/runtime_bindings.py#inspect"
       ],
       "tests": [
-        "tests/verification_profile/test_registration.py#test_validator_cli_and_fail_closed_production",
+        "tests/verification_profile/test_registration.py#test_validator_cli_with_compatibility_flag",
         "tests/verification_profile/test_registration.py#test_frozen_vectors",
         "tests/verification_profile/test_runtime_bindings.py#test_frozen_vectors"
       ],
@@ -1135,38 +1141,40 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`template_digest` 按 §17.4 与 UVP-1V 重算一致（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/commitments.py#check_digest"
       ],
       "tests": [
         "tests/verification_profile/test_commitments.py#test_template_enum_contents_are_hashed_without_inventing_semantics"
       ],
-      "gap": "完整 ContentMap_Template 与正式 tag 已重算；原生 value_type/ENUM 内容按原始 CBOR 保留，不猜 ENUM wire。L1a 类型语义和完整注册另验收，摘要 owner 不承担该职责。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-71",
       "phase": "D",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`AssumptionStateSnapshot.snapshot_digest` 按 §17.4 重算一致（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/commitments.py#check_digest"
       ],
       "tests": [
         "tests/verification_profile/test_commitments.py#test_snapshot_identity_and_state_digest_are_different_commitments"
       ],
-      "gap": "AssumptionStateSnapshot/1 覆盖 runtime id、Receipt、instant、reducer 和全部行；不同于仅 reducer/rows 的派生状态摘要。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-72",
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`excluded_claims.digest` 按 §17.4 重算一致（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/references.py#excluded_digest"
       ],
@@ -1175,15 +1183,16 @@
         "tests/verification_profile/test_references.py#test_frozen_vectors",
         "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl"
       ],
-      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-73",
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`assumption_set_digest` 按 §17.4 重算一致（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/registration_rules.py#assumption_set_digest"
       ],
@@ -1191,22 +1200,24 @@
         "tests/verification_profile/test_registration_rules.py#test_static_assumption_digest_matches_independent_preimage",
         "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
       ],
-      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-74",
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`manifest_digest` 按 §17.4 重算 `ContentMap_Manifest` 并逐位比较（owner；CM-2）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/selection.py#check_asset"
       ],
       "tests": [
         "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection"
       ],
-      "gap": "Manifest 正式 tag/完整 ContentMap 与摘要比较；仅检查已声明清单，不读取文件或给测试资产授予语义注册权。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-75a",
@@ -1232,8 +1243,8 @@
       "phase": "R/I/F/B/D",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "对**显式提供的** `RegistrySnapshot` 原始字节重算 `registry_snapshot_digest`（owner；CTX-10：L2 不得取远程对象）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/registration.py#check_registry"
       ],
@@ -1241,7 +1252,8 @@
         "tests/verification_profile/test_registration.py#test_registry_content_hash_and_context_identity_are_separate",
         "tests/verification_profile/test_registration.py#test_frozen_vectors"
       ],
-      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-76",
@@ -1331,10 +1343,10 @@
         "tools/verification_profile/runtime_bindings.py#guard"
       ],
       "tests": [
-        "tests/verification_profile/test_runtime_bindings.py#test_randomness_contract_and_parameters_require_external_pin",
+        "tests/verification_profile/test_runtime_bindings.py#test_randomness_actual_scheme_and_parameters_are_checked",
         "tests/verification_profile/test_runtime_bindings.py#test_population_count_matches_frozen_G",
         "tests/verification_profile/test_runtime_bindings.py#test_population_definition_and_schema_bind_to_profile",
-        "tests/verification_profile/test_runtime_bindings.py#test_receipt_and_all_four_profile_links_are_exact"
+        "tests/verification_profile/test_runtime_bindings.py#test_snapshot_receipt_and_profile_digests_are_records"
       ],
       "gap": "R9 已实现 PB-1—PB-4 的显式引用、总体基数以及 pinned TEST commitment 方案/参数集合检查；当前参数引用及方案为 opaque TEST imports，正式版本化 population/schema/randomness 合约、来源认证与具体 verifier 尚未冻结，保留 partial。"
     },
@@ -1456,23 +1468,24 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`edge_digest` 按 §17.4 重算 `ContentMap_WeakeningEdge`（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/selection.py#check_asset"
       ],
       "tests": [
         "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection"
       ],
-      "gap": "WeakeningEdge 正式 tag/ContentMap 重算；source/target/class/可选 evidence_ref 均被摘要绑定。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-89",
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`ExcludedClaimsRegistry.registry_digest` 按 §17.4 重算（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/references.py#exclusion_registry_digest",
         "tools/verification_profile/references.py#check_excluded"
@@ -1482,7 +1495,8 @@
         "tests/verification_profile/test_references.py#test_frozen_vectors",
         "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl"
       ],
-      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-90",
@@ -1529,7 +1543,7 @@
         "tools/verification_profile/runtime_bindings.py#guard"
       ],
       "tests": [
-        "tests/verification_profile/test_runtime_bindings.py#test_receipt_and_all_four_profile_links_are_exact"
+        "tests/verification_profile/test_runtime_bindings.py#test_snapshot_receipt_and_profile_digests_are_records"
       ],
       "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
@@ -1607,15 +1621,16 @@
       "phase": "I/F",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`context_digest` 按 §17.4 重算 `ContentMap_CreationValidationContext`（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/creation.py#check_object"
       ],
       "tests": [
         "tests/verification_profile/test_creation.py#test_three_domain_hashes_against_independent_projection"
       ],
-      "gap": "CreationContext 全部冻结字段按正式 tag 重算；运行期 ID 入摘要。正式导入/来源认证与其他相位规则独立验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-98",
@@ -1643,7 +1658,7 @@
         "tools/verification_profile/runtime_bindings.py#guard"
       ],
       "tests": [
-        "tests/verification_profile/test_runtime_bindings.py#test_snapshot_mapping_equals_both_states_and_freeze_record"
+        "tests/verification_profile/test_runtime_bindings.py#test_snapshot_mapping_digest_is_recorded"
       ],
       "gap": "R9 已实现该 Type A 显式输入结构/绑定/状态守卫，并有独立 Python/Rust 正负向量；使用带外 pin 的 TEST snapshot imports。不代表完整正式 Phase B conformance、实际事件/Lease/总体来源忠实性、状态原子写入或生产准入。"
     },
@@ -1695,30 +1710,32 @@
       "phase": "I/F",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`phase_i_record_digest` 按 §17.4 重算（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/creation.py#check_object"
       ],
       "tests": [
         "tests/verification_profile/test_creation.py#test_all_frozen_context_and_record_fields_are_hashed"
       ],
-      "gap": "PhaseIValidationRecord 的完整冻结 ContentMap、正式 tag 与摘要比较；记录是否对应有效选择仍由 102/110 分别验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-104",
       "phase": "I/F",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`intent_digest` 按 §17.4 对 `ContentMap_ReceiptIntent` 重算（owner；CTX-13）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/creation.py#check_record"
       ],
       "tests": [
         "tests/verification_profile/test_creation.py#test_intent_order_and_duplicates_are_semantic"
       ],
-      "gap": "ReceiptIntent 封闭 ContentMap 与正式 tag，输入数组保序保重复，RI-1 恰一选择引用；record 的 intent_digest 重算比较。导入对象的内部语义不属于此摘要 owner。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-105",
@@ -1774,8 +1791,8 @@
       "phase": "R/I/F/B/D",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`event_frontier_digest` 按 §17.4 重算 `ContentMap_EventFrontierSnapshot`（owner）",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/registration.py#check_frontier"
       ],
@@ -1783,7 +1800,8 @@
         "tests/verification_profile/test_registration.py#test_runtime_id_is_content_bound_and_version_is_forbidden",
         "tests/verification_profile/test_registration.py#test_frozen_vectors"
       ],
-      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-109",
@@ -1855,30 +1873,32 @@
       "phase": "R",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`MainnetAssuranceProfile.assurance_digest` 按 §17.4 重算；`human_summary` 不入摘要",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/commitments.py#check_digest"
       ],
       "tests": [
         "tests/verification_profile/test_commitments.py#test_versioned_identity_and_advisory_do_not_change_digest"
       ],
-      "gap": "完整 MAP ContentMap 使用 MainnetAssuranceProfile/1，排除 human_summary 与 ID/Version；只关闭摘要 owner，不接受主网发布、签名或能力启用。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-114",
       "phase": "D",
       "layer": "L2",
       "kind": "A",
-      "status": "IMPLEMENTED",
-      "requirement": "`DecisionEvaluationRecord.input_digest` 对完整 `DecisionEvaluationInput` 按 §17.4 重算一致",
+      "status": "DISABLED_BY_MAINTAINER",
+      "requirement": "**本轮政策停用**：保留相关摘要字段作记录；原 SHA 复算与一致性判定退出当前验收。历史规则说明见 Git 记录。",
       "implementation": [
         "tools/verification_profile/commitments.py#decision_input_digest"
       ],
       "tests": [
         "tests/verification_profile/test_commitments.py#test_reference_only_method_input_is_rejected_even_if_rehashed"
       ],
-      "gap": "DecisionEvaluationInput/1 覆盖完整七字段显式输入和内联 canonical_input 包装；不是 evaluator 重放或 SV-115/完整 Phase D 验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "id": "SV-115",
@@ -2023,7 +2043,7 @@
       "input": "`cbor(ContentMap_Profile)`（§3.3.3）",
       "owner": "SV-02",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/profile.py#content_map",
         "tools/verification_profile/profile.py#profile_digest",
@@ -2034,7 +2054,8 @@
         "tests/verification_profile/test_profile_digest.py#test_all_frozen_fields_are_projected_and_digest_bound",
         "tests/verification_profile/test_profile_digest.py#test_legacy_digest_is_read_only_and_not_rewritten"
       ],
-      "gap": "该条规则已在原始 CBOR Phase R 入口实现。完整 SchemaValid、registry/source 与其他 SV 独立验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`policy_digest`",
@@ -2042,7 +2063,7 @@
       "input": "`cbor(ContentMap_Policy)`（§3.3.3；**含 `on_none_applicable`**）",
       "owner": "SV-53b",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/selection.py#content_map",
         "tools/verification_profile/selection.py#asset_digest",
@@ -2052,7 +2073,8 @@
         "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection",
         "tests/verification_profile/test_selection.py#test_policy_digest_includes_candidates_slots_and_exhaustion"
       ],
-      "gap": "SelectionPolicy 的正式 tag/ContentMap 同时覆盖 ordered_candidates、expanded_slots 与 on_none_applicable；身份/版本不入摘要。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`template_digest`",
@@ -2060,7 +2082,7 @@
       "input": "`cbor(ContentMap_Template)`（§3.3.3）",
       "owner": "SV-70",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/codec.py#template_digest",
         "tools/verification_profile/commitments.py#object_digest",
@@ -2071,7 +2093,8 @@
         "tests/verification_profile/test_commitments.py#test_template_enum_contents_are_hashed_without_inventing_semantics",
         "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection"
       ],
-      "gap": "完整 ContentMap_Template 与正式 tag 已重算；原生 value_type/ENUM 内容按原始 CBOR 保留，不猜 ENUM wire。L1a 类型语义和完整注册另验收，摘要 owner 不承担该职责。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`rendered_claim_digest`",
@@ -2079,7 +2102,7 @@
       "input": "`cbor([claim_template_ref, concrete_bindings])`",
       "owner": "SV-46",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/codec.py#claim_digest",
         "tools/verification_profile/commitments.py#rendered_digest"
@@ -2088,7 +2111,8 @@
         "tests/verification_profile/test_codec.py#test_claim_transitive_binding",
         "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection"
       ],
-      "gap": "正式 RenderedClaim/1 对完整 [template_ref, concrete_bindings] 重算；支持已锁定的通用原生载荷与外部版本引用，不再限定 claim-test-bytes；不验证任务性质。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`assumption_state_digest`",
@@ -2096,7 +2120,7 @@
       "input": "`cbor([reducer_ref, AssumptionStateRows])`（§5.2.2）",
       "owner": "SV-54b",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/commitments.py#state_digest"
       ],
@@ -2104,7 +2128,8 @@
         "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection",
         "tests/verification_profile/test_commitments.py#test_snapshot_identity_and_state_digest_are_different_commitments"
       ],
-      "gap": "AssumptionState/1 精确覆盖 [reducer_ref, sorted(rows)]；不把 Receipt/id 混入该派生摘要。源码与字节向量独立对拍。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`snapshot_digest`（`AssumptionStateSnapshot`）",
@@ -2112,7 +2137,7 @@
       "input": "`cbor(ContentMap_AssumptionStateSnapshot)`（§3.3.3）",
       "owner": "SV-71",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/commitments.py#projection",
         "tools/verification_profile/commitments.py#object_digest",
@@ -2122,7 +2147,8 @@
         "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection",
         "tests/verification_profile/test_commitments.py#test_snapshot_identity_and_state_digest_are_different_commitments"
       ],
-      "gap": "AssumptionStateSnapshot/1 覆盖 runtime id、Receipt、instant、reducer 和全部行；不同于仅 reducer/rows 的派生状态摘要。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`excluded_claims.digest`",
@@ -2130,7 +2156,7 @@
       "input": "`cbor([registry_ref, sorted(exclusion_ids)])`（派生摘要值）",
       "owner": "SV-72",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/references.py#excluded_digest",
         "tools/verification_profile/references.py#check_excluded"
@@ -2139,7 +2165,8 @@
         "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl",
         "tests/verification_profile/test_references.py#test_selection_digest_owner_after_other_bindings_are_valid"
       ],
-      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`assumption_set_digest`",
@@ -2147,7 +2174,7 @@
       "input": "`cbor(sorted([[assumption_id, statement_digest], ...]))`",
       "owner": "SV-73",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/registration_rules.py#assumption_set_digest",
         "tools/verification_profile/registration_rules.py#check_rules"
@@ -2156,7 +2183,8 @@
         "tests/verification_profile/test_registration_rules.py#test_static_assumption_digest_matches_independent_preimage",
         "tests/verification_profile/test_registration_rules.py#test_fixed_vectors"
       ],
-      "gap": "方法无关注册规则 helper 已在四种方法下独立 Python/Rust 对拍；非 audit 参数/claim 块在规则专用向量中为未检验占位，完整方法、注册授权和 Phase R 其余规则不由本项通过授予。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`manifest_digest`",
@@ -2164,7 +2192,7 @@
       "input": "`cbor(ContentMap_Manifest)`（§3.3.3、§3.4）",
       "owner": "SV-74",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/selection.py#content_map",
         "tools/verification_profile/selection.py#asset_digest",
@@ -2175,7 +2203,8 @@
         "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection",
         "tests/verification_profile/test_selection.py#test_manifest_paths_and_cover_sets_are_unique"
       ],
-      "gap": "Manifest 正式 tag/完整 ContentMap 与摘要比较；仅检查已声明清单，不读取文件或给测试资产授予语义注册权。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`edge_digest`",
@@ -2183,7 +2212,7 @@
       "input": "`cbor(ContentMap_WeakeningEdge)`（§3.3.3、§6.5）",
       "owner": "SV-88",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/selection.py#content_map",
         "tools/verification_profile/selection.py#asset_digest",
@@ -2193,7 +2222,8 @@
         "tests/verification_profile/test_selection.py#test_three_asset_hashes_use_exact_domain_and_projection",
         "tests/verification_profile/test_selection.py#test_edge_four_frozen_semantic_conditions"
       ],
-      "gap": "WeakeningEdge 正式 tag/ContentMap 重算；source/target/class/可选 evidence_ref 均被摘要绑定。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`registry_digest`（`ExcludedClaimsRegistry`）",
@@ -2201,7 +2231,7 @@
       "input": "`cbor(ContentMap_ExcludedClaimsRegistry)`（§3.3.3、§6.3）",
       "owner": "SV-89",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/references.py#exclusion_registry_digest",
         "tools/verification_profile/references.py#check_excluded"
@@ -2210,7 +2240,8 @@
         "tests/verification_profile/test_references.py#test_digest_preimages_match_frozen_tags_with_openssl",
         "tests/verification_profile/test_references.py#test_registry_statement_tamper_rejected_until_fully_rebound"
       ],
-      "gap": "方法无关排除选择/注册对象 helper 与限定 audit R3 入口已实现，独立 Python/Rust 固定字节对拍通过；完整 Profile/注册授权/五相位仍待验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`assurance_digest`（`MainnetAssuranceProfile`）",
@@ -2218,7 +2249,7 @@
       "input": "`cbor(ContentMap_MainnetAssuranceProfile)`（§3.3.3、§3.6）",
       "owner": "SV-113",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/commitments.py#projection",
         "tools/verification_profile/commitments.py#object_digest",
@@ -2228,7 +2259,8 @@
         "tests/verification_profile/test_commitments.py#test_hashes_against_independent_domain_prefix_and_projection",
         "tests/verification_profile/test_commitments.py#test_versioned_identity_and_advisory_do_not_change_digest"
       ],
-      "gap": "完整 MAP ContentMap 使用 MainnetAssuranceProfile/1，排除 human_summary 与 ID/Version；只关闭摘要 owner，不接受主网发布、签名或能力启用。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`DecisionEvaluationRecord.input_digest`",
@@ -2236,7 +2268,7 @@
       "input": "`cbor(DecisionEvaluationInput)`（§11.1；完整显式输入）",
       "owner": "SV-114",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/commitments.py#decision_input_digest"
       ],
@@ -2245,7 +2277,8 @@
         "tests/verification_profile/test_commitments.py#test_input_digest_binds_every_explicit_field",
         "tests/verification_profile/test_commitments.py#test_reference_only_method_input_is_rejected_even_if_rehashed"
       ],
-      "gap": "DecisionEvaluationInput/1 覆盖完整七字段显式输入和内联 canonical_input 包装；不是 evaluator 重放或 SV-115/完整 Phase D 验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`context_digest`（`CreationValidationContext`）",
@@ -2253,7 +2286,7 @@
       "input": "`cbor(ContentMap_CreationValidationContext)`（§3.3.3、§13.0.2）",
       "owner": "SV-97",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/creation.py#content_map",
         "tools/verification_profile/creation.py#object_digest",
@@ -2263,7 +2296,8 @@
         "tests/verification_profile/test_creation.py#test_three_domain_hashes_against_independent_projection",
         "tests/verification_profile/test_creation.py#test_all_frozen_context_and_record_fields_are_hashed"
       ],
-      "gap": "CreationContext 全部冻结字段按正式 tag 重算；运行期 ID 入摘要。正式导入/来源认证与其他相位规则独立验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`registry_snapshot_digest`",
@@ -2271,7 +2305,7 @@
       "input": "`cbor(ContentMap_RegistrySnapshot)`（§3.3.3、§3.5；`entries` 排序去重见 RS-1/RS-2）",
       "owner": "SV-75b",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/registration.py#registry_digest",
         "tools/verification_profile/registration.py#check_registry"
@@ -2280,7 +2314,8 @@
         "tests/verification_profile/test_registration.py#test_snapshot_hash_preimages_match_normative_projection",
         "tests/verification_profile/test_registration.py#test_registry_content_hash_and_context_identity_are_separate"
       ],
-      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`phase_i_record_digest`",
@@ -2288,7 +2323,7 @@
       "input": "`cbor(ContentMap_PhaseIValidationRecord)`（§3.3.3、§13.0.2）",
       "owner": "SV-103",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/creation.py#content_map",
         "tools/verification_profile/creation.py#object_digest",
@@ -2298,7 +2333,8 @@
         "tests/verification_profile/test_creation.py#test_three_domain_hashes_against_independent_projection",
         "tests/verification_profile/test_creation.py#test_all_frozen_context_and_record_fields_are_hashed"
       ],
-      "gap": "PhaseIValidationRecord 的完整冻结 ContentMap、正式 tag 与摘要比较；记录是否对应有效选择仍由 102/110 分别验收。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`intent_digest`",
@@ -2306,7 +2342,7 @@
       "input": "`cbor(ContentMap_ReceiptIntent)`（§3.3.3、CTX-13）",
       "owner": "SV-104",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/creation.py#content_map",
         "tools/verification_profile/creation.py#object_digest",
@@ -2317,7 +2353,8 @@
         "tests/verification_profile/test_creation.py#test_intent_order_and_duplicates_are_semantic",
         "tests/verification_profile/test_creation.py#test_unknown_intent_fields_and_selector_xor_fail_closed"
       ],
-      "gap": "ReceiptIntent 封闭 ContentMap 与正式 tag，输入数组保序保重复，RI-1 恰一选择引用；record 的 intent_digest 重算比较。导入对象的内部语义不属于此摘要 owner。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     },
     {
       "name": "`event_frontier_digest`",
@@ -2325,7 +2362,7 @@
       "input": "`cbor(ContentMap_EventFrontierSnapshot)`（§3.3.3、§13.0.1）",
       "owner": "SV-108",
       "layer": "L2",
-      "status": "IMPLEMENTED",
+      "status": "DISABLED_BY_MAINTAINER",
       "implementation": [
         "tools/verification_profile/registration.py#frontier_digest",
         "tools/verification_profile/registration.py#check_frontier"
@@ -2334,7 +2371,8 @@
         "tests/verification_profile/test_registration.py#test_snapshot_hash_preimages_match_normative_projection",
         "tests/verification_profile/test_registration.py#test_runtime_id_is_content_bound_and_version_is_forbidden"
       ],
-      "gap": "规则级纯摘要/注册条目检查已实现并经独立 Rust 固定字节对拍；不代表完整相位、来源认证或生产准入。"
+      "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
+      "runtime_migration": "COMPLETE"
     }
   ],
   "slice_evidence": {
@@ -2612,5 +2650,30 @@
       ],
       "scope": "非主网测试部署签名撤销；20 events、2 Receipt、9 负例；双机复验未恢复（aki2 不可达），仅单机。"
     }
-  ]
+  ],
+  "sha_consistency_policy": {
+    "status": "DISABLED_BY_MAINTAINER",
+    "runtime_migration": "COMPLETE_FOR_REGISTERED_DIGEST_RULES",
+    "complete_owners": [
+      "SV-02",
+      "SV-103",
+      "SV-104",
+      "SV-108",
+      "SV-113",
+      "SV-114",
+      "SV-46",
+      "SV-53b",
+      "SV-54b",
+      "SV-70",
+      "SV-71",
+      "SV-72",
+      "SV-73",
+      "SV-74",
+      "SV-75b",
+      "SV-88",
+      "SV-89",
+      "SV-97"
+    ],
+    "pending_owners": []
+  }
 }

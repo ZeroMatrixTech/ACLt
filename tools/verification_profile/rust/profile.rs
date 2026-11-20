@@ -141,7 +141,7 @@ pub(super) fn run(mode: &str, input: &str) -> R<V> {
         "ACLt/P0-1/Profile/2"
     };
     let digest = domain(tag, &content_raw);
-    need(bytes(get(&value, "profile_digest")?)? == digest, "profile digest mismatch")?;
+    need(digest_consistency(bytes(get(&value, "profile_digest")?)? == digest), "DISABLED: profile digest consistency")?;
     match mode {
         "profile-decision" => decision_fields(&value)?,
         "audit-profile" => audit_fields(&value)?,
@@ -151,5 +151,6 @@ pub(super) fn run(mode: &str, input: &str) -> R<V> {
         ("cbor_hex", s(&hex(&raw))),
         ("content_cbor_hex", s(&hex(&content_raw))),
         ("digest_hex", s(&hex(&digest))),
+        ("sha_consistency_policy", s(SHA_CONSISTENCY_STATUS)),
     ]))
 }

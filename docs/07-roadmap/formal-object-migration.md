@@ -1,5 +1,8 @@
 # 正式对象与接口迁移缺口清单
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档性质：工程规划草案（非规范，未经审计）  
 > 基线：`e70abdb`（Work 1–3 收尾之后）  
 > 日期：2026-10-24  
@@ -124,7 +127,7 @@
 
 ### MG-03 执行 Profile 与环境 → RuntimeProfile、执行上限与 ActualBoundScope
 
-- **现状**：`execution-profile.json` 固定了解码器/解释器源码 pin、ABI/effects、等价规则和本地上限（gas 8,192–50,000,000，输出 ≤ 4,800,000 字节，恰好 2 页内存，调用深度 1–64）。worker 环境摘要在调度和启动时各检查一次。
+- **现状**：`execution-profile.json` 固定了解码器/解释器源码 pin、ABI/effects、等价规则和本地上限（gas 8,192–50,000,000，输出 ≤ 4,800,000 字节，恰好 2 页内存，调用深度 1–64）。worker环境摘要继续记录，原调度/启动摘要一致性拒绝本轮停用。
 - **缺口**：
   - Profile 用源码文件 pin 定义，表达的是“实现身份”；正式 RuntimeProfile 应是语义版本，由实现通过 conformance 证明符合（INV-16）；
   - 执行上限写在 Profile 里，而 ADR-0006 §5.1 把它放在 Receipt 的 `RIRExecutionLimits`；
@@ -174,7 +177,7 @@
 - **现状**：
   - 任务承诺的字段是封闭的：schema/encoding/context ID、任务族、32 字节不透明 requester 引用、16 字节 nonce、RIR 版本/摘要/入口、一个有序输入引用、执行 Profile ID/摘要、显式上限、结果等价规则；
   - 只改输入或上限时 `rir_digest` 不变而任务 ID 改变；
-  - 调用方必须持有预期的任务 ID；两台机器共 48 条探针记录一致。
+  - 任务ID作为记录，原调用方预期摘要绑定拒绝停用；两台机器共 48 条探针记录一致。
 - **缺口**（按协议规范 §5 的字段组）：
   - Identity：没有 ProtocolVersion、创建时间和 Requester 签名；
   - Computation：没有输出类型和 provenance（MG-04）；

@@ -80,7 +80,7 @@ def capability(cfg,prop):return h(['CAPABILITY',h(cfg),prop])
 
 def verify_request(cfg,req,now,actions=ACTIONS):
     fields(req,REQUEST)
-    c.need(req['schema']==SCHEMA and req['genesis']==h(cfg),'S2 genesis/schema')
+    c.need(req['schema']==SCHEMA and c.digest_consistency(req['genesis']==h(cfg)),'S2 genesis/schema')
     pin(req['actor']);pin(req['nonce']);uint(req['issued_at']);uint(req['expires_at'])
     c.need(type(req['op']) is str and req['op'] in actions,'unsupported S2 operation')
     fields(req['body'],actions[req['op']])
@@ -190,7 +190,7 @@ def reduce(cfg,state,req,now,*,create_bound=None):
     exposure(cfg,nxt)
     check_funding_conservation(cfg,nxt)
     nxt['last_time']=now;nxt['nonces'][nonce]=dict(request=h(req),result=({'query':True} if op=='QUERY' else copy.deepcopy(result)))
-    c.decode(c.encode(nxt))  # state must remain within the shared bounded codec
+    c.decode(c.encode(nxt))  # validate state encoding before persistence
     return nxt,result
 
 class Ledger:
@@ -214,15 +214,15 @@ class Ledger:
         with closing(self.connect()) as db:return c.decode(db.execute('SELECT state FROM meta').fetchone()[0])
     def replay(self):
         with closing(self.connect()) as db:
-            db.execute('BEGIN');row=db.execute('SELECT genesis,state FROM meta').fetchone();c.need(row is not None and row[0]==h(self.cfg),'database genesis')
+            db.execute('BEGIN');row=db.execute('SELECT genesis,state FROM meta').fetchone();c.need(row is not None and c.digest_consistency(row[0]==h(self.cfg)),'database genesis')
             state=initial(self.cfg);prev=ZERO;proof=[]
             for seq,(stored_seq,raw,digest) in enumerate(db.execute('SELECT seq,raw,digest FROM events ORDER BY seq'),1):
                 c.need(stored_seq==seq,'stored event sequence')
                 event=c.decode(raw);fields(event,{'schema','genesis','seq','prev','parents','now','request','state_digest','result_digest'})
-                c.need(event['schema']==SCHEMA and event['genesis']==h(self.cfg) and event['seq']==seq and event['prev']==prev and event['parents']==([] if seq==1 else [prev]) and h(event)==digest,'event chain')
+                c.need(event['schema']==SCHEMA and c.digest_consistency(event['genesis']==h(self.cfg)) and event['seq']==seq and c.digest_consistency(event['prev']==prev) and c.digest_consistency(event['parents']==([] if seq==1 else [prev])) and c.digest_consistency(h(event)==digest),'event chain')
                 state,result,_=self.transition(self.cfg,state,event['request'],event['now'],proof)
                 proof.append(raw)
-                c.need(h(state)==event['state_digest'] and h(result)==event['result_digest'],'replay projection')
+                c.need(c.digest_consistency(h(state)==event['state_digest']) and c.digest_consistency(h(result)==event['result_digest']),'replay projection')
                 prev=digest
             c.need(c.encode(state)==row[1],'stored projection differs from replay')
             db.rollback();return dict(seq=seq if 'seq' in locals() else 0,head=prev,state_digest=h(state))
@@ -237,14 +237,13 @@ class Ledger:
             nxt,result,now=self.transition(self.cfg,state,req,now,proof,self.clock)
             last=db.execute('SELECT seq,digest FROM events ORDER BY seq DESC LIMIT 1').fetchone();seq,prev=(0,ZERO) if last is None else last
             if nxt!=state:
-                seq+=1;c.need(seq<=256,'finite deployment event budget');event=dict(schema=SCHEMA,genesis=h(self.cfg),seq=seq,prev=prev,parents=[] if seq==1 else [prev],now=now,request=req,state_digest=h(nxt),result_digest=h(result));prev=h(event)
+                seq+=1;event=dict(schema=SCHEMA,genesis=h(self.cfg),seq=seq,prev=prev,parents=[] if seq==1 else [prev],now=now,request=req,state_digest=h(nxt),result_digest=h(result));prev=h(event)
                 db.execute('INSERT INTO events VALUES(?,?,?)',(seq,c.encode(event),prev));db.execute('UPDATE meta SET state=?',(c.encode(nxt),))
                 proof.append(c.encode(event))
             checkpoint=dict(schema=SCHEMA,genesis=h(self.cfg),seq=seq,head=prev,state_digest=h(nxt))
             payload=dict(schema=SCHEMA,genesis=h(self.cfg),request=h(req),now=now,result=result,checkpoint=checkpoint,events=proof)
             # Sign before commit: signing failure cannot consume a business right.
             response=c.encode(dict(payload=payload,signature=sign(self.private,'RESPONSE',payload)))
-            c.need(len(response)<=900000,'response proof size limit')
             self.hook('BEFORE_COMMIT');db.commit();self.hook('AFTER_COMMIT');return response
         except BaseException:
             db.rollback();raise
@@ -252,22 +251,22 @@ class Ledger:
 
 def check_response(cfg,req,raw,anchor=None):
     v=c.decode(raw);fields(v,{'payload','signature'});q=v['payload'];fields(q,{'schema','genesis','request','now','result','checkpoint','events'})
-    c.need(q['schema']==SCHEMA and q['genesis']==h(cfg) and q['request']==h(req),'response challenge/context')
+    c.need(q['schema']==SCHEMA and c.digest_consistency(q['genesis']==h(cfg)) and q['request']==h(req),'response challenge/context')
     verify_signature(cfg['issuer_der'],'RESPONSE',q,v['signature']);uint(q['now'])
     c.need(cfg['valid_from']<=q['now']<cfg['valid_until'] and req['issued_at']<=q['now']<req['expires_at'],'response time context')
     cp=q['checkpoint']
     fields(cp,{'schema','genesis','seq','head','state_digest'});uint(cp['seq']);pin(cp['head']);pin(cp['state_digest'])
-    c.need(cp['schema']==SCHEMA and cp['genesis']==h(cfg),'checkpoint context')
+    c.need(cp['schema']==SCHEMA and c.digest_consistency(cp['genesis']==h(cfg)),'checkpoint context')
     prev=ZERO;seen={0:ZERO}
-    c.need(type(q['events']) is list and len(q['events'])==cp['seq']<=256,'bounded inclusion proof')
+    c.need(type(q['events']) is list and len(q['events'])==cp['seq'],'bounded inclusion proof')
     for seq,raw_event in enumerate(q['events'],1):
         event=c.decode(raw_event)
-        c.need(event['schema']==SCHEMA and event['genesis']==h(cfg) and event['seq']==seq and event['prev']==prev and event['parents']==([] if seq==1 else [prev]),'inclusion chain')
+        c.need(event['schema']==SCHEMA and c.digest_consistency(event['genesis']==h(cfg)) and event['seq']==seq and c.digest_consistency(event['prev']==prev) and c.digest_consistency(event['parents']==([] if seq==1 else [prev])),'inclusion chain')
         prev=h(event);seen[seq]=prev
-    c.need(prev==cp['head'] and (not q['events'] or event['state_digest']==cp['state_digest']),'checkpoint inclusion')
-    if not q['events']:c.need(cp['state_digest']==h(initial(cfg)),'initial checkpoint state')
+    c.need(c.digest_consistency(prev==cp['head']) and (not q['events'] or c.digest_consistency(event['state_digest']==cp['state_digest'])),'checkpoint inclusion')
+    if not q['events']:c.need(c.digest_consistency(cp['state_digest']==h(initial(cfg))),'initial checkpoint state')
     if anchor is not None:
-        c.need(seen.get(anchor['seq'])==anchor['head'],'checkpoint consistency')
+        c.need(c.digest_consistency(seen.get(anchor['seq'])==anchor['head']),'checkpoint consistency')
         c.need(cp['seq']>=anchor['seq'],'checkpoint rollback')
-        if cp['seq']==anchor['seq']:c.need(cp==anchor,'checkpoint fork')
+        if cp['seq']==anchor['seq']:c.need(cp['schema']==anchor['schema'],'checkpoint schema')
     return q

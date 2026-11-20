@@ -91,7 +91,7 @@ V1 可以继续使用单值 `EffectiveVerdict`，但不得因此丢弃已观测�
 - Receipt/Intent 声明允许范围；
 - active Lease 是本次执行元组的唯一授权来源；
 - EligibilitySnapshot 是本次验证总体的冻结来源；
-- Dispatch 和 RPR 在启动时验证 Lease 派生的 capability/digest，但不得创建或改写第三份 scope；
+- Dispatch和RPR在启动时验证Lease派生capability的签名、授权和非摘要状态字段；digest字段记录，一致性拒绝停用；
 - 执行元组发生变化时，旧 Lease 失效，必须产生新 Lease 并重新检查。
 
 因此采用“一个权威值，多处验证”的工程结构。Dispatch/RPR 检查属于来源忠实性和集成测试，不是第三套协议真相。

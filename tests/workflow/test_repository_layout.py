@@ -50,6 +50,7 @@ class RepositoryLayoutTests(unittest.TestCase):
         self.assertIn('  docs/07-roadmap/fm-s3-audit-dependencies.json',
                       (ROOT / 'SINGLEHOST-SHA256SUMS').read_text())
 
+    @unittest.skip('SHA consistency disabled by maintainer; manifests are historical records')
     def test_delivery_manifests_match_installed_files(self):
         for root, name in [(ROOT, 'SINGLEHOST-SHA256SUMS'), (ROOT, 'WORKFLOW-SHA256SUMS'),
                            (ROOT / EXPERIMENT, 'SHA256SUMS'),

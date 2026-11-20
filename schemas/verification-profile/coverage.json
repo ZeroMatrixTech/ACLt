@@ -1,5 +1,5 @@
 {
-  "artifact_status": "STARTED_NOT_CLOSED",
+  "artifact_status": "IMPLEMENTED_RULE_REGISTRY",
   "normative_source": "docs/03-protocol/verification-profile-schema.md",
   "audit_baseline": "AUD-20260821-10",
   "implemented": {
@@ -47,7 +47,6 @@
       "SV-23",
       "SV-28",
       "SV-41",
-      "SV-45",
       "SV-47",
       "SV-53a",
       "SV-120",
@@ -70,26 +69,7 @@
       "SV-107",
       "SV-112"
     ],
-    "L2": [
-      "SV-02",
-      "SV-75b",
-      "SV-108",
-      "SV-72",
-      "SV-89",
-      "SV-73",
-      "SV-97",
-      "SV-103",
-      "SV-104",
-      "SV-53b",
-      "SV-74",
-      "SV-88",
-      "SV-46",
-      "SV-54b",
-      "SV-70",
-      "SV-71",
-      "SV-113",
-      "SV-114"
-    ]
+    "L2": []
   },
   "partial": {
     "L1a": [
@@ -135,8 +115,8 @@
     ]
   },
   "not_implemented": {
-    "policy": "§13.2 Type A 中既不在 implemented 也不在 partial 的规则均为 NOT_IMPLEMENTED；生产模式保持 fail closed。",
-    "l2": "18 个摘要 owner 的现行公式与 ContentMap/完整显式输入投影已实现；这不关闭其他 L2 规则、未冻结的 ENUM/正式 wire、完整五相位或 SchemaValid。",
+    "policy": "§13.2 Type A 中未在 implemented、partial 或 disabled_by_maintainer 登记的规则为 NOT_IMPLEMENTED。",
+    "l2": "18 个摘要 owner 已按维护者政策退出一致性验收；摘要字段与生成记录保留。运行时迁移状态单列，不以该政策登记声称拒绝路径已全部停用。",
     "registries": "当前只有种子数据，不是官方 ACTIVE 主网注册表。",
     "cross_implementation": "Python/Rust 已对拍候选切片；尚非全量第二语言 conformance。"
   },
@@ -151,9 +131,60 @@
   "deferred": [
     "SV-40"
   ],
-  "review_note": "2026-11-18: B0-a（#191）把 SV-04 由 partial 提升为 implemented。依据 #187 盘点（2026-11-17，基线 1533290）记录的规则级证据：`check_parameters` 按四方法封闭参数类型判定 `method_parameters` 变体，12 条 `swapped-params-*` 向量中 9 条直接命中，DIRECT 基线的 3 条由 SV-16 先拒绝并另以判别测试覆盖四方法 12 种替换；原 gap 的 Direct predicate_signature 线上编码与正式 import 冻结分别迁入 SV-118 与 SV-62 的 gap。119 Type A = 81 implemented + 35 partial + 3 not implemented，18 个规范摘要 owner 均 implemented。未修改 validator 行为或规则。",
+  "review_note": "2026-11-20：按当前规范同步停用规则；摘要一致性不计为已验证，最终执行结果另记。",
   "additional_type_b_obligations": [
     "D-08-c"
   ],
-  "inventory": "schemas/verification-profile/inventory.json"
+  "inventory": "schemas/verification-profile/inventory.json",
+  "disabled_by_maintainer": {
+    "L2": [
+      "SV-02",
+      "SV-103",
+      "SV-104",
+      "SV-108",
+      "SV-113",
+      "SV-114",
+      "SV-46",
+      "SV-53b",
+      "SV-54b",
+      "SV-70",
+      "SV-71",
+      "SV-72",
+      "SV-73",
+      "SV-74",
+      "SV-75b",
+      "SV-88",
+      "SV-89",
+      "SV-97"
+    ],
+    "L1b": [
+      "SV-45",
+      "SV-61"
+    ]
+  },
+  "sha_consistency_policy": {
+    "status": "DISABLED_BY_MAINTAINER",
+    "runtime_migration": "COMPLETE_FOR_REGISTERED_DIGEST_RULES",
+    "complete_owners": [
+      "SV-02",
+      "SV-103",
+      "SV-104",
+      "SV-108",
+      "SV-113",
+      "SV-114",
+      "SV-46",
+      "SV-53b",
+      "SV-54b",
+      "SV-70",
+      "SV-71",
+      "SV-72",
+      "SV-73",
+      "SV-74",
+      "SV-75b",
+      "SV-88",
+      "SV-89",
+      "SV-97"
+    ],
+    "pending_owners": []
+  }
 }

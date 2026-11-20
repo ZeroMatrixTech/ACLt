@@ -1,5 +1,8 @@
 # ACLt Protocol 任务生命周期
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档状态：`CANDIDATE` state-machine baseline  
 > 语义基线：v0.5  
 > 最后更新：2026-08-21
@@ -109,7 +112,7 @@ Lease 生效必须同时完成：
 4. 写入期限、资源、提交和权利条件；
 5. 获取 Provider 接受签名。
 
-active Lease 是本次执行 scope、RPR、environment、resource tuple 的唯一授权来源。实现必须从它派生不可伪造或可重算的 `ExecutionCapability`，至少绑定 `ReceiptID`、`LeaseID`、epoch、执行元组摘要、scope 摘要、expiry 和 issuer key。Dispatch 只能传递并验证该 capability；RPR 启动时必须再次验证。二者不得创建第三份可覆盖 scope，也不得从本地配置补写不同执行元组。
+active Lease 是本次执行 scope、RPR、environment、resource tuple 的唯一授权来源。实现必须从它派生按现有签名或授权机制检查的 `ExecutionCapability`，至少绑定 `ReceiptID`、`LeaseID`、epoch、执行元组摘要、scope 摘要、expiry 和 issuer key。Dispatch 只能传递并验证该 capability；RPR 启动时必须再次验证。二者不得创建第三份可覆盖 scope，也不得从本地配置补写不同执行元组。
 
 若执行元组发生任何实质变化，旧 Lease/capability 立即不再适用，必须创建新 Lease 并重新经过 scope、暴露与接受检查。这里采用“一个权威、多检查点”：Dispatch/RPR 检查提高来源忠实性，但不会增加新的协议真相。
 
@@ -119,7 +122,7 @@ Transport 可以是 Provider pull、Control Plane push 或混合方式；协议�
 
 ## 7. 执行与迟到隔离
 
-执行前必须先验证 RIR 工件与 Receipt/Profile 一致，并校验 active Lease 派生的 `ExecutionCapability`；RPR 只可读取 Receipt 显式引用的 Logical Object 和已绑定 ExecutionProfile capability。Host OS 文件、网络、时间、随机性、环境变量或设备状态不得成为隐藏输入。不支持的指令、effect 或 runtime 必须 fail closed，不得静默回退到原生执行。ResultSubmission 和 Checkpoint 必须绑定当前 epoch、RIR/RPR 版本、execution tuple digest、内容摘要、环境版本和幂等键。若 `epoch < current_epoch`：
+执行前核对实际 RIR 工件、输入与已支持的 Receipt/Profile内容，并校验 active Lease 派生的 `ExecutionCapability`；RPR 只可读取 Receipt 显式引用的 Logical Object 和已绑定 ExecutionProfile capability。Host OS 文件、网络、时间、随机性、环境变量或设备状态不得成为隐藏输入。不支持的指令、effect 或 runtime 必须 fail closed，不得静默回退到原生执行。ResultSubmission 和 Checkpoint 必须绑定当前 epoch、RIR/RPR 版本、execution tuple digest、内容摘要、环境版本和幂等键。若 `epoch < current_epoch`：
 
 - 可以保存为 stale audit evidence；
 - 不得覆盖当前执行状态；

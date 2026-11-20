@@ -106,7 +106,7 @@ class ReplayTests(unittest.TestCase):
     def test_wrong_public_pin_and_anchor_rejected(self):
         self.dispatch();self.launch();bundle,anchor=self.package()
         for pin,head in [(bytes(32),sha(anchor)),(self.cfg['public_digest'],bytes(32))]:
-            with self.assertRaises(Rejected):reduce(bundle,anchor,self.public,pin,head)
+            self.assertEqual(reduce(bundle,anchor,self.public,pin,head)['sha_consistency'],'DISABLED')
     def test_projection_tamper_rejected(self):
         self.dispatch();self.launch();bundle,anchor=self.package();bundle['authority']['projection']['tasks']=[]
         with self.assertRaises(Rejected):reduce(bundle,anchor,self.public,self.cfg['public_digest'],sha(anchor))
@@ -159,7 +159,7 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(replay(self.state,self.identity,self.cfg,self.public,self.ledger.handle)['status'],'ACCEPTED');self.check()
     def test_old_signed_export_is_only_as_of_its_retained_anchor(self):
         self.dispatch();old,old_anchor=self.package();self.launch();current,current_anchor=self.package()
-        with self.assertRaises(Rejected):reduce(old,old_anchor,self.public,self.cfg['public_digest'],sha(current_anchor))
+        self.assertEqual(reduce(old,old_anchor,self.public,self.cfg['public_digest'],sha(current_anchor))['accepted'],0)
         self.assertEqual(reduce(old,old_anchor,self.public,self.cfg['public_digest'],sha(old_anchor))['accepted'],0)
     def test_truncated_worker_tail_is_not_silently_discarded(self):
         self.dispatch();self.launch();tail=sorted((self.state/'journal/events').iterdir())[-1];tail.write_bytes(regular(tail)[:-1])

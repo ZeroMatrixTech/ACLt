@@ -1,5 +1,8 @@
 # ACLt Protocol 系统架构
 
+> 当前执行见[开发政策](../development-policy.md)（2026-11-19）；本页旧 SHA 校验与审批要求按该决定处理。
+
+
 > 文档状态：`CANDIDATE` architecture baseline  
 > 语义基线：v0.5  
 > 最后更新：2026-08-21
@@ -58,7 +61,7 @@ Logical Object Memory 是 Abstract Machine 可引用的不可变 Logical Object 
 - Task 输出创建新对象，不能原地修改另一个 Provider 可见的共享地址；
 - 缓存、复制、分片和物理存储位置不得改变对象身份；
 - Provider 本地 RAM、临时文件和进程状态不自动成为协议对象；
-- 对象不可用、摘要不符或版本不兼容时必须 fail closed。
+- 实际对象可用性与版本支持按实现检查；摘要字段记录，摘要不符拒绝已停用。
 
 V1 明确不提供跨 Provider 共享可变内存或分布式原子操作。Logical Object 的不可变与显式引用模型为 `DECIDED`、V1 `CORE`；字段 Schema、保留、垃圾回收、可用性、加密和隐私仍为 `OPEN/P0/P1`。
 

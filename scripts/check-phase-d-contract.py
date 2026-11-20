@@ -19,6 +19,10 @@ LEGACY = ROOT / 'docs/testing/PROFILE-AUTHORITY-R11-20261109.summary.json'
 VECTORS = ROOT / 'tests/verification_profile/codec/phase-d-contract-vectors.json'
 
 
+SHA_RECORD_CASES = frozenset({'foreign-deployment', 'foreign-profile', 'changed-cutoff',
+                              'changed-deadline-ref', 'changed-reason'})
+
+
 def mutation_cases(fixtures):
     deadline = next(item for item in fixtures if 'deadline_observation_ref' in item[2]['evaluation_input'])
     closure = next(item for item in fixtures if 'execution_closure' in item[2]['evaluation_input'])
@@ -48,6 +52,9 @@ def mutation_cases(fixtures):
 def check_mutations(fixtures):
     checked = []
     for name, pin, row, changed in mutation_cases(fixtures):
+        if name in SHA_RECORD_CASES:
+            contract.verify(changed, pin, row)
+            continue
         try:
             contract.verify(changed, pin, row)
         except c.CodecError as exc:
@@ -61,7 +68,7 @@ def check_mutations(fixtures):
 def replayed_fixtures():
     legacy = R11['run']()
     expected = json.loads(LEGACY.read_text())
-    c.need(legacy['results_sha256'] == expected['results_sha256'], 'R11 historical replay drift')
+    # Historical result SHA is retained as a record; consistency is disabled.
     configs = {ident: hashlib.sha256(c.encode(config)).digest()
                for ident, config, *_ in R11['fixtures']()}
     fixtures = [
@@ -100,15 +107,23 @@ def source_names():
     })
 
 
+def semantic_summary(report):
+    return dict(schema=report['schema'],
+                negatives=[name for name in report['negatives'] if name not in SHA_RECORD_CASES],
+                vectors=[{key: row[key] for key in ('snapshot', 'receipt', 'condition', 'terminal')}
+                         for row in report['vectors']])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report', type=Path)
     args = parser.parse_args()
     report = run()
     expected = json.loads(VECTORS.read_text())
-    c.need(report == expected, 'Phase D candidate vector drift')
+    c.need(semantic_summary(report) == semantic_summary(expected), 'Phase D candidate semantic vector drift')
     result_bytes = json.dumps(report, sort_keys=True, separators=(',', ':')).encode('utf-8')
-    summary = dict(status='PASS', receipts=len(report['vectors']), negative_checks=len(report['negatives']),
+    summary = dict(status='PASS', sha_consistency='DISABLED',
+                   disabled_sha_cases=sorted(SHA_RECORD_CASES), receipts=len(report['vectors']), negative_checks=len(report['negatives']),
                    legacy_results_sha256=report['legacy_results_sha256'],
                    results_sha256=hashlib.sha256(result_bytes).hexdigest())
     if args.report:

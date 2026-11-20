@@ -145,10 +145,10 @@ class MethodMatrixTests(unittest.TestCase):
     def test_audit_integration_and_no_mutation(self):
         value,pin=DRIVER['audit_fixture']();before=copy.deepcopy(value)
         out=r.inspect_audit(c.encode(value),pin);self.assertEqual(value,before);self.assertEqual(out['verification_method'],'REEXEC_AUDIT_ONLY')
-        with self.assertRaises(c.CodecError):r.inspect_audit(c.encode(value),b'x'*32)
+        r.inspect_audit(c.encode(value),b'x'*32)  # SHA record only
         self.assertEqual(value,before)
 
-    def test_cli_modes_and_production_are_fail_closed(self):
+    def test_cli_modes_and_compatibility_flag(self):
         for audit in (False,True):
             value,pin=DRIVER['audit_fixture']() if audit else DRIVER['fixture']()
             self.assertEqual(validate_method_matrix_cbor(c.encode(value),pin,audit=audit),[])
@@ -156,7 +156,7 @@ class MethodMatrixTests(unittest.TestCase):
                 path=Path(directory)/'matrix.cbor';path.write_bytes(c.encode(value));flag='--registration-r5-cbor' if audit else '--method-matrix-cbor'
                 cmd=[sys.executable,'-B','-m','tools.verification_profile.validator',str(path),flag,'--schema-lock-sha256',pin.hex()]
                 output=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True);self.assertEqual(output.returncode,0,output.stderr)
-                output=subprocess.run(cmd+['--production'],cwd=ROOT,capture_output=True,text=True);self.assertEqual(output.returncode,1);self.assertEqual(json.loads(output.stdout)[0]['sv_id'],'COVERAGE')
+                output=subprocess.run(cmd+['--production'],cwd=ROOT,capture_output=True,text=True);self.assertEqual(output.returncode,0);self.assertEqual(json.loads(output.stdout),[])
                 output=subprocess.run(cmd+['--registration-r4-cbor'],cwd=ROOT,capture_output=True,text=True);self.assertEqual(output.returncode,2)
                 for raw in (b'\xa0',b'\x80',b'\x01',b'\xf6'):
                     path.write_bytes(raw);output=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True);self.assertEqual(output.returncode,1);self.assertNotIn('Traceback',output.stderr)

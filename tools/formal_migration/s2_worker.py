@@ -44,7 +44,7 @@ def run(cfg,bundle,role,private,host,port,exe,directory,now,hook=None,*,s3b=Fals
             unknown=dict(status='UNKNOWN_NO_REEXECUTION')
             if s3b and s3_authority.uses(bundle,'rpr_entry'):unknown['stage']=local_stage(directory)
             return unknown
-        c.need(hashlib.sha256(Path(exe).read_bytes()).digest()==cfg['runtime_sha256'],'runtime binary pin')
+        c.need(c.digest_consistency(hashlib.sha256(Path(exe).read_bytes()).digest() == cfg['runtime_sha256']),'runtime binary pin')
         c.need(bundle['components'][0]['content']==cfg['artifact'],'worker artifact pin')
         query=s2.request(cfg,private,actor,'QUERY',dict(receipt=rid),now)
         q=s2.check_response(cfg,query,rpc(host,port,c.encode(query)))
@@ -70,8 +70,8 @@ def run(cfg,bundle,role,private,host,port,exe,directory,now,hook=None,*,s3b=Fals
             start_op = 'S3_START'
             if s3_authority.uses(bundle, 'rpr_entry'):
                 descriptor = s3_terminals.entry_descriptor(cfg, bundle, rid, role)
-                c.need(hashlib.sha256(inp).digest() == descriptor['input_sha256'], 'RPR entry input pin')
-                c.need(c.domain_hash('ACLt/RIR-0/Artifact/1', cfg['artifact']) == descriptor['rir_digest'],
+                c.need(c.digest_consistency(hashlib.sha256(inp).digest() == descriptor['input_sha256']), 'RPR entry input pin')
+                c.need(c.digest_consistency(c.domain_hash('ACLt/RIR-0/Artifact/1',cfg['artifact']) == descriptor['rir_digest']),
                        'RPR entry artifact pin')
                 start_body['entry'] = descriptor
                 start_op = 'S3_ENTRY'
@@ -138,6 +138,6 @@ def s3_result_body(directory):
     core = c.decode(observation['core'])
     c.need(core['status'] == 'TASK_OUTCOME', 'S3b result adapter requires a completed task outcome')
     raw = bytes.fromhex(core['canonical_outcome_hex'])
-    c.need(c.domain_hash('ACLt/RIR-0/ExecutionOutcome/1', raw).hex() == core['outcome_digest'],
+    c.need(c.digest_consistency(c.domain_hash('ACLt/RIR-0/ExecutionOutcome/1',raw).hex() == core['outcome_digest']),
            'S3b runtime outcome digest mismatch')
     return dict(binding, outcome=raw)

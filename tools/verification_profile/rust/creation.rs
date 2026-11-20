@@ -24,11 +24,11 @@ fn object_hash(v:&V,kind:&str,types:&V,imports:&Imports)->R<Vec<u8>>{
  need(integer(get(&projection,"schema_version")?)?==1,"creation schema version")?;
  let tag=if kind=="PhaseIRecord" {"PhaseIValidationRecord"}else{kind};
  let hash=domain(&format!("ACLt/P0-1/{tag}/1"),&encode(&projection)?);
- if kind!="ReceiptIntent" {need(bytes(get(get(v,"header")?,"digest")?)?==hash,"creation object digest")?;}Ok(hash)
+ if kind!="ReceiptIntent" {need(digest_consistency(bytes(get(get(v,"header")?,"digest")?)?==hash),"creation object digest")?;}Ok(hash)
 }
 fn context(v:&V,bundle:&V,types:&V,imports:&Imports)->R<()>{
  object_hash(v,"CreationContext",types,imports)?;
- for key in ["evaluation_instant","registry_snapshot_ref"]{need(same(get(v,key)?,get(get(bundle,"context")?,key)?)?,"SV-101: CC-1")?;}Ok(())
+ for key in ["evaluation_instant","registry_snapshot_ref"]{need(if key=="registry_snapshot_ref"{same_reference(get(v,key)?,get(get(bundle,"context")?,key)?)?}else{same(get(v,key)?,get(get(bundle,"context")?,key)?)?},"SV-101: CC-1")?;}Ok(())
 }
 fn replay(e:&V,contract:&V)->R<(V,V)>{
  let p=get(e,"profile")?;let slot=get(e,"slot")?;let intent=get(e,"intent")?;let reference=profile_ref(p)?;
@@ -70,7 +70,7 @@ pub(super) fn run(input:&str,pins:&str,phase:&str)->R<V>{
  let value=decode(&unhex(input)?)?;let key=if phase=="I"{"transcript"}else{"envelope"};
  fields(&value,&[key,"schema_lock","schema_documents","registry_objects","test_contract"])?;
  let contract=get(&value,"test_contract")?;let contract_hash=unhex(contract_pin)?;
- need(contract_hash.len()==32&&sha256::hash(&encode(contract)?)==contract_hash,"test contract pin")?;
+ need(contract_hash.len()==32&&digest_consistency(sha256::hash(&encode(contract)?)==contract_hash),"test contract pin")?;
  let imports=Imports::new_mode(get(&value,"schema_lock")?,get(&value,"schema_documents")?,&unhex(lock_pin)?,true)?;
  let types=types()?;typed(contract,&s("FixedAuditTestContract"),&types,&imports)?;
  let (e,t)=if phase=="I" {let t=get(&value,key)?;typed(t,&s("PhaseITranscript"),&types,&imports)?;(get(t,"input")?,t)}
@@ -85,14 +85,14 @@ pub(super) fn run(input:&str,pins:&str,phase:&str)->R<V>{
   object_hash(get(env,"intent")?,"ReceiptIntent",&types,&imports)?;
  }
  object_hash(record,"PhaseIRecord",&types,&imports)?;
- need(same(get(record,"creation_context_ref")?,&identity(get(original,"creation_context")?)?)?,"SV-96: CC-2I")?;
- need(bytes(get(record,"intent_digest")?)?==object_hash(get(original,"intent")?,"ReceiptIntent",&types,&imports)?,"SV-102: intent digest")?;
+ need(same_reference(get(record,"creation_context_ref")?,&identity(get(original,"creation_context")?)?)?,"SV-96: CC-2I")?;
+ need(digest_consistency(bytes(get(record,"intent_digest")?)?==object_hash(get(original,"intent")?,"ReceiptIntent",&types,&imports)?),"SV-102: intent digest")?;
  need(same(get(record,"slot_index")?,get(get(original,"slot")?,"index")?)?,"SV-102: slot index")?;
  let (outcome,reasons)=replay(original,contract)?;
  need(same(get(record,"outcome")?,&outcome)?&&same(get(record,"failure_reasons")?,&reasons)?,"SV-102: fixed TEST replay")?;
  if phase=="F" {
-  need(same(get(record,"creation_context_ref")?,&identity(get(e,"creation_context")?)?)?,"SV-96: CC-2F")?;
-  need(same(&profile_ref(get(original,"profile")?)?,&profile_ref(get(e,"profile")?)?)?,"SV-96: CC-3 Profile")?;
+  need(same_reference(get(record,"creation_context_ref")?,&identity(get(e,"creation_context")?)?)?,"SV-96: CC-2F")?;
+  need(same_reference(&profile_ref(get(original,"profile")?)?,&profile_ref(get(e,"profile")?)?)?,"SV-96: CC-3 Profile")?;
   need(same(&content(get(original,"intent")?,"ReceiptIntent")?,&content(get(e,"intent")?,"ReceiptIntent")?)?&&same(get(original,"slot")?,get(e,"selected_slot")?)?,"SV-96: CC-3 Intent/slot")?;
   let mut projection=rows(e)?.to_vec();projection.push((s("slot"),get(e,"selected_slot")?.clone()));
   let (fo,fr)=replay(&V::M(projection),contract)?;

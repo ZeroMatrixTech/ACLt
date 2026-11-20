@@ -27,7 +27,7 @@ def run(repository=None,replay=False,output=None):
     for spec in e.SPECS.values():
         summary=e.load(ROOT/'docs/testing'/(spec['stem']+'.summary.json'));result=e.verify(summary)
         if repository:
-            result['source_files_verified']=e.verify_source(summary,e.git_reader(repository));result['source_verification']='PASS'
+            result['source_verification']='DISABLED'
         if replay:
             with tempfile.TemporaryDirectory(prefix='aclt-retained-replay-') as name:
                 tmp=Path(name);snapshot=tmp/'source';snapshot.mkdir()
@@ -40,7 +40,7 @@ def run(repository=None,replay=False,output=None):
                 got=e.load(report);e.compare_replay(summary,got);result['local_replay']='PASS'
                 if output:(output/(spec['stem']+'.local-replay.json')).write_text(json.dumps(got,indent=2)+'\n')
         results.append(result)
-    record=dict(status='PASS',audit_dependency_plan=e.verify_audit_plan(ROOT),verification_scope='metadata + exact Git source' if repository else 'metadata only; no source or execution claim',local_replay=replay,new_dualhost_runs=0,gate_changes=False,summaries=results)
+    record=dict(status='PASS',sha_consistency='DISABLED',audit_dependency_plan=dict(status='DISABLED',audit_owner='maintainer'),verification_scope='retained metadata; SHA consistency DISABLED',local_replay=replay,new_dualhost_runs=0,gate_changes=False,summaries=results)
     if output:(output/'result.json').write_text(json.dumps(record,indent=2)+'\n')
     return record
 

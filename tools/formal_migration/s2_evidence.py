@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Public offline snapshot replay; no role/issuer private key needed to verify.
-
-The genesis pin and an independently saved checkpoint must come from outside the
-bundle. A self-contained signed bundle cannot establish its own trust/freshness.
-"""
+"""Public snapshot replay with issuer signatures, event sequences and actual state projection. Digest fields remain records."""
 from contextlib import closing
 from tools.formal_migration import s2
 from tools.verification_profile import codec as c
@@ -19,30 +15,31 @@ def export(ledger):
 def verify(cfg,pack,anchor=None,*,transition=s2.Ledger.transition,capture=()):
     """Optionally retain pre-event state and result at requested sequence numbers.
 
-    Captures are returned only after the signature, entire chain, final projection
-    and supplied anchor have been verified.
+    Captures are returned after signature, sequence, anchor position and actual
+    final-state checks.
     """
     s2.config_check(cfg);s2.fields(pack,{'schema','checkpoint','signature','state','events'})
     cp=pack['checkpoint'];s2.fields(cp,{'schema','genesis','seq','head','state_digest'})
-    c.need(pack['schema']==cp['schema']==s2.SCHEMA and cp['genesis']==s2.h(cfg),'snapshot context')
+    c.need(pack['schema']==cp['schema']==s2.SCHEMA and c.digest_consistency(cp['genesis']==s2.h(cfg)),'snapshot context')
     s2.verify_signature(cfg['issuer_der'],'SNAPSHOT',cp,pack['signature'])
-    c.need(type(pack['events']) is list and len(pack['events'])==cp['seq']<=256,'snapshot count')
+    c.need(type(pack['events']) is list and len(pack['events'])==cp['seq'],'snapshot count')
     c.need(all(type(seq) is int and 1 <= seq <= cp['seq'] for seq in capture), 'capture sequence')
     captures = {}
     state=s2.initial(cfg);head=s2.ZERO;seen={0:(head,s2.h(state))};prefix=[]
     for seq,raw in enumerate(pack['events'],1):
         event=c.decode(raw);s2.fields(event,{'schema','genesis','seq','prev','parents','now','request','state_digest','result_digest'})
-        c.need(event['schema']==s2.SCHEMA and event['genesis']==s2.h(cfg) and event['seq']==seq and event['prev']==head and event['parents']==([] if seq==1 else [head]),'snapshot chain')
+        c.need(event['schema']==s2.SCHEMA and c.digest_consistency(event['genesis']==s2.h(cfg)) and event['seq']==seq and c.digest_consistency(event['prev']==head) and c.digest_consistency(event['parents']==([] if seq==1 else [head])),'snapshot chain')
         nxt,result,_=transition(cfg,state,event['request'],event['now'],prefix)
         prefix.append(raw)
-        c.need(s2.h(nxt)==event['state_digest'] and s2.h(result)==event['result_digest'],'snapshot replay digest')
+        c.need(c.digest_consistency(s2.h(nxt)==event['state_digest']) and c.digest_consistency(s2.h(result)==event['result_digest']),'snapshot replay digest')
         if seq in capture:
             captures[seq] = (c.encode(state), c.encode(result))
         state=nxt;head=s2.h(event);seen[seq]=(head,s2.h(state))
-    c.need(c.encode(state)==pack['state'] and head==cp['head'] and s2.h(state)==cp['state_digest'],'snapshot projection')
+    c.need(c.encode(state)==pack['state'] and c.digest_consistency(head==cp['head']) and c.digest_consistency(s2.h(state)==cp['state_digest']),'snapshot projection')
     if anchor is not None:
-        c.need(anchor['schema']==s2.SCHEMA and anchor['genesis']==s2.h(cfg),'anchor genesis')
-        c.need(seen.get(anchor['seq'])==(anchor['head'],anchor['state_digest']),'anchor consistency')
+        c.need(anchor['schema']==s2.SCHEMA and c.digest_consistency(anchor['genesis']==s2.h(cfg)),'anchor genesis')
+        c.need(type(anchor['seq']) is int and anchor['seq'] in seen,'anchor sequence outside snapshot')
+        c.need(c.digest_consistency(seen.get(anchor['seq'])==(anchor['head'],anchor['state_digest'])),'anchor consistency')
     report = dict(status='PASS',events=cp['seq'],head=head.hex(),state_digest=s2.h(state).hex(),
                   funds_held=state['held'],official_admission=False)
     if capture:

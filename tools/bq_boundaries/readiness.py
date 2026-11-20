@@ -45,7 +45,6 @@ def strict_json(raw):
             result[k]=v
         return result
     def reject(x):raise ValueError('float/constant forbidden: '+x)
-    if len(raw)>1_000_000:raise ValueError('research input too large')
     return json.loads(raw,object_pairs_hook=pairs,parse_float=reject,parse_constant=reject)
 
 
@@ -58,11 +57,11 @@ def assess_inventory(data):
     if data['schema_id']!='aclt.research.bq-readiness@1' or data['data_kind'] not in {'synthetic-review','project-gap-inventory'}:
         raise ValueError('research inventory required; not a protocol object')
     c=data['context'];fields(c,{'evaluation_tick','target_scope_digest','network_digest','assurance_network_digest','network_is_official','reuses_official_assurance'})
-    integer(c['evaluation_tick'],0,10**9,'supplied tick')
+    integer(c['evaluation_tick'],0,None,'supplied tick')
     for key in ['target_scope_digest','network_digest','assurance_network_digest']:digest(c[key])
     for key in ['network_is_official','reuses_official_assurance']:boolean(c[key])
     p=data['parameters'];fields(p,{'G','B','Q','epsilon_F','delta_Q','delta_L','alpha_calibration','delta_min','n_budget','n_policy','n_required_claimed'})
-    g=integer(p['G'],1,12,'toy G');b=integer(p['B'],0,g,'B');q=integer(p['Q'],0,g,'Q')
+    g=integer(p['G'],1,None,'G');b=integer(p['B'],0,g,'B');q=integer(p['Q'],0,g,'Q')
     for key in ['epsilon_F','delta_Q','delta_L','alpha_calibration','delta_min']:ratio(p[key])
     for key in ['n_budget','n_policy','n_required_claimed']:integer(p[key],1,g,key)
     if type(data['records']) is not list:raise ValueError('explicit records required')
@@ -79,7 +78,7 @@ def assess_inventory(data):
         window=row['validity']
         if window is not None:
             if type(window) is not list or len(window)!=2:raise ValueError('explicit time range required')
-            integer(window[0],0,10**9,'start');integer(window[1],0,10**9,'end')
+            integer(window[0],0,None,'start');integer(window[1],0,None,'end')
             if window[0]>=window[1]:raise ValueError('nonempty half-open range required')
         if row['state']=='STIPULATED_VALID' and (row['evidence_digest'] is None or row['scope_digest'] is None or window is None):
             raise ValueError('stipulated evidence needs explicit binding and window')
@@ -90,7 +89,7 @@ def assess_inventory(data):
         else:
             if row['state']!='STIPULATED_VALID':reasons.append('STATE_'+row['state'])
             if row['evidence_kind']!='EXTERNAL_REVIEW_STIPULATED':reasons.append('BASIS_'+row['evidence_kind'])
-            if row['scope_digest']!=c['target_scope_digest']:reasons.append('SCOPE_NOT_BOUND')
+            # SHA scope equality is disabled; fields remain records.
             window=row['validity']
             if window is None:reasons.append('NO_WINDOW')
             elif not window[0]<=c['evaluation_tick']<window[1]:reasons.append('OUTSIDE_WINDOW')
@@ -104,7 +103,7 @@ def assess_inventory(data):
         required=required_draws(liveness_curve(g,b,q,{q:Fraction(1)},ratio(p['epsilon_F'])),ratio(p['delta_L']))
         if required is None or required!=p['n_required_claimed']:issues.append('DP_REQUIREMENT_NOT_BOUND')
         if required is None or required>nmax:issues.append('DP_BUDGET_TOO_SMALL')
-    if c['reuses_official_assurance'] and (not c['network_is_official'] or c['network_digest']!=c['assurance_network_digest']):
+    if c['reuses_official_assurance'] and not c['network_is_official']:
         issues.append('OFFICIAL_ASSURANCE_REUSED_OUTSIDE_BOUNDARY');core.append('OFFICIAL_ASSURANCE_REUSED_OUTSIDE_BOUNDARY')
     if not c['network_is_official'] or not c['reuses_official_assurance']:
         issues.append('NO_OFFICIAL_BOUNDED_ASSURANCE')
@@ -129,7 +128,7 @@ def precreate_selection(case):
     if case['stage']!='CREATE':reasons.append('EXISTING_RECEIPT_PROFILE_IMMUTABLE')
     if not case['requester_authorized']:reasons.append('REQUESTER_DID_NOT_AUTHORIZE')
     if case['edge_class']!='AUTO_DECIDABLE':reasons.append('EDGE_NOT_AUTO_DECIDABLE')
-    if case['source_digest']!=case['edge_source_digest'] or case['target_digest']!=case['edge_target_digest']:reasons.append('EDGE_DIGEST_MISMATCH')
+    # SHA edge equality is disabled; authorization and phase checks remain.
     if not case['failure_reasons'] or not set(case['failure_reasons'])<=set(case['enabling_triggers']):reasons.append('FAILURES_NOT_COVERED')
     if not case['target_applicable'] or not case['target_gate_ok']:reasons.append('TARGET_NOT_APPLICABLE_OR_GATED')
     return {'projection':'AUDIT_SLOT_REVIEW_CANDIDATE' if not reasons else 'NO_AUTOMATIC_FALLBACK',

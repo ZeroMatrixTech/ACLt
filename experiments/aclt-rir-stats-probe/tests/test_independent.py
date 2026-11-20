@@ -14,7 +14,9 @@ def run(row):return execute(bytes.fromhex(row['artifact_hex']),bytes.fromhex(row
 class IndependenceTests(unittest.TestCase):
     def test_frozen_vectors(self):
         for row in ROWS:
-            with self.subTest(vector=row['id']):self.assertEqual(run(row),row['expected'])
+            with self.subTest(vector=row['id']):
+                actual=run(row);actual.pop('sha_consistency',None)
+                self.assertEqual(actual,row['expected'])
     def test_rejection_classes_have_no_task_bytes(self):
         codes=set()
         for row in ROWS:
@@ -25,8 +27,8 @@ class IndependenceTests(unittest.TestCase):
     def test_host_failures_are_not_task_traps(self):
         for name in ['local-step-host-fault','memory-fault-injection']:
             r=run(case(name));self.assertEqual(r['status'],'HOST_FAULT');self.assertNotIn('result',r);self.assertNotIn('outcome_digest',r)
-    def test_revalidation_mismatch_has_no_task_result(self):
-        row=case('stats');row['expected_rir']='00'*32;self.assertEqual(run(row),dict(status='HOST_FAULT',code='RPR_REVALIDATION_MISMATCH'))
+    def test_revalidation_digest_check_is_disabled(self):
+        row=case('stats');row['expected_rir']='00'*32;result=run(row);self.assertEqual(result['status'],'TASK_OUTCOME');self.assertEqual(result['sha_consistency'],'DISABLED')
     def test_result_hash_uses_raw_output_not_json_hex(self):
         r=run(case('stats'));v=c.decode(bytes.fromhex(r['canonical_outcome_hex']));self.assertIsInstance(v['output'],bytes);self.assertNotIn('output_hex',v);self.assertEqual(c.domain_hash('ACLt/RIR-0/ExecutionOutcome/1',bytes.fromhex(r['canonical_outcome_hex'])).hex(),r['outcome_digest'])
     def test_limits_do_not_change_artifact_digest(self):

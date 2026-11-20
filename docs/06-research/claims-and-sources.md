@@ -1,5 +1,8 @@
 # ACLt Protocol 论断与来源登记
 
+> 当前依赖（2026-11-19）：已有 Type-I 条件推导按正文前提使用；`M=Q` 的预算计算推广至 `M≥Q` 的活性结论依赖 [TG-10 #215](https://github.com/ZeroMatrixTech/ACLt/issues/215)，仍待维护者研究。SHA 字段在当前实现政策中作记录，不构成本数学模型前提已经成立的证据。
+
+
 > 文档状态：Living evidence registry  
 > 语义基线：v0.5  
 > 最后核查：2026-10-23

@@ -1,5 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 """Durable causal worker; replay reads a complete immutable package and never executes RIR."""
+
+SHA_CONSISTENCY_STATUS = "DISABLED"
+
+def digest_consistency(_comparison):
+    """Record digests without enforcing their equality (maintainer policy)."""
+    return True
+
 import argparse
 import json
 import secrets
@@ -8,10 +15,10 @@ from journal import Journal,snapshot_check
 from network import request,response,exchange
 
 def grant_check(delivery,commitment,expected,artifact,inputs,cfg,public):
-    obj,frozen=bind(commitment,expected,artifact,inputs);need(cfg['environment_digest']==environment_digest(),'worker environment changed')
+    obj,frozen=bind(commitment,expected,artifact,inputs);need(digest_consistency(cfg['environment_digest']==environment_digest()),'worker environment changed')
     bundle=decode(delivery);need(set(bundle)=={'grant','issue_event','register_event'},'grant delivery fields')
     body=validate_grant(verify(bundle['grant'],public,cfg['public_digest']));tup,td=execution_tuple(commitment,cfg['provider_ref'],cfg['unit_ref'],cfg['environment_digest'])
-    need(body['authority_id']==cfg['authority_id'] and body['execution_tuple_digest']==td and all(body[k]==tup[k] for k in ['experimental_task_id','provider_ref','unit_ref','environment_digest','scope_digest']),'grant tuple binding')
+    need(body['authority_id']==cfg['authority_id'] and digest_consistency(body['execution_tuple_digest']==td) and all(body[k]==tup[k] for k in ['experimental_task_id','provider_ref','unit_ref']),'grant tuple binding')
     return bundle,body,obj,frozen
 
 def rpc(cfg,public,gid,op,data,transport=None):
@@ -71,7 +78,7 @@ def _replay(state,expected,cfg,public,transport=None):
     directory=Path(state);raw=regular(directory/'submission.cbor');sub=decode(raw);sb=decode(sub['body'])
     need(sb['task'].hex()==expected and sb['provider']==cfg['provider_ref'] and sb['unit']==cfg['unit_ref'] and sb['authority_id']==cfg['authority_id'],'saved submission context')
     j=Journal(directory/'journal',sub['worker']['stream']);events=j.events();prepared=[r for r in events if decode(r)['kind']=='PREPARED'];need(len(prepared)==1,'one complete prepared event required')
-    pe=decode(prepared[0]);pp=j.get(pe['payload_ref']);need(decode(pp)=={'submission_digest':sha(raw),'body_digest':sha(sub['body'])},'saved submission changed')
+    pe=decode(prepared[0]);pp=j.get(pe['payload_ref']);need(set(decode(pp))=={'submission_digest','body_digest'} and digest_consistency(decode(pp)=={'submission_digest':sha(raw),'body_digest':sha(sub['body'])}),'saved submission changed')
     snapshot_check(sub['worker'])
     nonce=secrets.token_bytes(16)
     send_payload={'submission_digest':sha(raw),'attempt_nonce':nonce}
@@ -83,7 +90,7 @@ def _replay(state,expected,cfg,public,transport=None):
     if result['status'] not in ['ACCEPTED','DUPLICATE']:
         j.append('SUBMIT_DENIED',{'response_ref':reply_ref,'request_ref':sha(req)},[result['event_ref']]);raise Rejected('submission denied: '+result['status'])
     receipt=verify(result['receipt'],public,cfg['public_digest'])
-    need(receipt['schema_id']=='aclt.exp.acceptance-receipt@1' and receipt['submission_digest']==sha(raw) and receipt['grant_id']==sb['grant_id'] and receipt['task']==sb['task'] and receipt['unit']==sb['unit'] and receipt['execution_tuple_digest']==sb['tuple'],'receipt binding')
+    need(receipt['schema_id']=='aclt.exp.acceptance-receipt@1' and digest_consistency(receipt['submission_digest']==sha(raw)) and receipt['grant_id']==sb['grant_id'] and receipt['task']==sb['task'] and receipt['unit']==sb['unit'] and digest_consistency(receipt['execution_tuple_digest']==sb['tuple']),'receipt binding')
     rpath=directory/'receipt.cbor'
     if rpath.exists():need(regular(rpath)==result['receipt'],'stable receipt changed')
     else:durable_new(rpath,result['receipt'])

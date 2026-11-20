@@ -23,6 +23,11 @@ REGISTRY = ROOT / 'tests/formal_migration/phase-d-envelope-registry.cbor'
 VECTORS = ROOT / 'tests/formal_migration/phase-d-envelope-vectors.json'
 
 
+SHA_RECORD_CASES = frozenset({'external-registry-pin','external-registry-pin-omitted','configuration-under-test-pin',
+                              'anchor-under-test-pin','source-contract-sha-record',
+                              'phase_d-phase_b_digest','phase_d-source_digest'})
+
+
 def fixture_registry(cases):
     """Reproduce the retained registry from the repository's pinned fixture index."""
     deployments = {}
@@ -48,7 +53,13 @@ def check_negatives(fixture, registry, pin):
             raise c.CodecError(f'{name} accepted')
         checks.append(name)
 
-    reject('external-registry-pin', 'external registry pin', new_pin=b'x' * 32)
+    def accept_record(name, *, wire=None, new_registry=registry, new_pin=pin):
+        c.need(name in SHA_RECORD_CASES, 'reviewed SHA record case')
+        report = envelope.verify(c.encode(value if wire is None else wire), new_registry, new_pin, receipts)
+        c.need(report['status'] == 'PASS', name + ': actual replay failed')
+
+    accept_record('external-registry-pin', new_pin=b'x' * 32)
+    accept_record('external-registry-pin-omitted', new_pin=None)
     reject('cross-version', 'envelope version', wire=dict(value, version='ACLt/1'))
     reject('missing-receipt', 'envelope receipt count', wire=dict(value, records=[]))
     reject('duplicate-receipt', 'duplicate receipt selection',
@@ -80,7 +91,17 @@ def check_negatives(fixture, registry, pin):
         else:
             entry['profiles'] = [b'x' * 32]
         raw = c.encode(changed)
-        reject(name + '-under-test-pin', message, new_registry=raw, new_pin=hashlib.sha256(raw).digest())
+        if name in ('configuration', 'anchor'):
+            accept_record(name + '-under-test-pin', new_registry=raw,
+                          new_pin=hashlib.sha256(raw).digest())
+        else:
+            reject(name + '-under-test-pin', message, new_registry=raw,
+                   new_pin=hashlib.sha256(raw).digest())
+    changed = c.decode(registry)
+    changed['deployments'][genesis]['deployment']['sources']['clock']['digest'] = b'x' * 32
+    raw = c.encode(changed)
+    accept_record('source-contract-sha-record', new_registry=raw,
+                  new_pin=hashlib.sha256(raw).digest())
 
     for phase, key, replacement in (
         ('phase_b', 'deployment_binding', {'deployment_ref': {'tag': 'MAINNET'}}),
@@ -95,7 +116,25 @@ def check_negatives(fixture, registry, pin):
         c.need(record[key] != replacement, 'mutation must change a field')
         record[key] = replacement
         changed['records'][0][phase] = c.encode(record)
-        reject(phase + '-' + key, 'B/D envelope does not match', wire=changed)
+        name = phase + '-' + key
+        if name in SHA_RECORD_CASES:
+            accept_record(name, wire=changed)
+        else:
+            reject(name, 'B/D envelope does not match', wire=changed)
+    for name in ('short-source-digest', 'missing-source-digest'):
+        changed = copy.deepcopy(value)
+        phase_d = c.decode(changed['records'][0]['phase_d'])
+        if name == 'short-source-digest':
+            phase_d['source_digest'] = b'short'
+        else:
+            phase_d.pop('source_digest')
+        changed['records'][0]['phase_d'] = c.encode(phase_d)
+        reject(name, 'B/D envelope does not match', wire=changed)
+    changed_registry = c.decode(registry)
+    changed_registry['deployments'][genesis]['deployment']['sources']['clock']['id'] = 'acl.test.fm-s3.other'
+    raw = c.encode(changed_registry)
+    reject('source-contract-id', 'registered deployment or source contract',
+           new_registry=raw, new_pin=hashlib.sha256(raw).digest())
     changed = copy.deepcopy(value)
     record = changed['records'][0]
     phase_b = c.decode(record['phase_b'])
@@ -109,8 +148,6 @@ def check_negatives(fixture, registry, pin):
 
 def run(cases, registry, pin, *, binary=None):
     rows, rust_requests, rust_expected = [], [], []
-    frozen_inner = {row['receipt']: row['candidate_sha256'] for row in
-                    json.loads(R13['R12']['VECTORS'].read_text())['vectors']}
     negative_fixture = None
     for name, config, snapshot, _, _, receipts in cases:
         records, expected = envelope.replay(registry, pin, config, snapshot, receipts)
@@ -125,7 +162,7 @@ def run(cases, registry, pin, *, binary=None):
             phase_d = c.decode(record['phase_d'])
             candidate_raw = phase_d['candidate_record']
             candidate_pin = hashlib.sha256(candidate_raw).hexdigest()
-            c.need(candidate_pin == frozen_inner.get(row['receipt']), 'R12 candidate digest drift')
+            # Candidate SHA is retained as a record.
             entries.append(dict(receipt=row['receipt'], terminal=row['terminal'],
                                 phase_b_sha256=hashlib.sha256(record['phase_b']).hexdigest(),
                                 phase_d_sha256=hashlib.sha256(record['phase_d']).hexdigest(),
@@ -152,6 +189,13 @@ def source_names():
     })
 
 
+def semantic_result(result):
+    return dict(version=result['version'], snapshots=[dict(
+        snapshot=row['snapshot'], receipts=[{key: receipt[key] for key in ('receipt', 'terminal')}
+                                             for receipt in row['receipts']])
+        for row in result['snapshots']])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--report', type=Path)
@@ -160,16 +204,19 @@ def main():
     frozen = json.loads(VECTORS.read_text())
     registry = REGISTRY.read_bytes()
     pin = bytes.fromhex(frozen['registry_sha256'])
-    c.need(registry == fixture_registry(cases), 'fixture registry drift')
+    c.need(c.encode(envelope.record_projection(c.decode(registry))) ==
+           c.encode(envelope.record_projection(c.decode(fixture_registry(cases)))),
+           'fixture registry semantic drift')
     compiler = os.environ.get('RUSTC', 'rustc')
     with tempfile.TemporaryDirectory(prefix='aclt-phase-d-r14-') as tmp:
         binary = Path(tmp) / 'codec'
         subprocess.run([compiler, '--edition=2021', '-D', 'warnings', str(R13['RUST'] / 'main.rs'),
                         '-o', str(binary)], check=True, timeout=120)
         result = run(cases, registry, pin, binary=binary)
-    c.need(result == frozen, 'R14 frozen vectors drift')
+    c.need(semantic_result(result) == semantic_result(frozen), 'R14 semantic vectors drift')
     raw = json.dumps(result, sort_keys=True, separators=(',', ':')).encode()
-    summary = dict(status='PASS', snapshots=len(result['snapshots']),
+    summary = dict(status='PASS', sha_consistency='DISABLED',
+                   disabled_sha_cases=sorted(SHA_RECORD_CASES), snapshots=len(result['snapshots']),
                    receipts=sum(len(row['receipts']) for row in result['snapshots']),
                    negatives=result['negatives'], registry_sha256=pin.hex(),
                    results_sha256=hashlib.sha256(raw).hexdigest())
