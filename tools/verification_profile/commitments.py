@@ -1,10 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Frozen object commitments, Claim bindings and assumption-state components.
-
-Native payloads require an explicit pinned import schema. ENUM wire, sum-union
-adapters and admission input capsules are candidate interfaces, not normative
-wire upgrades. No operation executes a verifier or emits a protocol Decision.
-"""
+"""Claim bindings, object records and assumption-state components over explicit schema documents."""
 import hashlib,json
 from pathlib import Path
 from tools.verification_profile import codec as c,profile as p,registration as r,references,registration_rules as common,method_rules,creation,selection

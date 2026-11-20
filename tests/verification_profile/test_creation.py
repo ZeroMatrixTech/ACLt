@@ -85,13 +85,13 @@ class CreationTests(unittest.TestCase):
         issues=validator.validate_creation_cbor(c.encode(self.value),self.lock,self.contract,phase='F')
         self.assertTrue(issues);self.assertIn('replay',issues[0].message)
 
-    def test_test_contract_has_external_pin_and_no_authority_claim(self):
+    def test_contract_contents_checked_with_digest_pin_record(self):
         out=r.inspect(c.encode(self.value),self.lock,self.contract,phase='F')
         for key in ('full_schema_valid','full_phase_i_replay','source_authentication','production_admission','receipt_created'):self.assertFalse(out[key])
         self.value['test_contract']['contract_tuple']=b'changed'
         with self.assertRaisesRegex(c.CodecError,'SV-102'):r.inspect(c.encode(self.value),self.lock,self.contract,phase='F')
 
-    def test_cli_requires_both_pins_and_production_rejects(self):
+    def test_cli_accepts_optional_pin_records_and_compatibility_flag(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)/'if.cbor';p.write_bytes(c.encode(self.value));cmd=[sys.executable,'-B','-m','tools.verification_profile.validator',str(p),'--creation-f-cbor']
             self.assertEqual(subprocess.run(cmd,capture_output=True).returncode,0)

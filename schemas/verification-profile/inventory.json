@@ -734,7 +734,7 @@
         "tools/verification_profile/selection.py#check_selected"
       ],
       "tests": [
-        "tests/verification_profile/test_selection.py#test_selected_slot_binds_full_identity_and_actual_digest"
+        "tests/verification_profile/test_selection.py#test_selected_slot_matches_id_version_with_digest_record"
       ],
       "gap": "2026-11-20 维护者停用该一致性门禁；摘要字段与生成记录保留，运行入口执行DISABLED政策。",
       "runtime_migration": "COMPLETE"
@@ -1089,7 +1089,7 @@
         "tools/verification_profile/runtime_bindings.py#inspect"
       ],
       "tests": [
-        "tests/verification_profile/test_registration.py#test_validator_cli_and_fail_closed_production",
+        "tests/verification_profile/test_registration.py#test_validator_cli_with_compatibility_flag",
         "tests/verification_profile/test_registration.py#test_frozen_vectors",
         "tests/verification_profile/test_runtime_bindings.py#test_frozen_vectors"
       ],

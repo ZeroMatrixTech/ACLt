@@ -93,7 +93,7 @@ class SingleHostValidationTests(unittest.TestCase):
   s=snapshot(['REVOKED']);s['assumption_states'][0]['effective_verdict']='VALID';variants.append(s)
   s=snapshot();s['reducer_ref']={};variants.append(s)
   for s in variants:self.assertTrue(validate_assumption_snapshot(bounded_profile(),s,REDUCER_REF,'TRUSTED'))
- def test_cli_production_always_refuses(self):
+ def test_cli_compatibility_flag_runs_implemented_rules(self):
   with tempfile.TemporaryDirectory() as td:
    p=pathlib.Path(td)/'profile.json';p.write_text(json.dumps(bounded_profile()))
    r=subprocess.run([sys.executable,'-B','-m','tools.verification_profile.validator',str(p),'--production'],cwd=ROOT,capture_output=True,text=True)

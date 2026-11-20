@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Frozen exclusion objects and a scoped audit Phase R wire entry.
-
-Schema documents and their trust pin are explicit inputs. Imported engineering
-components and log proofs are not authenticated by these structural checks.
-"""
+"""Exclusion objects and Phase R wire types over explicit schema documents. Digest pins are optional records."""
 import hashlib
 
 from tools.verification_profile import codec as c, registration as r

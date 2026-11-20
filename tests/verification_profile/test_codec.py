@@ -114,7 +114,7 @@ class ClaimCodecTests(unittest.TestCase):
         self.assertRaises(c.CodecError, c.encode, None)
         self.assertRaises(c.CodecError, c.encode, 1.0)
 
-    def test_contract_and_import_are_pinned(self):
+    def test_declared_contract_types_and_import_identity(self):
         root = Path(__file__).resolve().parents[2]
         contract = json.loads((root / 'schemas/verification-profile/claim-codec-slice.json').read_text())
         imported = contract['local_external_import']

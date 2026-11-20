@@ -153,7 +153,7 @@ class RegistrationTests(unittest.TestCase):
         before=copy.deepcopy(self.value);self.check();self.assertEqual(self.value,before)
         self.check(pin=b'x'*32)  # SHA consistency DISABLED;self.assertEqual(self.value,before)
 
-    def test_validator_cli_and_fail_closed_production(self):
+    def test_validator_cli_with_compatibility_flag(self):
         self.assertEqual(validate_registration_cbor(c.encode(self.value),self.pin),[])
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'registration.cbor';path.write_bytes(c.encode(self.value))
@@ -175,7 +175,7 @@ class RegistrationTests(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertIn('DISABLED', result.stderr)
 
-    def test_predecessor_source_pins_remain_replayable(self):
+    def test_predecessor_archive_preserves_declared_source_inventory(self):
         summary=json.loads((ROOT/'docs/testing/PROFILE-DIGEST-R1-20261107.summary.json').read_text())
         with tarfile.open(ROOT/'docs/testing/public-evidence/PROFILE-DIGEST-R1-source.tar.gz') as archive:
             self.assertEqual(set(archive.getnames()),set(summary['source_sha256']))

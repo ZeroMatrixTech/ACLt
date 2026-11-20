@@ -148,7 +148,7 @@ class MethodMatrixTests(unittest.TestCase):
         r.inspect_audit(c.encode(value),b'x'*32)  # SHA record only
         self.assertEqual(value,before)
 
-    def test_cli_modes_and_production_are_fail_closed(self):
+    def test_cli_modes_and_compatibility_flag(self):
         for audit in (False,True):
             value,pin=DRIVER['audit_fixture']() if audit else DRIVER['fixture']()
             self.assertEqual(validate_method_matrix_cbor(c.encode(value),pin,audit=audit),[])

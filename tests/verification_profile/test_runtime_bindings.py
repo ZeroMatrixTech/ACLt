@@ -113,7 +113,7 @@ class RuntimeBindingTests(unittest.TestCase):
     def test_snapshot_digest_records_do_not_reject_actual_snapshot(self):
         v,_,_=self.fixture();v['envelope']['payload']['eligibility_snapshot']['object_digest']=b'x'*32
         self.assertTrue(self.inspect(v)['accepted'])
-    def test_cli_reports_semantic_rejection_and_production_stays_closed(self):
+    def test_cli_reports_semantic_rejection_with_compatibility_flag(self):
         v,lp,cp=self.fixture();raw=c.encode(v);self.assertEqual(validator.validate_runtime_bindings_cbor(raw,lp,cp),[])
         v['envelope']['receipt_binding']['network_id']=b'other';self.assertTrue(validator.validate_runtime_bindings_cbor(c.encode(v),lp,cp))
         with tempfile.TemporaryDirectory() as tmp:

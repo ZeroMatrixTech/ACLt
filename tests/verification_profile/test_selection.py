@@ -35,7 +35,7 @@ class SelectionTests(unittest.TestCase):
             entry['state']=state;q['registry_snapshot']['header']['digest']=reg.registry_digest(q['registry_snapshot'])
             self.assertEqual(r.profile_admissible(q['profile'],q['registry_snapshot']),expected)
 
-    def test_selected_slot_binds_full_identity_and_actual_digest(self):
+    def test_selected_slot_matches_id_version_with_digest_record(self):
         v,_,_=self.fixture('profile-lookup');q=v['payload'];r.check_selected(q['slot'],q['profile'],q['registry_snapshot'])
         for key,value in [('id','acl.vp.other.audit'),('version',[2,0,0]),('digest',b'x'*32)]:
             slot=copy.deepcopy(q['slot']);slot['profile_ref'][key]=value
@@ -86,7 +86,7 @@ class SelectionTests(unittest.TestCase):
         for field,value in [('on_none_applicable','OTHER'),('ordered_candidates',[]),('expanded_slots',[])]:
             changed=copy.deepcopy(q);changed[field]=value;self.assertNotEqual(old,r.asset_digest(changed,'PolicyR7'))
 
-    def test_asset_digest_mismatch_rejected_before_semantic_use(self):
+    def test_asset_digest_is_recorded_with_semantic_checks(self):
         for op in ('policy','edge','manifest'):
             v,pin,_=self.fixture(op);v['payload'][op]['header']['digest']=b'x'*32
             self.assertEqual(r.inspect(c.encode(v),pin)['operation'],op)
@@ -143,7 +143,7 @@ class SelectionTests(unittest.TestCase):
         v,pin,_=self.fixture('applicability-test');q=v['payload'];q['intent_effects']=[b'network'];self.assertFalse(r.inspect(c.encode(v),pin)['effects_covered'])
         info=q['profile']['assumption_references'][0];self.assertEqual(info['role'],'INFORMATIONAL');info['scope']['fault_domains']=[];q['profile']['profile_digest']=p.profile_digest(q['profile']);self.assertTrue(r.inspect(c.encode(v),pin)['scope_covered'])
 
-    def test_cli_and_production_remain_fail_closed(self):
+    def test_cli_compatibility_flag_and_malformed_input(self):
         v,pin,_=self.fixture('manifest')
         with tempfile.TemporaryDirectory() as tmp:
             f=Path(tmp)/'asset.cbor';f.write_bytes(c.encode(v));cmd=[sys.executable,'-B','-m','tools.verification_profile.validator',str(f),'--registration-assets-cbor','--schema-lock-sha256',pin.hex()]

@@ -161,7 +161,7 @@ class ReferencesTests(unittest.TestCase):
             with self.assertRaises(c.CodecError):self.check(value)
             self.assertEqual(self.value,before)
 
-    def test_cli_production_and_malformed_inputs_fail_closed(self):
+    def test_cli_compatibility_flag_and_malformed_inputs(self):
         self.assertEqual(validate_registration_references_cbor(c.encode(self.value),self.pin),[])
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'refs.cbor';path.write_bytes(c.encode(self.value))

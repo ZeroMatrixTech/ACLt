@@ -156,7 +156,7 @@ class RegistrationRuleTests(unittest.TestCase):
         DRIVER['PREVIOUS']['seal'](audit)
         with self.assertRaisesRegex(c.CodecError,'fixed audit'):r.inspect_audit(c.encode(audit),pin)
 
-    def test_cli_modes_and_production_boundary(self):
+    def test_cli_modes_and_compatibility_flag(self):
         for audit in (False,True):
             value,pin=DRIVER['PREVIOUS']['fixture']() if audit else DRIVER['fixture']()
             self.assertEqual(validate_registration_rules_cbor(c.encode(value),pin,audit=audit),[])
@@ -182,7 +182,7 @@ class RegistrationRuleTests(unittest.TestCase):
         with self.assertRaises(c.CodecError):r.inspect(c.encode(bad),self.pin)
         self.assertEqual(bad,original)
 
-    def test_uncommitted_r3_evidence_keeps_its_exact_sources(self):
+    def test_r3_archive_preserves_declared_source_inventory(self):
         summary=json.loads((ROOT/'docs/testing/PROFILE-REFERENCES-R3-20261108.summary.json').read_text())
         archive=ROOT/summary['source_archive']['path']
         self.assertTrue(archive.is_file())

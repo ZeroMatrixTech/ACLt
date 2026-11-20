@@ -137,7 +137,7 @@ class ProfileDigestTests(unittest.TestCase):
                 self.assertTrue(change)
             self.assertEqual(value,before)
 
-    def test_raw_cli_and_production_boundary(self):
+    def test_raw_cli_with_compatibility_flag(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'profile.cbor'
             path.write_bytes(c.encode(fixture()))

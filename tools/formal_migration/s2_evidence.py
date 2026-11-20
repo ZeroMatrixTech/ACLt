@@ -1,9 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Public offline snapshot replay; no role/issuer private key needed to verify.
-
-The genesis pin and an independently saved checkpoint must come from outside the
-bundle. A self-contained signed bundle cannot establish its own trust/freshness.
-"""
+"""Public snapshot replay with issuer signatures, event sequences and actual state projection. Digest fields remain records."""
 from contextlib import closing
 from tools.formal_migration import s2
 from tools.verification_profile import codec as c
@@ -19,8 +15,8 @@ def export(ledger):
 def verify(cfg,pack,anchor=None,*,transition=s2.Ledger.transition,capture=()):
     """Optionally retain pre-event state and result at requested sequence numbers.
 
-    Captures are returned only after the signature, entire chain, final projection
-    and supplied anchor have been verified.
+    Captures are returned after signature, sequence, anchor position and actual
+    final-state checks.
     """
     s2.config_check(cfg);s2.fields(pack,{'schema','checkpoint','signature','state','events'})
     cp=pack['checkpoint'];s2.fields(cp,{'schema','genesis','seq','head','state_digest'})

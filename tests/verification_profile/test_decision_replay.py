@@ -27,7 +27,7 @@ class DecisionReplayTests(unittest.TestCase):
                 else:
                     self.assertEqual(D['semantic_result'](decision_replay.inspect(*args)), row['expected'])
 
-    def test_cli_external_pins_and_production_gate(self):
+    def test_cli_optional_pin_records_and_compatibility_flag(self):
         row = json.loads(VECTORS.read_text())['vectors'][0]
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'decision.cbor'

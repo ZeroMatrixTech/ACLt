@@ -113,7 +113,7 @@ class CommitmentTests(unittest.TestCase):
     def test_template_enum_contents_are_hashed_without_inventing_semantics(self):
         v,_,i=self.fixture('template-digest');obj=v['payload']['object'];old=r.object_digest(obj,'ClaimTemplate');row=next(x for x in obj['slot_decls'] if x['slot']=='soundness_class');row['decl']['value_type']={'enum':['SOUND','DIFFERENT']};new=r.object_digest(obj,'ClaimTemplate');self.assertNotEqual(old,new);obj['header']['digest']=new;r.check_digest(obj,'ClaimTemplate',i)
 
-    def test_payload_schema_digest_and_canonical_bytes_are_bound(self):
+    def test_static_payload_canonical_value_matches_profile(self):
         v,pin,_=self.fixture();row=v['payload']['profile']['verified_claim_spec']['static_bindings'][0]['value'];row['canonical_bytes']=c.encode(b'changed');D['reseal'](v)
         with self.assertRaisesRegex(c.CodecError,'SV-44'):r.inspect(c.encode(v),pin)
 
@@ -129,7 +129,7 @@ class CommitmentTests(unittest.TestCase):
         v,pin,_=self.fixture('state');s=v['payload']['result']['snapshot'];row=s['assumption_states'][0];row['cause_set']=[dict(cause_code='REVOKED',evidence_ref=b'evidence',observed_event_ref=b'event')];row['effective_verdict']='VALID';s['header']['digest']=r.object_digest(s,'AssumptionStateSnapshot');v['payload']['assumption_state_digest']=r.state_digest(s)
         with self.assertRaisesRegex(c.CodecError,'SV-54a'):r.inspect(c.encode(v),pin)
 
-    def test_evidence_version_and_reducer_cannot_be_substituted(self):
+    def test_evidence_version_and_reducer_identity(self):
         for key,value in [('evidence_version',[9,0,0]),('evidence_ref',b'other')]:
             v,pin,_=self.fixture('state');s=v['payload']['result']['snapshot'];s['assumption_states'][0][key]=value;s['header']['digest']=r.object_digest(s,'AssumptionStateSnapshot')
             with self.assertRaisesRegex(c.CodecError,'evidence'):r.inspect(c.encode(v),pin)
@@ -187,7 +187,7 @@ class CommitmentTests(unittest.TestCase):
         v,pin,_=self.fixture('claim-guard');self.assertEqual(v['payload']['assurance_profile']['profile_capabilities'][0]['disposition'],'DISABLED');out=r.inspect(c.encode(v),pin)
         for field in ('full_schema_valid','full_phase_i_replay','source_authentication','production_admission','protocol_decision_emitted'):self.assertFalse(out[field])
 
-    def test_cli_and_optimization_mode_keep_production_closed(self):
+    def test_cli_compatibility_flag_and_optimization_mode(self):
         v,pin,_=self.fixture('assurance-digest')
         with tempfile.TemporaryDirectory() as tmp:
             f=Path(tmp)/'input.cbor';f.write_bytes(c.encode(v));cmd=[sys.executable,'-B','-m','tools.verification_profile.validator',str(f),'--commitment-bindings-cbor','--schema-lock-sha256',pin.hex()];result=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True);self.assertEqual(result.returncode,0,result.stdout+result.stderr);self.assertEqual(subprocess.run(cmd+['--production'],cwd=ROOT,capture_output=True).returncode,0)
